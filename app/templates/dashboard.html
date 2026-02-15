@@ -1,0 +1,456 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - SilverCloud{% endblock %}
+
+{% block body %}
+<div class="container">
+    <style>
+        /* Sidebar: make full-height column so footer sits at bottom */
+        .sidebar{
+            display:flex;
+            flex-direction:column;
+            min-height:100vh;
+        }
+        /* Menu area should scroll if long */
+        .sidebar-menu{
+            flex:1 1 auto;
+            overflow:auto;
+            padding-left:12px;
+            padding-right:12px;
+        }
+        .sidebar-footer{
+            margin-top:auto;
+            padding:12px;
+            background:transparent;
+        }
+        .sidebar-footer .user-info{margin-bottom:8px}
+        .logout-btn{width:100%; padding:10px 12px; border-radius:6px}
+    </style>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h1>🌐 SilverCloud</h1>
+            <p>v2.0.0</p>
+        </div>
+
+        <!-- Menu Groups with Permission-Based Disabled State -->
+        <ul class="sidebar-menu" id="menu">
+            <!-- Dashboard -->
+            <li id="menu-dashboard">
+                <a href="/dashboard" class="active" data-permission="Dashboard Ekranı Görüntüleme" title="Dashboard">📊 Dashboard</a>
+            </li>
+            
+            <!-- Sistem Tabloları -->
+            <li style="margin-top: 20px; color: #667; font-size: 12px; font-weight: bold;">
+                SİSTEM TABLOLARI
+            </li>
+            <li><a href="/api/v1/subeler" data-permission="Şube Yönetimi Ekranı Görüntüleme" title="Şube Yönetimi">🏢 Şube Yönetimi</a></li>
+            <li><a href="/api/v1/degerler" data-permission="Değer Yönetimi Ekranı Görüntüleme" title="Değer Yönetimi">💰 Değer Yönetimi</a></li>
+            <li><a href="/api/v1/kullanicilar" data-permission="Kullanıcı Yönetimi Ekranı Görüntüleme" title="Kullanıcı Yönetimi">👥 Kullanıcı Yönetimi</a></li>
+
+            <!-- Kategori Sistemi -->
+            <li style="margin-top: 20px; color: #667; font-size: 12px; font-weight: bold;">
+                KATEGORİ SİSTEMİ
+            </li>
+            <li><a href="/api/v1/ust-kategoriler" data-permission="Üst Kategori Yönetimi Ekranı Görüntüleme" title="Üst Kategori Yönetimi">📁 Üst Kategori Yönetimi</a></li>
+            <li><a href="/api/v1/kategoriler" data-permission="Kategori Yönetimi Ekranı Görüntüleme" title="Kategori Yönetimi">📂 Kategori Yönetimi</a></li>
+
+            <!-- Fatura/Harcama -->
+            <li style="margin-top: 20px; color: #667; font-size: 12px; font-weight: bold;">
+                FATURA/HARCAMA
+            </li>
+            <li><a href="/api/v1/efaturalar" data-permission="Fatura Yükleme Ekranı Görüntüleme" title="Fatura Yükleme">📄 Fatura Yükleme</a></li>
+            <li><a href="/api/v1/efaturalar" data-permission="Fatura Kategori Atama Ekranı Görüntüleme" title="Fatura Kategori Atama">🏷️ Fatura Kategori Atama</a></li>
+            <li><a href="/api/v1/efaturalar" data-permission="B2B Ekstre Yükleme Ekranı Görüntüleme" title="B2B Ekstre Yükleme">📋 B2B Ekstre Yükleme</a></li>
+            <li><a href="/api/v1/efaturalar" data-permission="B2B Kategori Atama Ekranı Görüntüleme" title="B2B Kategori Atama">🏷️ B2B Kategori Atama</a></li>
+            <li><a href="/api/v1/odemeler" data-permission="Ödeme Yükleme Ekranı Görüntüleme" title="Ödeme Yükleme">💳 Ödeme Yükleme</a></li>
+            <li><a href="/api/v1/odemeler" data-permission="Ödeme Kategori Atama Ekranı Görüntüleme" title="Ödeme Kategori Atama">🏷️ Ödeme Kategori Atama</a></li>
+            <li><a href="/api/v1/diger-harcamalar" data-permission="Diğer Harcamalar Ekranı Görüntüleme" title="Diğer Harcamalar">💰 Diğer Harcamalar</a></li>
+            <li><a href="/api/v1/pos-hareketleri" data-permission="POS Hareketleri Yükleme Ekranı Görüntüleme" title="POS Hareketleri Yükleme">📤 POS Hareketleri Yükleme</a></li>
+            <li><a href="/api/v1/pos-hareketleri" data-permission="Yemek Çeki Ekranı Görüntüleme" title="Yemek Çeki">🍴 Yemek Çeki</a></li>
+
+            <!-- Gelir -->
+            <li style="margin-top: 20px; color: #667; font-size: 12px; font-weight: bold;">
+                GELİR
+            </li>
+            <li><a href="/api/v1/gelirler" data-permission="Gelir Girişi Ekranı Görüntüleme" title="Gelir Girişi">📈 Gelir Girişi</a></li>
+            <li><a href="/api/v1/nakit" data-permission="Nakit Girişi Ekranı Görüntüleme" title="Nakit Girişi">💵 Nakit Girişi</a></li>
+
+            <!-- Stok -->
+            <li style="margin-top: 20px; color: #667; font-size: 12px; font-weight: bold;">
+                STOK
+            </li>
+            <li><a href="/api/v1/stoklari" data-permission="Stok Tanımlama Ekranı Görüntüleme" title="Stok Tanımlama">📦 Stok Tanımlama</a></li>
+            <li><a href="/api/v1/stok-fiyatlari" data-permission="Stok Fiyat Tanımlama Ekranı Görüntüleme" title="Stok Fiyat Tanımlama">💲 Stok Fiyat Tanımlama</a></li>
+            <li><a href="/api/v1/stok-sayimlari" data-permission="Stok Sayım Ekranı Görüntüleme" title="Stok Sayım">📊 Stok Sayım</a></li>
+
+            <!-- Çalışan -->
+            <li style="margin-top: 20px; color: #667; font-size: 12px; font-weight: bold;">
+                ÇALIŞAN
+            </li>
+            <li><a href="/api/v1/calisanlar" data-permission="Çalışan Yönetimi Ekranı Görüntüleme" title="Çalışan Yönetimi">👔 Çalışan Yönetimi</a></li>
+            <li><a href="/api/v1/puantaj-secimler" data-permission="Puantaj Seçim Yönetimi Ekranı Görüntüleme" title="Puantaj Seçim Yönetimi">⏰ Puantaj Seçim Yönetimi</a></li>
+            <li><a href="/api/v1/puantajlar" data-permission="Puantaj Girişi Ekranı Görüntüleme" title="Puantaj Girişi">📋 Puantaj Girişi</a></li>
+            <li><a href="/api/v1/avans-istekler" data-permission="Avans Talebi Ekranı Görüntüleme" title="Avans Talebi">💸 Avans Talebi</a></li>
+            <li><a href="/api/v1/calisan-talepler" data-permission="Çalışan Talep Ekranı Görüntüleme" title="Çalışan Talep">📝 Çalışan Talep</a></li>
+
+            <!-- Rapor -->
+            <li style="margin-top: 20px; color: #667; font-size: 12px; font-weight: bold;">
+                RAPOR
+            </li>
+            <li><a href="/nakit-yatirma-raporu" data-permission="Nakit Yatırma Kontrol Raporu Görüntüleme" title="Nakit Yatırma Kontrol Raporu">💰 Nakit Yatırma Raporu</a></li>
+            <li><a href="/odeme-rapor" data-permission="Ödeme Rapor Görüntüleme" title="Ödeme Rapor">📊 Ödeme Rapor</a></li>
+            <li><a href="/fatura-rapor" data-permission="Fatura Rapor Görüntüleme" title="Fatura Rapor">📈 Fatura Rapor</a></li>
+            <li><a href="/fatura-diger-harcama-rapor" data-permission="Fatura & Diğer Harcama Rapor Görüntüleme" title="Fatura & Diğer Harcama Raporu">📑 Fatura & Diğer Harcama</a></li>
+            <li><a href="/pos-kontrol-dashboard" data-permission="POS Kontrol Dashboard Görüntüleme" title="POS Kontrol Dashboard">🎛️ POS Kontrol Dashboard</a></li>
+            <li><a href="/yemek-ceki-kontrol-dashboard" data-permission="Yemek Çeki Kontrol Dashboard Görüntüleme" title="Yemek Çeki Kontrol Dashboard">🍽️ Yemek Çeki Dashboard</a></li>
+            <li><a href="/vps-dashboard" data-permission="VPS Dashboard Görüntüleme" title="VPS Dashboard">🔍 VPS Dashboard</a></li>
+            <li><a href="/bayi-karlilik-raporu" data-permission="Bayi Karlılık Raporu Görüntüleme" title="Bayi Karlılık Raporu">💹 Bayi Karlılık Raporu</a></li>
+            <li><a href="/ozet-kontrol-raporu" data-permission="Özet Kontrol Raporu Görüntüleme" title="Özet Kontrol Raporu">✓ Özet Kontrol Raporu</a></li>
+            <li><a href="/nakit-akis-gelir-raporu" data-permission="Nakit Akış - Gelir Raporu Görüntüleme" title="Nakit Akış - Gelir">💧 Nakit Akış - Gelir</a></li>
+            <li><a href="/cari-borc-takip-sistemi" data-permission="Cari Borç Takip Sistemi Görüntüleme" title="Cari Borç Takip Sistemi">📌 Cari Borç Takip</a></li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div>👤 {{ user.Adi_Soyadi }}</div>
+                <div style="color: #999; font-size: 11px;">{{ user.Kullanici_Adi }}</div>
+                <div style="color: #999; font-size: 11px;">{{ user.Email }}</div>
+            </div>
+            <form method="POST" action="/logout" style="margin: 0;">
+                <button type="submit" class="logout-btn">Çıkış</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="topbar">
+            <h2>Dashboard</h2>
+            <div class="topbar-right">
+                <span>🕐 <span id="current-time"></span></span>
+            </div>
+        </div>
+
+        <div class="content">
+            {% if message %}
+            <div class="alert alert-success">
+                <span>✓ {{ message }}</span>
+                <span class="alert-close" onclick="this.parentElement.style.display='none';">×</span>
+            </div>
+            {% endif %}
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                <!-- Dashboard Controls -->
+                <div class="card" style="grid-column: 1 / -1; display:flex; align-items:center; gap:12px;">
+                    <div>
+                        <label style="font-weight:600; margin-right:8px;">Dönem:</label>
+                        <input type="month" id="period-month" />
+                    </div>
+                    <div>
+                        <label style="font-weight:600; margin-right:8px;">Şube:</label>
+                        <select id="branch-select">
+                            {% for s in suber %}
+                                <option value="{{ s.Sube_ID }}">{{ s.Sube_Adi }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div style="margin-left:auto">
+                        <button id="refresh-reports" style="padding:8px 12px; border-radius:6px; background:#667eea; color:white; border:none;">Yenile</button>
+                    </div>
+                </div>
+                <!-- Left column: Revenues -->
+                <div id="gelir-list" style="grid-column: span 1;">
+                    <div class="card">
+                        <h3>GELİRLER</h3>
+                        <div id="gelir-items" style="display:flex;flex-direction:column;gap:8px;padding-top:8px;"></div>
+                    </div>
+                </div>
+
+                <!-- Middle column: Expenses -->
+                <div id="gider-list" style="grid-column: span 1;">
+                    <div class="card">
+                        <h3>GİDERLER</h3>
+                        <div id="gider-items" style="display:flex;flex-direction:column;gap:8px;padding-top:8px;"></div>
+                    </div>
+                </div>
+
+                <!-- Metric Cards populated from Reports API -->
+                <div class="card" style="background:#3b82f6; color:white; padding:18px; border-radius:8px;">
+                    <div style="font-size:14px; opacity:0.9;">Toplam Fatura (Seçili Dönem)</div>
+                    <div id="total-invoices" style="font-size:28px; font-weight:700; margin-top:6px;">—</div>
+                </div>
+
+                <div class="card" style="background:#10b981; color:white; padding:18px; border-radius:8px;">
+                    <div style="font-size:14px; opacity:0.9;">Toplam Ödeme</div>
+                    <div id="total-payments" style="font-size:28px; font-weight:700; margin-top:6px;">—</div>
+                </div>
+
+                <div class="card" style="background:#f59e0b; color:white; padding:18px; border-radius:8px;">
+                    <div style="font-size:14px; opacity:0.9;">Toplam Nakit</div>
+                    <div id="total-cash" style="font-size:28px; font-weight:700; margin-top:6px;">—</div>
+                </div>
+
+                <div class="card" style="background:#ef4444; color:white; padding:18px; border-radius:8px;">
+                    <div style="font-size:14px; opacity:0.9;">Stok Değeri</div>
+                    <div id="inventory-valuation" style="font-size:28px; font-weight:700; margin-top:6px;">—</div>
+                </div>
+
+                <div class="card" style="background:#6b7280; color:white; padding:18px; border-radius:8px;">
+                    <div style="font-size:14px; opacity:0.9;">Çalışan Sayısı</div>
+                    <div id="employee-count" style="font-size:28px; font-weight:700; margin-top:6px;">—</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Güncel saati göster
+    function updateTime() {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const el = document.getElementById('current-time');
+        if (el) el.textContent = `${hours}:${minutes}`;
+    }
+
+    // Format number as currency
+    function fmt(n) {
+        try { return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(n); } catch { return n; }
+    }
+
+    async function fetchReports() {
+        const period = document.getElementById('period-month').value; // YYYY-MM
+        const branchEl = document.getElementById('branch-select');
+        const sube_id = branchEl ? branchEl.value : null;
+        if (!period || !sube_id) return;
+
+        // convert YYYY-MM -> YYMM integer
+        const [yStr, mStr] = period.split('-');
+        const yy = yStr.substring(2);
+        const donem = parseInt(yy + (mStr.length===1?('0'+mStr):mStr));
+
+        try {
+            const resp = await fetch(`/api/v1/rapor/dashboard?donem=${donem}&sube_id=${sube_id}`);
+            if (!resp.ok) throw new Error('dashboard fetch failed');
+            const data = await resp.json();
+
+            // metrics
+            const totalInvoices = data.financial_summary ? data.financial_summary.ciro : (data.gelirler||[]).reduce((s,i)=>s+i.amount,0);
+            const totalPayments = data.financial_summary ? data.financial_summary.gider : (data.giderler||[]).reduce((s,i)=>s+i.amount,0);
+            const totalCash = data.robotpos_total || 0;
+            document.getElementById('total-invoices').textContent = fmt(totalInvoices || 0);
+            document.getElementById('total-payments').textContent = fmt(totalPayments || 0);
+            document.getElementById('total-cash').textContent = fmt(totalCash || 0);
+
+            document.getElementById('inventory-valuation').textContent = fmt((data.stok && data.stok.stok_degeri) || 0);
+            document.getElementById('employee-count').textContent = (data.financial_summary && data.financial_summary.employee_count) || (data.employee_count || 0);
+
+            // populate gelir and gider lists
+            const gelEl = document.getElementById('gelir-items');
+            const giderEl = document.getElementById('gider-items');
+            gelEl.innerHTML = '';
+            giderEl.innerHTML = '';
+
+            const bayi = (data && data.bayi_karlilik) ? data.bayi_karlilik : null;
+            const pExcel = (bayi && bayi.processedExcelRows) ? bayi.processedExcelRows : (data.gelirler || []);
+            const pDiger = (bayi && bayi.processedDigerRows) ? bayi.processedDigerRows : (data.giderler || []);
+
+            // helpers
+            const toNum = v => Number(v||0);
+            const sumArr = (arr, key='total') => (arr||[]).reduce((s,i)=>s + toNum(i[key]||i.amount||0),0);
+
+            // Determine revenue and expense totals for percentages
+            const totalRev = sumArr(pExcel, 'total');
+            const totalExp = sumArr(pDiger, 'total');
+
+            // Known yemek cek providers (we render them nested under Yemek Çeki header)
+            const providers = ['Multinet','Ticket','Sodexo','Metropal','Setcard'];
+
+            // Render processedExcelRows with nesting for Yemek Çeki providers
+            pExcel.forEach(row => {
+                // skip provider rows when they will be rendered nested
+                if (providers.includes(row.label)) return;
+
+                const header = document.createElement('div');
+                header.style.background = '#e6fffa';
+                header.style.padding = '10px 14px';
+                header.style.borderRadius = '6px';
+                header.style.display = 'flex';
+                header.style.justifyContent = 'space-between';
+                header.style.alignItems = 'center';
+                const val = toNum(row.total || row.amount || 0);
+                const pct = totalRev ? ((val/totalRev)*100).toFixed(2) : '0.00';
+                header.innerHTML = `<div style="font-weight:700;color:#065f46">${row.label}</div><div style="font-weight:700;color:#065f46">${fmt(val)} <span style="color:#666;font-size:12px">(${pct}%)</span></div>`;
+                gelEl.appendChild(header);
+
+                // If this is the Yemek Çeki summary, render providers or the yemek_ceki breakdown
+                if (row.label && row.label.toLowerCase().includes('yemek')) {
+                    // render provider rows from pExcel (if present)
+                    pExcel.filter(r=> providers.includes(r.label)).forEach(pr => {
+                        const r = document.createElement('div');
+                        r.style.display='flex'; r.style.justifyContent='space-between'; r.style.padding='6px 12px';
+                        r.innerHTML = `<div style="margin-left:8px">${pr.label}</div><div style="color:#444">${fmt(toNum(pr.total||0))} <span style="color:#999;font-size:12px">(${totalRev?((toNum(pr.total||0)/totalRev*100).toFixed(2)):'0.00'}%)</span></div>`;
+                        gelEl.appendChild(r);
+                    });
+                    // also render aggregated yemek_ceki breakdown if available
+                    if (data.yemek_ceki && data.yemek_ceki.length>0) {
+                        data.yemek_ceki.forEach(it => {
+                            const r = document.createElement('div');
+                            r.style.display='flex'; r.style.justifyContent='space-between'; r.style.padding='6px 12px';
+                            r.innerHTML = `<div style="margin-left:8px">${it.label}</div><div style="color:#444">${fmt(toNum(it.amount))} <span style="color:#999;font-size:12px">(${totalRev?((toNum(it.amount)/totalRev*100).toFixed(2)):'0.00'}%)</span></div>`;
+                            gelEl.appendChild(r);
+                        });
+                    }
+                }
+            });
+
+            // Render GİDERLER: handle Satışların Maliyeti header + its supplier subrows
+            // find suppliers (category == 'maliyet')
+            const suppliers = pDiger.filter(r=> r.category === 'maliyet');
+            // render each top-level diger row; if it's Satışların Maliyeti render suppliers below
+            pDiger.forEach(row => {
+                // skip individual supplier rows (they'll be rendered under the header)
+                if (row.category === 'maliyet') return;
+
+                const val = toNum(row.total || row.amount || 0);
+                const pct = totalExp ? ((val/totalExp)*100).toFixed(2) : '0.00';
+                const header = document.createElement('div');
+                header.style.background = '#fee2e2';
+                header.style.padding = '10px 14px';
+                header.style.borderRadius = '6px';
+                header.style.display = 'flex';
+                header.style.justifyContent = 'space-between';
+                header.style.alignItems = 'center';
+                header.innerHTML = `<div style="font-weight:700;color:#7f1d1d">${row.label}</div><div style="font-weight:700;color:#7f1d1d">${fmt(val)} <span style="color:#666;font-size:12px">(${pct}%)</span></div>`;
+                giderEl.appendChild(header);
+
+                // if this is Satışların Maliyeti, render supplier rows
+                if (row.label && row.label.toLowerCase().includes('satışların maliyeti')) {
+                    suppliers.forEach(sup => {
+                        const r = document.createElement('div');
+                        r.style.display='flex'; r.style.justifyContent='space-between'; r.style.padding='6px 12px';
+                        r.innerHTML = `<div style="margin-left:8px">${sup.label}</div><div style="color:#444">${fmt(toNum(sup.total||0))} <span style="color:#999;font-size:12px">(${totalExp?((toNum(sup.total||0)/totalExp*100).toFixed(2)):'0.00'}%)</span></div>`;
+                        giderEl.appendChild(r);
+                    });
+                }
+            });
+
+            // Right sidebar: RobotPos, Stock, Financial
+            const robotEl = document.getElementById('total-cash');
+            if (robotEl) robotEl.textContent = fmt(data.robotpos_total || 0);
+            document.getElementById('inventory-valuation').textContent = fmt((data.stok && data.stok.stok_degeri) || 0);
+            // show previous and diff in a small panel if exists
+            // create or update a small sidebar block
+            let sidebarHtml = '';
+            sidebarHtml += `<div style="background:#eaf2ff;padding:10px;border-radius:6px;margin-bottom:8px"><div style="font-weight:700">STOK DURUMU</div><div>Dönem Stok Değeri: ${fmt((data.stok && data.stok.stok_degeri)||0)}</div><div>Önceki Dönem: ${fmt((data.stok && data.stok.prev_stok_degeri)||0)}</div><div>Stok Değer Farkı: ${fmt((data.stok && data.stok.stok_farki)||0)}</div></div>`;
+            sidebarHtml += `<div style="background:#f6edff;padding:10px;border-radius:6px"><div style="font-weight:700">FİNANSAL ÖZET</div><div>Cirolar: ${fmt((data.financial_summary && data.financial_summary.ciro)||0)}</div><div>Gider: ${fmt((data.financial_summary && data.financial_summary.gider)||0)}</div><div>Dönem Kâr / Zarar: ${fmt((data.financial_summary && data.financial_summary.donem_kar_zarar)||0)}</div></div>`;
+            // inject into a sidebar container; create if not present
+            let sideContainer = document.getElementById('right-sidebar-extra');
+            if (!sideContainer) {
+                sideContainer = document.createElement('div');
+                sideContainer.id = 'right-sidebar-extra';
+                sideContainer.style.gridColumn = 'span 1';
+                sideContainer.style.display = 'flex';
+                sideContainer.style.flexDirection = 'column';
+                sideContainer.style.gap = '12px';
+                const parent = document.querySelector('.content > div');
+                if (parent) parent.appendChild(sideContainer);
+            }
+            sideContainer.innerHTML = sidebarHtml;
+        } catch (e) {
+            console.error('dashboard', e);
+        }
+    }
+
+    // Initialize default period: current month
+    function initDates() {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth()+1).padStart(2,'0');
+        const el = document.getElementById('period-month');
+        if (el) el.value = `${y}-${m}`;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        updateTime();
+        setInterval(updateTime, 60000);
+        initDates();
+        fetchReports();
+        
+        // Permission-based menu item disable logic
+        // Fetch user permissions from backend with branch ID
+        const branchSelect = document.getElementById('branch-select');
+        const fetchPermissions = () => {
+            const branchId = branchSelect ? branchSelect.value : null;
+            if (!branchId) return;
+            
+            const permissionUrl = `/api/v1/permissions?sube_id=${branchId}`;
+            fetch(permissionUrl, { method: 'GET', credentials: 'include' })
+                .then(res => res.ok ? res.json() : { permissions: [] })
+                .catch(err => {
+                    console.warn('Could not fetch user permissions:', err);
+                    return { permissions: [] };
+                })
+                .then(data => {
+                    const userPermissions = (data && data.permissions) ? data.permissions : [];
+                    console.log('User permissions received:', userPermissions);
+                    
+                    // Hide menu items the user lacks permission for
+                    const menu = document.getElementById('menu');
+                    if (menu) {
+                        // First, hide link items without permission
+                        menu.querySelectorAll('a[data-permission]').forEach(link => {
+                            const permName = link.getAttribute('data-permission');
+                            const li = link.closest('li');
+                            if (!userPermissions.includes(permName)) {
+                                if (li) li.style.display = 'none';
+                            } else {
+                                if (li) li.style.display = '';
+                            }
+                        });
+
+                        // Then, hide section headers if they have no visible link children
+                        const headerCandidates = Array.from(menu.querySelectorAll('li')).filter(li => {
+                            const style = li.getAttribute('style') || '';
+                            return style.toLowerCase().includes('font-weight: bold') || style.toLowerCase().includes('font-weight:600');
+                        });
+
+                        headerCandidates.forEach(header => {
+                            // check subsequent siblings until next header candidate
+                            let foundVisible = false;
+                            let sib = header.nextElementSibling;
+                            while (sib) {
+                                const sstyle = sib.getAttribute('style') || '';
+                                // stop when next header reached
+                                if (sstyle.toLowerCase().includes('font-weight: bold') || sstyle.toLowerCase().includes('font-weight:600')) break;
+                                // if sibling contains an anchor and is visible, keep header
+                                if (sib.querySelector && sib.querySelector('a[data-permission]')) {
+                                    const display = (sib.style && sib.style.display) ? sib.style.display : '';
+                                    if (display !== 'none') { foundVisible = true; break; }
+                                }
+                                sib = sib.nextElementSibling;
+                            }
+                            header.style.display = foundVisible ? '' : 'none';
+                        });
+                    }
+                });
+        };
+        
+        // Fetch permissions on page load
+        fetchPermissions();
+        
+        // Re-fetch permissions when branch changes
+        if (branchSelect) {
+            branchSelect.addEventListener('change', () => {
+                fetchPermissions();
+                fetchReports();
+            });
+        }
+        
+        const btn = document.getElementById('refresh-reports');
+        if (btn) btn.addEventListener('click', fetchReports);
+    });
+</script>
+{% endblock %}
