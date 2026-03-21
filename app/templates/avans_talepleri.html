@@ -1,0 +1,459 @@
+{% extends "base.html" %}
+
+{% block title %}Avans Talepleri - SilverCloud{% endblock %}
+
+{% block extra_style %}
+<style>
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.95);
+        --glass-border: rgba(255, 255, 255, 0.3);
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --accent-color: #667eea;
+        --text-dark: #2d3748;
+        --text-gray: #718096;
+    }
+
+    .main-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+
+    .page-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-dark);
+        margin: 0;
+    }
+
+    .action-bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .search-container {
+        position: relative;
+        min-width: 250px;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 10px 16px 10px 40px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        outline: none;
+        transition: all 0.2s;
+        font-size: 0.9rem;
+    }
+
+    .search-input:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-gray);
+    }
+
+    .control-select {
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        font-size: 0.9rem;
+        outline: none;
+        min-width: 120px;
+    }
+
+    .btn-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        color: var(--text-dark);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-icon:hover {
+        background: #f7fafc;
+        border-color: #cbd5e0;
+    }
+
+    .btn-new {
+        background: var(--accent-color);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        transition: transform 0.2s, background 0.2s;
+    }
+
+    .btn-new:hover {
+        background: #5a67d8;
+        transform: translateY(-1px);
+    }
+
+    /* Table styles */
+    .data-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .data-table th {
+        background: #f8fafc;
+        color: var(--text-gray);
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 12px 16px;
+        text-align: left;
+        border-bottom: 2px solid #edf2f7;
+    }
+
+    .data-table td {
+        padding: 16px;
+        color: var(--text-dark);
+        font-size: 0.9rem;
+        border-bottom: 1px solid #edf2f7;
+    }
+
+    .data-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .data-table tr:hover td {
+        background-color: #f7fafc;
+    }
+
+    .actions-cell {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+    }
+
+    .btn-row-action {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-edit {
+        background: #ebf4ff;
+        color: #3182ce;
+    }
+
+    .btn-edit:hover {
+        background: #bee3f8;
+    }
+
+    .btn-delete {
+        background: #fff5f5;
+        color: #e53e3e;
+    }
+
+    .btn-delete:hover {
+        background: #fed7d7;
+    }
+
+    /* Modal Form Styles */
+    .modal-form-group {
+        margin-bottom: 16px;
+    }
+
+    .modal-form-group label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        margin-bottom: 6px;
+    }
+
+    .modal-form-group input,
+    .modal-form-group select,
+    .modal-form-group textarea {
+        width: 100%;
+        padding: 10px;
+        border-radius: 6px;
+        border: 1px solid #e2e8f0;
+        font-size: 0.9rem;
+    }
+
+    .modal-form-group textarea {
+        min-height: 80px;
+        resize: vertical;
+    }
+
+    .currency-input-wrapper {
+        position: relative;
+    }
+
+    .currency-input-wrapper::after {
+        content: '₺';
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-gray);
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="main-card">
+    <div class="page-header">
+        <h2 class="page-title">Avans Talepleri (Şube: {{ sube_adi }}, Dönem: {{ donem }})</h2>
+
+        <div class="action-bar">
+            <!-- Print Button -->
+            <button class="btn-icon" onclick="window.print()" title="Yazdır">
+                <i class="fas fa-print"></i>
+            </button>
+
+            <!-- Search Area -->
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="avansSearch" class="search-input" placeholder="Çalışan veya açıklama ara...">
+            </div>
+
+            <!-- Period Select -->
+            <select id="periodSelect" class="control-select" onchange="handleFilterChange()">
+                {% for opt in donem_options %}
+                <option value="{{ opt.code }}" {% if opt.code==donem %}selected{% endif %}>{{ opt.label }}</option>
+                {% endfor %}
+            </select>
+
+            <!-- New Advance Button -->
+            <button class="btn-new" onclick="openNewAvansModal()">
+                <i class="fas fa-plus"></i>
+                Yeni Avans
+            </button>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="data-table" id="avansTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>DÖNEM</th>
+                    <th>ÇALIŞAN</th>
+                    <th style="text-align: right;">TUTAR</th>
+                    <th>AÇIKLAMA</th>
+                    <th>KAYIT TARİHİ</th>
+                    <th style="text-align: right;">İŞLEMLER</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in avanslar %}
+                <tr data-id="{{ a.Avans_ID }}" data-tc="{{ a.TC_No }}">
+                    <td>{{ a.Avans_ID }}</td>
+                    <td>{{ a.Donem }}</td>
+                    <td>
+                        <div style="font-weight: 600;">{{ a.Calisan_Ad_Soyad }}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-gray);">{{ a.TC_No }}</div>
+                    </td>
+                    <td style="text-align: right; font-weight: 700;">{{ "{:,.2f}".format(a.Tutar).replace(',',
+                        'X').replace('.', ',').replace('X', '.') }} ₺</td>
+                    <td>{{ a.Aciklama }}</td>
+                    <td>{{ a.Kayit_Tarihi }}</td>
+                    <td>
+                        <div class="actions-cell">
+                            <button class="btn-row-action btn-edit" title="Düzenle"
+                                onclick='openEditAvansModal({{ a | tojson }})'>
+                                <i class="fas fa-pencil-alt"></i>
+                            </button>
+                            <button class="btn-row-action btn-delete" title="Sil"
+                                onclick="handleDeleteAvans({{ a.Avans_ID }})">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not avanslar %}
+                <tr>
+                    <td colspan="7" style="text-align: center; color: var(--text-gray); padding: 40px;">
+                        Bu dönem ve şube için avans talebi bulunamadı.
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add/Edit Avans Modal Content (Hidden) -->
+<template id="avansModalTemplate">
+    <form id="avansForm">
+        <input type="hidden" id="modal_avans_id" name="avans_id">
+
+        <div class="modal-form-group">
+            <label for="modal_tc_no">Çalışan Seçimi</label>
+            <select id="modal_tc_no" name="TC_No" required>
+                <option value="">Çalışan Seçiniz...</option>
+                {% for e in employees %}
+                <option value="{{ e.TC_No }}">{{ e.Ad_Soyad }} ({{ e.TC_No }})</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="modal-form-group">
+            <label for="modal_tutar">Tutar</label>
+            <div class="currency-input-wrapper">
+                <input type="number" id="modal_tutar" name="Tutar" step="0.01" min="0.01" required placeholder="0,00">
+            </div>
+        </div>
+
+        <div class="modal-form-group">
+            <label for="modal_aciklama">Açıklama</label>
+            <textarea id="modal_aciklama" name="Aciklama" placeholder="Talep açıklaması..."></textarea>
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+            <button type="button" class="btn btn-secondary" onclick="hideModal()">İptal</button>
+            <button type="submit" class="btn btn-primary" id="btnSaveAvans">Kaydet</button>
+        </div>
+    </form>
+</template>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const SUBE_ID = {{ current_sube_id }};
+    const DONEM = {{ donem }};
+
+    function handleFilterChange() {
+        const period = document.getElementById('periodSelect').value;
+        window.location.href = `/avans-talepleri?sube_id=${SUBE_ID}&donem=${period}`;
+    }
+
+    // Search functionality
+    document.getElementById('avansSearch')?.addEventListener('keyup', function (e) {
+        const term = e.target.value.toLowerCase();
+        const rows = document.querySelectorAll('#avansTable tbody tr');
+
+        rows.forEach(row => {
+            if (row.cells.length < 2) return; // Skip empty message row
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(term) ? '' : 'none';
+        });
+    });
+
+    function openNewAvansModal() {
+        const template = document.getElementById('avansModalTemplate');
+        showModal('Yeni Avans Talebi', template.innerHTML);
+
+        // Form submit handler
+        document.getElementById('avansForm').onsubmit = handleFormSubmit;
+    }
+
+    function openEditAvansModal(data) {
+        const template = document.getElementById('avansModalTemplate');
+        showModal('Avans Talebi Düzenle', template.innerHTML);
+
+        // Fill data
+        document.getElementById('modal_avans_id').value = data.Avans_ID;
+        document.getElementById('modal_tc_no').value = data.TC_No;
+        document.getElementById('modal_tc_no').disabled = true; // Cannot change employee on edit
+        document.getElementById('modal_tutar').value = data.Tutar;
+        document.getElementById('modal_aciklama').value = data.Aciklama === '-' ? '' : data.Aciklama;
+
+        document.getElementById('avansForm').onsubmit = handleFormSubmit;
+    }
+
+    async function handleFormSubmit(e) {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const avansId = formData.get('avans_id');
+
+        const payload = {
+            TC_No: formData.get('TC_No') || document.getElementById('modal_tc_no').value,
+            Tutar: parseFloat(formData.get('Tutar')),
+            Aciklama: formData.get('Aciklama'),
+            Donem: DONEM,
+            Sube_ID: SUBE_ID
+        };
+
+        const method = avansId ? 'PUT' : 'POST';
+        const url = avansId ? `/api/v1/avans-istekler/${avansId}` : `/api/v1/avans-istekler`;
+
+        try {
+            const res = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                showToast(avansId ? 'Talebi güncellendi' : 'Yeni talep oluşturuldu');
+                hideModal();
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                const err = await res.json();
+                showToast(err.error || 'İşlem başarısız', 'error');
+            }
+        } catch (err) {
+            showToast('Bağlantı hatası', 'error');
+        }
+    }
+
+    async function handleDeleteAvans(id) {
+        if (!confirm('Bu avans talebini silmek istediğinizden emin misiniz?')) return;
+
+        try {
+            const res = await fetch(`/api/v1/avans-istekler/${id}`, { method: 'DELETE' });
+            if (res.status === 204 || res.ok) {
+                showToast('Talep silindi');
+                document.querySelector(`tr[data-id="${id}"]`).remove();
+            } else {
+                showToast('Silme işlemi başarısız', 'error');
+            }
+        } catch (err) {
+            showToast('Bağlantı hatası', 'error');
+        }
+    }
+
+    // Branch sync
+    document.getElementById('branch-select')?.addEventListener('change', function (e) {
+        window.location.href = `/avans-talepleri?sube_id=${e.target.value}&donem=${DONEM}`;
+    });
+</script>
+{% endblock %}

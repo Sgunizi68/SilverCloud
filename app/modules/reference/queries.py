@@ -9,7 +9,7 @@ from datetime import date
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from app.models import (
-    Kategori, UstKategori, Deger, Sube, Kullanici, KullaniciRol
+    Kategori, UstKategori, Deger, Sube, Kullanici, KullaniciRol, Rol, Yetki, EFaturaReferans, OdemeReferans, Cari
 )
 
 
@@ -474,3 +474,369 @@ def count_kullanicilar(db: Session, aktif_only: bool = True) -> int:
     from sqlalchemy import func
     count_stmt = select(func.count(Kullanici.Kullanici_ID)).select_from(stmt.subquery())
     return db.scalars(count_stmt).first() or 0
+
+
+# ============================================================================
+# ROL (ROLES) QUERIES
+# ============================================================================
+
+def get_roller(db: Session, skip: int = 0, limit: int = 100,
+                 rol_adi: Optional[str] = None, aktif_only: bool = False) -> List[Rol]:
+    query = select(Rol)
+    
+    if rol_adi:
+        query = query.filter(Rol.Rol_Adi.ilike(f"%{rol_adi}%"))
+        
+    if aktif_only:
+        query = query.filter(Rol.Aktif_Pasif == True)
+        
+    query = query.offset(skip).limit(limit)
+    return db.scalars(query).all()
+
+def get_rol_by_id(db: Session, rol_id: int) -> Optional[Rol]:
+    return db.get(Rol, rol_id)
+
+def create_rol(db: Session, rol_adi: str, aciklama: Optional[str] = None, aktif_pasif: bool = True) -> Rol:
+    db_rol = Rol(
+        Rol_Adi=rol_adi,
+        Aciklama=aciklama,
+        Aktif_Pasif=aktif_pasif
+    )
+    db.add(db_rol)
+    db.commit()
+    db.refresh(db_rol)
+    return db_rol
+
+def update_rol(db: Session, db_rol: Rol, rol_adi: Optional[str] = None,
+                 aciklama: Optional[str] = None, aktif_pasif: Optional[bool] = None) -> Rol:
+    if rol_adi is not None:
+        db_rol.Rol_Adi = rol_adi
+    if aciklama is not None:
+        db_rol.Aciklama = aciklama
+    if aktif_pasif is not None:
+        db_rol.Aktif_Pasif = aktif_pasif
+        
+    db.commit()
+    db.refresh(db_rol)
+    return db_rol
+
+def delete_rol(db: Session, db_rol: Rol) -> bool:
+    db.delete(db_rol)
+    db.commit()
+    return True
+
+
+# ============================================================================
+# YETKİ (PERMISSIONS) QUERIES
+# ============================================================================
+
+def get_yetkiler(db: Session, skip: int = 0, limit: int = 100,
+                 yetki_adi: Optional[str] = None, aktif_only: bool = False) -> List[Yetki]:
+    query = select(Yetki)
+    
+    if yetki_adi:
+        query = query.filter(Yetki.Yetki_Adi.ilike(f"%{yetki_adi}%"))
+        
+    if aktif_only:
+        query = query.filter(Yetki.Aktif_Pasif == True)
+        
+    query = query.offset(skip).limit(limit)
+    return db.scalars(query).all()
+
+def get_yetki_by_id(db: Session, yetki_id: int) -> Optional[Yetki]:
+    return db.get(Yetki, yetki_id)
+
+def create_yetki(db: Session, yetki_adi: str, aciklama: Optional[str] = None, tip: Optional[str] = None, aktif_pasif: bool = True) -> Yetki:
+    db_yetki = Yetki(
+        Yetki_Adi=yetki_adi,
+        Aciklama=aciklama,
+        Tip=tip,
+        Aktif_Pasif=aktif_pasif
+    )
+    db.add(db_yetki)
+    db.commit()
+    db.refresh(db_yetki)
+    return db_yetki
+
+def update_yetki(db: Session, db_yetki: Yetki, yetki_adi: Optional[str] = None,
+                 aciklama: Optional[str] = None, tip: Optional[str] = None, aktif_pasif: Optional[bool] = None) -> Yetki:
+    if yetki_adi is not None:
+        db_yetki.Yetki_Adi = yetki_adi
+    if aciklama is not None:
+        db_yetki.Aciklama = aciklama
+    if tip is not None:
+        db_yetki.Tip = tip
+    if aktif_pasif is not None:
+        db_yetki.Aktif_Pasif = aktif_pasif
+        
+    db.commit()
+    db.refresh(db_yetki)
+    return db_yetki
+
+def delete_yetki(db: Session, db_yetki: Yetki) -> bool:
+    db.delete(db_yetki)
+    db.commit()
+    return True
+
+# ============================================================================
+# KULLANICI-ROL ATAMA QUERIES
+# ============================================================================
+
+from sqlalchemy.orm import joinedload
+
+def get_kullanici_rolleri(db: Session, skip: int = 0, limit: int = 100,
+                          kullanici_id: Optional[int] = None) -> List[KullaniciRol]:
+    query = select(KullaniciRol).options(
+        joinedload(KullaniciRol.kullanici),
+        joinedload(KullaniciRol.rol),
+        joinedload(KullaniciRol.sube)
+    )
+    
+    if kullanici_id is not None:
+        query = query.filter(KullaniciRol.Kullanici_ID == kullanici_id)
+        
+    query = query.offset(skip).limit(limit)
+    return db.scalars(query).all()
+
+# ============================================================================
+# E-FATURA REFERANS QUERIES
+# ============================================================================
+
+def get_efatura_referanslar(db: Session, skip: int = 0, limit: int = 100, search: Optional[str] = None) -> List[EFaturaReferans]:
+    query = select(EFaturaReferans).options(joinedload(EFaturaReferans.kategori))
+    if search:
+        query = query.filter(EFaturaReferans.Alici_Unvani.ilike(f"%{search}%"))
+    query = query.offset(skip).limit(limit)
+    return db.scalars(query).all()
+
+def get_efatura_referans_by_unvan(db: Session, alici_unvani: str) -> Optional[EFaturaReferans]:
+    return db.get(EFaturaReferans, alici_unvani)
+
+def create_efatura_referans(db: Session, alici_unvani: str, kategori_id: int, referans_kodu: str = "TANIMSIZ", aciklama: Optional[str] = None, aktif_pasif: bool = True) -> EFaturaReferans:
+    db_ref = EFaturaReferans(
+        Alici_Unvani=alici_unvani,
+        Referans_Kodu=referans_kodu,
+        Kategori_ID=kategori_id,
+        Aciklama=aciklama,
+        Aktif_Pasif=aktif_pasif
+    )
+    db.add(db_ref)
+    db.commit()
+    db.refresh(db_ref)
+    return db_ref
+
+def update_efatura_referans(db: Session, db_ref: EFaturaReferans, kategori_id: Optional[int] = None, aktif_pasif: Optional[bool] = None) -> EFaturaReferans:
+    if kategori_id is not None:
+        db_ref.Kategori_ID = kategori_id
+    if aktif_pasif is not None:
+        db_ref.Aktif_Pasif = aktif_pasif
+        
+    db.commit()
+    db.refresh(db_ref)
+    return db_ref
+
+def delete_efatura_referans(db: Session, db_ref: EFaturaReferans) -> bool:
+    db.delete(db_ref)
+    db.commit()
+    return True
+
+# ============================================================================
+# ÖDEME REFERANS QUERIES
+# ============================================================================
+
+def get_odeme_referanslar(db: Session, skip: int = 0, limit: int = 100, search: Optional[str] = None) -> List[OdemeReferans]:
+    query = select(OdemeReferans).options(joinedload(OdemeReferans.kategori))
+    if search:
+        query = query.filter(OdemeReferans.Referans_Metin.ilike(f"%{search}%"))
+    query = query.offset(skip).limit(limit)
+    return db.scalars(query).all()
+
+def get_odeme_referans_by_metin(db: Session, referans_metin: str) -> Optional[OdemeReferans]:
+    stmt = select(OdemeReferans).where(OdemeReferans.Referans_Metin == referans_metin)
+    return db.scalars(stmt).first()
+
+def get_odeme_referans_by_id(db: Session, referans_id: int) -> Optional[OdemeReferans]:
+    return db.get(OdemeReferans, referans_id)
+
+def create_odeme_referans(db: Session, referans_metin: str, kategori_id: int, aktif_pasif: bool = True) -> OdemeReferans:
+    db_ref = OdemeReferans(
+        Referans_Metin=referans_metin,
+        Kategori_ID=kategori_id,
+        Aktif_Pasif=aktif_pasif
+    )
+    db.add(db_ref)
+    db.commit()
+    db.refresh(db_ref)
+    return db_ref
+
+def update_odeme_referans(db: Session, db_ref: OdemeReferans, kategori_id: Optional[int] = None, aktif_pasif: Optional[bool] = None) -> OdemeReferans:
+    if kategori_id is not None:
+        db_ref.Kategori_ID = kategori_id
+    if aktif_pasif is not None:
+        db_ref.Aktif_Pasif = aktif_pasif
+        
+    db.commit()
+    db.refresh(db_ref)
+    return db_ref
+
+def delete_odeme_referans(db: Session, db_ref: OdemeReferans) -> bool:
+    db.delete(db_ref)
+    db.commit()
+    return True
+
+def get_kullanici_rol(db: Session, kullanici_id: int, rol_id: int, sube_id: int) -> Optional[KullaniciRol]:
+    return db.get(KullaniciRol, (kullanici_id, rol_id, sube_id))
+
+def create_kullanici_rol(db: Session, kullanici_id: int, rol_id: int, sube_id: int, aktif_pasif: bool = True) -> KullaniciRol:
+    db_krol = KullaniciRol(
+        Kullanici_ID=kullanici_id,
+        Rol_ID=rol_id,
+        Sube_ID=sube_id,
+        Aktif_Pasif=aktif_pasif
+    )
+    db.add(db_krol)
+    db.commit()
+    db.refresh(db_krol)
+    return db_krol
+
+def update_kullanici_rol(db: Session, db_krol: KullaniciRol, aktif_pasif: bool) -> KullaniciRol:
+    db_krol.Aktif_Pasif = aktif_pasif
+    db.commit()
+    db.refresh(db_krol)
+    return db_krol
+
+def delete_kullanici_rol(db: Session, db_krol: KullaniciRol) -> bool:
+    db.delete(db_krol)
+    db.commit()
+    return True
+
+
+# ============================================================================
+# ROL-YETKİ ATAMA QUERIES
+# ============================================================================
+
+from app.models import RolYetki
+
+def get_rol_yetkileri(db: Session, skip: int = 0, limit: int = 100,
+                      rol_id: Optional[int] = None) -> List[RolYetki]:
+    query = select(RolYetki).options(
+        joinedload(RolYetki.rol),
+        joinedload(RolYetki.yetki)
+    )
+    
+    if rol_id is not None:
+        query = query.filter(RolYetki.Rol_ID == rol_id)
+        
+    query = query.offset(skip).limit(limit)
+    return db.scalars(query).all()
+
+def get_rol_yetki(db: Session, rol_id: int, yetki_id: int) -> Optional[RolYetki]:
+    return db.get(RolYetki, (rol_id, yetki_id))
+
+def create_rol_yetki(db: Session, rol_id: int, yetki_id: int, aktif_pasif: bool = True) -> RolYetki:
+    db_ryetki = RolYetki(
+        Rol_ID=rol_id,
+        Yetki_ID=yetki_id,
+        Aktif_Pasif=aktif_pasif
+    )
+    db.add(db_ryetki)
+    db.commit()
+    db.refresh(db_ryetki)
+    return db_ryetki
+
+def update_rol_yetki(db: Session, db_ryetki: RolYetki, aktif_pasif: bool) -> RolYetki:
+    db_ryetki.Aktif_Pasif = aktif_pasif
+    db.commit()
+    db.refresh(db_ryetki)
+    return db_ryetki
+
+def delete_rol_yetki(db: Session, db_ryetki: RolYetki) -> bool:
+    db.delete(db_ryetki)
+    db.commit()
+    return True
+
+# ============================================================================
+# CARI (CLIENTS) QUERIES
+# ============================================================================
+
+def get_cariler(
+    db: Session,
+    skip: int = 0,
+    limit: int = 100,
+    search: Optional[str] = None
+) -> List[Cari]:
+    """Get all cariler with optional search."""
+    stmt = select(Cari).options(
+        joinedload(Cari.referans).joinedload(OdemeReferans.kategori)
+    )
+    
+    if search:
+        stmt = stmt.where(Cari.Alici_Unvani.ilike(f"%{search}%"))
+        
+    stmt = stmt.offset(skip).limit(limit)
+    return db.scalars(stmt).all()
+
+
+def get_cari_by_id(db: Session, cari_id: int) -> Optional[Cari]:
+    """Get a cari by ID."""
+    return db.get(Cari, cari_id)
+
+
+def create_cari(
+    db: Session,
+    alici_unvani: str,
+    e_fatura_kategori_id: Optional[int] = None,
+    referans_id: Optional[int] = None,
+    cari: bool = True,
+    aciklama: Optional[str] = None,
+    aktif_pasif: bool = True
+) -> Cari:
+    """Create a new cari record."""
+    new_cari = Cari(
+        Alici_Unvani=alici_unvani,
+        e_Fatura_Kategori_ID=e_fatura_kategori_id,
+        Referans_ID=referans_id,
+        Cari=cari,
+        Aciklama=aciklama,
+        Aktif_Pasif=aktif_pasif
+    )
+    db.add(new_cari)
+    db.commit()
+    db.refresh(new_cari)
+    return new_cari
+
+
+def update_cari(
+    db: Session,
+    db_cari: Cari,
+    alici_unvani: Optional[str] = None,
+    e_fatura_kategori_id: Optional[int] = None,
+    referans_id: Optional[int] = None,
+    cari: Optional[bool] = None,
+    aciklama: Optional[str] = None,
+    aktif_pasif: Optional[bool] = None
+) -> Cari:
+    """Update an existing cari record."""
+    if alici_unvani is not None:
+        db_cari.Alici_Unvani = alici_unvani
+    if e_fatura_kategori_id is not None:
+        db_cari.e_Fatura_Kategori_ID = e_fatura_kategori_id
+    if referans_id is not None:
+        db_cari.Referans_ID = referans_id
+    if cari is not None:
+        db_cari.Cari = cari
+    if aciklama is not None:
+        db_cari.Aciklama = aciklama
+    if aktif_pasif is not None:
+        db_cari.Aktif_Pasif = aktif_pasif
+        
+    db.commit()
+    db.refresh(db_cari)
+    return db_cari
+
+
+def delete_cari(db: Session, db_cari: Cari) -> bool:
+    """Delete a cari record."""
+    db.delete(db_cari)
+    db.commit()
+    return True

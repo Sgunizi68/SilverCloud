@@ -1,0 +1,553 @@
+{% extends "base.html" %}
+
+{% block title %}Özet Kontrol Raporu - SilverCloud{% endblock %}
+
+{% block nav_ozet_kontrol_raporu %}active{% endblock %}
+{% block acc_rapor %}active{% endblock %}
+{% block acc_rapor_content %}open{% endblock %}
+
+{% block extra_style %}
+<style>
+    /* Dashboard-style UI Alignment */
+    .report-header-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        background: white;
+        padding: 15px 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(30, 60, 120, 0.05);
+        border: 1px solid #e0e6ef;
+    }
+
+    .report-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #1a2340;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .control-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .form-select-sm {
+        height: 38px;
+        border: 1px solid #d1d9e8;
+        border-radius: 8px;
+        padding: 0 12px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        background: #f8fafd;
+        color: #1a2340;
+    }
+
+    .btn-download {
+        background: #10b981;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+
+    .btn-download:hover {
+        background: #059669;
+        transform: translateY(-1px);
+    }
+
+    /* Stats row */
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .stat-card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 1.25rem;
+        border: 1px solid #e0e6ef;
+        box-shadow: 0 2px 10px rgba(30, 60, 120, 0.05);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: #2563eb;
+    }
+
+    .stat-card.green::before { background: #10b981; }
+    .stat-card.red::before { background: #ef4444; }
+    .stat-card.blue::before { background: #3b82f6; }
+    .stat-card.purple::before { background: #8b5cf6; }
+
+    .stat-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #64748b;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: #1e293b;
+        font-family: 'DM Mono', 'Courier New', monospace;
+    }
+
+    .stat-sub {
+        font-size: 0.75rem;
+        color: #94a3b8;
+        margin-top: 5px;
+    }
+
+    /* Main Grid */
+    .report-grid {
+        display: grid;
+        grid-template-columns: 1.5fr 1fr;
+        gap: 1.5rem;
+    }
+
+    @media (max-width: 1100px) {
+        .report-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .panel {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #e0e6ef;
+        box-shadow: 0 4px 15px rgba(30, 60, 120, 0.05);
+        overflow: hidden;
+    }
+
+    .panel-header {
+        background: #f8fafd;
+        padding: 12px 20px;
+        border-bottom: 1px solid #e0e6ef;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .panel-header h2 {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #1a2340;
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    /* Custom Table Style */
+    .legacy-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .legacy-table tr {
+        border-bottom: 1px solid #f1f5f9;
+        transition: background 0.2s;
+    }
+
+    .legacy-table tr:hover {
+        background: #f8fafc;
+    }
+
+    .legacy-table td {
+        padding: 12px 20px;
+        font-size: 0.95rem;
+    }
+
+    .label-cell {
+        font-weight: 600;
+        color: #475569;
+    }
+
+    .value-cell {
+        text-align: right;
+        font-weight: 700;
+        color: #1e293b;
+        font-family: 'DM Mono', monospace;
+    }
+
+    .total-row {
+        background: #f1f5f9;
+        font-weight: 800;
+    }
+
+    .total-row td {
+        border-top: 2px solid #e2e8f0;
+    }
+
+    /* Calc Cards */
+    .calc-container {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .calc-box {
+        background: #f8fafd;
+        border-radius: 10px;
+        padding: 15px;
+        border: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .calc-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .calc-title {
+        font-weight: 700;
+        font-size: 0.95rem;
+        color: #1e293b;
+    }
+
+    .calc-formula {
+        font-size: 0.75rem;
+        color: #64748b;
+        font-style: italic;
+    }
+
+    .calc-result {
+        text-align: right;
+    }
+
+    .calc-amount {
+        font-size: 1.25rem;
+        font-weight: 800;
+        font-family: 'DM Mono', monospace;
+    }
+
+    .status-badge {
+        font-size: 0.75rem;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-weight: 700;
+        display: inline-block;
+        margin-top: 5px;
+    }
+
+    .status-ok { background: #d1fae5; color: #065f46; }
+    .status-warn { background: #fef3c7; color: #92400e; }
+    .status-err { background: #fee2e2; color: #991b1b; }
+
+    .val-pos { color: #10b981; }
+    .val-neg { color: #ef4444; }
+    .val-neutral { color: #64748b; }
+
+    /* Topbar hide */
+    .topbar { display: none !important; }
+    .content.dashboard-content { padding: 1.5rem !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    {% set d = report_data if report_data else {} %}
+    {% set f = d.get('financial', {}) %}
+
+    <!-- Calculations (for differences) -->
+    {% set robotpos = d.get('robotposTutar', 0.0) %}
+    {% set toplam = d.get('toplamSatis', 0.0) %}
+    {% set nakit = d.get('nakit', 0.0) %}
+    {% set gh_efatura = d.get('gunlukHarcamaEFatura', 0.0) %}
+    {% set gh_diger = d.get('gunlukHarcamaDiger', 0.0) %}
+    {% set kalan_nakit = nakit - gh_efatura - gh_diger %}
+    {% set nakit_girisi = d.get('nakitGirisiToplam', 0.0) %}
+    {% set bankaya_yatan = d.get('bankayaYatan', 0.0) %}
+    {% set gelir_pos = d.get('gelirPOS', 0.0) %}
+    {% set pos_hareket = d.get('posHareketleri', 0.0) %}
+    {% set online_gelir = d.get('onlineGelirToplam', 0.0) %}
+    {% set online_virman = d.get('onlineVirmanToplam', 0.0) %}
+    {% set yemek_ceki_aylik = d.get('yemekCekiAylikGelir', 0.0) %}
+    {% set yemek_ceki_toplam = d.get('yemekCekiDonemToplam', 0.0) %}
+
+    {% set gelir_fark = toplam - robotpos %}
+    {% set nakit_fark = bankaya_yatan - kalan_nakit %}
+    {% set kk_fark = pos_hareket - gelir_pos %}
+    {% set online_fark = online_virman - online_gelir %}
+    {% set yemek_ceki_fark = yemek_ceki_toplam - yemek_ceki_aylik %}
+    {% set total_fark = gelir_fark + nakit_fark + kk_fark + online_fark + yemek_ceki_fark %}
+
+    {% macro money(val) -%}
+    {{ "{:,.2f}".format(val).replace(',', 'X').replace('.', ',').replace('X', '.') }} ₺
+    {%- endmacro %}
+
+    {% macro color_class(val) -%}
+    {% if val > 1 %}val-pos{% elif val < -1 %}val-neg{% else %}val-neutral{% endif %}
+    {%- endmacro %}
+
+    {% macro status_badge(val) -%}
+    {% if val|abs > 200 %} <span class="status-badge status-err">Hatalı</span>
+    {% elif val|abs > 10 %} <span class="status-badge status-warn">Uyumsuz</span>
+    {% else %} <span class="status-badge status-ok">Uyumlu</span>
+    {% endif %}
+    {%- endmacro %}
+
+    <!-- Header -->
+    <div class="report-header-bar">
+        <div class="report-title">
+            <i class="fas fa-chart-pie" style="color: #2563eb;"></i>
+            Özet Kontrol Raporu
+        </div>
+        <div class="control-bar">
+            <button class="btn-download" onclick="exportToExcel()">
+                <i class="fas fa-file-excel"></i> EXCEL
+            </button>
+            <select class="form-select-sm" id="branchSelect" onchange="updateFilters()">
+                {% for s in subeler %}
+                <option value="{{ s.Sube_ID }}" {% if s.Sube_ID == secili_sube_id %}selected{% endif %}>{{ s.Sube_Adi }}</option>
+                {% endfor %}
+            </select>
+            <select class="form-select-sm" id="donemSelect" onchange="updateFilters()">
+                {% for p in donem_list %}
+                <option value="{{ p.value }}" {% if p.value == secili_donem %}selected{% endif %}>{{ p.display }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    {% if report_data %}
+    <!-- Summary Cards -->
+    <div class="stats-row">
+        <div class="stat-card blue">
+            <div class="stat-label">TOPLAM GELİR</div>
+            <div class="stat-value">{{ money(f.total_revenue) }}</div>
+            <div class="stat-sub">Dönem Satışları</div>
+        </div>
+        <div class="stat-card red">
+            <div class="stat-label">TOPLAM GİDER</div>
+            <div class="stat-value">{{ money(f.total_expense) }}</div>
+            <div class="stat-sub">Fatura + Harcama + Borç</div>
+        </div>
+        {% if show_gizli %}
+        <div class="stat-card green">
+            <div class="stat-label">CİRODAN KALAN</div>
+            <div class="stat-value">{{ money(f.cirodan_kalan) }}</div>
+            <div class="stat-sub">Gelir - Gider</div>
+        </div>
+        <div class="stat-card purple">
+            <div class="stat-label">DÖNEM KARI</div>
+            <div class="stat-value">{{ money(f.donem_kar_zarar) }}</div>
+            <div class="stat-sub">Cirodan Kalan + Stok Farkı</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="report-grid">
+        <!-- Legacy Table Structure -->
+        <div class="panel">
+            <div class="panel-header">
+                <i class="fas fa-university" style="color: #2563eb;"></i>
+                <h2>Database Verileri (GümüşBulut)</h2>
+            </div>
+            <table class="legacy-table">
+                <tr>
+                    <td class="label-cell">Robotpos Tutar (Sistem)</td>
+                    <td class="value-cell">{{ money(robotpos) }}</td>
+                </tr>
+                <tr>
+                    <td class="label-cell">Toplam Satış Gelirleri</td>
+                    <td class="value-cell">{{ money(toplam) }}</td>
+                </tr>
+                <tr>
+                    <td class="label-cell">Nakit Gelir</td>
+                    <td class="value-cell">{{ money(nakit) }}</td>
+                </tr>
+                <tr>
+                    <td class="label-cell">Günlük Harcama (e-Fatura)</td>
+                    <td class="value-cell" style="color: #ef4444;">- {{ money(gh_efatura) }}</td>
+                </tr>
+                <tr>
+                    <td class="label-cell">Günlük Harcama (Diğer)</td>
+                    <td class="value-cell" style="color: #ef4444;">- {{ money(gh_diger) }}</td>
+                </tr>
+                <tr class="total-row">
+                    <td class="label-cell" style="color: #2563eb;">Kalan Nakit Bakiyesi</td>
+                    <td class="value-cell" style="color: #2563eb;">{{ money(kalan_nakit) }}</td>
+                </tr>
+                <tr><td colspan="2" style="padding: 2px; background: #f8fafd;"></td></tr>
+                <tr>
+                    <td class="label-cell">Nakit Girişi Toplam</td>
+                    <td class="value-cell">{{ money(nakit_girisi) }}</td>
+                </tr>
+                <tr>
+                    <td class="label-cell">Bankaya Yatan Toplam</td>
+                    <td class="value-cell">{{ money(bankaya_yatan) }}</td>
+                </tr>
+                <tr>
+                    <td class="label-cell">Gelir POS (Kredi Kartı)</td>
+                    <td class="value-cell">{{ money(gelir_pos) }}</td>
+                </tr>
+                <tr>
+                    <td class="label-cell">POS Hareketleri (Banka)</td>
+                    <td class="value-cell">{{ money(pos_hareket) }}</td>
+                </tr>
+                <tr>
+                    <td class="label-cell">Online Gelir Toplam</td>
+                    <td class="value-cell">{{ money(online_gelir) }}</td>
+                </tr>
+                <tr>
+                    <td class="label-cell">Online Virman (B2B)</td>
+                    <td class="value-cell">{{ money(online_virman) }}</td>
+                </tr>
+                <tr>
+                    <td class="label-cell">Yemek Çeki Aylık Gelir</td>
+                    <td class="value-cell">{{ money(yemek_ceki_aylik) }}</td>
+                </tr>
+                <tr>
+                    <td class="label-cell">Yemek Çeki Dönem Toplamı</td>
+                    <td class="value-cell">{{ money(yemek_ceki_toplam) }}</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Automated Calculations -->
+        <div class="panel">
+            <div class="panel-header" style="background: #fff0f0;">
+                <i class="fas fa-calculator" style="color: #ef4444;"></i>
+                <h2>Otomatik Hesaplamalar</h2>
+            </div>
+            <div class="calc-container">
+                <!-- TOPLAM FARK -->
+                <div class="calc-box" style="background: #eff6ff; border-color: #bfdbfe; border-left: 6px solid #2563eb;">
+                    <div class="calc-info">
+                        <span class="calc-title">TOPLAM FARK</span>
+                        <span class="calc-formula">∑ Tüm Farklar'ın Toplamı</span>
+                        {{ status_badge(total_fark) }}
+                    </div>
+                    <div class="calc-result">
+                        <span class="calc-amount {{ color_class(total_fark) }}">{{ money(total_fark) }}</span>
+                    </div>
+                </div>
+
+                <div class="calc-box">
+                    <div class="calc-info">
+                        <span class="calc-title">Gelir Farkı</span>
+                        <span class="calc-formula">Satışlar - Robotpos</span>
+                        {{ status_badge(gelir_fark) }}
+                    </div>
+                    <div class="calc-result">
+                        <span class="calc-amount {{ color_class(gelir_fark) }}">{{ money(gelir_fark) }}</span>
+                    </div>
+                </div>
+
+                <div class="calc-box">
+                    <div class="calc-info">
+                        <span class="calc-title">Nakit Farkı</span>
+                        <span class="calc-formula">Bankaya Yatan - Kalan Nakit</span>
+                        {{ status_badge(nakit_fark) }}
+                    </div>
+                    <div class="calc-result">
+                        <span class="calc-amount {{ color_class(nakit_fark) }}">{{ money(nakit_fark) }}</span>
+                    </div>
+                </div>
+
+                <div class="calc-box">
+                    <div class="calc-info">
+                        <span class="calc-title">Kredi Kartı Farkı</span>
+                        <span class="calc-formula">POS Takas - Gelir POS</span>
+                        {{ status_badge(kk_fark) }}
+                    </div>
+                    <div class="calc-result">
+                        <span class="calc-amount {{ color_class(kk_fark) }}">{{ money(kk_fark) }}</span>
+                    </div>
+                </div>
+
+                <div class="calc-box">
+                    <div class="calc-info">
+                        <span class="calc-title">Online Gelir Farkı</span>
+                        <span class="calc-formula">Virmanlar - Online Gelir</span>
+                        {{ status_badge(online_fark) }}
+                    </div>
+                    <div class="calc-result">
+                        <span class="calc-amount {{ color_class(online_fark) }}">{{ money(online_fark) }}</span>
+                    </div>
+                </div>
+
+                <div class="calc-box">
+                    <div class="calc-info">
+                        <span class="calc-title">Yemek Çeki Farkı</span>
+                        <span class="calc-formula">Dönem Toplam - Aylık Gelir</span>
+                        {{ status_badge(yemek_ceki_fark) }}
+                    </div>
+                    <div class="calc-result">
+                        <span class="calc-amount {{ color_class(yemek_ceki_fark) }}">{{ money(yemek_ceki_fark) }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div style="padding: 100px; text-align: center; background: white; border-radius: 12px; margin-top: 2rem; border: 2px dashed #e2e8f0;">
+        <i class="fas fa-search" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 1rem;"></i>
+        <h3 style="color: #64748b;">Rapor Verisi Bulunamadı</h3>
+        <p style="color: #94a3b8;">Lütfen şube veya dönem seçimini değiştirin.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+<script>
+    function updateFilters() {
+        const sube_id = document.getElementById('branchSelect').value;
+        const donem = document.getElementById('donemSelect').value;
+        window.location.href = `/ozet-kontrol-raporu?sube_id=${sube_id}&donem=${donem}`;
+    }
+
+    function exportToExcel() {
+        const rows = [["KALEM", "TUTAR"]];
+        document.querySelectorAll('.legacy-table tr').forEach(tr => {
+            const label = tr.querySelector('.label-cell')?.innerText;
+            const val = tr.querySelector('.value-cell')?.innerText;
+            if (label && val) rows.push([label, val]);
+        });
+        
+        rows.push([]);
+        rows.push(["HESAPLAMA", "FARK"]);
+        document.querySelectorAll('.calc-box').forEach(box => {
+            const title = box.querySelector('.calc-title')?.innerText;
+            const val = box.querySelector('.calc-amount')?.innerText;
+            if (title && val) rows.push([title, val]);
+        });
+
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Rapor");
+        XLSX.writeFile(wb, "Ozet_Kontrol_Raporu.xlsx");
+    }
+</script>
+{% endblock %}
+

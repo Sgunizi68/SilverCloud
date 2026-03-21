@@ -1,0 +1,21 @@
+--- PuantajSecimi ---
+ID: 1 | Name: Çalışma | Value: 1.0 | Color: #43d048
+ID: 2 | Name: Haftalık İzin | Value: 1.0 | Color: #efff0f
+ID: 3 | Name: Rapor | Value: 0.0 | Color: #2c91a5
+ID: 4 | Name: Yıllık İzin | Value: 1.0 | Color: #e7f070
+ID: 5 | Name: Çıkış | Value: 0.0 | Color: #000000
+ID: 6 | Name: SGK Giriş Öncesi | Value: 0.0 | Color: #f00a2c
+ID: 7 | Name: Kısmi Süreli Çalışma | Value: 0.5 | Color: #17c5e8
+ID: 8 | Name: İşe Gelmeme | Value: 0.0 | Color: #1a1a1a
+ID: 9 | Name: Haftalık İzninde Çalışma | Value: 2.0 | Color: #a3526a
+ID: 10 | Name: Bayram Tatilinde Çalışma | Value: 2.0 | Color: #df7796
+ID: 11 | Name: Bayram Arifesinde Çalışma | Value: 1.5 | Color: #c6768e
+ID: 12 | Name: Ücretsiz İzin | Value: 0.0 | Color: #bbc2c3
+ID: 13 | Name: ÇalışmaDene | Value: 1.0 | Color: #d926b2
+
+--- GelirEkstra Sample ---
+ID: 5 | Date: 2025-07-01 | Tabak: 240 | Sube: 1
+ID: 6 | Date: 2025-07-02 | Tabak: 236 | Sube: 1
+ID: 7 | Date: 2025-07-03 | Tabak: 207 | Sube: 1
+ID: 8 | Date: 2025-07-04 | Tabak: 236 | Sube: 1
+ID: 9 | Date: 2025-07-05 | Tabak: 206 | Sube: 1

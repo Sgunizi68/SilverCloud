@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+{% block title %}Online Kontrol Dashboard{% endblock %}
+{% block nav_online_kontrol_dashboard %}active{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <style>
+        .report-header-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .report-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #1a2340;
+        }
+
+        .control-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .btn-icon {
+            background: none;
+            border: 1px solid #d1d9e8;
+            color: #444;
+            border-radius: 6px;
+            padding: 0.35rem 0.65rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+
+        .btn-icon:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .donem-select,
+        .sube-select {
+            border: 1px solid #d1d9e8;
+            border-radius: 6px;
+            padding: 0.35rem 0.6rem;
+            font-size: 0.88rem;
+            color: #1a2340;
+            font-weight: 600;
+            background: #f8fafd;
+            cursor: pointer;
+        }
+
+        .sube-select {
+            max-width: 200px;
+        }
+
+        /* Panel */
+        .online-panel {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 12px rgba(30, 60, 120, 0.10);
+            overflow: hidden;
+            border: 1px solid #e0e6ef;
+            margin-bottom: 1.2rem;
+        }
+
+        .online-panel-header {
+            background: linear-gradient(90deg, #1a2340 0%, #2c3e70 100%);
+            color: #fff;
+            text-align: center;
+            font-weight: 700;
+            font-size: 1rem;
+            padding: 0.7rem 1rem;
+            letter-spacing: 0.04em;
+        }
+
+        /* Table */
+        .online-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.84rem;
+        }
+
+        .online-table thead th {
+            padding: 0.75rem;
+            text-align: center;
+            font-size: 0.77rem;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Group colors for headers based on screenshot */
+        .th-platform {
+            background: #34495e;
+            text-align: left !important;
+        }
+
+        .th-gelir {
+            background: #27ae60;
+        }
+
+        .th-virman-gun {
+            background: #2980b9;
+        }
+
+        .th-virman-toplam {
+            background: #8e44ad;
+        }
+
+        .th-kismi {
+            background: #16a085;
+        }
+
+        .th-fark {
+            background: #2c3e50;
+        }
+
+        .th-komisyon {
+            background: #9b59b6;
+        }
+
+        .th-komisyon-yuzde {
+            background: #e74c3c;
+        }
+
+        .th-yuzde {
+            background: #f39c12;
+        }
+
+        .online-table td {
+            padding: 0.6rem 0.75rem;
+            border: 1px solid #eee;
+            vertical-align: middle;
+        }
+
+        .num-cell {
+            text-align: right;
+            font-weight: 600;
+            font-family: 'Courier New', monospace;
+        }
+
+        .text-cell {
+            font-weight: 600;
+        }
+
+        .platform-name {
+            color: #c0392b;
+            font-weight: 700;
+        }
+
+        .row-ok {
+            background: #f0fff4;
+        }
+
+        .row-fail {
+            background: #fff5f5;
+        }
+
+        .row-total {
+            background: #34495e;
+            color: #fff;
+        }
+
+        .row-total .num-cell,
+        .row-total .platform-name {
+            color: #fff;
+        }
+
+        @media print {
+            .control-bar {
+                display: none !important;
+            }
+        }
+    </style>
+
+    <!-- Header Bar -->
+    <div class="report-header-bar">
+        <div class="report-title">
+            Online Kontrol Dashboard
+            <span style="font-size:0.95rem; font-weight:400; color:#555;">(Şube: {{ sube_adi }})</span>
+        </div>
+        <div class="control-bar">
+            <button class="btn-icon" title="Yazdır" onclick="window.print()">🖨️</button>
+            <button class="btn-icon" title="İndir" onclick="exportTableToCSV()">⬇️</button>
+            <select class="donem-select"
+                onchange="window.location.href='/online-kontrol-dashboard?sube_id={{ secili_sube_id }}&donem=' + this.value">
+                {% for d in donem_listesi %}
+                <option value="{{ d }}" {% if d==secili_donem %}selected{% endif %}>
+                    {{ d // 100 + 2000 }} / {{ "%02d" % (d % 100) }}
+                </option>
+                {% endfor %}
+            </select>
+            <select class="sube-select"
+                onchange="window.location.href='/online-kontrol-dashboard?sube_id=' + this.value + '&donem={{ secili_donem }}'">
+                {% for s in auth_suber %}
+                <option value="{{ s.Sube_ID }}" {% if s.Sube_ID==secili_sube_id %}selected{% endif %}>{{ s.Sube_Adi }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <!-- Main Panel -->
+    <div class="online-panel">
+        <div style="overflow-x: auto;">
+            <table class="online-table" id="onlineTable">
+                <thead>
+                    <tr>
+                        <th class="th-platform">Platform</th>
+                        <th class="th-gelir">Gelir Toplam</th>
+                        <th class="th-virman-gun">Virman Son Gün</th>
+                        <th class="th-virman-toplam">Toplam Virman</th>
+                        <th class="th-kismi">Kısmi Gelir</th>
+                        <th class="th-fark">Fark</th>
+                        <th class="th-komisyon">Komisyon Toplam</th>
+                        <th class="th-komisyon-yuzde">Komisyon %</th>
+                        <th class="th-yuzde">%</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in dashboard_data.data %}
+                    {% set is_fail = (row.fark | abs > 0.01) %}
+                    <tr class="{{ 'row-fail' if is_fail else 'row-ok' }}">
+                        <td class="platform-name">{{ row.platform }}</td>
+                        <td class="num-cell">{{ "{:,.2f}".format(row.gelir_toplam).replace(',', 'X').replace('.',
+                            ',').replace('X', '.') }}</td>
+                        <td style="text-align:center; font-weight:600;">{{ row.virman_son_gun }}</td>
+                        <td class="num-cell">{{ "{:,.2f}".format(row.toplam_virman).replace(',', 'X').replace('.',
+                            ',').replace('X', '.') }}</td>
+                        <td class="num-cell">{{ "{:,.2f}".format(row.kismi_gelir).replace(',', 'X').replace('.',
+                            ',').replace('X', '.') }}</td>
+                        <td class="num-cell" style="{{ 'color:red;' if is_fail else '' }}">
+                            {{ "{:,.2f}".format(row.fark).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                        </td>
+                        <td class="num-cell">{{ "{:,.2f}".format(row.komisyon_toplam).replace(',', 'X').replace('.',
+                            ',').replace('X', '.') }}</td>
+                        <td class="num-cell">{{ "{:,.2f}".format(row.komisyon_yuzde).replace(',', 'X').replace('.',
+                            ',').replace('X', '.') }}%</td>
+                        <td class="num-cell">{{ "{:,.2f}".format(row.yuzde).replace(',', 'X').replace('.',
+                            ',').replace('X', '.') }}%</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    {% if dashboard_data.summary %}
+                    <tr class="row-total">
+                        <td class="platform-name">{{ dashboard_data.summary.platform }}</td>
+                        <td class="num-cell">{{ "{:,.2f}".format(dashboard_data.summary.gelir_toplam).replace(',',
+                            'X').replace('.', ',').replace('X', '.') }}</td>
+                        <td style="text-align:center;">N/A</td>
+                        <td class="num-cell">{{ "{:,.2f}".format(dashboard_data.summary.toplam_virman).replace(',',
+                            'X').replace('.', ',').replace('X', '.') }}</td>
+                        <td class="num-cell">{{ "{:,.2f}".format(dashboard_data.summary.kismi_gelir).replace(',',
+                            'X').replace('.', ',').replace('X', '.') }}</td>
+                        <td class="num-cell">{{ "{:,.2f}".format(dashboard_data.summary.fark).replace(',',
+                            'X').replace('.', ',').replace('X', '.') }}</td>
+                        <td class="num-cell">{{ "{:,.2f}".format(dashboard_data.summary.komisyon_toplam).replace(',',
+                            'X').replace('.', ',').replace('X', '.') }}</td>
+                        <td class="num-cell">{{ "{:,.2f}".format(dashboard_data.summary.komisyon_yuzde).replace(',',
+                            'X').replace('.', ',').replace('X', '.') }}%</td>
+                        <td class="num-cell">{{ "{:,.2f}".format(dashboard_data.summary.yuzde).replace(',',
+                            'X').replace('.', ',').replace('X', '.') }}%</td>
+                    </tr>
+                    {% endif %}
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    function exportTableToCSV() {
+        const rows = [];
+        const headers = Array.from(document.querySelectorAll('#onlineTable thead th')).map(th => th.textContent.trim());
+        rows.push(headers);
+
+        document.querySelectorAll('#onlineTable tbody tr, #onlineTable tfoot tr').forEach(tr => {
+            const cells = tr.querySelectorAll('td');
+            if (cells.length > 0) {
+                rows.push(Array.from(cells).map(td => '"' + td.textContent.trim().replace(/"/g, '""') + '"'));
+            }
+        });
+
+        const csv = rows.map(r => r.join(',')).join('\n');
+        const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'online_kontrol_{{ secili_donem }}.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+</script>
+{% endblock %}

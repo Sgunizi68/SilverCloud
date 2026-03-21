@@ -1,0 +1,496 @@
+{% extends "base.html" %}
+{% block title %}POS Kontrol Dashboard{% endblock %}
+{% block nav_pos_kontrol_dashboard %}active{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <style>
+        .report-header-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .report-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #1a2340;
+        }
+
+        .control-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .btn-icon {
+            background: none;
+            border: 1px solid #d1d9e8;
+            color: #444;
+            border-radius: 6px;
+            padding: 0.35rem 0.65rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+
+        .btn-icon:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .donem-select,
+        .sube-select {
+            border: 1px solid #d1d9e8;
+            border-radius: 6px;
+            padding: 0.35rem 0.6rem;
+            font-size: 0.88rem;
+            color: #1a2340;
+            font-weight: 600;
+            background: #f8fafd;
+            cursor: pointer;
+        }
+
+        .sube-select {
+            max-width: 200px;
+        }
+
+        /* Stats row */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.8rem;
+            margin-bottom: 1.2rem;
+        }
+
+        @media (max-width: 700px) {
+            .stats-row {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .stat-card {
+            background: #fff;
+            border-radius: 10px;
+            padding: 1rem 1.2rem;
+            text-align: center;
+            border: 1px solid #e0e6ef;
+            box-shadow: 0 2px 8px rgba(30, 60, 120, 0.07);
+        }
+
+        .stat-card .stat-label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .stat-value {
+            font-size: 1.7rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .stat-card.green {
+            border-color: #bbf7d0;
+            background: #f0fff4;
+        }
+
+        .stat-card.green .stat-label,
+        .stat-card.green .stat-value {
+            color: #16a34a;
+        }
+
+        .stat-card.red {
+            border-color: #fecaca;
+            background: #fff0f0;
+        }
+
+        .stat-card.red .stat-label,
+        .stat-card.red .stat-value {
+            color: #dc2626;
+        }
+
+        .stat-card.blue {
+            border-color: #bfdbfe;
+            background: #eff6ff;
+        }
+
+        .stat-card.blue .stat-label,
+        .stat-card.blue .stat-value {
+            color: #2563eb;
+        }
+
+        /* Panel */
+        .pos-panel {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 12px rgba(30, 60, 120, 0.10);
+            overflow: hidden;
+            border: 1px solid #e0e6ef;
+            margin-bottom: 1.2rem;
+        }
+
+        .pos-panel-header {
+            background: linear-gradient(90deg, #1a2340 0%, #2c3e70 100%);
+            color: #fff;
+            text-align: center;
+            font-weight: 700;
+            font-size: 1rem;
+            padding: 0.7rem 1rem;
+            letter-spacing: 0.04em;
+        }
+
+        /* Table */
+        .pos-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.84rem;
+        }
+
+        .pos-table thead {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: #f0f3f8;
+        }
+
+        .pos-table th {
+            padding: 0.5rem 0.75rem;
+            text-align: left;
+            font-size: 0.77rem;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 2px solid #d1d9e8;
+            font-weight: 600;
+        }
+
+        .pos-table td {
+            padding: 0.42rem 0.75rem;
+            border-bottom: 1px solid #eee;
+            vertical-align: middle;
+        }
+
+        .pos-table tr.ok-row {
+            background: #f0fff4;
+        }
+
+        .pos-table tr.fail-row {
+            background: #fff0f0;
+        }
+
+        .pos-table tr:hover {
+            filter: brightness(0.97);
+        }
+
+        .durum-icon {
+            font-size: 1rem;
+            font-weight: bold;
+        }
+
+        .durum-icon.ok {
+            color: #22c55e;
+        }
+
+        .durum-icon.fail {
+            color: #ef4444;
+        }
+
+        .num-cell {
+            text-align: right;
+            font-weight: 600;
+            color: #15803d;
+            font-family: 'Courier New', monospace;
+        }
+
+        .tarih-cell {
+            color: #2563eb;
+            font-weight: 600;
+        }
+
+        /* Summary at bottom */
+        .summary-bar {
+            background: linear-gradient(90deg, #1a2340 0%, #2c3e70 100%);
+            border-radius: 12px;
+            padding: 1.2rem 1.5rem;
+            color: #fff;
+            margin-top: 1.2rem;
+        }
+
+        .summary-bar .summary-title {
+            text-align: center;
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.8rem;
+        }
+
+        @media (max-width: 600px) {
+            .summary-cards {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .summary-card {
+            background: rgba(255, 255, 255, 0.07);
+            border-radius: 8px;
+            padding: 0.9rem 1rem;
+            text-align: center;
+        }
+
+        .summary-card .sc-label {
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.75);
+            margin-bottom: 0.4rem;
+        }
+
+        .summary-card .sc-value {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .summary-card .sc-value.small {
+            font-size: 1rem;
+        }
+
+        .summary-card .sc-value.danger {
+            color: #fca5a5;
+        }
+
+        /* Legend */
+        .aciklama-bar {
+            background: #f8fafd;
+            border: 1px solid #dde3f0;
+            border-radius: 8px;
+            padding: 0.65rem 1rem;
+            font-size: 0.83rem;
+            color: #555;
+            margin-bottom: 1.2rem;
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .legend-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            display: inline-block;
+        }
+
+        .legend-dot.green {
+            background: #bbf7d0;
+            border: 1px solid #22c55e;
+        }
+
+        .legend-dot.red {
+            background: #fecaca;
+            border: 1px solid #ef4444;
+        }
+
+        @media print {
+
+            .control-bar,
+            .report-header-bar .control-bar {
+                display: none !important;
+            }
+        }
+    </style>
+
+    <!-- Header Bar -->
+    <div class="report-header-bar">
+        <div class="report-title">
+            POS Kontrol Dashboard
+            <span style="font-size:0.95rem; font-weight:400; color:#555;">(Şube: {{ sube_adi }})</span>
+        </div>
+        <div class="control-bar">
+            <button class="btn-icon" title="Yazdır" onclick="window.print()">🖨️</button>
+            <button class="btn-icon" title="İndir" onclick="exportTableToCSV()">⬇️</button>
+            <select class="donem-select"
+                onchange="window.location.href='/pos-kontrol-dashboard?sube_id={{ secili_sube_id }}&donem=' + this.value">
+                {% for d in donem_listesi %}
+                <option value="{{ d }}" {% if d==secili_donem %}selected{% endif %}>
+                    {{ d // 100 + 2000 }} / {{ "%02d" % (d % 100) }}
+                </option>
+                {% endfor %}
+            </select>
+            <select class="sube-select"
+                onchange="window.location.href='/pos-kontrol-dashboard?sube_id=' + this.value + '&donem={{ secili_donem }}'">
+                {% for s in auth_suber %}
+                <option value="{{ s.Sube_ID }}" {% if s.Sube_ID==secili_sube_id %}selected{% endif %}>{{ s.Sube_Adi }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+        <div class="stat-card blue">
+            <div class="stat-label">📅 Toplam Gün</div>
+            <div class="stat-value">{{ dashboard_data.summary.total }}</div>
+        </div>
+        <div class="stat-card green">
+            <div class="stat-label">✓ Uyumlu</div>
+            <div class="stat-value">{{ dashboard_data.summary.ok }}</div>
+        </div>
+        <div class="stat-card red">
+            <div class="stat-label">✕ Uyumsuz</div>
+            <div class="stat-value">{{ dashboard_data.summary.fail }}</div>
+        </div>
+        <div class="stat-card blue">
+            <div class="stat-label">% Başarı Oranı</div>
+            <div class="stat-value">{{ dashboard_data.summary.success_rate }}</div>
+        </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="aciklama-bar">
+        <strong>Açıklama</strong>
+        <span class="legend-item"><span class="legend-dot green"></span> Tüm kontroller başarılı (Gelir POS = POS
+            Hareketleri ve Kesinti uyumlu)</span>
+        <span class="legend-item"><span class="legend-dot red"></span> Uyumsuzluk var (tutarlar eşleşmiyor)</span>
+    </div>
+
+    <!-- Main Panel -->
+    <div class="pos-panel">
+        <div class="pos-panel-header">POS Kontrol Verileri</div>
+        <div style="overflow-x: auto;">
+            <table class="pos-table" id="posTable">
+                <thead>
+                    <tr>
+                        <th style="text-align:center; width:60px;">DURUM</th>
+                        <th>TARİH</th>
+                        <th style="text-align:right;">GELİR POS</th>
+                        <th style="text-align:right;">POS HAREKETLERİ</th>
+                        <th style="text-align:right;">POS KESİNTİ</th>
+                        <th style="text-align:right;">POS NET</th>
+                        <th style="text-align:right;">ÖDEME</th>
+                        <th style="text-align:right;">ÖDEME KESİNTİ</th>
+                        <th style="text-align:right;">ÖDEME NET</th>
+                        <th style="text-align:center;">KTR POS</th>
+                        <th style="text-align:center;">KTR KESİNTİ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in dashboard_data.data %}
+                    {% set is_ok = (row.Kontrol_POS == 'OK' and row.Kontrol_Kesinti == 'OK') %}
+                    <tr class="{{ 'ok-row' if is_ok else 'fail-row' }}">
+                        <td style="text-align:center;">
+                            {% if is_ok %}
+                            <span class="durum-icon ok">✓</span>
+                            {% else %}
+                            <span class="durum-icon fail">✕</span>
+                            {% endif %}
+                        </td>
+                        <td class="tarih-cell">{{ row.Tarih.strftime('%d.%m.%Y') }}</td>
+                        <td class="num-cell">{{ "{:,.2f}".format(row.Gelir_POS).replace(',', 'X').replace('.',
+                            ',').replace('X', '.') }}</td>
+                        <td class="num-cell">{{ "{:,.2f}".format(row.POS_Hareketleri).replace(',', 'X').replace('.',
+                            ',').replace('X', '.') }}</td>
+                        <td class="num-cell">{{ "{:,.2f}".format(row.POS_Kesinti).replace(',', 'X').replace('.',
+                            ',').replace('X', '.') }}</td>
+                        <td class="num-cell">{{ "{:,.2f}".format(row.POS_Net).replace(',', 'X').replace('.',
+                            ',').replace('X', '.') }}</td>
+                        <td class="num-cell">{{ "{:,.2f}".format(row.Odeme).replace(',', 'X').replace('.',
+                            ',').replace('X', '.') }}</td>
+                        <td class="num-cell">{{ "{:,.2f}".format(row.Odeme_Kesinti).replace(',', 'X').replace('.',
+                            ',').replace('X', '.') }}</td>
+                        <td class="num-cell">{{ "{:,.2f}".format(row.Odeme_Net).replace(',', 'X').replace('.',
+                            ',').replace('X', '.') }}</td>
+                        <td style="text-align:center;">
+                            <span class="durum-icon {{ 'ok' if row.Kontrol_POS == 'OK' else 'fail' }}">
+                                {{ '✓' if row.Kontrol_POS == 'OK' else '✕' }}
+                            </span>
+                        </td>
+                        <td style="text-align:center;">
+                            <span class="durum-icon {{ 'ok' if row.Kontrol_Kesinti == 'OK' else 'fail' }}">
+                                {{ '✓' if row.Kontrol_Kesinti == 'OK' else '✕' }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="11" style="text-align:center; padding:2rem; color:#aaa;">Bu dönem için kayıt
+                            bulunamadı.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Summary Bar at Bottom -->
+    {% if dashboard_data.data %}
+    {% set gelir_toplam = dashboard_data.data | sum(attribute='Gelir_POS') %}
+    {% set pos_h_toplam = dashboard_data.data | sum(attribute='POS_Hareketleri') %}
+    {% set pos_k_toplam = dashboard_data.data | sum(attribute='POS_Kesinti') %}
+    {% set odeme_toplam = dashboard_data.data | sum(attribute='Odeme') %}
+    <div class="summary-bar">
+        <div class="summary-title">📊 Dönem Toplamları</div>
+        <div class="summary-cards">
+            <div class="summary-card">
+                <div class="sc-label">Gelir POS Toplam</div>
+                <div class="sc-value small">{{ "{:,.2f}".format(gelir_toplam).replace(',', 'X').replace('.',
+                    ',').replace('X', '.') }} ₺</div>
+            </div>
+            <div class="summary-card">
+                <div class="sc-label">POS Hareketleri Toplam</div>
+                <div class="sc-value small">{{ "{:,.2f}".format(pos_h_toplam).replace(',', 'X').replace('.',
+                    ',').replace('X', '.') }} ₺</div>
+            </div>
+            <div class="summary-card">
+                <div class="sc-label">POS Kesinti Toplam</div>
+                <div class="sc-value small {{ 'danger' if pos_k_toplam > 0 else '' }}">{{
+                    "{:,.2f}".format(pos_k_toplam).replace(',', 'X').replace('.', ',').replace('X', '.') }} ₺</div>
+            </div>
+            <div class="summary-card">
+                <div class="sc-label">Ödeme Toplam</div>
+                <div class="sc-value small">{{ "{:,.2f}".format(odeme_toplam).replace(',', 'X').replace('.',
+                    ',').replace('X', '.') }} ₺</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    function exportTableToCSV() {
+        const rows = [];
+        const headers = Array.from(document.querySelectorAll('#posTable thead th')).map(th => th.textContent.trim());
+        rows.push(headers);
+
+        document.querySelectorAll('#posTable tbody tr').forEach(tr => {
+            const cells = tr.querySelectorAll('td');
+            if (cells.length > 3) {
+                rows.push(Array.from(cells).map(td => '"' + td.textContent.trim().replace(/"/g, '""') + '"'));
+            }
+        });
+
+        const csv = rows.map(r => r.join(',')).join('\n');
+        const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'pos_kontrol_{{ secili_donem }}.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+</script>
+{% endblock %}

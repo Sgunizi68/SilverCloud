@@ -1,0 +1,485 @@
+{% extends "base.html" %}
+
+{% block title %}Tabak Sayısı Yükleme - SilverCloud{% endblock %}
+
+{% block acc_fatura_harcama %}active{% endblock %}
+{% block acc_fatura_harcama_content %}open{% endblock %}
+
+{% block extra_style %}
+<style>
+    .upload-container {
+        padding: 30px;
+        max-width: 1000px;
+        margin: 10px auto;
+    }
+
+    .card-glass {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        border: 1px solid #eef2f7;
+    }
+
+    .page-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #334155;
+        margin-bottom: 20px;
+    }
+
+    .info-box {
+        background: #f0f7ff;
+        border-left: 3px solid #3b82f6;
+        padding: 15px 20px;
+        margin-bottom: 25px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .info-box i {
+        color: #3b82f6;
+        font-size: 16px;
+    }
+
+    .info-box p {
+        margin: 0;
+        font-size: 14px;
+        color: #3b82f6;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 25px;
+        margin-bottom: 25px;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 8px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 14px;
+        background: white;
+        color: #334155;
+    }
+
+    .help-text {
+        font-size: 12px;
+        color: #64748b;
+        margin-top: 5px;
+    }
+
+    .btn-submit {
+        background: #2563eb;
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 15px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        transition: all 0.2s;
+        float: right;
+    }
+
+    .btn-submit:hover {
+        background: #1d4ed8;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+    }
+
+    .btn-submit:disabled {
+        background: #94a3b8;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .divider {
+        height: 1px;
+        background: #e2e8f0;
+        margin: 40px 0;
+        clear: both;
+    }
+
+    .section-subtitle {
+        font-size: 16px;
+        font-weight: 700;
+        color: #334155;
+        margin-bottom: 20px;
+    }
+
+    .columns-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .column-card {
+        background: #f8fafc;
+        padding: 15px 20px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .column-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 4px;
+        display: block;
+    }
+
+    .column-desc {
+        font-size: 13px;
+        color: #64748b;
+    }
+
+    /* Result Table container */
+    .result-container {
+        margin-top: 30px;
+        display: none;
+    }
+
+    .result-alert {
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-size: 14px;
+        border: 1px solid transparent;
+    }
+
+    .alert-success {
+        background: #f0fdf4;
+        border-color: #bbf7d0;
+        color: #166534;
+    }
+
+    .alert-danger {
+        background: #fef2f2;
+        border-color: #fecaca;
+        color: #991b1b;
+    }
+
+    .alert-warning {
+        background: #fffbeb;
+        border-color: #fef3c7;
+        color: #92400e;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="upload-container">
+    <div class="card-glass">
+        <h1 class="page-title">Tabak Sayısı Yükleme</h1>
+
+        <div class="info-box">
+            <i class="fas fa-info-circle"></i>
+            <p>Tarih bazlı tabak sayılarını güncellemek için lütfen uygun formatta bir Excel dosyası seçin.</p>
+        </div>
+
+        <form id="uploadForm">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="subeSelect">Şube Seçimi</label>
+                    <select id="subeSelect" class="form-control" required>
+                        {% for sube in subeler %}
+                        <option value="{{ sube.Sube_ID }}">{{ sube.Sube_Adi }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="help-text">Tabak sayılarının güncelleneceği şubeyi seçin.</div>
+                </div>
+
+                <div class="form-group">
+                    <label for="fileInput">Excel Dosyası</label>
+                    <input type="file" id="fileInput" class="form-control" accept=".xlsx,.xls" required>
+                </div>
+            </div>
+
+            <button type="submit" id="submitBtn" class="btn-submit">
+                <i class="fas fa-upload"></i> Yükle
+            </button>
+        </form>
+
+        <div class="divider"></div>
+
+        <h3 class="section-subtitle">Gerekli Excel Sütunları</h3>
+        <div class="columns-grid">
+            <div class="column-card">
+                <span class="column-title">Şube</span>
+                <span class="column-desc">Şube adı (Bilgi amaçlıdır)</span>
+            </div>
+            <div class="column-card">
+                <span class="column-title">Tarih</span>
+                <span class="column-desc">İşlem tarihi (DD.MM.YYYY formatında)</span>
+            </div>
+            <div class="column-card">
+                <span class="column-title">Toplam Tabak Sayısı</span>
+                <span class="column-desc">Günlük toplam tabak sayısı (sayısal değer)</span>
+            </div>
+        </div>
+
+        <!-- Hidden result messages -->
+        <div id="resultContainer" class="result-container">
+            <div id="resultMessage" class="result-alert"></div>
+            <div id="previewArea" style="display:none; margin-top:20px;">
+                <button onclick="location.reload()" class="btn-submit" style="float:none; display:inline-flex;">
+                    <i class="fas fa-redo"></i> Yeni Yükleme
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+    const uploadForm = document.getElementById('uploadForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const resultContainer = document.getElementById('resultContainer');
+    const resultMessage = document.getElementById('resultMessage');
+
+    uploadForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const fileInput = document.getElementById('fileInput');
+        const subeId = document.getElementById('subeSelect').value;
+        const file = fileInput.files[0];
+
+        if (!file) return;
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> İşleniyor...';
+        resultContainer.style.display = 'none';
+
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            try {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+
+                let finalProcessedData = [];
+                let successSheet = "";
+                let debugInfo = [];
+
+                // Iterate sheets until we find valid data
+                for (let name of workbook.SheetNames) {
+                    const ws = workbook.Sheets[name];
+                    const rawRows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+
+                    if (rawRows.length === 0) continue;
+
+                    const headerInfo = findHeaderRow(rawRows);
+                    if (headerInfo) {
+                        const processed = processRawRows(rawRows, headerInfo);
+                        if (processed.length > 0) {
+                            finalProcessedData = processed;
+                            successSheet = name;
+                            break;
+                        }
+                    } else {
+                        // Store detected headers or content for debugging
+                        for (let i = 0; i < Math.min(rawRows.length, 10); i++) {
+                            const rowText = rawRows[i].filter(v => v !== "").join(' | ');
+                            if (rowText) debugInfo.push(`Sheet "${name}" Satır ${i + 1}: ${rowText}`);
+                        }
+                    }
+                }
+
+                if (finalProcessedData.length === 0) {
+                    let err = 'Geçerli veri bulunamadı. Lütfen "Tarih" ve "Toplam Tabak Sayısı" sütunlarını kontrol edin.';
+                    if (debugInfo.length > 0) {
+                        err += `<br><br><small><strong>Tespit Edilen Sütunlar (İlk 10 satır):</strong><br>${debugInfo.slice(0, 5).join('<br>')}</small>`;
+                    }
+                    showResult(err, 'danger');
+                    return;
+                }
+
+                console.log(`Successfully parsed ${finalProcessedData.length} rows from sheet "${successSheet}"`);
+
+                // Call backend
+                const response = await fetch('/api/v1/tabak-sayisi/bulk', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sube_id: parseInt(subeId),
+                        data_list: finalProcessedData
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.error) {
+                    showResult('Hata: ' + result.error, 'danger');
+                } else {
+                    let msg = `<strong>İşlem Tamamlandı.</strong> ${result.updated_records} kayıt başarıyla güncellendi.`;
+                    if (result.records_not_found > 0) {
+                        msg += `<br><em>${result.records_not_found} kayıt için baz veri bulunamadığından atlandı.</em>`;
+                    }
+                    if (result.errors && result.errors.length > 0) {
+                        msg += `<br><small>Hata Detayı: ${result.errors[0]}</small>`;
+                    }
+                    showResult(msg, 'success');
+                }
+
+            } catch (err) {
+                console.error("Excel Parse error:", err);
+                showResult('Dosya okuma hatası: ' + err.message, 'danger');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    });
+
+    function normalizeHeader(header) {
+        if (header === null || header === undefined) return "";
+        let val = header.toString().toLowerCase()
+            .replace(/ı/g, 'i').replace(/ğ/g, 'g').replace(/ü/g, 'u')
+            .replace(/ş/g, 's').replace(/ö/g, 'o').replace(/ç/g, 'c')
+            .replace(/[^a-z0-9]/g, '')
+            .trim();
+
+        // Alias support
+        if (val === 'date') return 'tarih';
+        return val;
+    }
+
+    function findHeaderRow(rows) {
+        for (let i = 0; i < Math.min(rows.length, 50); i++) {
+            const row = rows[i];
+            if (!row || !Array.isArray(row)) continue;
+
+            const normalized = row.map(cell => normalizeHeader(cell));
+
+            // Permissive check for 'tarih' and 'tabak'
+            const tarihIdx = normalized.findIndex(h => h.includes('tarih'));
+            const tabakIdx = normalized.findIndex(h => h.includes('tabak'));
+
+            // Ensure they are different columns to avoid report titles like "Tarihli Tabak Raporu"
+            if (tarihIdx !== -1 && tabakIdx !== -1 && tarihIdx !== tabakIdx) {
+                return { headerRowIndex: i, tarihIdx, tabakIdx };
+            }
+        }
+        return null;
+    }
+
+    function processRawRows(rows, headerInfo) {
+        const { headerRowIndex, tarihIdx, tabakIdx } = headerInfo;
+        const valid = [];
+        let skippedCount = 0;
+
+        for (let i = headerRowIndex + 1; i < rows.length; i++) {
+            const row = rows[i];
+            if (!row || row.length === 0) continue;
+
+            let rawDate = row[tarihIdx];
+            let rawTabak = row[tabakIdx];
+
+            if (rawDate === undefined || rawDate === "" || rawDate === null) continue;
+
+            let formattedDate = parseDate(rawDate);
+            let count = parseNumber(rawTabak);
+
+            if (formattedDate && !isNaN(count)) {
+                valid.push({
+                    islem_tarihi: formattedDate,
+                    tabak_sayisi: Math.round(count)
+                });
+            } else {
+                skippedCount++;
+                if (skippedCount <= 5) {
+                    console.log(`Skipped row ${i + 1}: Date=${rawDate} -> ${formattedDate}, Tabak=${rawTabak} -> ${count}`);
+                }
+            }
+        }
+        return valid;
+    }
+
+    function parseDate(val) {
+        if (val === null || val === undefined) return null;
+
+        // If it's already a Date object
+        if (val instanceof Date && !isNaN(val.getTime())) {
+            const y = val.getFullYear();
+            const m = (val.getMonth() + 1).toString().padStart(2, '0');
+            const d = val.getDate().toString().padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        // Handle numeric (Excel serial date)
+        if (typeof val === 'number' && val > 30000) {
+            const d = new Date((val - 25569) * 86400 * 1000);
+            const y = d.getFullYear();
+            const m = (d.getMonth() + 1).toString().padStart(2, '0');
+            const day = d.getDate().toString().padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+
+        let str = val.toString().trim();
+        if (!str) return null;
+
+        // Remove time if exists (HH:mm:ss or HH:mm)
+        str = str.split(/\s+/)[0];
+
+        // Split by common separators: . / : -
+        // IMPORTANT: Hyphen must be at the end to be literal, otherwise it creates a range!
+        const parts = str.split(/[./:-]/);
+        if (parts.length >= 3) {
+            let p1 = parts[0], p2 = parts[1], p3 = parts[2];
+
+            // YYYY-MM-DD or YYYY.MM.DD
+            if (p1.length === 4) {
+                return `${p1}-${p2.padStart(2, '0')}-${p3.padStart(2, '0')}`;
+            }
+
+            // DD.MM.YYYY or DD/MM/YYYY
+            if (p3.length === 4) {
+                return `${p3}-${p2.padStart(2, '0')}-${p1.padStart(2, '0')}`;
+            }
+
+            // DD.MM.YY (Short year)
+            if (p3.length === 2) {
+                return `20${p3}-${p2.padStart(2, '0')}-${p1.padStart(2, '0')}`;
+            }
+        }
+
+        return null;
+    }
+
+    function parseNumber(val) {
+        if (val === null || val === undefined) return NaN;
+        if (typeof val === 'number') return val;
+
+        const str = val.toString().replace(/[^0-9,.]/g, '').replace(',', '.');
+        return parseFloat(str);
+    }
+
+    function showResult(text, type) {
+        resultContainer.style.display = 'block';
+        resultMessage.className = `result-alert alert-${type}`;
+        resultMessage.innerHTML = text;
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
+
+        if (type === 'success') {
+            document.getElementById('previewArea').style.display = 'block';
+        }
+    }
+</script>
+{% endblock %}

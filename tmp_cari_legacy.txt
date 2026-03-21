@@ -1,0 +1,9 @@
+﻿--- Legacy Fatura Query Sample ---
+  ('Cari Olmayan Bor├º', 'MULTINET KURUMSAL H─░ZMETLER ANON─░M ┼₧─░RKET─░', datetime.date(2026, 3, 1), Decimal('4452.22'))
+  ('Cari Olmayan Bor├º', 'MULTINET KURUMSAL H─░ZMETLER ANON─░M ┼₧─░RKET─░', datetime.date(2026, 3, 1), Decimal('6262.04'))
+
+--- Legacy Odeme Query Sample ---
+
+Pepsi Total Fatura: 0
+Pepsi Total Odeme:  0
+Pepsi Balance:      0

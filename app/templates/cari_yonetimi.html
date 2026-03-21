@@ -1,0 +1,495 @@
+{% extends "base.html" %}
+
+{% block title %}Cari Borç Yönetimi - SilverCloud{% endblock %}
+
+/* Nav active block */
+{% block acc_sistem_tablolari %}active{% endblock %}
+{% block acc_sistem_tablolari_content %}open{% endblock %}
+
+{% block extra_style %}
+<style>
+    .ref-page-container {
+        padding: 20px;
+    }
+
+    .card-glass {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        margin-bottom: 20px;
+    }
+
+    .header-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .header-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .action-btn {
+        padding: 8px 14px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        background: white;
+        font-size: 13px;
+        font-weight: 500;
+        color: #475569;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+        color: #334155;
+    }
+
+    .action-btn.primary {
+        background: #3b82f6;
+        color: white;
+        border-color: #3b82f6;
+        font-weight: 600;
+    }
+
+    .action-btn.primary:hover {
+        background: #2563eb;
+    }
+
+    .search-input {
+        padding: 8px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        width: 250px;
+        font-size: 13px;
+        outline: none;
+        background: white;
+    }
+
+    .search-input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+    }
+
+    /* Table styling matching reference image */
+    .ref-table-wrapper {
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .ref-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .ref-table th {
+        background: #fdfdfd;
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 12px 20px;
+        text-align: left;
+        border-bottom: 1px solid #e2e8f0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .ref-table td {
+        padding: 10px 20px;
+        color: #475569;
+        font-size: 13px;
+        border-bottom: 1px solid #e2e8f0;
+        vertical-align: middle;
+    }
+
+    .ref-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .ref-table tr:hover {
+        background-color: #f8fafc;
+    }
+
+    .alici-name {
+        color: #334155;
+        font-weight: 500;
+    }
+
+    .kategori-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 500;
+        background: #eff6ff;
+        color: #3b82f6;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 500;
+    }
+
+    .status-active {
+        background: #f0fdf4;
+        color: #16a34a;
+    }
+
+    .status-passive {
+        background: #fef2f2;
+        color: #dc2626;
+    }
+
+    .status-yes {
+        background: #f0fdf4;
+        color: #16a34a;
+    }
+
+    .status-no {
+        background: #f8fafc;
+        color: #64748b;
+    }
+
+    .action-icons {
+        display: flex;
+        gap: 6px;
+        justify-content: center;
+    }
+
+    .icon-btn {
+        width: 28px;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: #64748b;
+    }
+
+    .icon-btn.view:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+        color: #334155;
+    }
+
+    .icon-btn.edit:hover {
+        background: #eff6ff;
+        border-color: #bfdbfe;
+        color: #3b82f6;
+    }
+
+    .icon-btn.delete {
+        color: #ef4444;
+        border-color: #fca5a5;
+    }
+
+    .icon-btn.delete:hover {
+        background: #fef2f2;
+        border-color: #f87171;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ref-page-container">
+
+    <!-- Header -->
+    <div class="card-glass header-bar">
+        <h1 class="header-title">Cari Borç Yönetimi</h1>
+
+        <div class="header-actions">
+            <!-- Search -->
+            <input type="text" class="search-input" placeholder="Ünvan ara..." id="cari-search">
+            <!-- Export -->
+            <button class="action-btn" onclick="exportCarilerToExcel()" title="Dışa Aktar">
+                <i class="fas fa-download"></i> Dışa Aktar
+            </button>
+            <!-- New -->
+            <button class="action-btn primary" onclick="openAddModal()">
+                <i class="fas fa-plus"></i> Yeni Cari
+            </button>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="card-glass ref-table-wrapper">
+        <table class="ref-table" id="cariler-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>E-FATURA ÜNVAN</th>
+                    <th>E-FATURA KATEGORİ</th>
+                    <th>ÖDEME E-REFERANS</th>
+                    <th style="text-align: center;">CARİ</th>
+                    <th style="text-align: center;">DURUM</th>
+                    <th style="width: 120px; text-align: center;" class="hide-on-print">İŞLEMLER</th>
+                </tr>
+            </thead>
+            <tbody id="cariler-tbody">
+                {% for c in cariler %}
+                <tr data-id="{{ c.Cari_ID }}">
+                    <td>#{{ c.Cari_ID }}</td>
+                    <td>
+                        <div class="alici-name">{{ c.Alici_Unvani }}</div>
+                        <small style="color: #94a3b8;">{{ c.Aciklama or "" }}</small>
+                    </td>
+                    <td>
+                        {% set kat_adi = "-" %}
+                        {% for k in kategoriler %}
+                        {% if k.Kategori_ID == c.e_Fatura_Kategori_ID %}
+                        {% set kat_adi = k.Kategori_Adi %}
+                        {% endif %}
+                        {% endfor %}
+                        <span class="kategori-badge">{{ kat_adi }}</span>
+                    </td>
+                    <td><small>{{ c.Referans_Detay }}</small></td>
+                    <td style="text-align: center;">
+                        <span class="status-badge {{ 'status-yes' if c.Cari else 'status-no' }}">
+                            {{ 'Evet' if c.Cari else 'Hayır' }}
+                        </span>
+                    </td>
+                    <td style="text-align: center;">
+                        <span class="status-badge {{ 'status-active' if c.Aktif_Pasif else 'status-passive' }}">
+                            {{ 'Aktif' if c.Aktif_Pasif else 'Pasif' }}
+                        </span>
+                    </td>
+                    <td class="hide-on-print">
+                        <div class="action-icons">
+                            <button class="icon-btn view" title="Görüntüle"
+                                onclick='openViewModal({{ c | tojson | safe }})'>
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="icon-btn edit" title="Düzenle"
+                                onclick='openEditModal({{ c | tojson | safe }})'>
+                                <i class="fas fa-pen"></i>
+                            </button>
+                            <button class="icon-btn delete" title="Sil"
+                                onclick="deleteCari({{ c.Cari_ID }}, '{{ c.Alici_Unvani | escape }}')">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 40px; color: #94a3b8;">
+                        Henüz cari kaydı bulunmuyor.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<!-- Data for Dropdowns -->
+<script>
+    const KATEGORILER = {{ kategoriler | tojson | safe }};
+    const REFERANSLAR = {{ odeme_referanslar | tojson | safe }};
+</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+    // --- Search Logic ---
+    document.addEventListener('DOMContentLoaded', () => {
+        const searchInput = document.getElementById('cari-search');
+        if (searchInput) {
+            searchInput.addEventListener('input', function () {
+                const term = this.value.toLowerCase();
+                document.querySelectorAll('#cariler-tbody tr').forEach(row => {
+                    if (row.cells.length === 1) return; // Empty state row
+                    const unvan = row.querySelector('.alici-name').textContent.toLowerCase();
+                    if (unvan.includes(term)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        }
+    });
+
+    // --- Modal Forms ---
+    function openAddModal() {
+        showModal('Yeni Cari Ekle', cariFormHtml(false));
+        document.getElementById('cariForm').addEventListener('submit', handleFormSubmit);
+        setupModalLogic();
+    }
+
+    function openEditModal(data) {
+        showModal('Cari Düzenle', cariFormHtml(true, data));
+        document.getElementById('cariForm').addEventListener('submit', handleFormSubmit);
+        setupModalLogic();
+    }
+
+    function openViewModal(data) {
+        showModal('Cari Bilgileri', cariFormHtml(true, data, true));
+        // Disable all inputs in the form
+        const form = document.getElementById('cariForm');
+        form.querySelectorAll('input, select, textarea').forEach(el => el.disabled = true);
+        // Remove the footer with save button
+        form.querySelector('.modal-footer').innerHTML = `
+            <button type="button" class="btn btn-secondary" onclick="hideModal()">Kapat</button>
+        `;
+    }
+
+    function cariFormHtml(isEdit = false, data = {}, isView = false) {
+        let katOpts = '<option value="">Seçiniz...</option>';
+        KATEGORILER.forEach(k => {
+            const sel = (k.Kategori_ID == data.e_Fatura_Kategori_ID) ? 'selected' : '';
+            katOpts += `<option value="${k.Kategori_ID}" ${sel}>${k.Kategori_Adi}</option>`;
+        });
+
+        let refOpts = '<option value="">Seçiniz...</option>';
+        REFERANSLAR.forEach(r => {
+            const sel = (r.Referans_ID == data.Referans_ID) ? 'selected' : '';
+            refOpts += `<option value="${r.Referans_ID}" ${sel}>#${r.Referans_ID} (${r.Referans_Metin} - ${r.Kategori_Adi})</option>`;
+        });
+
+        return `
+            <form id="cariForm" data-mode="${isEdit ? 'edit' : 'add'}" data-id="${data.Cari_ID || ''}">
+                <style>
+                    .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 15px; }
+                    .form-group label { font-size: 13px; font-weight: 600; color: #475569; }
+                    .form-control { padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; outline: none; }
+                    .form-control:focus { border-color: #3b82f6; }
+                    .form-check { display: flex; align-items: center; gap: 8px; margin-bottom: 15px; cursor: pointer; }
+                    .form-check input { width: 16px; height: 16px; }
+                </style>
+                <div class="form-group">
+                    <label for="Alici_Unvani">Alıcı Ünvanı *</label>
+                    <input type="text" id="Alici_Unvani" class="form-control" value="${data.Alici_Unvani || ''}" placeholder="Örn: ABC A.Ş." required>
+                </div>
+                <div class="form-group">
+                    <label for="e_Fatura_Kategori_ID">E-Fatura Kategorisi *</label>
+                    <select id="e_Fatura_Kategori_ID" class="form-control" required>
+                        ${katOpts}
+                    </select>
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" id="Cari" ${data.Cari !== false ? 'checked' : ''}>
+                    <label for="Cari">Cari Hesap</label>
+                </div>
+                <div class="form-group">
+                    <label for="Referans_ID">Ödeme e-Referans ${data.Cari !== false ? '*' : ''}</label>
+                    <select id="Referans_ID" class="form-control" ${data.Cari !== false ? 'required' : ''}>
+                        ${refOpts}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="Aciklama">Açıklama</label>
+                    <textarea id="Aciklama" class="form-control" rows="2">${data.Aciklama || ''}</textarea>
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" id="Aktif_Pasif" ${data.Aktif_Pasif !== false ? 'checked' : ''}>
+                    <label for="Aktif_Pasif">Aktif</label>
+                </div>
+                <div class="modal-footer" style="margin-top: 25px;">
+                    <button type="button" class="btn btn-secondary" onclick="hideModal()">İptal</button>
+                    ${!isView ? `<button type="submit" class="btn btn-primary" style="background:#3b82f6; color:white; border:none;">Kaydet</button>` : ''}
+                </div>
+            </form>
+        `;
+    }
+
+    function setupModalLogic() {
+        const cariCheck = document.getElementById('Cari');
+        const refSelect = document.getElementById('Referans_ID');
+        if (cariCheck && refSelect) {
+            cariCheck.addEventListener('change', () => {
+                refSelect.required = cariCheck.checked;
+                const label = refSelect.previousElementSibling;
+                if (cariCheck.checked) {
+                    label.innerHTML = "Ödeme e-Referans *";
+                } else {
+                    label.innerHTML = "Ödeme e-Referans";
+                }
+            });
+        }
+    }
+
+    async function handleFormSubmit(e) {
+        e.preventDefault();
+        const form = e.target;
+        const mode = form.getAttribute('data-mode');
+        const id = form.getAttribute('data-id');
+
+        const data = {
+            Alici_Unvani: document.getElementById('Alici_Unvani').value.trim(),
+            e_Fatura_Kategori_ID: parseInt(document.getElementById('e_Fatura_Kategori_ID').value),
+            Referans_ID: parseInt(document.getElementById('Referans_ID').value) || null,
+            Cari: document.getElementById('Cari').checked,
+            Aciklama: document.getElementById('Aciklama').value.trim(),
+            Aktif_Pasif: document.getElementById('Aktif_Pasif').checked
+        };
+
+        const url = mode === 'add' ? '/api/v1/cari-yonetimi' : `/api/v1/cari-yonetimi/${id}`;
+        const method = mode === 'add' ? 'POST' : 'PUT';
+
+        try {
+            const res = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (res.ok) {
+                showToast(mode === 'add' ? 'Cari başarıyla eklendi.' : 'Cari güncellendi.');
+                hideModal();
+                setTimeout(() => location.reload(), 900);
+            } else {
+                const err = await res.json();
+                showToast(err.error || 'İşlem sırasında hata oluştu.', 'error');
+            }
+        } catch { showToast('Bağlantı hatası.', 'error'); }
+    }
+
+    async function deleteCari(id, unvan) {
+        if (!confirm(`'${unvan}' kaydını silmek istediğinize emin misiniz?`)) return;
+        try {
+            const res = await fetch(`/api/v1/cari-yonetimi/${id}`, { method: 'DELETE' });
+            if (res.ok || res.status === 204) {
+                showToast('Kayıt silindi.');
+                setTimeout(() => location.reload(), 900);
+            } else {
+                const err = await res.json();
+                showToast(err.error || 'Silinirken hata oluştu.', 'error');
+            }
+        } catch { showToast('Bağlantı hatası.', 'error'); }
+    }
+
+    function exportCarilerToExcel() {
+        const table = document.getElementById('cariler-table');
+        const wb = XLSX.utils.table_to_book(table, { sheet: "Cari Listesi" });
+        XLSX.writeFile(wb, "SilverCloud_Cariler.xlsx");
+    }
+</script>
+{% endblock %}

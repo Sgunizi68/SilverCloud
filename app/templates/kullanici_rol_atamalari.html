@@ -1,0 +1,599 @@
+{% extends "base.html" %}
+
+{% block title %}Kullanıcı Rol Atama - SilverCloud{% endblock %}
+
+/* Nav active block */
+{% block acc_sistem_tablolari %}active{% endblock %}
+{% block acc_sistem_tablolari_content %}open{% endblock %}
+
+{% block extra_style %}
+<style>
+    .krol-page-container {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        height: calc(100vh - 80px);
+        /* Adjust based on your header height */
+    }
+
+    .card-glass {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Dual pane layout */
+    .split-layout {
+        display: flex;
+        gap: 20px;
+        flex: 1;
+        min-height: 0;
+        /* Important for scrolling internals */
+    }
+
+    /* Left Pane: Users List */
+    .users-pane {
+        flex: 0 0 350px;
+        display: flex;
+        flex-direction: column;
+        padding: 15px;
+        overflow: hidden;
+        /* Hide main pane overflow, scroll inner list */
+    }
+
+    /* Right Pane: Details & Assignments */
+    .details-pane {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+        overflow-y: auto;
+    }
+
+    /* Search Input styling */
+    .search-input {
+        padding: 10px 15px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        width: 100%;
+        font-size: 13px;
+        outline: none;
+        background: white;
+        margin-bottom: 15px;
+    }
+
+    .search-input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+    }
+
+    /* User List */
+    .user-list {
+        flex: 1;
+        overflow-y: auto;
+        padding-right: 5px;
+    }
+
+    .user-list::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .user-list::-webkit-scrollbar-thumb {
+        background-color: #cbd5e1;
+        border-radius: 6px;
+    }
+
+    .user-item {
+        padding: 12px 15px;
+        margin-bottom: 8px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 14px;
+        color: #475569;
+        display: flex;
+        align-items: center;
+        border: 1px solid transparent;
+    }
+
+    .user-item:hover {
+        background-color: #f8fafc;
+        border-color: #e2e8f0;
+    }
+
+    .user-item.active {
+        background-color: #3b82f6;
+        color: white;
+        border-color: #3b82f6;
+        font-weight: 500;
+    }
+
+    .user-item .login-name {
+        font-size: 12px;
+        opacity: 0.8;
+        margin-left: 5px;
+    }
+
+    /* Details Pane Sections */
+    .section-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .selected-user-header {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 25px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .selected-user-name {
+        color: #3b82f6;
+    }
+
+    /* Assignments List */
+    .assignments-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 30px;
+    }
+
+    .assignment-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 15px;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+    }
+
+    .assignment-info {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .assignment-rol {
+        font-weight: 600;
+        color: #334155;
+        font-size: 14px;
+    }
+
+    .assignment-sube {
+        font-size: 12px;
+        color: #64748b;
+    }
+
+    .assignment-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .status-icon {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+    }
+
+    .status-icon.active {
+        color: #10b981;
+        border: 1px solid #10b981;
+        background: #ecfdf5;
+    }
+
+    .status-icon.inactive {
+        color: #ef4444;
+        border: 1px solid #ef4444;
+        background: #fef2f2;
+    }
+
+    .delete-btn-sm {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        border: 1px solid #fecaca;
+        background: white;
+        color: #ef4444;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .delete-btn-sm:hover {
+        background: #fef2f2;
+    }
+
+    /* New Assignment Form */
+    .form-row {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+
+    .form-group {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .form-group label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #475569;
+    }
+
+    .form-control {
+        padding: 10px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 14px;
+        outline: none;
+        transition: border-color 0.2s;
+        background: white;
+    }
+
+    .form-control:focus {
+        border-color: #3b82f6;
+    }
+
+    .btn-primary {
+        background-color: #3b82f6;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 20px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        width: 100%;
+    }
+
+    .btn-primary:hover {
+        background-color: #2563eb;
+    }
+
+    /* Checkbox styling */
+    .checkbox-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+    }
+
+    .checkbox-wrapper input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+    }
+
+    .checkbox-wrapper span {
+        font-size: 14px;
+        color: #475569;
+        user-select: none;
+    }
+
+    .no-selection {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: #94a3b8;
+        font-size: 16px;
+    }
+
+    .no-selection i {
+        font-size: 48px;
+        margin-bottom: 20px;
+        color: #cbd5e1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="krol-page-container">
+
+    <!-- Top Header -->
+    <div class="card-glass"
+        style="padding: 15px 25px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-shrink: 0;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div
+                style="width: 40px; height: 40px; border-radius: 10px; background: #6366f1; display: flex; align-items: center; justify-content: center; color: white;">
+                <i class="fas fa-shield-alt"></i>
+            </div>
+            <div>
+                <h1 style="margin: 0; font-size: 18px; font-weight: 800; color: #111827;">Kullanıcı Rol Atama</h1>
+                <p style="margin: 0; font-size: 12px; color: #6b21a8; font-weight: 500;">Rol ve Şube Yetkilendirme Seçim
+                    Ekranı</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Split Layout -->
+    <div class="split-layout">
+
+        <!-- Left Pane: Users -->
+        <div class="card-glass users-pane">
+            <input type="text" id="user-search" class="search-input" placeholder="Kullanıcı Ara...">
+            <div class="user-list" id="users-container">
+                <!-- Users will be populated here via JS -->
+            </div>
+        </div>
+
+        <!-- Right Pane: Details -->
+        <div class="card-glass details-pane" id="details-container">
+            <!-- Default Empty State -->
+            <div class="no-selection" id="no-selection-state">
+                <i class="fas fa-hand-pointer"></i>
+                <p>Rollerini yönetmek için soldan bir kullanıcı seçin.</p>
+            </div>
+
+            <!-- Active User State (Hidden initially) -->
+            <div id="active-user-state" style="display: none; height: 100%; flex-direction: column;">
+                <div class="selected-user-header">
+                    Roller: <span class="selected-user-name" id="display-user-name">Kullanıcı Adı</span>
+                </div>
+
+                <div class="section-title">
+                    Atanmış Roller (<span id="assigned-roles-count">0</span>)
+                </div>
+
+                <input type="text" id="role-search" class="search-input" placeholder="Rol veya Şube Ara..."
+                    style="margin-bottom: 15px;">
+
+                <div class="assignments-list" id="assignments-container">
+                    <!-- Assignments populated via JS -->
+                </div>
+
+                <div style="margin-top: auto; border-top: 1px solid #e2e8f0; padding-top: 20px;">
+                    <div class="section-title" style="border-bottom:none; margin-bottom:10px;">Yeni Rol Ata</div>
+                    <form id="new-assignment-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="Rol_ID">Rol Seçin</label>
+                                <select id="Rol_ID" class="form-control" required>
+                                    <option value="">-- Rol --</option>
+                                    {% for r in roller %}
+                                    <option value="{{ r.Rol_ID }}">{{ r.Rol_Adi }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="Sube_ID">Şube Seçin</label>
+                                <select id="Sube_ID" class="form-control" required>
+                                    <!-- Populate if single branch or multiple depending on user role, from backend list -->
+                                    {% for s in subeler %}
+                                    <option value="{{ s.Sube_ID }}">{{ s.Sube_Adi }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row" style="align-items: center; justify-content: space-between;">
+                            <label class="checkbox-wrapper">
+                                <input type="checkbox" id="Aktif_Pasif" checked>
+                                <span>Aktif</span>
+                            </label>
+                            <div style="flex: 0 0 200px;">
+                                <button type="submit" class="btn-primary"><i class="fas fa-plus"
+                                        style="margin-right: 8px;"></i> Rol Ata</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // Data from Backend
+    const KULLANICILAR = {{ kullanicilar | tojson | safe }};
+    const ATAMALAR = {{ atamalar | tojson | safe }};
+
+    // State
+    let selectedUserId = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        renderUsers(KULLANICILAR);
+
+        const savedUserId = sessionStorage.getItem('krol_selected_user_id');
+        if (savedUserId) {
+            const user = KULLANICILAR.find(k => k.Kullanici_ID == savedUserId);
+            if (user) {
+                selectUser(user.Kullanici_ID, user.Kullanici_Adi);
+            }
+        }
+
+        // Setup Search Listeners
+        document.getElementById('user-search').addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = KULLANICILAR.filter(k =>
+                k.Adi_Soyadi.toLowerCase().includes(term) ||
+                k.Kullanici_Adi.toLowerCase().includes(term)
+            );
+            renderUsers(filtered);
+        });
+
+        document.getElementById('role-search').addEventListener('input', (e) => {
+            if (selectedUserId) {
+                renderAssignments(selectedUserId, e.target.value.toLowerCase());
+            }
+        });
+
+        // Form Submit
+        document.getElementById('new-assignment-form').addEventListener('submit', handleNewAssignment);
+    });
+
+    function renderUsers(users) {
+        const container = document.getElementById('users-container');
+        container.innerHTML = '';
+
+        users.forEach(k => {
+            const div = document.createElement('div');
+            div.className = `user-item ${selectedUserId === k.Kullanici_ID ? 'active' : ''}`;
+            div.innerHTML = `${k.Kullanici_Adi} <span class="login-name">(${k.Adi_Soyadi})</span>`;
+            div.onclick = () => selectUser(k.Kullanici_ID, k.Kullanici_Adi);
+            container.appendChild(div);
+        });
+    }
+
+    function selectUser(userId, userName) {
+        selectedUserId = userId;
+        sessionStorage.setItem('krol_selected_user_id', userId);
+
+        // Update UI
+        document.getElementById('no-selection-state').style.display = 'none';
+
+        const activeState = document.getElementById('active-user-state');
+        activeState.style.display = 'flex'; // It's a flex container
+
+        document.getElementById('display-user-name').textContent = userName;
+
+        // Refresh users list to highlight active
+        renderUsers(KULLANICILAR);
+
+        // Reset role search
+        document.getElementById('role-search').value = '';
+
+        // Render assignments
+        renderAssignments(userId);
+    }
+
+    function renderAssignments(userId, searchTerm = '') {
+        const container = document.getElementById('assignments-container');
+        container.innerHTML = '';
+
+        let userAssignments = ATAMALAR.filter(a => a.Kullanici_ID === userId);
+
+        if (searchTerm) {
+            userAssignments = userAssignments.filter(a =>
+                (a.Rol_Adi && a.Rol_Adi.toLowerCase().includes(searchTerm)) ||
+                (a.Sube_Adi && a.Sube_Adi.toLowerCase().includes(searchTerm))
+            );
+        }
+
+        document.getElementById('assigned-roles-count').textContent = userAssignments.length;
+
+        if (userAssignments.length === 0) {
+            container.innerHTML = '<div style="padding: 15px; text-align: center; color: #94a3b8; border: 1px dashed #cbd5e1; border-radius: 8px;">Kayıtlı Atama Yok</div>';
+            return;
+        }
+
+        userAssignments.forEach(a => {
+            const div = document.createElement('div');
+            div.className = 'assignment-item';
+
+            const statusIcon = a.Aktif_Pasif ?
+                '<div class="status-icon active" title="Aktif"><i class="fas fa-check"></i></div>' :
+                '<div class="status-icon inactive" title="Pasif"><i class="fas fa-times"></i></div>';
+
+            div.innerHTML = `
+                <div class="assignment-info">
+                    <div class="assignment-rol">${a.Rol_Adi} <span class="assignment-sube">@ ${a.Sube_Adi}</span></div>
+                </div>
+                <div class="assignment-actions">
+                    <div style="cursor: pointer;" onclick="toggleStatus(${a.Kullanici_ID}, ${a.Rol_ID}, ${a.Sube_ID}, ${!a.Aktif_Pasif})">
+                        ${statusIcon}
+                    </div>
+                    <button class="delete-btn-sm" onclick="deleteAssignment(${a.Kullanici_ID}, ${a.Rol_ID}, ${a.Sube_ID})" title="Sil">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    async function handleNewAssignment(e) {
+        e.preventDefault();
+        if (!selectedUserId) return;
+
+        const data = {
+            Kullanici_ID: selectedUserId,
+            Rol_ID: parseInt(document.getElementById('Rol_ID').value),
+            Sube_ID: parseInt(document.getElementById('Sube_ID').value),
+            Aktif_Pasif: document.getElementById('Aktif_Pasif').checked,
+        };
+
+        try {
+            const res = await fetch('/api/v1/kullanici-rol-atamalari', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (res.ok) {
+                showToast('Rol başarıyla atandı.');
+                setTimeout(() => location.reload(), 900);
+            } else {
+                const err = await res.json();
+                showToast(err.error || 'Atanırken hata oluştu.', 'error');
+            }
+        } catch {
+            showToast('Bağlantı hatası.', 'error');
+        }
+    }
+
+    async function toggleStatus(k_id, r_id, s_id, new_status) {
+        try {
+            const res = await fetch(`/api/v1/kullanici-rol-atamalari/${k_id}/${r_id}/${s_id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ Aktif_Pasif: new_status })
+            });
+
+            if (res.ok) {
+                showToast('Durum güncellendi.');
+                setTimeout(() => location.reload(), 900);
+            } else {
+                const err = await res.json();
+                showToast(err.error || 'Güncellenirken hata oluştu.', 'error');
+            }
+        } catch {
+            showToast('Bağlantı hatası.', 'error');
+        }
+    }
+
+    async function deleteAssignment(k_id, r_id, s_id) {
+        if (!confirm('Bu atamayı kaldırmak istediğinize emin misiniz?')) return;
+
+        try {
+            const res = await fetch(`/api/v1/kullanici-rol-atamalari/${k_id}/${r_id}/${s_id}`, {
+                method: 'DELETE'
+            });
+
+            if (res.ok || res.status === 204) {
+                showToast('Atama silindi.');
+                setTimeout(() => location.reload(), 900);
+            } else {
+                const err = await res.json();
+                showToast(err.error || 'Silinirken hata oluştu.', 'error');
+            }
+        } catch {
+            showToast('Bağlantı hatası.', 'error');
+        }
+    }
+</script>
+{% endblock %}

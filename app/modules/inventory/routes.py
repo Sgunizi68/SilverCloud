@@ -290,7 +290,8 @@ def update_stok_fiyat(fiyat_id):
             db,
             fiyat_id,
             fiyat=float(data.get("Fiyat")) if "Fiyat" in data else None,
-            aktif_pasif=data.get("Aktif_Pasif")
+            aktif_pasif=data.get("Aktif_Pasif"),
+            gecerlilik_baslangic_tarih=data.get("Gecerlilik_Baslangic_Tarih")
         )
         db.close()
         
@@ -422,6 +423,37 @@ def create_stok_sayim():
         }
         
         return jsonify(result), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@inventory_bp.route("/stok-sayimlar/auto-save", methods=["POST"])
+@auth_required
+def auto_save_stok_sayim():
+    """Auto-save (upsert) a single stock count entry."""
+    try:
+        data = request.get_json()
+        if not data or "Malzeme_Kodu" not in data or "Donem" not in data or "Miktar" not in data or "Sube_ID" not in data:
+            return jsonify({"error": "Malzeme_Kodu, Donem, Miktar, and Sube_ID required"}), 400
+        
+        db = get_db_session()
+        saved_sayim = queries.upsert_stok_sayim(
+            db,
+            malzeme_kodu=data["Malzeme_Kodu"],
+            donem=int(data["Donem"]),
+            miktar=float(data["Miktar"]),
+            sube_id=data["Sube_ID"]
+        )
+        db.close()
+        
+        result = {
+            "Sayim_ID": saved_sayim.Sayim_ID,
+            "Malzeme_Kodu": saved_sayim.Malzeme_Kodu,
+            "Donem": saved_sayim.Donem,
+            "Miktar": float(saved_sayim.Miktar),
+            "Sube_ID": saved_sayim.Sube_ID,
+            "Kayit_Tarihi": saved_sayim.Kayit_Tarihi.isoformat(),
+        }
+        return jsonify(result), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

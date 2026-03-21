@@ -1,0 +1,541 @@
+{% extends "base.html" %}
+
+{% block title %}Nakit Akış - Gelir Raporu - SilverCloud{% endblock %}
+
+{% block nav_nakit_akis_gelir_raporu %}active{% endblock %}
+{% block acc_rapor %}active{% endblock %}
+{% block acc_rapor_content %}open{% endblock %}
+
+{% block extra_style %}
+<style>
+    /* Premium High-Density Design */
+    :root {
+        --card-blue: #3b82f6;
+        --card-purple: #8b5cf6;
+        --card-orange: #f59e0b;
+        --card-green: #10b981;
+        --bg-light: #f8fafc;
+        --text-dark: #1e293b;
+        --border-color: #e2e8f0;
+    }
+
+    body {
+        background-color: var(--bg-light) !important;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        color: var(--text-dark);
+        font-size: 13px;
+    }
+
+    .report-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 1.5rem;
+    }
+
+    /* Header & Filter Card */
+    .header-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.25rem 1.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        margin-bottom: 1.5rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .header-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 1.25rem;
+    }
+
+    .header-title h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0;
+        color: #0f172a;
+    }
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        align-items: flex-end;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 6px;
+        font-size: 12px;
+        color: #64748b;
+    }
+
+    .form-control-custom {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background-color: #fcfcfd;
+        font-size: 13px;
+        transition: border-color 0.2s;
+    }
+
+    .form-control-custom:focus {
+        outline: none;
+        border-color: var(--card-blue);
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    }
+
+    /* Summary Cards */
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .summary-card {
+        border-radius: 12px;
+        padding: 1.25rem;
+        color: white;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        transition: transform 0.2s;
+        min-height: 100px;
+    }
+
+    .summary-card:hover {
+        transform: translateY(-2px);
+    }
+
+    .summary-card.blue {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+    }
+
+    .summary-card.purple {
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    }
+
+    .summary-card.orange {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+    }
+
+    .summary-card.green {
+        background: linear-gradient(135deg, #10b981, #059669);
+    }
+
+    .summary-label {
+        font-size: 12px;
+        font-weight: 600;
+        opacity: 0.9;
+        margin-bottom: 4px;
+    }
+
+    .summary-value {
+        font-size: 1.5rem;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+    }
+
+    /* Table Styling */
+    .table-container {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .custom-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+
+    .custom-table thead th {
+        background-color: #1e293b;
+        color: white;
+        padding: 12px 16px;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 11px;
+        letter-spacing: 0.5px;
+        border: none;
+        position: sticky;
+        top: 0;
+    }
+
+    .custom-table tbody tr {
+        border-bottom: 1px solid #f1f5f9;
+        transition: background-color 0.2s;
+    }
+
+    .custom-table tbody tr:hover {
+        background-color: #f8fafc;
+    }
+
+    .custom-table td {
+        padding: 12px 16px;
+        color: #334155;
+    }
+
+    .date-cell .date {
+        font-weight: 700;
+        color: #0f172a;
+        font-size: 13px;
+    }
+
+    .date-cell .day {
+        font-size: 11px;
+        color: #64748b;
+        margin-top: 2px;
+    }
+
+    .val-cell {
+        font-family: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
+        font-weight: 600;
+    }
+
+    .total-cell {
+        font-weight: 800;
+        color: var(--card-green);
+    }
+
+    /* Info Section */
+    .info-section {
+        margin-top: 2rem;
+        background: #f1f5f9;
+        border-radius: 12px;
+        padding: 1.5rem;
+        border-left: 4px solid var(--card-blue);
+    }
+
+    .info-section h3 {
+        font-size: 14px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        color: var(--text-dark);
+    }
+
+    .info-section p {
+        font-size: 12px;
+        color: #475569;
+        margin-bottom: 4px;
+        line-height: 1.5;
+    }
+
+    .btn-apply {
+        background: var(--card-blue);
+        color: white;
+        border: none;
+        padding: 8px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .btn-apply:hover {
+        background: #2563eb;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        margin-left: auto;
+    }
+
+    .btn-icon {
+        width: 38px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        background: white;
+        color: #64748b;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 16px;
+    }
+
+    .btn-icon:hover {
+        background: #f1f5f9;
+        color: var(--card-blue);
+        border-color: var(--card-blue);
+    }
+
+    .btn-icon.blue {
+        color: var(--card-blue);
+    }
+
+    /* Print styles */
+    @media print {
+
+        .sidebar,
+        .header-card,
+        .info-section,
+        .action-buttons,
+        .topbar {
+            display: none !important;
+        }
+
+        .report-container {
+            padding: 0;
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .summary-grid {
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .summary-card {
+            color: black !important;
+            border: 1px solid #eee;
+            box-shadow: none !important;
+            background: white !important;
+        }
+
+        .summary-value {
+            color: black !important;
+        }
+
+        .custom-table thead th {
+            background: #eee !important;
+            color: black !important;
+        }
+    }
+
+    /* Custom scrollbar for better look */
+    ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+
+    /* Topbar hide as per user pattern */
+    .topbar {
+        display: none !important;
+    }
+
+    .content.dashboard-content {
+        padding: 0 !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{% macro f(val) -%}
+₺{{ "{:,.2f}".format(val).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+{%- endmacro %}
+
+<div class="report-container">
+    <!-- Header & Filters -->
+    <div class="header-card">
+        <div class="header-title">
+            <span style="background: rgba(16, 185, 129, 0.1); padding: 8px; border-radius: 8px;">
+                <i class="fas fa-chart-line" style="color: var(--card-green); font-size: 20px;"></i>
+            </span>
+            <h1>Nakit Akış - Gelir Raporu</h1>
+
+            <div class="action-buttons">
+                <button class="btn-icon" onclick="printReport()" title="Yazdır">
+                    <i class="fas fa-print"></i>
+                </button>
+                <button class="btn-icon blue" onclick="exportToExcel()" title="Excel İndir">
+                    <i class="fas fa-download"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="filter-grid">
+            <div class="form-group">
+                <label><i class="fas fa-store"></i> Şube</label>
+                <select class="form-control-custom" id="subeSelect">
+                    {% for s in subeler %}
+                    <option value="{{ s.Sube_ID }}" {% if s.Sube_ID==secili_sube_id %}selected{% endif %}>{{ s.Sube_Adi
+                        }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-calendar-alt"></i> Başlangıç Tarihi</label>
+                <input type="date" class="form-control-custom" id="startDate" value="{{ start_date }}">
+            </div>
+            <div class="form-group">
+                <label><i class="fas fa-calendar-alt"></i> Bitiş Tarihi</label>
+                <input type="date" class="form-control-custom" id="endDate" value="{{ end_date }}">
+            </div>
+            <div class="form-group">
+                <button class="btn-apply" onclick="applyFilters()">
+                    <i class="fas fa-sync-alt"></i> Sorgula
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {% if report_data %}
+    <!-- Summary Cards -->
+    <div class="summary-grid" id="printableArea">
+        <div class="summary-card blue">
+            <div class="summary-label">Tahmini Nakit</div>
+            <div class="summary-value">{{ f(report_data.summary.total_tahmini_nakit) }}</div>
+        </div>
+        <div class="summary-card purple">
+            <div class="summary-label">POS Ödemesi</div>
+            <div class="summary-value">{{ f(report_data.summary.total_pos_odeme) }}</div>
+        </div>
+        <div class="summary-card orange">
+            <div class="summary-label">Yemek Çeki</div>
+            <div class="summary-value">{{ f(report_data.summary.total_yemek_ceki) }}</div>
+        </div>
+        <div class="summary-card green">
+            <div class="summary-label">Toplam Gelir</div>
+            <div class="summary-value">{{ f(report_data.summary.grand_total) }}</div>
+        </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="table-container" id="reportTableContainer">
+        <table class="custom-table">
+            <thead>
+                <tr>
+                    <th style="width: 180px;">Gün</th>
+                    <th style="text-align: right;">Tahmini Nakit</th>
+                    <th style="text-align: right;">POS Ödemesi</th>
+                    <th style="text-align: right;">Yemek Çeki</th>
+                    <th style="text-align: right;">Online Virman</th>
+                    <th style="text-align: right;">Toplam</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in report_data.daily %}
+                <tr>
+                    <td class="date-cell">
+                        <div class="date">{{ row.display_date }}</div>
+                        <div class="day">{{ row.day_name }}</div>
+                    </td>
+                    <td class="val-cell" style="text-align: right;">{{ f(row.tahmini_nakit) }}</td>
+                    <td class="val-cell" style="text-align: right;">{{ f(row.pos_odeme) }}</td>
+                    <td class="val-cell" style="text-align: right;">{{ f(row.yemek_ceki) }}</td>
+                    <td class="val-cell" style="text-align: right;">{{ f(row.online_virman) }}</td>
+                    <td class="val-cell total-cell" style="text-align: right;">{{ f(row.total) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Info Section -->
+    <div class="info-section">
+        <h3><i class="fas fa-info-circle"></i> Rapor Hakkında</h3>
+        <p><strong>Tahmini Nakit:</strong> İlgili günün Nakit Satışlarından, sisteme girilen günlük "e-Fatura" ve "Diğer
+            Harcamalar" düşülerek hesaplanır.</p>
+        <p><strong>POS Ödemesi:</strong> İlgili tarihte bankaların POS cihazlarından geçen işlem tutarlarının
+            toplamıdır.</p>
+        <p><strong>Yemek Çeki:</strong> Ticket, Sodexo, Multinet vb. yemek kartı ve çekleri ile yapılan tahsilatların
+            toplamıdır.</p>
+        <p><strong>Online Virman:</strong> Yemeksepeti, Getir, Trendyol gibi online platformlardan branch hesabına
+            aktarılacak olan (B2B) tutarları temsil eder.</p>
+    </div>
+    {% else %}
+    <div
+        style="background: white; padding: 4rem; text-align: center; border-radius: 12px; border: 1px dashed var(--border-color);">
+        <i class="fas fa-search" style="font-size: 40px; color: #cbd5e1; margin-bottom: 1rem;"></i>
+        <h2 style="color: #64748b; font-size: 18px;">Veri Sorgulama Bekleniyor</h2>
+        <p style="color: #94a3b8;">Lütfen şube ve tarih aralığı seçerek sorgula butonuna basınız.</p>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<!-- Load SheetJS for Excel export -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+
+<script>
+    function applyFilters() {
+        const sube_id = document.getElementById('subeSelect').value;
+        const start = document.getElementById('startDate').value;
+        const end = document.getElementById('endDate').value;
+
+        if (!start || !end) {
+            alert("Lütfen tarih aralığı seçiniz.");
+            return;
+        }
+
+        window.location.href = `/nakit-akis-gelir-raporu?sube_id=${sube_id}&start_date=${start}&end_date=${end}`;
+    }
+
+    function printReport() {
+        window.print();
+    }
+
+    function exportToExcel() {
+        // Prepare data for export
+        const table = document.querySelector('.custom-table');
+        if (!table) {
+            alert("Aktarılacak veri bulunamadı.");
+            return;
+        }
+
+        const rows = Array.from(table.querySelectorAll('tbody tr'));
+        const data = rows.map(tr => {
+            const cells = tr.querySelectorAll('td');
+            return {
+                "Tarih": cells[0].querySelector('.date').innerText,
+                "Gün": cells[0].querySelector('.day').innerText,
+                "Tahmini Nakit": cells[1].innerText.replace('₺', '').replace(/\./g, '').replace(',', '.').trim(),
+                "POS Ödemesi": cells[2].innerText.replace('₺', '').replace(/\./g, '').replace(',', '.').trim(),
+                "Yemek Çeki": cells[3].innerText.replace('₺', '').replace(/\./g, '').replace(',', '.').trim(),
+                "Online Virman": cells[4].innerText.replace('₺', '').replace(/\./g, '').replace(',', '.').trim(),
+                "Toplam": cells[5].innerText.replace('₺', '').replace(/\./g, '').replace(',', '.').trim()
+            };
+        });
+
+        // Summary Data
+        const summary = {
+            "Tahmini Nakit Toplam": "{{ report_data.summary.total_tahmini_nakit if report_data else 0 }}",
+            "POS Ödemesi Toplam": "{{ report_data.summary.total_pos_odeme if report_data else 0 }}",
+            "Yemek Çeki Toplam": "{{ report_data.summary.total_yemek_ceki if report_data else 0 }}",
+            "Online Virman Toplam": "{{ report_data.summary.total_online_virman if report_data else 0 }}",
+            "Genel Toplam": "{{ report_data.summary.grand_total if report_data else 0 }}"
+        };
+
+        // Create workbook and worksheet
+        const wb = XLSX.utils.book_new();
+        const ws_daily = XLSX.utils.json_to_sheet(data);
+
+        // Add Summary sheet
+        const summary_data = Object.entries(summary).map(([key, val]) => ({ "Açıklama": key, "Tutar": parseFloat(val) }));
+        const ws_summary = XLSX.utils.json_to_sheet(summary_data);
+
+        XLSX.utils.book_append_sheet(wb, ws_daily, "Günlük Detay");
+        XLSX.utils.book_append_sheet(wb, ws_summary, "Özet Toplamlar");
+
+        // Download file
+        XLSX.writeFile(wb, `Nakit_Akis_Gelir_Raporu_${new Date().toLocaleDateString()}.xlsx`);
+    }
+</script>
+{% endblock %}

@@ -292,7 +292,7 @@ class DigerHarcama(db.Model):
     )
     Gunluk_Harcama = Column(Boolean, default=False)
     Sube_ID = Column(Integer, ForeignKey("Sube.Sube_ID"), nullable=False, index=True)
-    Aciklama = Column(String(45), nullable=True)
+    Açıklama = Column(String(45), nullable=True)
     Kayit_Tarihi = Column(DateTime, default=func.now())
     Imaj = Column(LargeBinary, nullable=True)
     Imaj_Adi = Column(String(255), nullable=True)
@@ -342,6 +342,7 @@ class OdemeReferans(db.Model):
 
     # Relationships
     kategori = relationship("Kategori", back_populates="odeme_referanslar")
+    cariler = relationship("Cari", back_populates="referans")
 
     def __repr__(self):
         return f"<OdemeReferans {self.Referans_Metin}>"
@@ -701,6 +702,9 @@ class Cari(db.Model):
     Aktif_Pasif = Column(Boolean, default=True, index=True)
     Kayit_Tarihi = Column(DateTime, default=func.now(), onupdate=func.now())
 
+    # Relationships
+    referans = relationship("OdemeReferans", back_populates="cariler")
+
     def __repr__(self):
         return f"<Cari {self.Alici_Unvani}>"
 
@@ -712,8 +716,13 @@ class Mutabakat(db.Model):
 
     Mutabakat_ID = Column(Integer, primary_key=True, index=True)
     Cari_ID = Column(Integer, ForeignKey("Cari.Cari_ID"), nullable=False, index=True)
+    Sube_ID = Column(Integer, ForeignKey("Sube.Sube_ID"), nullable=False, index=True)
     Mutabakat_Tarihi = Column(Date, nullable=False, index=True)
     Tutar = Column(DECIMAL(15, 2), nullable=False)
+
+    # Relationships
+    cari = relationship("Cari")
+    sube = relationship("Sube")
 
     def __repr__(self):
         return f"<Mutabakat {self.Mutabakat_ID}>"

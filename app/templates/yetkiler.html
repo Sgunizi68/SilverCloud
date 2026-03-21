@@ -1,0 +1,396 @@
+{% extends "base.html" %}
+
+{% block title %}Yetki Yönetimi - SilverCloud{% endblock %}
+
+/* Nav active block */
+{% block acc_sistem_tablolari %}active{% endblock %}
+{% block acc_sistem_tablolari_content %}open{% endblock %}
+
+{% block extra_style %}
+<style>
+    .yetki-page-container {
+        padding: 20px;
+    }
+
+    .card-glass {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+        transition: transform 0.2s ease;
+    }
+
+    .action-btn {
+        padding: 8px 16px;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        background: white;
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+        background: #f9fafb;
+        border-color: #d1d5db;
+    }
+
+    .action-btn.primary {
+        background: #6366f1;
+        color: white;
+        border-color: #6366f1;
+    }
+
+    .action-btn.primary:hover {
+        background: #4f46e5;
+    }
+
+    .search-input {
+        padding: 8px 12px;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        width: 200px;
+        font-size: 13px;
+        outline: none;
+        background: white;
+    }
+
+    .search-input:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+    }
+
+    .table-container table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .table-container th {
+        background: #fdfdfd;
+        color: #6b7280;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 12px 16px;
+        text-align: left;
+        border-bottom: 1px solid #e5e7eb;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .table-container td {
+        padding: 12px 16px;
+        color: #374151;
+        font-size: 13px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .table-container tr:last-child td {
+        border-bottom: none;
+    }
+
+    .table-container tr:hover {
+        background-color: #f9fafb;
+    }
+
+    .yetki-name {
+        color: #4f46e5;
+        font-weight: 600;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        justify-content: center;
+        font-size: 14px;
+    }
+
+    .status-badge.active {
+        color: #10b981;
+    }
+
+    .status-badge.inactive {
+        color: #ef4444;
+    }
+
+    .tip-badge {
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        background: #f3f4f6;
+        color: #4b5563;
+    }
+
+    .edit-btn {
+        padding: 5px 10px;
+        background: transparent;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        cursor: pointer;
+        color: #6b7280;
+        transition: all 0.15s;
+    }
+
+    .edit-btn:hover {
+        background: #f3f4f6;
+        color: #374151;
+        border-color: #d1d5db;
+    }
+
+    .delete-btn {
+        padding: 5px 10px;
+        background: transparent;
+        border: 1px solid #fecaca;
+        border-radius: 6px;
+        cursor: pointer;
+        color: #ef4444;
+        transition: all 0.15s;
+    }
+
+    .delete-btn:hover {
+        background: #fef2f2;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="yetki-page-container">
+    <!-- Dashboard-style Header Bar -->
+    <div class="card-glass"
+        style="padding: 15px 25px; margin-bottom: 25px; display: flex; flex-direction: row; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div
+                style="width: 40px; height: 40px; border-radius: 10px; background: #6366f1; display: flex; align-items: center; justify-content: center; color: white;">
+                <i class="fas fa-key"></i>
+            </div>
+            <div>
+                <h1 style="margin: 0; font-size: 18px; font-weight: 800; color: #111827;">Yetki Yönetimi</h1>
+                <p style="margin: 0; font-size: 12px; color: #6b21a8; font-weight: 500;">Sistem Yetkileri ve Erişimler
+                </p>
+            </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <input type="text" class="search-input" placeholder="Yetki ara..." id="yetki-search">
+            <button class="action-btn" onclick="printYetkiler()">
+                <i class="fas fa-print" style="color: #6366f1;"></i> Yazdır
+            </button>
+            <button class="action-btn" onclick="exportYetkilerToExcel()">
+                <i class="fas fa-file-excel" style="color: #10b981;"></i> Excel
+            </button>
+            <button class="action-btn primary" onclick="openAddYetkiModal()">
+                <i class="fas fa-plus"></i> Yeni Yetki
+            </button>
+        </div>
+    </div>
+
+    <!-- Table Card -->
+    <div class="card-glass" style="padding: 0; overflow: hidden;">
+        <div class="table-container">
+            <table id="yetkiler-table">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">ID</th>
+                        <th>YETKİ ADI</th>
+                        <th>AÇIKLAMA</th>
+                        <th style="width: 100px; text-align: center;">TİP</th>
+                        <th style="width: 80px; text-align: center;">AKTİF</th>
+                        <th style="width: 100px; text-align: center;" class="hide-on-print">İŞLEMLER</th>
+                    </tr>
+                </thead>
+                <tbody id="yetkiler-tbody">
+                    {% for y in yetkiler %}
+                    <tr>
+                        <td>{{ y.Yetki_ID }}</td>
+                        <td class="yetki-name">{{ y.Yetki_Adi }}</td>
+                        <td>{{ y.Aciklama }}</td>
+                        <td style="text-align: center;">
+                            <span class="tip-badge">{{ y.Tip or '-' }}</span>
+                        </td>
+                        <td style="text-align: center;">
+                            {% if y.Aktif_Pasif %}
+                            <div class="status-badge active" title="Aktif"><i class="far fa-check-circle"></i></div>
+                            {% else %}
+                            <div class="status-badge inactive" title="Pasif"><i class="far fa-times-circle"></i></div>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;" class="hide-on-print">
+                            <button class="edit-btn" title="Düzenle" data-yetki='{{ y | tojson | safe }}'
+                                onclick='openEditYetkiModal(JSON.parse(this.getAttribute("data-yetki")))'>✏️</button>
+                            <button class="delete-btn" title="Sil" onclick="deleteYetki({{ y.Yetki_ID }})">🗑️</button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">
+                            <i class="fas fa-inbox"
+                                style="font-size: 28px; display: block; margin-bottom: 8px; color: #d1d5db;"></i>
+                            Kayıtlı yetki bulunamadı.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // --- Search ---
+    document.addEventListener('DOMContentLoaded', () => {
+        const searchInput = document.getElementById('yetki-search');
+        if (searchInput) {
+            searchInput.addEventListener('keyup', function () {
+                const term = this.value.toLowerCase();
+                document.querySelectorAll('#yetkiler-tbody tr').forEach(row => {
+                    if (row.cells.length === 1) return;
+                    const text = Array.from(row.cells).map(c => c.textContent.toLowerCase()).join(' ');
+                    row.style.display = text.includes(term) ? '' : 'none';
+                });
+            });
+        }
+    });
+
+    // --- Form helpers ---
+    function yetkiFormHtml(y = {}) {
+        return `
+            <form id="yetkiForm">
+                <input type="hidden" id="Yetki_ID" name="Yetki_ID" value="${y.Yetki_ID || ''}">
+                <div class="form-group">
+                    <label for="Yetki_Adi">Yetki Adı *</label>
+                    <input type="text" id="Yetki_Adi" name="Yetki_Adi" value="${y.Yetki_Adi || ''}" required>
+                </div>
+                <div class="form-group">
+                    <label for="Aciklama">Açıklama</label>
+                    <textarea id="Aciklama" name="Aciklama">${y.Aciklama || ''}</textarea>
+                </div>
+                <div class="form-group">
+                    <label for="Tip">Tip</label>
+                    <select id="Tip" name="Tip" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
+                        <option value="" ${!y.Tip ? 'selected' : ''}>Seçiniz</option>
+                        <option value="Ekran" ${y.Tip === 'Ekran' ? 'selected' : ''}>Ekran</option>
+                        <option value="Islem" ${y.Tip === 'Islem' ? 'selected' : ''}>İşlem</option>
+                        <option value="API" ${y.Tip === 'API' ? 'selected' : ''}>API</option>
+                    </select>
+                </div>
+                <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin-top: 15px;">
+                    <input type="checkbox" id="Aktif_Pasif" name="Aktif_Pasif" ${(!y.Yetki_ID || y.Aktif_Pasif) ? 'checked' : ''} style="width: 18px; height: 18px; cursor: pointer;">
+                    <label for="Aktif_Pasif" style="margin: 0; cursor: pointer; user-select: none;">Aktif Yetki</label>
+                </div>
+                <div class="modal-footer" style="margin-top: 20px;">
+                    <button type="button" class="btn btn-secondary" onclick="hideModal()">İptal</button>
+                    <button type="submit" class="btn btn-primary">${y.Yetki_ID ? 'Güncelle' : 'Kaydet'}</button>
+                </div>
+            </form>
+        `;
+    }
+
+    function openAddYetkiModal() {
+        showModal('Yeni Yetki Ekle', yetkiFormHtml());
+        document.getElementById('yetkiForm').addEventListener('submit', handleAddYetki);
+    }
+
+    function openEditYetkiModal(y) {
+        showModal('Yetki Düzenle', yetkiFormHtml(y));
+        document.getElementById('yetkiForm').addEventListener('submit', handleEditYetki);
+    }
+
+    async function handleAddYetki(e) {
+        e.preventDefault();
+        const data = {
+            Yetki_Adi: document.getElementById('Yetki_Adi').value,
+            Aciklama: document.getElementById('Aciklama').value,
+            Tip: document.getElementById('Tip').value,
+            Aktif_Pasif: document.getElementById('Aktif_Pasif').checked,
+        };
+        try {
+            const res = await fetch('/api/v1/yetkiler', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+            });
+            if (res.ok) { showToast('Yetki başarıyla eklendi.'); hideModal(); setTimeout(() => location.reload(), 900); }
+            else { const err = await res.json(); showToast(err.error || 'Eklenirken hata oluştu.', 'error'); }
+        } catch { showToast('Bağlantı hatası.', 'error'); }
+    }
+
+    async function handleEditYetki(e) {
+        e.preventDefault();
+        const id = document.getElementById('Yetki_ID').value;
+        const data = {
+            Yetki_Adi: document.getElementById('Yetki_Adi').value,
+            Aciklama: document.getElementById('Aciklama').value,
+            Tip: document.getElementById('Tip').value,
+            Aktif_Pasif: document.getElementById('Aktif_Pasif').checked,
+        };
+
+        try {
+            const res = await fetch(`/api/v1/yetkiler/${id}`, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+            });
+            if (res.ok) { showToast('Yetki başarıyla güncellendi.'); hideModal(); setTimeout(() => location.reload(), 900); }
+            else { const err = await res.json(); showToast(err.error || 'Güncellenirken hata oluştu.', 'error'); }
+        } catch { showToast('Bağlantı hatası.', 'error'); }
+    }
+
+    async function deleteYetki(id) {
+        if (!confirm('Bu yetkiyi silmek istediğinize emin misiniz?')) return;
+        try {
+            const res = await fetch(`/api/v1/yetkiler/${id}`, { method: 'DELETE' });
+            if (res.ok || res.status === 204) { showToast('Yetki silindi.'); setTimeout(() => location.reload(), 900); }
+            else { const err = await res.json(); showToast(err.error || 'Silinirken hata oluştu.', 'error'); }
+        } catch { showToast('Bağlantı hatası.', 'error'); }
+    }
+
+    // --- Excel Export ---
+    function exportYetkilerToExcel() {
+        const table = document.getElementById('yetkiler-table');
+        const wb = XLSX.utils.table_to_book(table, { sheet: "Yetki Listesi" });
+        XLSX.writeFile(wb, "Yetki_Listesi.xlsx");
+    }
+
+    // --- Print ---
+    function printYetkiler() {
+        const table = document.getElementById('yetkiler-table');
+        if (!table) return;
+        const clone = table.cloneNode(true);
+        // İŞLEMLER column removal
+        clone.querySelectorAll('th:last-child, td:last-child').forEach(el => el.remove());
+
+        // Convert icons to text for printing
+        clone.querySelectorAll('.status-badge').forEach(el => {
+            if (el.classList.contains('active')) {
+                el.textContent = 'Aktif';
+            } else {
+                el.textContent = 'Pasif';
+            }
+            el.className = '';
+        });
+
+        const now = new Date().toLocaleString('tr-TR');
+        const html = `<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">
+            <title>Yetki Yönetimi Raporu</title>
+            <style>body{font-family:Arial,sans-serif;padding:20mm;color:#111}
+            h1{font-size:20px;margin:0 0 4px}p{font-size:12px;color:#666;border-bottom:1px solid #ccc;padding-bottom:10px;margin-bottom:16px}
+            table{width:100%;border-collapse:collapse}th{background:#f3f4f6;font-size:11px;text-transform:uppercase;padding:10px 12px;text-align:left;border:1px solid #ddd}
+            td{padding:10px 12px;font-size:13px;border:1px solid #eee}tr:nth-child(even){background:#fafafa}</style>
+            </head><body><h1>SilverCloud - Yetki Yönetimi Raporu</h1><p>Rapor Tarihi: ${now}</p>${clone.outerHTML}</body></html>`;
+        const win = window.open('', '_blank', 'width=900,height=700');
+        win.document.write(html);
+        win.document.close();
+        win.focus();
+        win.print();
+        win.onafterprint = () => win.close();
+    }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+{% endblock %}

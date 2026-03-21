@@ -1,0 +1,427 @@
+{% extends "base.html" %}
+
+{% block title %}Şube Yönetimi - SilverCloud{% endblock %}
+
+/* Nav active block */
+{% block acc_sistem_tablolari %}active{% endblock %}
+{% block acc_sistem_tablolari_content %}open{% endblock %}
+{% block nav_subeler %}active{% endblock %}
+
+{% block extra_style %}
+<style>
+    .sube-page-container {
+        padding: 20px;
+    }
+
+    /* Reuse dashboard glassmorphism card */
+    .card-glass {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+        transition: transform 0.2s ease;
+    }
+
+    .action-btn {
+        padding: 8px 16px;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        background: white;
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+        background: #f9fafb;
+        border-color: #d1d5db;
+    }
+
+    .action-btn.primary {
+        background: #6366f1;
+        color: white;
+        border-color: #6366f1;
+    }
+
+    .action-btn.primary:hover {
+        background: #4f46e5;
+    }
+
+    .search-input {
+        padding: 8px 12px;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        width: 200px;
+        font-size: 13px;
+        outline: none;
+        background: white;
+    }
+
+    .search-input:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+    }
+
+    .table-container {
+        margin-top: 20px;
+    }
+
+    .table-container table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .table-container th {
+        background: #fdfdfd;
+        color: #6b7280;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 12px 16px;
+        text-align: left;
+        border-bottom: 1px solid #e5e7eb;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .table-container td {
+        padding: 12px 16px;
+        color: #374151;
+        font-size: 13px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .table-container tr:last-child td {
+        border-bottom: none;
+    }
+
+    .table-container tr:hover {
+        background-color: #f9fafb;
+    }
+
+    .status-icon {
+        color: #10b981;
+        font-size: 16px;
+    }
+
+    .status-inactive {
+        color: #9ca3af;
+    }
+
+    .edit-btn {
+        padding: 4px 8px;
+        background: transparent;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        cursor: pointer;
+        color: #6b7280;
+    }
+
+    .edit-btn:hover {
+        background: #f3f4f6;
+        color: #374151;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="sube-page-container">
+    <!-- Dashboard-style Header Bar -->
+    <div class="card-glass"
+        style="padding: 15px 25px; margin-bottom: 25px; display: flex; flex-direction: row; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div
+                style="width: 40px; height: 40px; border-radius: 10px; background: #6366f1; display: flex; align-items: center; justify-content: center; color: white;">
+                <i class="fas fa-store"></i>
+            </div>
+            <div>
+                <h1 style="margin: 0; font-size: 18px; font-weight: 800; color: #111827;">Şube Yönetimi</h1>
+                <p style="margin: 0; font-size: 12px; color: #6b21a8; font-weight: 500;">Şube Kayıt ve Düzenleme</p>
+            </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <input type="text" class="search-input" placeholder="Şube ara..." id="sube-search">
+            <button class="action-btn" onclick="printSubeler()">
+                <i class="fas fa-print" style="color: #6366f1;"></i> Yazdır
+            </button>
+            <button class="action-btn" onclick="exportSubelerToExcel()">
+                <i class="fas fa-file-excel" style="color: #10b981;"></i> Excel
+            </button>
+            <button class="action-btn primary" onclick="openAddSubeModal()">
+                <i class="fas fa-plus"></i> Yeni Şube
+            </button>
+        </div>
+    </div>
+
+    <!-- Print Only Header -->
+    <div class="print-only-header">
+        <h1>SilverCloud - Şube Yönetimi Raporu</h1>
+        <p>Rapor Tarihi: {{ now().strftime('%d.%m.%Y %H:%M') if now else '—' }}</p>
+    </div>
+
+    <!-- Table Card -->
+    <div class="card-glass" style="padding: 0; overflow: hidden;">
+        <div class="table-container" style="margin-top: 0;">
+            <table id="subeler-table">
+                <thead>
+                    <tr>
+                        <th style="width: 80px;">ID</th>
+                        <th>ŞUBE ADI</th>
+                        <th>AÇIKLAMA</th>
+                        <th style="width: 100px; text-align: center;">AKTİF</th>
+                        <th style="width: 100px; text-align: center;" class="hide-on-print">İŞLEMLER</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sube in all_suber %}
+                    <tr>
+                        <td>{{ sube.Sube_ID }}</td>
+                        <td>{{ sube.Sube_Adi }}</td>
+                        <td>{{ sube.Aciklama or '-' }}</td>
+                        <td style="text-align: center;">
+                            <span style="cursor: pointer;" data-id="{{ sube.Sube_ID }}"
+                                data-status="{{ 'true' if sube.Aktif_Pasif else 'false' }}"
+                                onclick="toggleSubeStatus(this.getAttribute('data-id'), this.getAttribute('data-status') === 'true')">
+                                {% if sube.Aktif_Pasif %}
+                                <span class="status-icon" title="Aktif (Tıklayarak değiştir)">✅</span>
+                                {% else %}
+                                <span class="status-inactive" title="Pasif (Tıklayarak değiştir)">❌</span>
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td style="text-align: center;" class="hide-on-print">
+                            <button class="edit-btn" title="Düzenle" data-sube='{{ sube | tojson | safe }}'
+                                onclick='openEditSubeModal(JSON.parse(this.getAttribute("data-sube")))'>✏️</button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 30px; color: #6b7280;">
+                            <i class="fas fa-inbox"
+                                style="font-size: 24px; display: block; margin-bottom: 8px; color: #d1d5db;"></i>
+                            Kayıtlı şube bulunamadı.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Simple client-side search filtering
+        const searchInput = document.getElementById('sube-search');
+        if (searchInput) {
+            searchInput.addEventListener('keyup', function () {
+                const term = this.value.toLowerCase();
+                const tbody = document.querySelector('#subeler-table tbody');
+                if (!tbody) return;
+
+                const rows = tbody.querySelectorAll('tr');
+                rows.forEach(row => {
+                    if (row.cells.length === 1) return;
+                    const name = row.cells[1].textContent.toLowerCase();
+                    const info = row.cells[2].textContent.toLowerCase();
+                    row.style.display = (name.includes(term) || info.includes(term)) ? '' : 'none';
+                });
+            });
+        }
+    });
+
+    // Custom print: opens a clean new window with just the table
+    function printSubeler() {
+        const table = document.getElementById('subeler-table');
+        if (!table) return;
+
+        // Clone table and remove the "İşlemler" column (last th/td)
+        const clone = table.cloneNode(true);
+        clone.querySelectorAll('th:last-child, td:last-child').forEach(el => el.remove());
+
+        const now = new Date().toLocaleString('tr-TR');
+        const printHtml = `
+            <!DOCTYPE html>
+            <html lang="tr">
+            <head>
+                <meta charset="UTF-8">
+                <title>SilverCloud - Şube Yönetimi Raporu</title>
+                <style>
+                    body { font-family: Arial, sans-serif; padding: 20mm; color: #111; }
+                    h1 { font-size: 20px; margin: 0 0 4px 0; }
+                    p.subtitle { font-size: 12px; color: #666; margin: 0 0 16px 0; border-bottom: 1px solid #ccc; padding-bottom: 10px; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                    th { background: #f3f4f6; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 12px; text-align: left; border: 1px solid #ddd; }
+                    td { padding: 10px 12px; font-size: 13px; border: 1px solid #eee; }
+                    tr:nth-child(even) { background: #fafafa; }
+                </style>
+            </head>
+            <body>
+                <h1>SilverCloud - Şube Yönetimi Raporu</h1>
+                <p class="subtitle">Rapor Tarihi: ${now}</p>
+                ${clone.outerHTML}
+            </body>
+            </html>
+        `;
+
+        const win = window.open('', '_blank', 'width=900,height=700');
+        win.document.write(printHtml);
+        win.document.close();
+        win.focus();
+        win.print();
+        win.onafterprint = () => win.close();
+    }
+
+    // CRUD Functions
+    function openAddSubeModal() {
+        const content = `
+            <form id="subeForm">
+                <div class="form-group">
+                    <label for="Sube_Adi">Şube Adı</label>
+                    <input type="text" id="Sube_Adi" name="Sube_Adi" required>
+                </div>
+                <div class="form-group">
+                    <label for="Aciklama">Açıklama</label>
+                    <textarea id="Aciklama" name="Aciklama"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="Aktif_Pasif" name="Aktif_Pasif" checked> Aktif
+                    </label>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="hideModal()">İptal</button>
+                    <button type="submit" class="btn btn-primary">Kaydet</button>
+                </div>
+            </form>
+        `;
+        showModal('Yeni Şube Ekle', content);
+        document.getElementById('subeForm').addEventListener('submit', handleAddSube);
+    }
+
+    function openEditSubeModal(sube) {
+        const content = `
+            <form id="subeForm">
+                <input type="hidden" id="Sube_ID" name="Sube_ID" value="${sube.Sube_ID}">
+                <div class="form-group">
+                    <label for="Sube_Adi">Şube Adı</label>
+                    <input type="text" id="Sube_Adi" name="Sube_Adi" value="${sube.Sube_Adi}" required>
+                </div>
+                <div class="form-group">
+                    <label for="Aciklama">Açıklama</label>
+                    <textarea id="Aciklama" name="Aciklama">${sube.Aciklama || ''}</textarea>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="Aktif_Pasif" name="Aktif_Pasif" ${sube.Aktif_Pasif ? 'checked' : ''}> Aktif
+                    </label>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="hideModal()">İptal</button>
+                    <button type="submit" class="btn btn-primary">Güncelle</button>
+                </div>
+            </form>
+        `;
+        showModal('Şube Düzenle', content);
+        document.getElementById('subeForm').addEventListener('submit', handleEditSube);
+    }
+
+    async function handleAddSube(e) {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = {
+            Sube_Adi: formData.get('Sube_Adi'),
+            Aciklama: formData.get('Aciklama'),
+            Aktif_Pasif: e.target.Aktif_Pasif.checked
+        };
+
+        try {
+            const response = await fetch('/api/v1/subeler', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (response.ok) {
+                showToast('Şube başarıyla eklendi.');
+                hideModal();
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                const err = await response.json();
+                showToast(err.error || 'Eklenirken hata oluştu.', 'error');
+            }
+        } catch (err) {
+            showToast('Bağlantı hatası.', 'error');
+        }
+    }
+
+    async function handleEditSube(e) {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const subeId = formData.get('Sube_ID');
+        const data = {
+            Sube_Adi: formData.get('Sube_Adi'),
+            Aciklama: formData.get('Aciklama'),
+            Aktif_Pasif: e.target.Aktif_Pasif.checked
+        };
+
+        try {
+            const response = await fetch(`/api/v1/subeler/${subeId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (response.ok) {
+                showToast('Şube başarıyla güncellendi.');
+                hideModal();
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                const err = await response.json();
+                showToast(err.error || 'Güncellenirken hata oluştu.', 'error');
+            }
+        } catch (err) {
+            showToast('Bağlantı hatası.', 'error');
+        }
+    }
+
+    async function toggleSubeStatus(subeId, currentStatus) {
+        if (!confirm('Şube durumunu değiştirmek istediğinize emin misiniz?')) return;
+
+        try {
+            // Fetch Sube data first to get name/desc
+            const res = await fetch(`/api/v1/subeler/${subeId}`);
+            const sube = await res.json();
+
+            const response = await fetch(`/api/v1/subeler/${subeId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...sube, Aktif_Pasif: !currentStatus })
+            });
+            if (response.ok) {
+                showToast('Şube durumu güncellendi.');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast('Hata oluştu.', 'error');
+            }
+        } catch (err) {
+            showToast('Bağlantı hatası.', 'error');
+        }
+    }
+
+    // Export Excel
+    function exportSubelerToExcel() {
+        const table = document.getElementById('subeler-table');
+        const wb = XLSX.utils.table_to_book(table, { sheet: "Şube Listesi" });
+
+        // Remove 'İşlemler' column from the export if desired, but here we just export as is or filter
+        XLSX.writeFile(wb, "Sube_Listesi.xlsx");
+    }
+</script>
+{% endblock %}

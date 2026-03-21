@@ -1,0 +1,421 @@
+{% extends "base.html" %}
+
+{% block title %}Stok Tanımlama - SilverCloud{% endblock %}
+
+{% block nav_stok_tanimlama %}active{% endblock %}
+{% block acc_stok %}active{% endblock %}
+{% block acc_stok_content %}open{% endblock %}
+
+{% block extra_style %}
+<style>
+    :root {
+        --premium-blue: #4f46e5;
+        --premium-bg: rgba(255, 255, 255, 0.8);
+        --glass-border: rgba(255, 255, 255, 0.3);
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        color: #1e293b;
+        font-weight: 700;
+        font-size: 1.5rem;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .search-container {
+        position: relative;
+        width: 300px;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 0.6rem 1rem 0.6rem 2.5rem;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+    }
+
+    .search-input:focus {
+        border-color: var(--premium-blue);
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        outline: none;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 0.8rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #64748b;
+    }
+
+    .btn-premium {
+        background: var(--premium-blue);
+        color: white;
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        border: none;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+
+    .btn-premium:hover {
+        background: #4338ca;
+        transform: translateY(-1px);
+    }
+
+    .table-card {
+        background: var(--premium-bg);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .stok-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .stok-table th {
+        background: #f8fafc;
+        padding: 1rem;
+        text-align: left;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: #64748b;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .stok-table td {
+        padding: 1rem;
+        font-size: 0.875rem;
+        color: #334155;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+    }
+
+    .stok-table tr:hover {
+        background: rgba(248, 250, 252, 0.5);
+    }
+
+    .stok-code {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    .status-badge {
+        padding: 0.25rem 0.6rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .status-active {
+        background: #dcfce7;
+        color: #15803d;
+    }
+
+    .status-passive {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .btn-icon {
+        padding: 0.5rem;
+        border-radius: 6px;
+        color: #64748b;
+        transition: all 0.2s;
+        border: 1px solid transparent;
+        background: transparent;
+        cursor: pointer;
+    }
+
+    .btn-icon:hover {
+        background: white;
+        color: var(--premium-blue);
+        border-color: #e2e8f0;
+    }
+
+    /* Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+    }
+
+    .modal-content {
+        background: white;
+        margin: 5% auto;
+        padding: 2rem;
+        border-radius: 12px;
+        width: 500px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .modal-header h3 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1e293b;
+    }
+
+    .close-modal {
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #64748b;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 0.4rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.6rem;
+        border-radius: 6px;
+        border: 1px solid #e2e8f0;
+        font-size: 0.9rem;
+    }
+
+    .form-control:focus {
+        border-color: var(--premium-blue);
+        outline: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="sube-page-container">
+    <div class="page-header">
+        <h2 class="page-title">Stok Tanımlama</h2>
+        <div class="action-buttons">
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="stokSearch" class="search-input" placeholder="Stok Ara..."
+                    onkeyup="filterTable()">
+            </div>
+            <button class="btn-premium" onclick="openModal()">
+                <i class="fas fa-plus"></i> Yeni Stok
+            </button>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <table class="stok-table" id="stokTable">
+            <thead>
+                <tr>
+                    <th>Kod</th>
+                    <th>Açıklama</th>
+                    <th>Grup</th>
+                    <th>Birim</th>
+                    <th>Sınıf</th>
+                    <th>Aktif</th>
+                    <th style="text-align: right;">İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stok in stoklar %}
+                <tr data-id="{{ stok.Stok_ID }}">
+                    <td class="stok-code">{{ stok.Malzeme_Kodu }}</td>
+                    <td>{{ stok.Malzeme_Aciklamasi }}</td>
+                    <td>{{ stok.Urun_Grubu }}</td>
+                    <td>{{ stok.Birimi }}</td>
+                    <td>{{ stok.Sinif or '-' }}</td>
+                    <td>
+                        <span class="status-badge {{ 'status-active' if stok.Aktif_Pasif else 'status-passive' }}">
+                            {{ 'Aktif' if stok.Aktif_Pasif else 'Pasif' }}
+                        </span>
+                    </td>
+                    <td style="text-align: right;">
+                        <button class="btn-icon" onclick='editStok({{ {
+                            "Stok_ID": stok.Stok_ID,
+                            "Malzeme_Kodu": stok.Malzeme_Kodu,
+                            "Malzeme_Aciklamasi": stok.Malzeme_Aciklamasi,
+                            "Urun_Grubu": stok.Urun_Grubu,
+                            "Birimi": stok.Birimi,
+                            "Sinif": stok.Sinif,
+                            "Aktif_Pasif": stok.Aktif_Pasif
+                        } | tojson }})'>
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Stok Modal -->
+<div id="stokModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">Yeni Stok</h3>
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+        </div>
+        <form id="stokForm">
+            <input type="hidden" id="stok_id">
+            <div class="form-group">
+                <label>Malzeme Kodu</label>
+                <input type="text" id="malzeme_kodu" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>Açıklama</label>
+                <input type="text" id="malzeme_aciklamasi" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>Ürün Grubu</label>
+                <input type="text" id="urun_grubu" class="form-control" list="grup_list" required>
+                <datalist id="grup_list">
+                    {% for g in urun_grupları %}<option value="{{ g }}">{% endfor %}
+                </datalist>
+            </div>
+            <div style="display: flex; gap: 1rem;">
+                <div class="form-group" style="flex: 1;">
+                    <label>Birim</label>
+                    <input type="text" id="birimi" class="form-control" list="birim_list" required>
+                    <datalist id="birim_list">
+                        {% for b in birimler %}<option value="{{ b }}">{% endfor %}
+                    </datalist>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label>Sınıf</label>
+                    <input type="text" id="sinif" class="form-control" list="sinif_list">
+                    <datalist id="sinif_list">
+                        {% for s in siniflar %}<option value="{{ s }}">{% endfor %}
+                    </datalist>
+                </div>
+            </div>
+            <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 1rem;">
+                <input type="checkbox" id="aktif_pasif" checked>
+                <label for="aktif_pasif" style="margin-bottom: 0;">Aktif mi?</label>
+            </div>
+            <button type="submit" class="btn-premium" style="width: 100%; margin-top: 1.5rem; justify-content: center;">
+                Kaydet
+            </button>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const modal = document.getElementById('stokModal');
+    const stokForm = document.getElementById('stokForm');
+
+    function openModal() {
+        document.getElementById('modalTitle').innerText = 'Yeni Stok';
+        stokForm.reset();
+        document.getElementById('stok_id').value = '';
+        document.getElementById('malzeme_kodu').readOnly = false;
+        modal.style.display = 'block';
+    }
+
+    function closeModal() {
+        modal.style.display = 'none';
+    }
+
+    window.onclick = function (event) {
+        if (event.target == modal) closeModal();
+    }
+
+    function editStok(stok) {
+        document.getElementById('modalTitle').innerText = 'Stok Düzenle';
+        document.getElementById('stok_id').value = stok.Stok_ID;
+        document.getElementById('malzeme_kodu').value = stok.Malzeme_Kodu;
+        document.getElementById('malzeme_kodu').readOnly = true;
+        document.getElementById('malzeme_aciklamasi').value = stok.Malzeme_Aciklamasi;
+        document.getElementById('urun_grubu').value = stok.Urun_Grubu;
+        document.getElementById('birimi').value = stok.Birimi;
+        document.getElementById('sinif').value = stok.Sinif || '';
+        document.getElementById('aktif_pasif').checked = stok.Aktif_Pasif;
+        modal.style.display = 'block';
+    }
+
+    stokForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('stok_id').value;
+        const method = id ? 'PUT' : 'POST';
+        const url = id ? `/api/v1/stok/${id}` : '/api/v1/stok';
+
+        const data = {
+            Malzeme_Kodu: document.getElementById('malzeme_kodu').value,
+            Malzeme_Aciklamasi: document.getElementById('malzeme_aciklamasi').value,
+            Urun_Grubu: document.getElementById('urun_grubu').value,
+            Birimi: document.getElementById('birimi').value,
+            Sinif: document.getElementById('sinif').value,
+            Aktif_Pasif: document.getElementById('aktif_pasif').checked
+        };
+
+        try {
+            const response = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                location.reload();
+            } else {
+                const err = await response.json();
+                alert('Hata: ' + (err.error || 'İşlem başarısız'));
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Sunucu hatası!');
+        }
+    };
+
+    function filterTable() {
+        const query = document.getElementById('stokSearch').value.toLowerCase();
+        const rows = document.querySelectorAll('#stokTable tbody tr');
+        rows.forEach(row => {
+            const text = row.innerText.toLowerCase();
+            row.style.display = text.includes(query) ? '' : 'none';
+        });
+    }
+</script>
+{% endblock %}

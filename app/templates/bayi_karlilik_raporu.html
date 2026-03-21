@@ -1,0 +1,483 @@
+{% extends "base.html" %}
+
+{% block title %}Bayi Karlılık Raporu - SilverCloud{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<style>
+    /* Standard Report Container styling matching fatura_raporu.html */
+    .report-container {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        color: #334155;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 24px;
+        background-color: #f8fafc;
+        min-height: calc(100vh - 60px);
+    }
+
+    .card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+
+    /* Redesigned Top Bar */
+    .top-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: white;
+        padding: 16px 24px;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        margin-bottom: 24px;
+    }
+
+    .top-bar-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .icon-box {
+        width: 48px;
+        height: 48px;
+        background-color: #3b82f6; /* blue-500 */
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+    }
+
+    .top-bar-title h1 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin: 0;
+        line-height: 1.2;
+    }
+
+    .top-bar-title p {
+        font-size: 0.875rem;
+        color: #64748b;
+        margin: 4px 0 0 0;
+    }
+
+    .top-bar-right {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .btn-action {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
+        color: white;
+    }
+
+    .btn-excel {
+        background-color: #10b981; /* green-500 */
+    }
+    .btn-excel:hover {
+        background-color: #059669;
+    }
+
+    .btn-pdf {
+        background-color: #ef4444; /* red-500 */
+    }
+    .btn-pdf:hover {
+        background-color: #dc2626;
+    }
+
+    .filter-form-inline {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0;
+    }
+
+    .filter-icon {
+        color: #64748b;
+        font-size: 1.1rem;
+    }
+
+    .select-inline {
+        height: 38px;
+        padding: 6px 32px 6px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #0f172a;
+        background-color: white;
+        outline: none;
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+        background-position: right 8px center;
+        background-repeat: no-repeat;
+        background-size: 1.5em 1.5em;
+    }
+
+    .select-inline:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 1px #3b82f6;
+    }
+
+    /* Table Wrapper */
+    .report-table-wrapper {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        overflow-x: auto;
+        background: white;
+    }
+
+    .table {
+        width: 100%;
+        min-width: 1200px;
+        border-collapse: collapse;
+        text-align: right;
+    }
+
+    .table th {
+        background-color: #f8fafc;
+        color: #64748b;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 12px 16px;
+        border-bottom: 1px solid #e2e8f0;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .table th:first-child {
+        text-align: left;
+        position: sticky;
+        left: 0;
+        background-color: #f8fafc;
+        z-index: 10;
+        border-right: 1px solid #e2e8f0;
+    }
+
+    .table th.th-toplam {
+        border-left: 2px solid #e2e8f0;
+    }
+
+    .table tbody tr {
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f8fafc;
+    }
+
+    .table td {
+        padding: 10px 16px;
+        font-size: 0.875rem;
+        color: #334155;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    .table td.cell-label {
+        text-align: left;
+        font-weight: 500;
+        font-family: inherit;
+        position: sticky;
+        left: 0;
+        background-color: inherit;
+        z-index: 5;
+        border-right: 1px solid #e2e8f0;
+        background: #ffffff;
+    }
+    
+    .table tbody tr:hover td.cell-label {
+        background-color: #f8fafc;
+    }
+
+    .table td.cell-toplam {
+        border-left: 2px solid #e2e8f0;
+        font-weight: 600;
+        background-color: #f8fafc;
+    }
+
+    .row-bold td {
+        font-weight: 600;
+        color: #0f172a;
+    }
+
+    .row-kar-zarar {
+        background-color: #dcfce7 !important;
+    }
+
+    .row-kar-zarar td {
+        color: #166534 !important;
+        font-weight: 700 !important;
+    }
+
+    .row-kar-zarar td.cell-label {
+        background-color: #dcfce7;
+    }
+    
+    .table tbody tr.row-kar-zarar:hover td.cell-label, 
+    .table tbody tr.row-kar-zarar:hover {
+        background-color: #bbf7d0 !important;
+    }
+
+    .row-separator td {
+        background-color: #f1f5f9;
+        height: 6px;
+        padding: 0;
+    }
+
+    .diger-toggle-row {
+        cursor: pointer;
+        background-color: #f8fafc;
+    }
+    
+    .diger-toggle-row:hover {
+        background-color: #f1f5f9 !important;
+    }
+    
+    .diger-toggle-row:hover td.cell-label {
+        background-color: #f1f5f9;
+    }
+
+    .diger-row {
+        display: none;
+        background-color: #ffffff;
+    }
+
+    .diger-row.show {
+        display: table-row;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+        background: #f1f5f9; 
+    }
+    ::-webkit-scrollbar-thumb {
+        background: #cbd5e1; 
+        border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8; 
+    }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
+{% endblock %}
+
+{% block content %}
+{% set bold_labels = [
+"Tabak Sayısı", "Çalışma Gün Sayısı", "Günlük Ziyaretçi Sayısı", "Toplam Ciro",
+"Maliyet", "Maliyet %", "Personel Sayısı", "Personel Sayısı (Sürücü Sayısı Hariç)",
+"Toplam Maaş Gideri", "Toplam Maaş Gideri (Sürücü Maaşı Hariç)",
+"Personel Maaş Giderleri; SGK, Stopaj (Muhtasar) Dahil", "Ortalama Kişi Başı Maaş",
+"Maaş Giderleri %", "VPS (Personel Başına Ziyaretçi)", "VPS (Personel Başına Ziyaretçi Sayısı)",
+"Toplam Kira", "Toplam Kira %", "Paket Komisyon ve Lojistik Giderleri",
+"Paket Komisyon ve Lojistik (Paket Satış) %", "Diğer Detay Toplamı",
+"Toplam Diğer Giderler", "Diğer Giderler %", "Ciro Primi ve Reklam Primi",
+"Ciro Primi ve Reklam %", "Toplam Kar / Zarar", "Toplam Kar / Zarar %"
+] %}
+
+{% set separator_labels = [
+"Günlük Ziyaretçi Sayısı", "Restoran Ciro", "Maliyet %",
+"VPS (Personel Başına Ziyaretçi)", "VPS (Personel Başına Ziyaretçi Sayısı)",
+"Toplam Kira", "Toplam Kira %", "Paket Komisyon ve Lojistik (Paket Satış) %",
+"Diğer Giderler %", "Ciro Primi ve Reklam %"
+] %}
+
+{% set months = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"] %}
+{% set yr_suffix = (secili_year|string)[2:] if secili_year else (years[0]|string)[2:] %}
+
+<div class="report-container">
+    <!-- Redesigned Top Bar -->
+    <div class="top-bar">
+        <div class="top-bar-left">
+            <div class="icon-box">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="top-bar-title">
+                <h1>Bayi Karlılık Raporu</h1>
+                <p>Detaylı finansal analiz ve performans takibi</p>
+            </div>
+        </div>
+        
+        <div class="top-bar-right">
+            <button class="btn-action btn-excel" onclick="exportToExcel()">
+                <i class="fas fa-download"></i> Excel'e Aktar
+            </button>
+            <button class="btn-action btn-pdf" onclick="window.print()">
+                <i class="far fa-file-pdf"></i> PDF olarak İndir
+            </button>
+            
+            <form id="filterForm" method="GET" action="/bayi-karlilik-raporu" class="filter-form-inline">
+                {% if subeler|length > 1 %}
+                <i class="fas fa-store filter-icon"></i>
+                <select name="sube_id" class="select-inline" onchange="this.form.submit()">
+                    {% for sube in subeler %}
+                    <option value="{{ sube.Sube_ID }}" {% if sube.Sube_ID==secili_sube_id %}selected{% endif %}>
+                        {{ sube.Sube_Adi }}
+                    </option>
+                    {% endfor %}
+                </select>
+                {% else %}
+                <input type="hidden" name="sube_id" value="{{ subeler[0].Sube_ID if subeler else '' }}">
+                {% endif %}
+
+                <i class="far fa-calendar filter-icon"></i>
+                <select name="year" class="select-inline" style="width: 100px;" onchange="this.form.submit()">
+                    {% for y in years %}
+                    <option value="{{ y }}" {% if y==secili_year %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+
+        <!-- Report Table -->
+        <div class="report-table-wrapper">
+            <table class="table" id="reportTable">
+                <thead>
+                    <tr>
+                        <th style="width: 20%;">Şube Raporu Adı</th>
+                        {% for m in months %}
+                        <th>{{ m }}{{ yr_suffix }}</th>
+                        {% endfor %}
+                        <th class="th-toplam">Toplam</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if report_data and report_data.processedExcelRows %}
+                    {% for row in report_data.processedExcelRows %}
+                    {% set is_karzarar = 'toplam kar' in row['label']|lower %}
+                    <tr class="{% if row['label'] in bold_labels %}row-bold{% endif %} {% if is_karzarar %}row-kar-zarar{% endif %}">
+                        <td class="cell-label">{{ row['label'] }}</td>
+                        {% for val in row['values'] %}
+                        <td>
+                            {% if val %}
+                                {% if row['category'] == 'percentage' or ' %' in row['label'] %}
+                                    {{ "{:,.2f}%".format(val).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                                {% elif row['category'] == 'operasyonel' and 'Ziyaretçi' not in row['label'] %}
+                                    {{ "{:,.0f}".format(val).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                                {% else %}
+                                    {{ "{:,.2f}".format(val).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                                {% endif %}
+                            {% else %}
+                                0,00
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                        <td class="cell-toplam">
+                            {% if row['category'] == 'percentage' or ' %' in row['label'] %}
+                                {{ "{:,.2f}%".format(row['total']).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                            {% elif row['category'] == 'operasyonel' and 'Ziyaretçi' not in row['label'] %}
+                                {{ "{:,.0f}".format(row['total']).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                            {% else %}
+                                {{ "{:,.2f}".format(row['total']).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% if row['label'] in separator_labels %}
+                    <tr class="row-separator"><td colspan="14"></td></tr>
+                    {% endif %}
+                    {% endfor %}
+
+                    {# Diğer Detayı Collapsible Section #}
+                    <tr class="diger-toggle-row row-bold" onclick="toggleDiger()">
+                        <td class="cell-label">
+                            <i class="fas fa-chevron-down mr-2" id="digerChevron" style="width: 16px; color: #64748b; margin-right: 8px;"></i>
+                            Diğer Detayı
+                        </td>
+                        <td colspan="13"></td>
+                    </tr>
+                    {% for row in report_data.processedDigerRows %}
+                    <tr class="diger-row">
+                        <td class="cell-label" style="padding-left: 32px;">{{ row['label'] }}</td>
+                        {% for val in row['values'] %}
+                        <td>{{ "{:,.2f}".format(val or 0).replace(',', 'X').replace('.', ',').replace('X', '.') }}</td>
+                        {% endfor %}
+                        <td class="cell-toplam">{{ "{:,.2f}".format(row['total'] or 0).replace(',', 'X').replace('.', ',').replace('X', '.') }}</td>
+                    </tr>
+                    {% endfor %}
+
+                    <tr class="row-separator"><td colspan="14"></td></tr>
+
+                    {# Summary Rows (More) #}
+                    {% for row in report_data.processedMoreRows %}
+                    {% set is_karzarar = 'toplam kar' in row['label']|lower %}
+                    <tr class="{% if row['label'] in bold_labels %}row-bold{% endif %} {% if is_karzarar %}row-kar-zarar{% endif %}">
+                        <td class="cell-label">{{ row['label'] }}</td>
+                        {% for val in row['values'] %}
+                        <td>
+                            {% if row['category'] == 'percentage' or ' %' in row['label'] %}
+                                {{ "{:,.2f}%".format(val or 0).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                            {% else %}
+                                {{ "{:,.2f}".format(val or 0).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                        <td class="cell-toplam">
+                            {% if row['category'] == 'percentage' or ' %' in row['label'] %}
+                                {{ "{:,.2f}%".format(row['total'] or 0).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                            {% else %}
+                                {{ "{:,.2f}".format(row['total'] or 0).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% if row['label'] in separator_labels %}
+                    <tr class="row-separator"><td colspan="14"></td></tr>
+                    {% endif %}
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="14" style="text-align: center; padding: 48px; color: #64748b;">
+                            <i class="fas fa-search" style="font-size: 3rem; opacity: 0.3; margin-bottom: 16px;"></i>
+                            <p style="margin: 0;">Seçilen kriterlere uygun veri bulunamadı.</p>
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function toggleDiger() {
+        const rows = document.querySelectorAll('.diger-row');
+        const chevron = document.getElementById('digerChevron');
+        rows.forEach(r => r.classList.toggle('show'));
+        chevron.classList.toggle('fa-chevron-down');
+        chevron.classList.toggle('fa-chevron-right');
+    }
+
+    function exportToExcel() {
+        const table = document.getElementById('reportTable');
+        const wb = XLSX.utils.table_to_book(table, { sheet: "Bayi Karlılık Raporu" });
+        XLSX.writeFile(wb, `Bayi_Karlilik_Raporu_${new Date().getTime()}.xlsx`);
+    }
+</script>
+{% endblock %}

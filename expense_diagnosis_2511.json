@@ -1,0 +1,320 @@
+{
+  "e_Fatura": [
+    {
+      "parent": "Satıştan İndirimler & Komisyonlar",
+      "child": "Yemek Çekleri Komisyonu",
+      "amount": 27765.66
+    },
+    {
+      "parent": "Satışların Maliyeti",
+      "child": "Cola",
+      "amount": 68286.58
+    },
+    {
+      "parent": "Diğer Giderler",
+      "child": "Zuccaciye",
+      "amount": 56099.38
+    },
+    {
+      "parent": "Satışların Maliyeti",
+      "child": "Tavuk Dünyası",
+      "amount": 734706.8
+    },
+    {
+      "parent": "Satışların Maliyeti",
+      "child": "Donuk Urun (Fasdat patates)",
+      "amount": 39280.85
+    },
+    {
+      "parent": "Satışların Maliyeti",
+      "child": "Hal",
+      "amount": 22003.74
+    },
+    {
+      "parent": "Diğer Giderler",
+      "child": "Yonetim Gideri",
+      "amount": 16301.83
+    },
+    {
+      "parent": "Satışların Maliyeti",
+      "child": "Donuk Ekmek(G2M)",
+      "amount": 31611.37
+    },
+    {
+      "parent": "Satışların Maliyeti",
+      "child": "Ayran/Süt (Seher)",
+      "amount": 7819.22
+    },
+    {
+      "parent": "Satıştan İndirimler & Komisyonlar",
+      "child": "Yemek Sepeti (Online) Komisyonu",
+      "amount": 136486.32
+    },
+    {
+      "parent": "Diğer Giderler",
+      "child": "Bakım Onarım",
+      "amount": 10680.2
+    },
+    {
+      "parent": "Diğer Giderler",
+      "child": "Temizlik Giderleri",
+      "amount": 175.45
+    },
+    {
+      "parent": "Diğer Giderler",
+      "child": "Kırtasiye",
+      "amount": 2210.0
+    },
+    {
+      "parent": "Diğer Giderler",
+      "child": "Personel Yemek Giderleri",
+      "amount": 615.5
+    },
+    {
+      "parent": "Satışların Maliyeti",
+      "child": "Gunluk Eksik Gıda",
+      "amount": 1632.0
+    },
+    {
+      "parent": "Kira Giderleri",
+      "child": "Ortak Gider",
+      "amount": 4242.76
+    },
+    {
+      "parent": "Diğer Giderler",
+      "child": "Elektrik",
+      "amount": 56033.95
+    },
+    {
+      "parent": "Kira Giderleri",
+      "child": "Sabit Kira",
+      "amount": 144405.0
+    },
+    {
+      "parent": "Kira Giderleri",
+      "child": "Depo Kira",
+      "amount": 1572.31
+    },
+    {
+      "parent": "Diğer Giderler",
+      "child": "Doğalgaz Gideri",
+      "amount": 8623.0
+    },
+    {
+      "parent": "Diğer Giderler",
+      "child": "İnternet ve Telefon",
+      "amount": 1323.0
+    },
+    {
+      "parent": "Diğer Giderler",
+      "child": "İlaçlama",
+      "amount": 2026.5
+    },
+    {
+      "parent": "Bilgi",
+      "child": "Bölünmüş Fatura",
+      "amount": 168634.76
+    },
+    {
+      "parent": "TD Ciro/Reklam Primi & Lojistik",
+      "child": "Tavuk Dünyası Reklam Primi",
+      "amount": 13174.0
+    },
+    {
+      "parent": "TD Ciro/Reklam Primi & Lojistik",
+      "child": "Tavuk Dünyası Lojistik",
+      "amount": 36888.0
+    },
+    {
+      "parent": "TD Ciro/Reklam Primi & Lojistik",
+      "child": "Tavuk Dünyası Ciro Primi",
+      "amount": 118572.76
+    }
+  ],
+  "Odeme": [
+    {
+      "parent": "Ödeme Sistemleri",
+      "child": "Kendi Hesabına Transfer",
+      "amount": 0.0
+    },
+    {
+      "parent": "Ödeme Sistemleri",
+      "child": "Fasdat Ödemesi",
+      "amount": -60384.21
+    },
+    {
+      "parent": "Ödeme Sistemleri",
+      "child": "Cola Ödemesi",
+      "amount": -73712.56
+    },
+    {
+      "parent": "Ödeme Sistemleri",
+      "child": "Seher Gıda Ödemesi",
+      "amount": -18257.57
+    },
+    {
+      "parent": "Ödeme Sistemleri",
+      "child": "G2M Ödemesi",
+      "amount": -51961.45
+    },
+    {
+      "parent": "Ödeme Sistemleri",
+      "child": "Kübra Şerbetçi Ödemesi",
+      "amount": -43698.91
+    },
+    {
+      "parent": "Ödeme Sistemleri",
+      "child": "İGDAŞ Ödemesi",
+      "amount": -7688.0
+    },
+    {
+      "parent": "Ödeme Sistemleri",
+      "child": "DBS Ödemesi",
+      "amount": -976682.53
+    },
+    {
+      "parent": "Ödeme Sistemleri",
+      "child": "ATM Para Yatırma",
+      "amount": 181950.0
+    },
+    {
+      "parent": "Ödeme Sistemleri",
+      "child": "Muhasebeci Ödemesi",
+      "amount": -15000.0
+    },
+    {
+      "parent": "Ödeme Sistemleri",
+      "child": "BES Ödemesi",
+      "amount": -2186.0
+    },
+    {
+      "parent": "Ödeme Sistemleri",
+      "child": "Kredi Kartı Ödemesi",
+      "amount": 1635929.5
+    },
+    {
+      "parent": "Ödeme Sistemleri",
+      "child": "Kredi Kartı Komisyon ve  BSMV Ödemesi",
+      "amount": -168.31
+    },
+    {
+      "parent": "Ödeme Sistemleri",
+      "child": "Maaş Ödemesi",
+      "amount": -295112.54
+    },
+    {
+      "parent": "Ödeme Sistemleri",
+      "child": "Yatıtımcıya Ödeme",
+      "amount": -335000.0
+    },
+    {
+      "parent": "Ödeme Sistemleri",
+      "child": "Robotpos Ödemesi",
+      "amount": -4597.99
+    },
+    {
+      "parent": "Ödeme Sistemleri",
+      "child": "Multinet Ödemesi",
+      "amount": 118058.33
+    },
+    {
+      "parent": "Ödeme Sistemleri",
+      "child": "SetCard Ödemesi",
+      "amount": 48507.59
+    },
+    {
+      "parent": "Ödeme Sistemleri",
+      "child": "Türk Telekom Ödemesi",
+      "amount": -1323.0
+    },
+    {
+      "parent": "Ödeme Sistemleri",
+      "child": " Avans Ödemesi",
+      "amount": -69799.0
+    },
+    {
+      "parent": "Ödeme Sistemleri",
+      "child": "Ticket Ödemesi",
+      "amount": 70987.14
+    },
+    {
+      "parent": "Ödeme Sistemleri",
+      "child": "Sodexo Ödemesi",
+      "amount": 76954.21
+    }
+  ],
+  "Diger_Harcama": [
+    {
+      "parent": "Kira Giderleri",
+      "child": "Ciro Kira",
+      "amount": 87371.0
+    },
+    {
+      "parent": "Diğer Giderler",
+      "child": "Su",
+      "amount": 9000.0
+    },
+    {
+      "parent": "Kira Giderleri",
+      "child": "Ortak Gider",
+      "amount": 18300.0
+    },
+    {
+      "parent": "Diğer Giderler",
+      "child": "Kdv / Vergi",
+      "amount": 48206.72
+    },
+    {
+      "parent": "Maaş Giderleri",
+      "child": "Muhtasar (G.Stopaj)",
+      "amount": 33028.44
+    },
+    {
+      "parent": "Maaş Giderleri",
+      "child": "Sgk",
+      "amount": 126347.26
+    },
+    {
+      "parent": "Maaş Giderleri",
+      "child": "Personel Avans",
+      "amount": 69799.0
+    },
+    {
+      "parent": "Maaş Giderleri",
+      "child": "Personel Maaslar",
+      "amount": 254163.14
+    },
+    {
+      "parent": "Satıştan İndirimler & Komisyonlar",
+      "child": "Banka Komisyonu",
+      "amount": 253.19
+    },
+    {
+      "parent": "Diğer Giderler",
+      "child": "Müşavirlik Ücreti",
+      "amount": 15000.0
+    },
+    {
+      "parent": "Diğer Giderler",
+      "child": "Kargo",
+      "amount": 150.0
+    },
+    {
+      "parent": "Diğer Giderler",
+      "child": "Temizlik Giderleri",
+      "amount": 535.25
+    },
+    {
+      "parent": "Diğer Giderler",
+      "child": "Plan Dışı Giderler",
+      "amount": 2000.0
+    }
+  ],
+  "B2B_Ekstre": [
+    {
+      "parent": "E-Ticaret Kredi Kart",
+      "child": "Yemek Sepeti Online ",
+      "amount": 0.0
+    }
+  ]
+}

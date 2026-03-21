@@ -1,0 +1,468 @@
+{% extends "base.html" %}
+
+{% block title %}Stok Sayım - SilverCloud{% endblock %}
+
+{% block nav_stok_sayimi %}active{% endblock %}
+{% block acc_stok %}active{% endblock %}
+{% block acc_stok_content %}open{% endblock %}
+
+{% block extra_style %}
+<style>
+    .sayim-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        background: #f8fafc;
+        border-bottom: 2px solid #e2e8f0;
+        position: sticky;
+        top: 0;
+        z-index: 20;
+    }
+
+    .sayim-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1e293b;
+    }
+
+    .sayim-controls {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .sayim-controls select {
+        padding: 0.4rem 0.6rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        color: #334155;
+    }
+
+    .donem-nav {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .donem-nav button {
+        background: #e2e8f0;
+        border: none;
+        padding: 0.3rem 0.6rem;
+        border-radius: 4px;
+        cursor: pointer;
+        color: #475569;
+        font-size: 0.8rem;
+    }
+
+    .donem-nav button:hover {
+        background: #cbd5e1;
+    }
+
+    .donem-display {
+        font-weight: 700;
+        font-size: 1rem;
+        color: #1e293b;
+        padding: 0.3rem 0.8rem;
+        background: white;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        min-width: 60px;
+        text-align: center;
+    }
+
+    .readonly-notice {
+        color: #dc2626;
+        font-size: 0.8rem;
+        font-style: italic;
+    }
+
+    .toplam-badge {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #1e293b;
+    }
+
+    .toplam-badge span {
+        font-size: 1.3rem;
+        color: #0f172a;
+    }
+
+    .table-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 0 0 8px 8px;
+        overflow: hidden;
+    }
+
+    .sayim-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+    }
+
+    .sayim-table th {
+        background: #f1f5f9;
+        padding: 0.6rem 1rem;
+        text-align: left;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #64748b;
+        border-bottom: 2px solid #e2e8f0;
+        position: sticky;
+        top: 90px;
+        z-index: 15;
+    }
+
+    .sayim-table th.right {
+        text-align: right;
+    }
+
+    .sayim-table td {
+        padding: 0.4rem 1rem;
+        color: #334155;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+    }
+
+    .sayim-table td.right {
+        text-align: right;
+    }
+
+    .sayim-table tr:hover {
+        background: #f8fafc;
+    }
+
+    /* Group header row */
+    .grup-header td {
+        background: #e8f0fe;
+        font-weight: 700;
+        color: #1e40af;
+        font-size: 0.85rem;
+        padding: 0.5rem 1rem;
+        border-bottom: 1px solid #c7d2fe;
+    }
+
+    .kod-cell {
+        font-family: 'Consolas', 'Courier New', monospace;
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    /* Miktar input - minimal, underline style like old program */
+    .miktar-input {
+        width: 90px;
+        padding: 0.2rem 0.4rem;
+        border: none;
+        border-bottom: 1px solid #94a3b8;
+        background: transparent;
+        text-align: right;
+        font-weight: 600;
+        color: #0f172a;
+        font-size: 0.85rem;
+    }
+
+    .miktar-input:focus {
+        outline: none;
+        border-bottom-color: #3b82f6;
+        background: #eff6ff;
+    }
+
+    .miktar-input:disabled {
+        border-bottom-color: transparent;
+        color: #94a3b8;
+        cursor: not-allowed;
+    }
+
+    .fiyat-cell,
+    .tutar-cell {
+        font-family: 'Consolas', 'Courier New', monospace;
+        font-size: 0.82rem;
+    }
+
+    .tutar-cell {
+        font-weight: 600;
+    }
+
+    .btn-kaydet {
+        background: #3b82f6;
+        color: white;
+        border: none;
+        padding: 0.5rem 1.2rem;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .btn-kaydet:hover {
+        background: #2563eb;
+    }
+
+    .btn-kaydet:disabled {
+        background: #94a3b8;
+        cursor: not-allowed;
+    }
+
+    .save-bar {
+        display: flex;
+        justify-content: flex-end;
+        padding: 0.5rem 1rem;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+        position: sticky;
+        top: 52px;
+        z-index: 19;
+    }
+
+    .flash-msg {
+        padding: 0.8rem 1rem;
+        border-radius: 6px;
+        margin: 0.5rem 1rem;
+        font-size: 0.85rem;
+    }
+
+    .flash-success {
+        background: #dcfce7;
+        color: #15803d;
+        border-left: 4px solid #22c55e;
+    }
+
+    .flash-danger {
+        background: #fee2e2;
+        color: #b91c1c;
+        border-left: 4px solid #ef4444;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% set can_edit = (is_admin or secili_donem == current_donem) %}
+
+<!-- Flash messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category, message in messages %}
+<div class="flash-msg flash-{{ category }}">{{ message }}</div>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<form method="POST" action="/stok-sayimi/kaydet" id="sayimForm">
+    <input type="hidden" name="donem" value="{{ secili_donem }}">
+    <input type="hidden" name="sube_id" value="{{ secili_sube_id }}">
+
+    <!-- Header bar -->
+    <div class="sayim-header">
+        <div class="sayim-title">Stok Sayım (Şube: {{ sube_adi }})</div>
+
+        <div class="sayim-controls">
+            <!-- Branch selector (hidden select, shown for admins with multiple branches) -->
+            {% if subeler | length > 1 %}
+            <select id="filterSube" onchange="applyFilters()">
+                {% for s in subeler %}
+                <option value="{{ s.Sube_ID }}" {% if s.Sube_ID==secili_sube_id %}selected{% endif %}>{{ s.Sube_Adi }}
+                </option>
+                {% endfor %}
+            </select>
+            {% endif %}
+
+            <!-- Period navigation -->
+            <div class="donem-nav">
+                <select id="filterDonem" onchange="applyFilters()"
+                    style="padding: 0.4rem 0.6rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; color: #334155; font-weight: 600;">
+                    {% for d in donem_listesi %}
+                    <option value="{{ d.val }}" {% if d.val==secili_donem %}selected{% endif %}>{{ d.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            {% if not can_edit %}
+            <span class="readonly-notice">Bu dönem için veri girişi kapalıdır.</span>
+            {% endif %}
+
+            <div class="toplam-badge">
+                Toplam Stok Değeri: <span id="genelToplam">{{ "{:,.2f}".format(genel_toplam).replace(",",
+                    "X").replace(".", ",").replace("X", ".") }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Save button bar -->
+    {% if can_edit %}
+    <div class="save-bar">
+        <button type="submit" class="btn-kaydet"><i class="fas fa-save"></i> Kaydet</button>
+    </div>
+    {% endif %}
+
+    <!-- Data table -->
+    <div class="table-card">
+        <table class="sayim-table" id="sayimGrid">
+            <thead>
+                <tr>
+                    <th style="width: 130px;">KOD</th>
+                    <th>AÇIKLAMA</th>
+                    <th style="width: 60px;">BİRİM</th>
+                    <th style="width: 110px;" class="right">MİKTAR</th>
+                    <th style="width: 100px;" class="right">BİRİM FİYAT</th>
+                    <th style="width: 120px;" class="right">TOPLAM TUTAR</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for grup, items in gruplu_stoklar.items() %}
+                <!-- Group header -->
+                <tr class="grup-header">
+                    <td colspan="5">{{ grup }}</td>
+                    <td class="right">{{ "{:,.2f}".format(grup_toplamlar[grup]).replace(",", "X").replace(".",
+                        ",").replace("X", ".") }}</td>
+                </tr>
+
+                {% for item in items %}
+                <tr>
+                    <td class="kod-cell">{{ item.Malzeme_Kodu }}</td>
+                    <td>{{ item.Malzeme_Aciklamasi }}</td>
+                    <td>{{ item.Birimi }}</td>
+                    <td class="right">
+                        <input type="text" class="miktar-input" name="miktar_{{ item.Malzeme_Kodu }}"
+                            data-fiyat="{{ item.fiyat if item.fiyat else item.Fiyat }}"
+                            value="{{ '{:,.2f}'.format(item.Miktar).replace(',', 'X').replace('.', ',').replace('X', '.') if item.Miktar is not none else '0,00' }}"
+                            oninput="calculateRowTotal(this)" {% if not can_edit %}disabled{% endif %}
+                            autocomplete="off">
+                    </td>
+                    <td class="right fiyat-cell">{{ "{:,.2f}".format(item.Fiyat).replace(",", "X").replace(".",
+                        ",").replace("X", ".") }}</td>
+                    <td class="right tutar-cell row-total">{{ "{:,.2f}".format(item.Tutar).replace(",",
+                        "X").replace(".", ",").replace("X", ".") }}</td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 2rem; color: #64748b;">
+                        Aktif stok bulunmamaktadır.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</form>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const SECILI_DONEM = {{ secili_donem }};
+    const SUBE_ID = {{ secili_sube_id }};
+
+    function syncHeaderPeriod() {
+        const displayEl = document.getElementById('readonly-period');
+        if (displayEl) {
+            const donemSelect = document.getElementById('filterDonem');
+            if (donemSelect) {
+                const selectedOption = donemSelect.options[donemSelect.selectedIndex];
+                if (selectedOption) {
+                    displayEl.value = selectedOption.text;
+                }
+            }
+        }
+    };
+
+    function applyFilters() {
+        const subeLocal = document.getElementById('filterSube');
+        const subeGlobal = document.getElementById('branch-select');
+        const sube = subeLocal ? subeLocal.value : (subeGlobal ? subeGlobal.value : SUBE_ID);
+
+        const donem = document.getElementById('filterDonem') ? document.getElementById('filterDonem').value : SECILI_DONEM;
+        window.location.href = `/stok-sayimi?sube_id=${sube}&donem=${donem}`;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        syncHeaderPeriod();
+        // Brief interval to win against any competing listeners in base.html
+        const syncInt = setInterval(syncHeaderPeriod, 50);
+        setTimeout(() => clearInterval(syncInt), 1500);
+
+        // Also listen to branch-select change to sync filters if needed
+        const subeGlobal = document.getElementById('branch-select');
+        if (subeGlobal) {
+            subeGlobal.addEventListener('change', applyFilters);
+        }
+    });
+
+    function changeDonem(dir) {
+        // dir: -1 = previous month, +1 = next month
+        let yy = Math.floor(SECILI_DONEM / 100);
+        let mm = SECILI_DONEM % 100;
+        mm += dir;
+        if (mm > 12) { mm = 1; yy += 1; }
+        if (mm < 1) { mm = 12; yy -= 1; }
+        const newDonem = yy * 100 + mm;
+        const sube = document.getElementById('filterSube') ? document.getElementById('filterSube').value : SUBE_ID;
+        window.location.href = `/stok-sayimi?sube_id=${sube}&donem=${newDonem}`;
+    }
+
+    function parseTR(str) {
+        if (!str) return 0;
+        return parseFloat(str.replace(/\./g, '').replace(',', '.')) || 0;
+    }
+
+    function formatTR(num) {
+        return num.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function calculateRowTotal(inputEl) {
+        const miktar = parseTR(inputEl.value);
+        const fiyat = parseFloat(inputEl.getAttribute('data-fiyat')) || 0;
+        const tutar = miktar * fiyat;
+
+        const tr = inputEl.closest('tr');
+        const tutarTd = tr.querySelector('.row-total');
+        if (tutarTd) tutarTd.innerText = formatTR(tutar);
+
+        recalcGroupAndTotal();
+    }
+
+    function recalcGroupAndTotal() {
+        let grandTotal = 0;
+        const rows = document.querySelectorAll('.sayim-table tbody tr');
+        let currentGroupHeader = null;
+        let groupTotal = 0;
+
+        rows.forEach((row, i) => {
+            if (row.classList.contains('grup-header')) {
+                // Write previous group total
+                if (currentGroupHeader) {
+                    const td = currentGroupHeader.querySelector('td.right');
+                    if (td) td.innerText = formatTR(groupTotal);
+                }
+                currentGroupHeader = row;
+                groupTotal = 0;
+            } else {
+                const totalCell = row.querySelector('.row-total');
+                if (totalCell) {
+                    groupTotal += parseTR(totalCell.innerText);
+                }
+            }
+        });
+
+        // Write last group
+        if (currentGroupHeader) {
+            const td = currentGroupHeader.querySelector('td.right');
+            if (td) td.innerText = formatTR(groupTotal);
+        }
+
+        // Grand total
+        document.querySelectorAll('.grup-header').forEach(h => {
+            const td = h.querySelector('td.right');
+            if (td) grandTotal += parseTR(td.innerText);
+        });
+
+        document.getElementById('genelToplam').innerText = formatTR(grandTotal);
+    }
+</script>
+{% endblock %}

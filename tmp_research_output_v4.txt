@@ -1,0 +1,43 @@
+--- EFatura Sample (Komisyon) ---
+Date: 2025-07-22 | Vendor: TAVUK DÜNYASI GIDA SANAYİ VE TİCARET ANONİM ŞİRKETİ | Total: 11044.17 | Desc: 08-14 Temmuz Trendyol Komisyon Yansıtma
+Date: 2025-07-21 | Vendor: TAVUK DÜNYASI GIDA SANAYİ VE TİCARET ANONİM ŞİRKETİ | Total: 2825.25 | Desc: 08-14 Temmuz Getir Komisyon Yansıtma
+Date: 2025-07-18 | Vendor: TAVUK DÜNYASI GIDA SANAYİ VE TİCARET ANONİM ŞİRKETİ | Total: 11319.00 | Desc: 08-14 Temmuz Yemek Sepeti  Komisyon Yansıtma
+Date: 2025-07-18 | Vendor: TAVUK DÜNYASI GIDA SANAYİ VE TİCARET ANONİM ŞİRKETİ | Total: 646.50 | Desc: 08-14 Temmuz Migros Yemek Komisyon Yansıtma
+Date: 2025-07-15 | Vendor: TAVUK DÜNYASI GIDA SANAYİ VE TİCARET ANONİM ŞİRKETİ | Total: 225.00 | Desc: 01-07 Temmuz Migros Yemek Komisyon Yansıtma
+Date: 2025-07-11 | Vendor: TAVUK DÜNYASI GIDA SANAYİ VE TİCARET ANONİM ŞİRKETİ | Total: 12040.05 | Desc: 01-07 Temmuz Trendyol Komisyon Yansıtma
+Date: 2025-07-10 | Vendor: TAVUK DÜNYASI GIDA SANAYİ VE TİCARET ANONİM ŞİRKETİ | Total: 2575.50 | Desc: 01-07 Temmuz Getir Komisyon Yansıtma
+Date: 2025-07-10 | Vendor: TAVUK DÜNYASI GIDA SANAYİ VE TİCARET ANONİM ŞİRKETİ | Total: 8903.26 | Desc: 01-07 Temmuz Yemek Sepeti  Komisyon Yansıtma
+Date: 2025-06-30 | Vendor: TAVUK DÜNYASI GIDA SANAYİ VE TİCARET ANONİM ŞİRKETİ | Total: 35297.85 | Desc: Ocak-Mayıs Trendyol Sodexo Komisyon Yansıtma
+Date: 2025-06-30 | Vendor: TAVUK DÜNYASI GIDA SANAYİ VE TİCARET ANONİM ŞİRKETİ | Total: 39186.42 | Desc: Ocak-Mayıs Trendyol Multinet Komisyon Yansıtma
+Date: 2025-06-30 | Vendor: TAVUK DÜNYASI GIDA SANAYİ VE TİCARET ANONİM ŞİRKETİ | Total: 19564.05 | Desc: Ocak-Şubat-Mart Trendyol Edenred Komisyon Yansıtma
+Date: 2025-06-30 | Vendor: TAVUK DÜNYASI GIDA SANAYİ VE TİCARET ANONİM ŞİRKETİ | Total: 7369.20 | Desc: Nisan-Mayıs Trendyol Edenred Komisyon Yansıtma
+Date: 2025-06-30 | Vendor: TAVUK DÜNYASI GIDA SANAYİ VE TİCARET ANONİM ŞİRKETİ | Total: 219.00 | Desc: Haziran Trendyol Multinet Komisyon Yansıtma
+Date: 2025-06-30 | Vendor: TAVUK DÜNYASI GIDA SANAYİ VE TİCARET ANONİM ŞİRKETİ | Total: 3138.01 | Desc: 29-30 Haziran  Yemek Sepeti  Komisyon Yansıtma
+Date: 2025-06-30 | Vendor: TAVUK DÜNYASI GIDA SANAYİ VE TİCARET ANONİM ŞİRKETİ | Total: 3461.70 | Desc: 29-30 Haziran Trendyol Komisyon Yansıtma
+Date: 2025-06-28 | Vendor: TAVUK DÜNYASI GIDA SANAYİ VE TİCARET ANONİM ŞİRKETİ | Total: 8144.10 | Desc: 22-28 Haziran Trendyol Komisyon Yansıtma
+Date: 2025-06-30 | Vendor: TAVUK DÜNYASI GIDA SANAYİ VE TİCARET ANONİM ŞİRKETİ | Total: 6045.00 | Desc: 22-30 Haziran Getir Komisyon Yansıtma
+Date: 2025-06-28 | Vendor: TAVUK DÜNYASI GIDA SANAYİ VE TİCARET ANONİM ŞİRKETİ | Total: 11130.77 | Desc: 22-28 Haziran  Yemek Sepeti  Komisyon Yansıtma
+Date: 2025-06-28 | Vendor: TAVUK DÜNYASI GIDA SANAYİ VE TİCARET ANONİM ŞİRKETİ | Total: 109.50 | Desc: 22-28 Haziran Migros Yemek Komisyon Yansıtma
+Date: 2025-06-24 | Vendor: TAVUK DÜNYASI GIDA SANAYİ VE TİCARET ANONİM ŞİRKETİ | Total: 2183.25 | Desc: 15-21 Haziran Getir Komisyon Yansıtma
+
+--- B2BEkstre with Borc > 0 (Likely Commissions) ---
+Date: 2025-07-31 | Desc: 22-31 Temmuz Trendyol Komisyon Yansıtma | Borc: 18813.30
+Date: 2025-07-31 | Desc: HAŞERE İLAÇLAMA BEDELİ TEMMUZ | Borc: 840.00
+Date: 2025-07-31 | Desc: HAŞERE İLAÇLAMA BEDELİ TEMMUZ | Borc: 840.00
+Date: 2025-07-31 | Desc: CANLI YAKALAMA MONİTÖRÜ | Borc: 234.00
+Date: 2025-07-31 | Desc: CANLI YAKALAMA YAPIŞKANI | Borc: 94.50
+Date: 2025-07-31 | Desc:  | Borc: 16145.69
+Date: 2025-07-31 | Desc: 1-31 Temmuz Ciro Prim Gelirleri | Borc: 163903.55
+Date: 2025-07-31 | Desc: 22-31 Temmuz Getir Komisyon Yansıtma | Borc: 6058.50
+Date: 2025-07-31 | Desc: 29-31 Temmuz Migros Yemek Komisyon Yansıtma | Borc: 454.50
+Date: 2025-07-31 | Desc:  | Borc: 4902.54
+Date: 2025-07-31 | Desc: 29-31 Temmuz Yemek Sepeti  Komisyon Yansıtma | Borc: 6152.28
+Date: 2025-07-31 | Desc:  | Borc: 30586.52
+Date: 2025-07-30 | Desc: 15-21 Temmuz Trendyol Komisyon Yansıtma | Borc: 7085.85
+Date: 2025-07-29 | Desc:  | Borc: 13333.49
+Date: 2025-07-29 | Desc: BRANDIUM AVM-Elektirk arızası | Borc: 15552.00
+Date: 2025-07-29 | Desc: 15-21 Temmuz Migros Yemek Komisyon Yansıtma | Borc: 433.26
+Date: 2025-07-29 | Desc:  | Borc: 9060.21
+Date: 2025-07-29 | Desc:  | Borc: 23772.82
+Date: 2025-07-29 | Desc: 22-28 Temmuz Migros Yemek Komisyon Yansıtma | Borc: 438.00
+Date: 2025-07-29 | Desc: 15-21 Temmuz Yemek Sepeti  Komisyon Yansıtma | Borc: 9148.50

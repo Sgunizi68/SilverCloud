@@ -1,0 +1,25 @@
+Total B2BEkstre records: 2685
+
+--- B2BEkstre Sample (All) ---
+ID: 40 | Date: 2025-07-31 | Desc: 22-31 Temmuz Trendyol Komisyon Yansıtma | Borc: 18813.30 | Alacak: 0.00 | Sube: 1
+ID: 41 | Date: 2025-07-31 | Desc: HAŞERE İLAÇLAMA BEDELİ TEMMUZ | Borc: 840.00 | Alacak: 0.00 | Sube: 1
+ID: 42 | Date: 2025-07-31 | Desc: HAŞERE İLAÇLAMA BEDELİ TEMMUZ | Borc: 840.00 | Alacak: 0.00 | Sube: 1
+ID: 43 | Date: 2025-07-31 | Desc: CANLI YAKALAMA MONİTÖRÜ | Borc: 234.00 | Alacak: 0.00 | Sube: 1
+ID: 44 | Date: 2025-07-31 | Desc: CANLI YAKALAMA YAPIŞKANI | Borc: 94.50 | Alacak: 0.00 | Sube: 1
+ID: 45 | Date: 2025-07-31 | Desc:  | Borc: 16145.69 | Alacak: 0.00 | Sube: 1
+ID: 46 | Date: 2025-07-31 | Desc: 22-31 Temmuz Getir Online Alacak Virmanları | Borc: 0.00 | Alacak: -20195.00 | Sube: 1
+ID: 47 | Date: 2025-07-31 | Desc: 29-31 Temmuz Migros Yemek Online Alacak Virmanları | Borc: 0.00 | Alacak: -1515.00 | Sube: 1
+ID: 48 | Date: 2025-07-31 | Desc: 1-31 Temmuz Ciro Prim Gelirleri | Borc: 163903.55 | Alacak: 0.00 | Sube: 1
+ID: 49 | Date: 2025-07-31 | Desc: 22-31 Temmuz Getir Komisyon Yansıtma | Borc: 6058.50 | Alacak: 0.00 | Sube: 1
+ID: 50 | Date: 2025-07-31 | Desc: 29-31 Temmuz Yemek Sepeti Online Alacak Virmanları | Borc: 0.00 | Alacak: -20507.50 | Sube: 1
+ID: 51 | Date: 2025-07-31 | Desc: 29-31 Temmuz Migros Yemek Komisyon Yansıtma | Borc: 454.50 | Alacak: 0.00 | Sube: 1
+ID: 52 | Date: 2025-07-31 | Desc:  | Borc: 4902.54 | Alacak: 0.00 | Sube: 1
+ID: 53 | Date: 2025-07-31 | Desc: 29-31 Temmuz Yemek Sepeti  Komisyon Yansıtma | Borc: 6152.28 | Alacak: 0.00 | Sube: 1
+ID: 54 | Date: 2025-07-31 | Desc:  | Borc: 30586.52 | Alacak: 0.00 | Sube: 1
+ID: 55 | Date: 2025-07-30 | Desc: 15-21 Temmuz Trendyol Komisyon Yansıtma | Borc: 7085.85 | Alacak: 0.00 | Sube: 1
+ID: 56 | Date: 2025-07-30 | Desc: Gönderen:Gümüşbulut Danışmanlık Turizm Gıda Sanay- | Borc: 0.00 | Alacak: -19500.00 | Sube: 1
+ID: 57 | Date: 2025-07-30 | Desc: kiradan mal alıma | Borc: 0.00 | Alacak: -20909.00 | Sube: 1
+ID: 58 | Date: 2025-07-29 | Desc: 22-28 Temmuz Migros Yemek Online Alacak Virmanları | Borc: 0.00 | Alacak: -1460.00 | Sube: 1
+ID: 59 | Date: 2025-07-29 | Desc: 29-31 Temmuz Trendyol Online Alacak Virmanları | Borc: 0.00 | Alacak: -15676.00 | Sube: 1
+
+--- B2BEkstre with Alacak > 0 (Distinct Descriptions) ---

@@ -1,9 +1,18 @@
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}SilverCloud{% endblock %}</title>
+    <!-- SheetJS for Excel Exports -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    {% block extra_style %}{% endblock %}
+
     <style>
         * {
             margin: 0;
@@ -20,52 +29,80 @@
 
         .container {
             width: 100%;
-            max-width: 100%;
+            max-width: 100vw;
             display: flex;
+            overflow-x: hidden;
         }
 
-        /* Sidebar */
+        /* Sidebar: fixed height and internally scrollable */
         .sidebar {
             width: 250px;
+            height: 100vh;
+            position: sticky;
+            top: 0;
             background: #1a1a1a;
             color: white;
-            padding: 20px;
-            min-height: 100vh;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+            padding: 15px 10px;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 1000;
         }
 
         .sidebar-header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 15px;
             border-bottom: 2px solid #667eea;
-            padding-bottom: 15px;
+            padding-bottom: 10px;
         }
 
         .sidebar-header h1 {
-            font-size: 20px;
-            margin-bottom: 5px;
+            font-size: 18px;
+            margin-bottom: 3px;
         }
 
         .sidebar-header p {
-            font-size: 12px;
+            font-size: 11px;
             color: #999;
         }
 
+        /* Menu area scrolls if long */
         .sidebar-menu {
             list-style: none;
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 0 5px;
+        }
+
+        /* Custom scrollbar for sidebar */
+        .sidebar-menu::-webkit-scrollbar {
+            width: 4px;
+        }
+        .sidebar-menu::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .sidebar-menu::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 4px;
+        }
+        .sidebar-menu::-webkit-scrollbar-thumb:hover {
+            background: #667eea;
         }
 
         .sidebar-menu li {
-            margin: 10px 0;
+            margin: 2px 0;
         }
 
         .sidebar-menu a {
             color: #ccc;
             text-decoration: none;
             display: block;
-            padding: 10px 15px;
+            padding: 6px 12px;
             border-radius: 5px;
-            transition: all 0.3s;
+            font-size: 13px;
+            transition: all 0.2s;
         }
 
         .sidebar-menu a:hover {
@@ -117,34 +154,123 @@
             pointer-events: none;
         }
 
-        .sidebar-footer {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            right: 20px;
+        /* Sidebar Accordion Styles */
+        .accordion-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            margin-top: 10px;
+            color: #bdc3c7;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: color 0.2s, background 0.2s;
+            border-radius: 4px;
+            user-select: none;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        .user-info {
-            background: #2a2a2a;
+        .accordion-header:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .accordion-header.active {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .accordion-header.active .accordion-icon {
+            transform: rotate(180deg);
+        }
+
+        .accordion-content {
+            display: none;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            padding-left: 10px;
+        }
+
+        .accordion-content.open,
+        .accordion-content.show {
+            display: block;
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
             padding: 10px;
-            border-radius: 5px;
-            margin-bottom: 10px;
-            font-size: 12px;
+            background: rgba(0, 0, 0, 0.2);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .sidebar-footer .user-info {
+            margin-bottom: 8px;
         }
 
         .logout-btn {
             width: 100%;
-            padding: 10px;
-            background: #e74c3c;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background 0.3s;
+            padding: 10px 12px;
+            border-radius: 6px;
         }
 
-        .logout-btn:hover {
-            background: #c0392b;
+        /* Topbar User Profile */
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: background 0.3s;
+            position: relative;
+        }
+
+        .user-profile:hover {
+            background: #f5f5f5;
+        }
+
+        .profile-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+            min-width: 150px;
+            display: none;
+            z-index: 1000;
+            padding: 8px 0;
+        }
+
+        .profile-dropdown.show {
+            display: block;
+        }
+
+        .profile-dropdown form {
+            margin: 0;
+        }
+
+        .profile-dropdown button {
+            width: 100%;
+            text-align: left;
+            padding: 10px 15px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #333;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .profile-dropdown button:hover {
+            background: #f5f5f5;
+            color: #e74c3c;
         }
 
         /* Main Content */
@@ -152,48 +278,94 @@
             flex: 1;
             display: flex;
             flex-direction: column;
+            min-width: 0; /* Important: prevents content from pushing sidebar */
         }
 
         .topbar {
             background: white;
-            padding: 20px 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 15px 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .topbar h2 {
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+            font-weight: 500;
             color: #333;
-            font-size: 24px;
         }
 
         .topbar-right {
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 20px;
+        }
+
+        .topbar-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .topbar-item input[type="text"],
+        .topbar-item select {
+            padding: 6px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .topbar-item input[readonly] {
+            background: #f9f9f9;
+            cursor: default;
         }
 
         .content {
             flex: 1;
             padding: 30px;
             overflow-y: auto;
+            overflow-x: hidden; /* Page-level horizontal scroll disabled */
+            min-width: 0;
         }
 
         /* Cards */
         .card {
             background: white;
             border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
             padding: 20px;
             margin-bottom: 20px;
         }
 
-        .card h3 {
-            color: #333;
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #667eea;
             margin-bottom: 15px;
+            padding-bottom: 10px;
+        }
+
+        .card-header h3 {
+            color: #333;
+            margin: 0;
+            border: none;
+            padding: 0;
+        }
+
+        /* Dashboard overrides for card h3 since dashboard has different style */
+        .dashboard-content .card h3 {
             border-bottom: 2px solid #667eea;
             padding-bottom: 10px;
+            margin-bottom: 15px;
         }
 
         /* Forms */
@@ -304,6 +476,9 @@
         table th {
             font-weight: 600;
             color: #333;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         table tbody tr:hover {
@@ -384,11 +559,652 @@
             }
         }
 
-        {% block extra_style %}{% endblock %}
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            backdrop-filter: blur(2px);
+        }
+
+        .modal-overlay.show {
+            display: flex;
+        }
+
+        .modal-container {
+            background: white;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            /* Prevents modal from overflowing screen */
+            display: flex;
+            flex-direction: column;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            animation: modalFadeIn 0.3s ease;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            padding: 15px 20px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 18px;
+            color: #1e293b;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #64748b;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            /* Allows scrolling if content is too large */
+        }
+
+        .modal-footer {
+            padding: 15px 20px;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+
+
+        /* Print Styles - Enhanced for a professional report look */
+        @media print {
+
+            .sidebar,
+            .topbar,
+            .action-bar,
+            .action-btn,
+            .search-input,
+            .edit-btn,
+            .hide-on-print,
+            .sidebar-header,
+            .sidebar-menu,
+            .sidebar-footer,
+            .topbar-left,
+            .topbar-right,
+            #toastContainer,
+            .modal-overlay {
+                display: none !important;
+            }
+
+            /* Reset layout for print */
+            body,
+            html {
+                background: white !important;
+                height: auto !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .container {
+                display: block !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .main-content {
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                display: block !important;
+            }
+
+            .content {
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 10mm !important;
+                display: block !important;
+            }
+
+            .card,
+            .card-glass {
+                box-shadow: none !important;
+                border: none !important;
+                border-radius: 0 !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                background: white !important;
+                display: block !important;
+            }
+
+            .sube-page-container {
+                display: block !important;
+                padding: 0 !important;
+            }
+
+            /* Table formatting for print */
+            table {
+                width: 100% !important;
+                border-collapse: collapse !important;
+                margin-top: 15px !important;
+            }
+
+            th {
+                background-color: #f3f4f6 !important;
+                color: #000 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                border: 1px solid #ddd !important;
+            }
+
+            td {
+                border: 1px solid #eee !important;
+                color: #000 !important;
+            }
+
+            /* Specific headers for print */
+            .print-only-header {
+                display: block !important;
+                margin-bottom: 20px !important;
+                border-bottom: 2px solid #333 !important;
+                padding-bottom: 10px !important;
+            }
+
+            .print-only-header h1 {
+                margin: 0;
+                font-size: 24px;
+                color: #000;
+            }
+
+            .print-only-header p {
+                margin: 5px 0 0 0;
+                font-size: 12px;
+                color: #666;
+            }
+        }
+
+        /* Default: Hide print header on screen */
+        .print-only-header {
+            display: none;
+        }
     </style>
 </head>
+
 <body>
-    {% block body %}{% endblock %}
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1>🌐 SilverCloud</h1>
+                <p>v2.0.0</p>
+            </div>
+
+            <!-- Menu Groups with Permission-Based Disabled State -->
+            <ul class="sidebar-menu" id="menu">
+                <!-- Dashboard -->
+                <li id="menu-dashboard">
+                    <a href="/dashboard" class="{% block nav_dashboard %}{% endblock %}"
+                        data-permission="Dashboard Ekranı Görüntüleme" title="Dashboard">📊 Dashboard</a>
+                </li>
+
+                <!-- Sistem Tabloları -->
+                <li>
+                    <div class="accordion-header {% block acc_sistem_tablolari %}{% endblock %}"
+                        id="acc-sistem-tablolari">
+                        <span>SİSTEM TABLOLARI</span>
+                        <span class="accordion-icon">▼</span>
+                    </div>
+                    <ul class="accordion-content {% block acc_sistem_tablolari_content %}{% endblock %}">
+                        <li><a href="/subeler" class="{% block nav_subeler %}{% endblock %}"
+                                data-permission="Şube Yönetimi Ekranı Görüntüleme" title="Şube Yönetimi">🏢 Şube
+                                Yönetimi</a></li>
+                        <li><a href="/degerler" data-permission="Değer Yönetimi Ekranı Görüntüleme"
+                                title="Değer Yönetimi">💰 Değer Yönetimi</a></li>
+                        <li><a href="/kullanicilar" data-permission="Kullanıcı Yönetimi Ekranı Görüntüleme"
+                                title="Kullanıcı Yönetimi">👥 Kullanıcı Yönetimi</a></li>
+                        <li><a href="/roller" data-permission="Rol Yönetimi Ekranı Görüntüleme" title="Rol Yönetimi">⏱️
+                                Rol Yönetimi</a></li>
+                        <li><a href="/yetkiler" data-permission="Yetki Yönetimi Ekranı Görüntüleme"
+                                title="Yetki Yönetimi">🔑 Yetki Yönetimi</a></li>
+                        <li><a href="/kullanici-rol-atamalari" data-permission="Kullanıcı Rol Atama Ekranı Görüntüleme"
+                                title="Kullanıcı Rol Atama">🛡️
+                                Kullanıcı Rol Atama</a></li>
+                        <li><a href="/rol-yetki-atamalari" data-permission="Rol Yetki Atama Ekranı Görüntüleme"
+                                title="Rol Yetki Atama">🛡️ Rol Yetki Atama</a></li>
+                        <li><a href="/efatura-referans-yonetimi"
+                                data-permission="e-Fatura Referans Yönetimi Ekranı Görüntüleme"
+                                title="e-Fatura Referans Yönetimi">🧾 e-Fatura Referans Yönetimi</a></li>
+                        <li><a href="/odeme-referans-yonetimi"
+                                data-permission="Ödeme Referans Yönetimi Ekran Görüntüleme"
+                                title="Ödeme Referans Yönetimi">🧾 Ödeme Referans Yönetimi</a></li>
+                        <li><a href="/cari-borc-yonetimi" data-permission="Cari Borç Yönetimi Ekranı Görüntüleme"
+                                title="Cari Borç Yönetimi">🧾 Cari Borç Yönetimi</a></li>
+                    </ul>
+                </li>
+
+                <!-- Kategori Sistemi -->
+                <li>
+                    <div class="accordion-header {% block acc_kategori_sistemi %}{% endblock %}" id="acc-kategori-sistemi">
+                        <span>KATEGORİ SİSTEMİ</span>
+                        <span class="accordion-icon">▼</span>
+                    </div>
+                    <ul class="accordion-content {% block acc_kategori_sistemi_content %}{% endblock %}">
+                        <li><a href="/ust-kategori-yonetimi" data-permission="Üst Kategori Yönetimi Ekranı Görüntüleme"
+                                title="Üst Kategori Yönetimi">📁 Üst Kategori Yönetimi</a></li>
+                        <li><a href="/kategori-yonetimi" data-permission="Kategori Yönetimi Ekranı Görüntüleme"
+                                title="Kategori Yönetimi">📂 Kategori Yönetimi</a></li>
+                    </ul>
+                </li>
+
+                <!-- Fatura/Harcama -->
+                <li>
+                    <div class="accordion-header {% block acc_fatura_harcama %}{% endblock %}" id="acc-fatura-harcama">
+                        <span>FATURA/HARCAMA</span>
+                        <span class="accordion-icon">▼</span>
+                    </div>
+                    <ul class="accordion-content {% block acc_fatura_harcama_content %}{% endblock %}">
+                        <li><a href="/fatura-yukleme" data-permission="Fatura Yükleme Ekranı Görüntüleme"
+                                title="Fatura Yükleme">📄 Fatura Yükleme</a></li>
+                        <li><a href="/fatura-kategori-atama" data-permission="Fatura Kategori Atama Ekranı Görüntüleme"
+                                title="Fatura Kategori Atama">🏷️ Fatura Kategori Atama</a></li>
+                        <li><a href="/b2b-ekstre-yukleme" data-permission="B2B Ekstre Yükleme Ekranı Görüntüleme"
+                                title="B2B Ekstre Yükleme">📋 B2B Ekstre Yükleme</a></li>
+                        <li><a href="/fatura-bolme-yonetimi" data-permission="Fatura Bölme Yönetimi Ekranı Görüntüleme"
+                                title="Fatura Bölme Yönetimi">📋 Fatura Bölme Yönetimi</a></li>
+                        <li><a href="/mutabakat-yonetimi" data-permission="Mutabakat Yönetimi Ekranı Görüntüleme"
+                                title="Mutabakat Yönetimi">🤝 Mutabakat Yönetimi</a></li>
+                        <li><a href="/api/v1/efaturalar" data-permission="B2B Kategori Atama Ekranı Görüntüleme"
+                                title="B2B Kategori Atama">🏷️ B2B Kategori Atama</a></li>
+                        <li><a href="/odeme-yukleme" class="{% block nav_odeme_yukleme %}{% endblock %}"
+                                data-permission="Ödeme Yükleme Ekranı Görüntüleme" title="Ödeme Yükleme">💳 Ödeme
+                                Yükleme</a></li>
+                        <li><a href="/odeme-kategori-atama" class="{% block nav_odeme_kategori %}{% endblock %}" 
+                                data-permission="Ödeme Kategori Atama Ekranı Görüntüleme"
+                                title="Ödeme Kategori Atama">🏷️ Ödeme Kategori Atama</a></li>
+                        <li><a href="/diger-harcamalar" class="{% block nav_diger_harcamalar %}{% endblock %}"
+                                data-permission="Diğer Harcamalar Ekranı Görüntüleme" title="Diğer Harcamalar">💰 Diğer
+                                Harcamalar</a></li>
+                        <li><a href="/pos-hareketleri-yukleme" class="{% block nav_pos_yukleme %}{% endblock %}"
+                                data-permission="POS Hareketleri Yükleme Ekranı Görüntüleme"
+                                title="POS Hareketleri Yükleme">📤 POS Hareketleri Yükleme</a></li>
+                        <li><a href="/tabak-sayisi-yukleme" data-permission="Tabak Sayısı Yükleme Ekranı Görüntüleme"
+                                title="Tabak Sayısı Yükleme">🍽️ Tabak Sayısı Yükleme</a></li>
+                        <li><a href="/yemek-ceki" class="{% block nav_yemek_ceki %}{% endblock %}"
+                                data-permission="Yemek Çeki Ekranı Görüntüleme" title="Yemek Çeki">🍴 Yemek Çeki</a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Gelir -->
+                <li>
+                    <div class="accordion-header {% block acc_gelir %}{% endblock %}" id="acc-gelir">
+                        <span>GELİR</span>
+                        <span class="accordion-icon">▼</span>
+                    </div>
+                    <ul class="accordion-content {% block acc_gelir_content %}{% endblock %}">
+                        <li><a href="/gelir-girisi" class="{% block nav_gelir_girisi %}{% endblock %}"
+                                data-permission="Gelir Girişi Ekranı Görüntüleme" title="Gelir Girişi">📈 Gelir
+                                Girişi</a></li>
+                        <li><a href="/nakit-girisi" class="{% block nav_nakit_girisi %}{% endblock %}"
+                                data-permission="Nakit Girişi Ekranı Görüntüleme" title="Nakit Girişi">💵 Nakit
+                                Girişi</a></li>
+                        <li><a href="/nakit-yatirma-kontrol-raporu"
+                                class="{% block nav_nakit_yatirma_kontrol %}{% endblock %}"
+                                title="Nakit Yatırma Kontrol">📊 Nakit Kontrol</a></li>
+                    </ul>
+                </li>
+
+                <!-- Stok -->
+                <li>
+                    <div class="accordion-header {% block acc_stok %}{% endblock %}" id="acc-stok">
+                        <span>STOK</span>
+                        <span class="accordion-icon">▼</span>
+                    </div>
+                    <ul class="accordion-content {% block acc_stok_content %}{% endblock %}">
+                        <li><a href="/stok-tanimlama" class="{% block nav_stok_tanimlama %}{% endblock %}"
+                                data-permission="Stok Tanımlama Ekranı Görüntüleme" title="Stok Tanımlama">📦 Stok
+                                Tanımlama</a></li>
+                        <li><a href="/stok-fiyat-tanimlama" class="{% block nav_stok_fiyat_tanimlama %}{% endblock %}"
+                                data-permission="Stok Fiyat Tanımlama Ekranı Görüntüleme"
+                                title="Stok Fiyat Tanımlama">💲 Stok Fiyat Tanımlama</a></li>
+                        <li><a href="/stok-sayimi" class="{% block nav_stok_sayimi %}{% endblock %}"
+                                data-permission="Stok Sayım Ekranı Görüntüleme" title="Stok Sayım">📊 Stok Sayım</a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Çalışan -->
+                <li>
+                    <div class="accordion-header {% block acc_calisan %}{% endblock %}" id="acc-calisan">
+                        <span>ÇALIŞAN</span>
+                        <span class="accordion-icon">▼</span>
+                    </div>
+                    <ul class="accordion-content {% block acc_calisan_content %}{% endblock %}">
+                        <li><a href="/calisanlar" class="{% block nav_calisanlar %}{% endblock %}"
+                                data-permission="Çalışan Yönetimi Ekranı Görüntüleme" title="Çalışan Yönetimi">👔
+                                Çalışan Yönetimi</a></li>
+                        <li><a href="/puantaj-secim-yonetimi" class="{% block nav_puantaj_secim %}{% endblock %}"
+                                data-permission="Puantaj Seçim Yönetimi Ekranı Görüntüleme"
+                                title="Puantaj Seçim Yönetimi">⏰ Puantaj Seçim Yönetimi</a></li>
+                        <li><a href="/puantaj-girisi" class="{% block nav_puantaj_girisi %}{% endblock %}"
+                                data-permission="Puantaj Girişi Ekranı Görüntüleme" title="Puantaj Girişi">📋 Puantaj
+                                Girişi</a></li>
+                        <li><a href="/avans-talepleri" class="{% block nav_avans_talepleri %}{% endblock %}"
+                                data-permission="Avans Talebi Ekranı Görüntüleme" title="Avans Talebi">💸 Avans
+                                Talebi</a></li>
+                        <li><a href="/calisan-talep-yonetimi" class="{% block nav_calisan_talep %}{% endblock %}"
+                                data-permission="Çalışan Talep Ekranı Görüntüleme" title="Çalışan Talep Yönetimi">📝
+                                Çalışan Talep Yönetimi</a></li>
+                    </ul>
+                </li>
+
+
+                <!-- Rapor -->
+                <li>
+                    <div class="accordion-header {% block acc_rapor %}{% endblock %}" id="acc-rapor">
+                        <span>RAPOR</span>
+                        <span class="accordion-icon">▼</span>
+                    </div>
+                    <ul class="accordion-content {% block acc_rapor_content %}{% endblock %}">
+                        <li><a href="/nakit-yatirma-kontrol-raporu"
+                                class="{% block nav_nakit_yatirma_raporu %}{% endblock %}"
+                                data-permission="Nakit Yatırma Kontrol Raporu Görüntüleme"
+                                title="Nakit Yatırma Kontrol Raporu">💰 Nakit Yatırma Raporu</a></li>
+                        <li><a href="/odeme-rapor" data-permission="Ödeme Rapor Görüntüleme" title="Ödeme Rapor">📊
+                                Ödeme Rapor</a></li>
+                        <li><a href="/fatura-rapor" class="{% block nav_fatura_rapor %}{% endblock %}"
+                                data-permission="Fatura Rapor Görüntüleme" title="Fatura Rapor">📈
+                                Fatura Rapor</a></li>
+                        <li><a href="/fatura-diger-harcama-rapor"
+                                class="{% block nav_fatura_diger_harcama_rapor %}{% endblock %}"
+                                data-permission="Fatura & Diğer Harcama Rapor Görüntüleme"
+                                title="Fatura & Diğer Harcama Raporu">📑 Fatura & Diğer Harcama</a></li>
+                        <li><a href="/pos-kontrol-dashboard" class="{% block nav_pos_kontrol_dashboard %}{% endblock %}"
+                                data-permission="POS Kontrol Dashboard Görüntüleme" title="POS Kontrol Dashboard">🎛️
+                                POS Kontrol Dashboard</a></li>
+                        <li><a href="/online-kontrol-dashboard"
+                                class="{% block nav_online_kontrol_dashboard %}{% endblock %}"
+                                data-permission="Online Kontrol Dashboard Görüntüleme"
+                                title="Online Kontrol Dashboard">🌐 Online Kontrol Dashboard</a></li>
+                        <li><a href="/yemek-ceki-kontrol-dashboard"
+                                class="{% block nav_yemek_ceki_kontrol_dashboard %}{% endblock %}"
+                                data-permission="Yemek Çeki Kontrol Dashboard Görüntüleme"
+                                title="Yemek Çeki Kontrol Dashboard">🍽️ Yemek Çeki Dashboard</a></li>
+                        <li><a href="/vps-dashboard" class="{% block nav_vps_dashboard %}{% endblock %}"
+                                data-permission="VPS Dashboard Görüntüleme" title="VPS Dashboard">🔍
+                                VPS Dashboard</a></li>
+                        <li><a href="/bayi-karlilik-raporu" data-permission="Bayi Karlılık Raporu Görüntüleme"
+                                title="Bayi Karlılık Raporu">💹 Bayi Karlılık Raporu</a></li>
+                        <li><a href="/ozet-kontrol-raporu" class="{% block nav_ozet_kontrol_raporu %}{% endblock %}"
+                                data-permission="Özet Kontrol Raporu Görüntüleme" title="Özet Kontrol Raporu">✓ Özet
+                                Kontrol Raporu</a></li>
+                        <li><a href="/nakit-akis-gelir-raporu"
+                                class="{% block nav_nakit_akis_gelir_raporu %}{% endblock %}"
+                                data-permission="Nakit Akış - Gelir Raporu Görüntüleme" title="Nakit Akış - Gelir">💧
+                                Nakit Akış - Gelir</a></li>
+                        <li><a href="/cari-borc-takip-sistemi" data-permission="Cari Borç Takip Sistemi Görüntüleme"
+                                title="Cari Borç Takip Sistemi">📌 Cari Borç Takip</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="topbar">
+                <div class="topbar-left">
+                    Hoşgeldiniz, {{ user.Adi_Soyadi if user else 'Misafir' }}
+                </div>
+                <div class="topbar-right">
+                    {% block topbar_right %}
+                    <div class="topbar-item">
+                        <label style="font-weight:600;">Dönem:</label>
+                        <input type="text" id="readonly-period" readonly style="width: 140px; text-align: center;" />
+                    </div>
+                    <div class="topbar-item">
+                        <select id="branch-select" style="min-width: 150px; font-weight: 500;">
+                            {% for s in subeler %}
+                            <option value="{{ s.Sube_ID }}" {% if s.Sube_ID == secili_sube_id %}selected{% endif %}>{{ s.Sube_Adi }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <!-- Hidden inputs for logic to work -->
+                    <input type="month" id="period-month" style="display:none;" />
+                    {% endblock %}
+                    <div class="user-profile" id="userProfileBtn">
+                        <div style="font-size: 20px;">👤</div>
+                        <div style="font-weight: 500;">{{ user.Kullanici_Adi if user else 'Misafir' }}</div>
+                        <div style="font-size: 12px;">▼</div>
+                        <div class="profile-dropdown" id="profileDropdown">
+                            <form action="/logout" method="POST">
+                                <button type="submit">🚪 Çıkış Yap</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="content dashboard-content">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Common Modal -->
+    <div class="modal-overlay" id="commonModalOverlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3 id="modalTitle">Modal Title</h3>
+                <button class="modal-close" id="modalCloseBtn">&times;</button>
+            </div>
+            <div id="modalBody" class="modal-body">
+                <!-- Content injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toastContainer" style="position: fixed; bottom: 20px; right: 20px; z-index: 3000; pointer-events: none;">
+    </div>
+
+    <!-- Base Scripts for Sidebar Accordion & Permissions -->
+    <script>
+        // Modal Helper Functions
+        const modalOverlay = document.getElementById('commonModalOverlay');
+        const modalBody = document.getElementById('modalBody');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalCloseBtn = document.getElementById('modalCloseBtn');
+
+        function showModal(title, contentHtml) {
+            modalTitle.textContent = title;
+            modalBody.innerHTML = contentHtml;
+            modalOverlay.classList.add('show');
+        }
+
+        function hideModal() {
+            modalOverlay.classList.remove('show');
+            setTimeout(() => {
+                if (!modalOverlay.classList.contains('show')) {
+                    modalBody.innerHTML = '';
+                }
+            }, 300);
+        }
+
+        if (modalCloseBtn) {
+            modalCloseBtn.addEventListener('click', hideModal);
+        }
+
+        window.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) hideModal();
+        });
+
+        // Toast Helper
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${type === 'error' ? 'error' : 'success'}`;
+            toast.style.marginBottom = '10px';
+            toast.style.minWidth = '250px';
+            toast.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+            toast.style.pointerEvents = 'auto';
+            toast.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                    <span>${type === 'success' ? '✅' : (type === 'error' ? '❌' : 'ℹ️')} ${message}</span>
+                    <span class="alert-close" onclick="this.parentElement.parentElement.remove()" style="margin-left: 10px;">×</span>
+                </div>
+            `;
+            document.getElementById('toastContainer').appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.5s';
+                setTimeout(() => toast.remove(), 500);
+            }, 4000);
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            // Profile Dropdown Toggle
+            const userProfileBtn = document.getElementById('userProfileBtn');
+            const profileDropdown = document.getElementById('profileDropdown');
+            if (userProfileBtn && profileDropdown) {
+                userProfileBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    profileDropdown.classList.toggle('show');
+                });
+
+                document.addEventListener('click', (e) => {
+                    if (!userProfileBtn.contains(e.target)) {
+                        profileDropdown.classList.remove('show');
+                    }
+                });
+            }
+
+            // Global Date Initialization for Header Filters
+            const initBaseDates = () => {
+                const now = new Date();
+                const y = now.getFullYear();
+                const m = now.getMonth() + 1;
+                const months = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+
+                const periodMonthEl = document.getElementById('period-month');
+                if (periodMonthEl && !periodMonthEl.value) {
+                    periodMonthEl.value = `${y}-${String(m).padStart(2, '0')}`;
+                }
+
+                const displayEl = document.getElementById('readonly-period');
+                if (displayEl) {
+                    const yy = String(y).substring(2);
+                    displayEl.value = `${yy}${String(m).padStart(2, '0')} - ${months[now.getMonth()]} ${y}`;
+                }
+            };
+            initBaseDates();
+
+            // Permission logic
+            const branchSelect = document.getElementById('branch-select');
+            const fetchPermissionsBase = () => {
+                // Check if there is an active branch selection somewhere
+                const branchId = branchSelect ? branchSelect.value : null;
+                const url = branchId ? `/api/v1/permissions?sube_id=${branchId}` : `/api/v1/permissions`;
+
+                fetch(url, { method: 'GET', credentials: 'include' })
+                    .then(res => res.ok ? res.json() : { permissions: [] })
+                    .catch(err => {
+                        console.warn('Could not fetch user permissions:', err);
+                        return { permissions: [] };
+                    })
+                    .then(data => {
+                        const userPermissions = (data && data.permissions) ? data.permissions : [];
+                        const menu = document.getElementById('menu');
+                        if (menu) {
+                            menu.querySelectorAll('a[data-permission]').forEach(link => {
+                                const permName = link.getAttribute('data-permission');
+                                const li = link.closest('li');
+                                if (!userPermissions.includes(permName)) {
+                                    if (li) li.style.display = 'none';
+                                } else {
+                                    if (li) li.style.display = '';
+                                }
+                            });
+
+                            const accordions = menu.querySelectorAll('li:has(.accordion-header)');
+                            accordions.forEach(accLi => {
+                                const content = accLi.querySelector('.accordion-content');
+                                if (content) {
+                                    const visibleItems = Array.from(content.querySelectorAll('li')).filter(li => li.style.display !== 'none');
+                                    if (visibleItems.length === 0) {
+                                        accLi.style.display = 'none';
+                                    } else {
+                                        accLi.style.display = '';
+                                    }
+                                }
+                            });
+                        }
+                    });
+            };
+
+            fetchPermissionsBase();
+            if (branchSelect) {
+                branchSelect.addEventListener('change', fetchPermissionsBase);
+            }
+
+            // Accordion Interaction Logic
+            const accHeaders = document.querySelectorAll('.accordion-header');
+            accHeaders.forEach(header => {
+                header.addEventListener('click', () => {
+                    const content = header.nextElementSibling;
+                    const isCurrentlyOpen = content.classList.contains('open');
+
+                    document.querySelectorAll('.accordion-content').forEach(c => {
+                        c.classList.remove('open');
+                    });
+                    document.querySelectorAll('.accordion-header').forEach(h => {
+                        h.classList.remove('active');
+                    });
+
+                    if (!isCurrentlyOpen) {
+                        content.classList.add('open');
+                        header.classList.add('active');
+                    }
+                });
+            });
+
+            // Auto-expand logic: Sync headers with content state on load
+            document.querySelectorAll('.accordion-content').forEach(content => {
+                if (content.classList.contains('open') || content.classList.contains('show')) {
+                    const header = content.previousElementSibling;
+                    if (header && header.classList.contains('accordion-header')) {
+                        header.classList.add('active');
+                    }
+                }
+            });
+        });
+    </script>
     {% block scripts %}{% endblock %}
 </body>
+
 </html>

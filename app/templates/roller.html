@@ -1,0 +1,374 @@
+{% extends "base.html" %}
+
+{% block title %}Rol Yönetimi - SilverCloud{% endblock %}
+
+/* Nav active block */
+{% block acc_sistem_tablolari %}active{% endblock %}
+{% block acc_sistem_tablolari_content %}open{% endblock %}
+
+{% block extra_style %}
+<style>
+    .rol-page-container {
+        padding: 20px;
+    }
+
+    .card-glass {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+        transition: transform 0.2s ease;
+    }
+
+    .action-btn {
+        padding: 8px 16px;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        background: white;
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+        background: #f9fafb;
+        border-color: #d1d5db;
+    }
+
+    .action-btn.primary {
+        background: #6366f1;
+        color: white;
+        border-color: #6366f1;
+    }
+
+    .action-btn.primary:hover {
+        background: #4f46e5;
+    }
+
+    .search-input {
+        padding: 8px 12px;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        width: 200px;
+        font-size: 13px;
+        outline: none;
+        background: white;
+    }
+
+    .search-input:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+    }
+
+    .table-container table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .table-container th {
+        background: #fdfdfd;
+        color: #6b7280;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 12px 16px;
+        text-align: left;
+        border-bottom: 1px solid #e5e7eb;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .table-container td {
+        padding: 12px 16px;
+        color: #374151;
+        font-size: 13px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .table-container tr:last-child td {
+        border-bottom: none;
+    }
+
+    .table-container tr:hover {
+        background-color: #f9fafb;
+    }
+
+    .rol-name {
+        color: #4f46e5;
+        font-weight: 600;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        justify-content: center;
+        font-size: 14px;
+    }
+
+    .status-badge.active {
+        color: #10b981;
+    }
+
+    .status-badge.inactive {
+        color: #ef4444;
+    }
+
+    .edit-btn {
+        padding: 5px 10px;
+        background: transparent;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        cursor: pointer;
+        color: #6b7280;
+        transition: all 0.15s;
+    }
+
+    .edit-btn:hover {
+        background: #f3f4f6;
+        color: #374151;
+        border-color: #d1d5db;
+    }
+
+    .delete-btn {
+        padding: 5px 10px;
+        background: transparent;
+        border: 1px solid #fecaca;
+        border-radius: 6px;
+        cursor: pointer;
+        color: #ef4444;
+        transition: all 0.15s;
+    }
+
+    .delete-btn:hover {
+        background: #fef2f2;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="rol-page-container">
+    <!-- Dashboard-style Header Bar -->
+    <div class="card-glass"
+        style="padding: 15px 25px; margin-bottom: 25px; display: flex; flex-direction: row; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div
+                style="width: 40px; height: 40px; border-radius: 10px; background: #6366f1; display: flex; align-items: center; justify-content: center; color: white;">
+                <i class="fas fa-users-cog"></i>
+            </div>
+            <div>
+                <h1 style="margin: 0; font-size: 18px; font-weight: 800; color: #111827;">Rol Yönetimi</h1>
+                <p style="margin: 0; font-size: 12px; color: #6b21a8; font-weight: 500;">Rol Kayıt ve Düzenleme</p>
+            </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <input type="text" class="search-input" placeholder="Rol ara..." id="rol-search">
+            <button class="action-btn" onclick="printRoller()">
+                <i class="fas fa-print" style="color: #6366f1;"></i> Yazdır
+            </button>
+            <button class="action-btn" onclick="exportRollerToExcel()">
+                <i class="fas fa-file-excel" style="color: #10b981;"></i> Excel
+            </button>
+            <button class="action-btn primary" onclick="openAddRolModal()">
+                <i class="fas fa-plus"></i> Yeni Rol
+            </button>
+        </div>
+    </div>
+
+    <!-- Table Card -->
+    <div class="card-glass" style="padding: 0; overflow: hidden;">
+        <div class="table-container">
+            <table id="roller-table">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">ID</th>
+                        <th>ROL ADI</th>
+                        <th>AÇIKLAMA</th>
+                        <th style="width: 80px; text-align: center;">AKTİF</th>
+                        <th style="width: 100px; text-align: center;" class="hide-on-print">İŞLEMLER</th>
+                    </tr>
+                </thead>
+                <tbody id="roller-tbody">
+                    {% for r in roller %}
+                    <tr>
+                        <td>{{ r.Rol_ID }}</td>
+                        <td class="rol-name">{{ r.Rol_Adi }}</td>
+                        <td>{{ r.Aciklama }}</td>
+                        <td style="text-align: center;">
+                            {% if r.Aktif_Pasif %}
+                            <div class="status-badge active" title="Aktif"><i class="far fa-check-circle"></i></div>
+                            {% else %}
+                            <div class="status-badge inactive" title="Pasif"><i class="far fa-times-circle"></i></div>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: center;" class="hide-on-print">
+                            <button class="edit-btn" title="Düzenle" data-rol='{{ r | tojson | safe }}'
+                                onclick='openEditRolModal(JSON.parse(this.getAttribute("data-rol")))'>✏️</button>
+                            <button class="delete-btn" title="Sil" onclick="deleteRol({{ r.Rol_ID }})">🗑️</button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 40px; color: #6b7280;">
+                            <i class="fas fa-inbox"
+                                style="font-size: 28px; display: block; margin-bottom: 8px; color: #d1d5db;"></i>
+                            Kayıtlı rol bulunamadı.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // --- Search ---
+    document.addEventListener('DOMContentLoaded', () => {
+        const searchInput = document.getElementById('rol-search');
+        if (searchInput) {
+            searchInput.addEventListener('keyup', function () {
+                const term = this.value.toLowerCase();
+                document.querySelectorAll('#roller-tbody tr').forEach(row => {
+                    if (row.cells.length === 1) return;
+                    const text = Array.from(row.cells).map(c => c.textContent.toLowerCase()).join(' ');
+                    row.style.display = text.includes(term) ? '' : 'none';
+                });
+            });
+        }
+    });
+
+    // --- Form helpers ---
+    function rolFormHtml(r = {}) {
+        return `
+            <form id="rolForm">
+                <input type="hidden" id="Rol_ID" name="Rol_ID" value="${r.Rol_ID || ''}">
+                <div class="form-group">
+                    <label for="Rol_Adi">Rol Adı *</label>
+                    <input type="text" id="Rol_Adi" name="Rol_Adi" value="${r.Rol_Adi || ''}" required>
+                </div>
+                <div class="form-group">
+                    <label for="Aciklama">Açıklama</label>
+                    <textarea id="Aciklama" name="Aciklama">${r.Aciklama || ''}</textarea>
+                </div>
+                <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin-top: 15px;">
+                    <input type="checkbox" id="Aktif_Pasif" name="Aktif_Pasif" ${(!r.Rol_ID || r.Aktif_Pasif) ? 'checked' : ''} style="width: 18px; height: 18px; cursor: pointer;">
+                    <label for="Aktif_Pasif" style="margin: 0; cursor: pointer; user-select: none;">Aktif Rol</label>
+                </div>
+                <div class="modal-footer" style="margin-top: 20px;">
+                    <button type="button" class="btn btn-secondary" onclick="hideModal()">İptal</button>
+                    <button type="submit" class="btn btn-primary">${r.Rol_ID ? 'Güncelle' : 'Kaydet'}</button>
+                </div>
+            </form>
+        `;
+    }
+
+    function openAddRolModal() {
+        showModal('Yeni Rol Ekle', rolFormHtml());
+        document.getElementById('rolForm').addEventListener('submit', handleAddRol);
+    }
+
+    function openEditRolModal(r) {
+        showModal('Rol Düzenle', rolFormHtml(r));
+        document.getElementById('rolForm').addEventListener('submit', handleEditRol);
+    }
+
+    async function handleAddRol(e) {
+        e.preventDefault();
+        const data = {
+            Rol_Adi: document.getElementById('Rol_Adi').value,
+            Aciklama: document.getElementById('Aciklama').value,
+            Aktif_Pasif: document.getElementById('Aktif_Pasif').checked,
+        };
+        try {
+            const res = await fetch('/api/v1/roller', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+            });
+            if (res.ok) { showToast('Rol başarıyla eklendi.'); hideModal(); setTimeout(() => location.reload(), 900); }
+            else { const err = await res.json(); showToast(err.error || 'Eklenirken hata oluştu.', 'error'); }
+        } catch { showToast('Bağlantı hatası.', 'error'); }
+    }
+
+    async function handleEditRol(e) {
+        e.preventDefault();
+        const id = document.getElementById('Rol_ID').value;
+        const data = {
+            Rol_Adi: document.getElementById('Rol_Adi').value,
+            Aciklama: document.getElementById('Aciklama').value,
+            Aktif_Pasif: document.getElementById('Aktif_Pasif').checked,
+        };
+
+        try {
+            const res = await fetch(`/api/v1/roller/${id}`, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+            });
+            if (res.ok) { showToast('Rol başarıyla güncellendi.'); hideModal(); setTimeout(() => location.reload(), 900); }
+            else { const err = await res.json(); showToast(err.error || 'Güncellenirken hata oluştu.', 'error'); }
+        } catch { showToast('Bağlantı hatası.', 'error'); }
+    }
+
+    async function deleteRol(id) {
+        if (!confirm('Bu rolü silmek istediğinize emin misiniz?')) return;
+        try {
+            const res = await fetch(`/api/v1/roller/${id}`, { method: 'DELETE' });
+            if (res.ok || res.status === 204) { showToast('Rol silindi.'); setTimeout(() => location.reload(), 900); }
+            else {
+                const err = await res.json();
+                showToast(err.error || 'Silinirken hata oluştu.', 'error');
+            }
+        } catch { showToast('Bağlantı hatası.', 'error'); }
+    }
+
+    // --- Excel Export ---
+    function exportRollerToExcel() {
+        const table = document.getElementById('roller-table');
+        const wb = XLSX.utils.table_to_book(table, { sheet: "Rol Listesi" });
+        XLSX.writeFile(wb, "Rol_Listesi.xlsx");
+    }
+
+    // --- Print ---
+    function printRoller() {
+        const table = document.getElementById('roller-table');
+        if (!table) return;
+        const clone = table.cloneNode(true);
+        // İŞLEMLER column removal
+        clone.querySelectorAll('th:last-child, td:last-child').forEach(el => el.remove());
+
+        // Convert icons to text for printing
+        clone.querySelectorAll('.status-badge').forEach(el => {
+            if (el.classList.contains('active')) {
+                el.textContent = 'Aktif';
+            } else {
+                el.textContent = 'Pasif';
+            }
+            el.className = '';
+        });
+
+        const now = new Date().toLocaleString('tr-TR');
+        const html = `<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">
+            <title>Rol Yönetimi Raporu</title>
+            <style>body{font-family:Arial,sans-serif;padding:20mm;color:#111}
+            h1{font-size:20px;margin:0 0 4px}p{font-size:12px;color:#666;border-bottom:1px solid #ccc;padding-bottom:10px;margin-bottom:16px}
+            table{width:100%;border-collapse:collapse}th{background:#f3f4f6;font-size:11px;text-transform:uppercase;padding:10px 12px;text-align:left;border:1px solid #ddd}
+            td{padding:10px 12px;font-size:13px;border:1px solid #eee}tr:nth-child(even){background:#fafafa}</style>
+            </head><body><h1>SilverCloud - Rol Yönetimi Raporu</h1><p>Rapor Tarihi: ${now}</p>${clone.outerHTML}</body></html>`;
+        const win = window.open('', '_blank', 'width=900,height=700');
+        win.document.write(html);
+        win.document.close();
+        win.focus();
+        win.print();
+        win.onafterprint = () => win.close();
+    }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+{% endblock %}

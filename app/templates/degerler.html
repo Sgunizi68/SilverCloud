@@ -1,0 +1,366 @@
+{% extends "base.html" %}
+
+{% block title %}Değer Yönetimi - SilverCloud{% endblock %}
+
+/* Nav active block */
+{% block acc_sistem_tablolari %}active{% endblock %}
+{% block acc_sistem_tablolari_content %}open{% endblock %}
+
+{% block extra_style %}
+<style>
+    .deger-page-container {
+        padding: 20px;
+    }
+
+    .card-glass {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+        transition: transform 0.2s ease;
+    }
+
+    .action-btn {
+        padding: 8px 16px;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        background: white;
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+        background: #f9fafb;
+        border-color: #d1d5db;
+    }
+
+    .action-btn.primary {
+        background: #6366f1;
+        color: white;
+        border-color: #6366f1;
+    }
+
+    .action-btn.primary:hover {
+        background: #4f46e5;
+    }
+
+    .search-input {
+        padding: 8px 12px;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        width: 200px;
+        font-size: 13px;
+        outline: none;
+        background: white;
+    }
+
+    .search-input:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+    }
+
+    .table-container table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .table-container th {
+        background: #fdfdfd;
+        color: #6b7280;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 12px 16px;
+        text-align: left;
+        border-bottom: 1px solid #e5e7eb;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .table-container td {
+        padding: 12px 16px;
+        color: #374151;
+        font-size: 13px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .table-container tr:last-child td {
+        border-bottom: none;
+    }
+
+    .table-container tr:hover {
+        background-color: #f9fafb;
+    }
+
+    .deger-name {
+        color: #4f46e5;
+        font-weight: 600;
+    }
+
+    .deger-value {
+        font-family: monospace;
+        font-size: 14px;
+        color: #059669;
+        font-weight: 700;
+    }
+
+    .aciklama-cell {
+        max-width: 400px;
+        color: #6b7280;
+        font-size: 12px;
+        line-height: 1.5;
+    }
+
+    .edit-btn {
+        padding: 5px 10px;
+        background: transparent;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        cursor: pointer;
+        color: #6b7280;
+        transition: all 0.15s;
+    }
+
+    .edit-btn:hover {
+        background: #f3f4f6;
+        color: #374151;
+        border-color: #d1d5db;
+    }
+
+    .delete-btn {
+        padding: 5px 10px;
+        background: transparent;
+        border: 1px solid #fecaca;
+        border-radius: 6px;
+        cursor: pointer;
+        color: #ef4444;
+        transition: all 0.15s;
+    }
+
+    .delete-btn:hover {
+        background: #fef2f2;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="deger-page-container">
+    <!-- Dashboard-style Header Bar -->
+    <div class="card-glass"
+        style="padding: 15px 25px; margin-bottom: 25px; display: flex; flex-direction: row; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <div
+                style="width: 40px; height: 40px; border-radius: 10px; background: #6366f1; display: flex; align-items: center; justify-content: center; color: white;">
+                <i class="fas fa-tags"></i>
+            </div>
+            <div>
+                <h1 style="margin: 0; font-size: 18px; font-weight: 800; color: #111827;">Değer Yönetimi</h1>
+                <p style="margin: 0; font-size: 12px; color: #6b21a8; font-weight: 500;">Çarpan ve Oran Değerleri</p>
+            </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <input type="text" class="search-input" placeholder="Değer ara..." id="deger-search">
+            <button class="action-btn" onclick="printDegerler()">
+                <i class="fas fa-print" style="color: #6366f1;"></i> Yazdır
+            </button>
+            <button class="action-btn" onclick="exportDegerlerToExcel()">
+                <i class="fas fa-file-excel" style="color: #10b981;"></i> Excel
+            </button>
+            <button class="action-btn primary" onclick="openAddDegerModal()">
+                <i class="fas fa-plus"></i> Yeni Değer
+            </button>
+        </div>
+    </div>
+
+    <!-- Table Card -->
+    <div class="card-glass" style="padding: 0; overflow: hidden;">
+        <div class="table-container">
+            <table id="degerler-table">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">ID</th>
+                        <th>DEĞER ADI</th>
+                        <th style="width: 130px;">BAŞLANGIÇ TARİHİ</th>
+                        <th style="width: 130px;">BİTİŞ TARİHİ</th>
+                        <th style="width: 80px; text-align: right;">DEĞER</th>
+                        <th>AÇIKLAMA</th>
+                        <th style="width: 100px; text-align: center;" class="hide-on-print">İŞLEMLER</th>
+                    </tr>
+                </thead>
+                <tbody id="degerler-tbody">
+                    {% for d in degerler %}
+                    <tr>
+                        <td>{{ d.Deger_ID }}</td>
+                        <td class="deger-name">{{ d.Deger_Adi }}</td>
+                        <td>{{ d.Gecerli_Baslangic_Tarih }}</td>
+                        <td>{{ d.Gecerli_Bitis_Tarih }}</td>
+                        <td style="text-align: right;" class="deger-value">{{ "%.2f"|format(d.Deger) }}</td>
+                        <td class="aciklama-cell">{{ d.Deger_Aciklama }}</td>
+                        <td style="text-align: center;" class="hide-on-print">
+                            <button class="edit-btn" title="Düzenle" data-deger='{{ d | tojson | safe }}'
+                                onclick='openEditDegerModal(JSON.parse(this.getAttribute("data-deger")))'>✏️</button>
+                            <button class="delete-btn" title="Sil" onclick="deleteDeger({{ d.Deger_ID }})">🗑️</button>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 40px; color: #6b7280;">
+                            <i class="fas fa-inbox"
+                                style="font-size: 28px; display: block; margin-bottom: 8px; color: #d1d5db;"></i>
+                            Kayıtlı değer bulunamadı.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // --- Search ---
+    document.addEventListener('DOMContentLoaded', () => {
+        const searchInput = document.getElementById('deger-search');
+        if (searchInput) {
+            searchInput.addEventListener('keyup', function () {
+                const term = this.value.toLowerCase();
+                document.querySelectorAll('#degerler-tbody tr').forEach(row => {
+                    if (row.cells.length === 1) return;
+                    const text = Array.from(row.cells).map(c => c.textContent.toLowerCase()).join(' ');
+                    row.style.display = text.includes(term) ? '' : 'none';
+                });
+            });
+        }
+    });
+
+    // --- Form helpers ---
+    function degerFormHtml(d = {}) {
+        return `
+            <form id="degerForm">
+                <input type="hidden" id="Deger_ID" name="Deger_ID" value="${d.Deger_ID || ''}">
+                <div class="form-group">
+                    <label for="Deger_Adi">Değer Adı *</label>
+                    <input type="text" id="Deger_Adi" name="Deger_Adi" value="${d.Deger_Adi || ''}" required>
+                </div>
+                <div class="form-group">
+                    <label for="Deger">Değer *</label>
+                    <input type="number" step="0.0001" id="Deger" name="Deger" value="${d.Deger !== undefined ? d.Deger : ''}" required>
+                </div>
+                <div class="form-group">
+                    <label for="Gecerli_Baslangic_Tarih">Başlangıç Tarihi *</label>
+                    <input type="date" id="Gecerli_Baslangic_Tarih" name="Gecerli_Baslangic_Tarih"
+                        value="${d.Gecerli_Baslangic_Tarih || ''}" required>
+                </div>
+                <div class="form-group">
+                    <label for="Gecerli_Bitis_Tarih">Bitiş Tarihi</label>
+                    <input type="date" id="Gecerli_Bitis_Tarih" name="Gecerli_Bitis_Tarih"
+                        value="${d.Gecerli_Bitis_Tarih || '2100-01-01'}">
+                </div>
+                <div class="form-group">
+                    <label for="Deger_Aciklama">Açıklama</label>
+                    <textarea id="Deger_Aciklama" name="Deger_Aciklama">${d.Deger_Aciklama || ''}</textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="hideModal()">İptal</button>
+                    <button type="submit" class="btn btn-primary">${d.Deger_ID ? 'Güncelle' : 'Kaydet'}</button>
+                </div>
+            </form>
+        `;
+    }
+
+    function openAddDegerModal() {
+        showModal('Yeni Değer Ekle', degerFormHtml());
+        document.getElementById('degerForm').addEventListener('submit', handleAddDeger);
+    }
+
+    function openEditDegerModal(d) {
+        showModal('Değer Düzenle', degerFormHtml(d));
+        document.getElementById('degerForm').addEventListener('submit', handleEditDeger);
+    }
+
+    async function handleAddDeger(e) {
+        e.preventDefault();
+        const data = {
+            Deger_Adi: document.getElementById('Deger_Adi').value,
+            Deger: parseFloat(document.getElementById('Deger').value),
+            Gecerli_Baslangic_Tarih: document.getElementById('Gecerli_Baslangic_Tarih').value,
+            Gecerli_Bitis_Tarih: document.getElementById('Gecerli_Bitis_Tarih').value || '2100-01-01',
+            Deger_Aciklama: document.getElementById('Deger_Aciklama').value,
+        };
+        try {
+            const res = await fetch('/api/v1/degerler', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+            });
+            if (res.ok) { showToast('Değer başarıyla eklendi.'); hideModal(); setTimeout(() => location.reload(), 900); }
+            else { const err = await res.json(); showToast(err.error || 'Eklenirken hata oluştu.', 'error'); }
+        } catch { showToast('Bağlantı hatası.', 'error'); }
+    }
+
+    async function handleEditDeger(e) {
+        e.preventDefault();
+        const id = document.getElementById('Deger_ID').value;
+        const data = {
+            Deger_Adi: document.getElementById('Deger_Adi').value,
+            Deger: parseFloat(document.getElementById('Deger').value),
+            Gecerli_Baslangic_Tarih: document.getElementById('Gecerli_Baslangic_Tarih').value,
+            Gecerli_Bitis_Tarih: document.getElementById('Gecerli_Bitis_Tarih').value || '2100-01-01',
+            Deger_Aciklama: document.getElementById('Deger_Aciklama').value,
+        };
+        try {
+            const res = await fetch(`/api/v1/degerler/${id}`, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+            });
+            if (res.ok) { showToast('Değer başarıyla güncellendi.'); hideModal(); setTimeout(() => location.reload(), 900); }
+            else { const err = await res.json(); showToast(err.error || 'Güncellenirken hata oluştu.', 'error'); }
+        } catch { showToast('Bağlantı hatası.', 'error'); }
+    }
+
+    async function deleteDeger(id) {
+        if (!confirm('Bu değeri silmek istediğinize emin misiniz?')) return;
+        try {
+            const res = await fetch(`/api/v1/degerler/${id}`, { method: 'DELETE' });
+            if (res.ok || res.status === 204) { showToast('Değer silindi.'); setTimeout(() => location.reload(), 900); }
+            else { showToast('Silinirken hata oluştu.', 'error'); }
+        } catch { showToast('Bağlantı hatası.', 'error'); }
+    }
+
+    // --- Excel Export ---
+    function exportDegerlerToExcel() {
+        const table = document.getElementById('degerler-table');
+        const wb = XLSX.utils.table_to_book(table, { sheet: "Değer Listesi" });
+        XLSX.writeFile(wb, "Deger_Listesi.xlsx");
+    }
+
+    // --- Print ---
+    function printDegerler() {
+        const table = document.getElementById('degerler-table');
+        if (!table) return;
+        const clone = table.cloneNode(true);
+        clone.querySelectorAll('th:last-child, td:last-child').forEach(el => el.remove());
+        const now = new Date().toLocaleString('tr-TR');
+        const html = `<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">
+            <title>Değer Yönetimi Raporu</title>
+            <style>body{font-family:Arial,sans-serif;padding:20mm;color:#111}
+            h1{font-size:20px;margin:0 0 4px}p{font-size:12px;color:#666;border-bottom:1px solid #ccc;padding-bottom:10px;margin-bottom:16px}
+            table{width:100%;border-collapse:collapse}th{background:#f3f4f6;font-size:11px;text-transform:uppercase;padding:10px 12px;text-align:left;border:1px solid #ddd}
+            td{padding:10px 12px;font-size:13px;border:1px solid #eee}tr:nth-child(even){background:#fafafa}</style>
+            </head><body><h1>SilverCloud - Değer Yönetimi Raporu</h1><p>Rapor Tarihi: ${now}</p>${clone.outerHTML}</body></html>`;
+        const win = window.open('', '_blank', 'width=900,height=700');
+        win.document.write(html);
+        win.document.close();
+        win.focus();
+        win.print();
+        win.onafterprint = () => win.close();
+    }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+{% endblock %}

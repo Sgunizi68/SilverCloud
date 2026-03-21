@@ -50,18 +50,34 @@ def create_app(config_name: str = "development") -> Flask:
     # Register blueprints (modules)
     from app.modules.auth import auth_bp, web_auth_bp
     from app.modules.reference import reference_bp
+    from app.modules.reference.web_routes import web_reference_bp
     from app.modules.invoicing import invoicing_bp
-    from app.modules.inventory import inventory_bp
-    from app.modules.hr import hr_bp
+    from app.modules.invoicing.web_routes import web_invoicing_bp
+    from app.modules.inventory import inventory_bp, web_inventory_bp
+    from app.modules.hr import hr_bp, web_hr_bp
     from app.modules.reports import reports_bp
     
     app.register_blueprint(auth_bp)
     app.register_blueprint(web_auth_bp)
     app.register_blueprint(reference_bp)
+    app.register_blueprint(web_reference_bp)
     app.register_blueprint(invoicing_bp)
+    app.register_blueprint(web_invoicing_bp)
     app.register_blueprint(inventory_bp)
+    app.register_blueprint(web_inventory_bp)
     app.register_blueprint(hr_bp)
+    app.register_blueprint(web_hr_bp)
     app.register_blueprint(reports_bp)
-    
-    
+    # Custom filters
+    @app.template_filter('date_day_of_week')
+    def date_day_of_week(val):
+        """Returns 1-7 for day of week. Sunday is 0."""
+        from datetime import date
+        if isinstance(val, date):
+            return (val.weekday() + 1) % 7
+        if isinstance(val, tuple) and len(val) == 3:
+            y, m, d = val
+            return (date(y, m, d).weekday() + 1) % 7
+        return 0
+
     return app

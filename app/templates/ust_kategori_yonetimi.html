@@ -1,0 +1,328 @@
+{% extends "base.html" %}
+
+{% block title %}Üst Kategori Yönetimi - SilverCloud{% endblock %}
+
+/* Nav active block */
+{% block acc_kategori_sistemi %}active{% endblock %}
+{% block acc_kategori_sistemi_content %}open{% endblock %}
+
+{% block extra_style %}
+<style>
+    .ref-page-container {
+        padding: 20px;
+    }
+
+    .card-glass {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        margin-bottom: 20px;
+    }
+
+    .header-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .header-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .action-btn {
+        padding: 8px 14px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        background: white;
+        font-size: 13px;
+        font-weight: 500;
+        color: #475569;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+    }
+
+    .action-btn.primary {
+        background: #3b82f6;
+        color: white;
+        border-color: #3b82f6;
+        font-weight: 600;
+    }
+
+    .action-btn.primary:hover {
+        background: #2563eb;
+    }
+
+    .search-input {
+        padding: 8px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        width: 250px;
+        font-size: 13px;
+        outline: none;
+        background: white;
+    }
+
+    .ref-table-wrapper {
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .ref-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .ref-table th {
+        background: #fdfdfd;
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 12px 20px;
+        text-align: left;
+        border-bottom: 1px solid #e2e8f0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .ref-table td {
+        padding: 12px 20px;
+        color: #475569;
+        font-size: 13px;
+        border-bottom: 1px solid #e2e8f0;
+        vertical-align: middle;
+    }
+
+    .ref-table tr:hover {
+        background-color: #f8fafc;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+    }
+
+    .status-active {
+        color: #16a34a;
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+    }
+
+    .status-passive {
+        color: #dc2626;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+    }
+
+    .action-icons {
+        display: flex;
+        gap: 6px;
+        justify-content: flex-end;
+    }
+
+    .icon-btn {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: #64748b;
+    }
+
+    .icon-btn:hover {
+        background: #f8fafc;
+        color: #3b82f6;
+        border-color: #3b82f6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ref-page-container">
+    <div class="card-glass header-bar">
+        <h1 class="header-title">Üst Kategori Yönetimi</h1>
+        <div class="header-actions">
+            <!-- Icons from reference image -->
+            <button class="icon-btn" onclick="window.print()" title="Yazdır"><i class="fas fa-print"></i></button>
+            <button class="icon-btn" onclick="exportToExcel()" title="Excel"><i class="fas fa-download"></i></button>
+            <input type="text" class="search-input" placeholder="Üst Kategori ara..." id="ust-kat-search">
+            <button class="action-btn primary" onclick="openAddModal()">
+                <i class="fas fa-plus"></i> Yeni Üst Kategori
+            </button>
+        </div>
+    </div>
+
+    <div class="card-glass ref-table-wrapper">
+        <table class="ref-table" id="ust-kat-table">
+            <thead>
+                <tr>
+                    <th style="width: 80px;">ID</th>
+                    <th>ÜST KATEGORİ ADI</th>
+                    <th style="width: 100px; text-align: center;">AKTİF</th>
+                    <th style="width: 120px; text-align: center;">İŞLEMLER</th>
+                </tr>
+            </thead>
+            <tbody id="ust-kat-tbody">
+                {% for uk in ust_kategoriler %}
+                <tr data-id="{{ uk.UstKategori_ID }}">
+                    <td>{{ uk.UstKategori_ID }}</td>
+                    <td class="uk-name">{{ uk.UstKategori_Adi }}</td>
+                    <td style="text-align: center;">
+                        <span class="status-badge {{ 'status-active' if uk.Aktif_Pasif else 'status-passive' }}">
+                            <i class="fas {{ 'fa-check' if uk.Aktif_Pasif else 'fa-times' }}"></i>
+                        </span>
+                    </td>
+                    <td class="hide-on-print">
+                        <div class="action-icons">
+                            <button class="icon-btn edit" title="Düzenle"
+                                onclick='openEditModal({{ uk | tojson | safe }})'>
+                                <i class="fas fa-pen"></i>
+                            </button>
+                            <button class="icon-btn delete" title="Sil" style="color: #ef4444;"
+                                onclick="deleteUstKategori({{ uk.UstKategori_ID }}, '{{ uk.UstKategori_Adi | escape }}')">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 40px; color: #94a3b8;">
+                        Henüz üst kategori bulunmuyor.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const searchInput = document.getElementById('ust-kat-search');
+        if (searchInput) {
+            searchInput.addEventListener('input', function () {
+                const term = this.value.toLowerCase();
+                document.querySelectorAll('#ust-kat-tbody tr').forEach(row => {
+                    const name = row.querySelector('.uk-name')?.textContent.toLowerCase() || '';
+                    row.style.display = name.includes(term) ? '' : 'none';
+                });
+            });
+        }
+    });
+
+    function ustKategoriFormHtml(isEdit = false, data = {}) {
+        return `
+            <form id="ustKatForm" data-mode="${isEdit ? 'edit' : 'add'}" data-id="${data.UstKategori_ID || ''}">
+                <div class="form-group" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
+                    <label style="font-size: 13px; font-weight: 600; color: #475569;">Üst Kategori Adı *</label>
+                    <input type="text" id="UstKategori_Adi" class="form-control" 
+                        style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;"
+                        value="${data.UstKategori_Adi || ''}" required>
+                </div>
+                <div class="form-check" style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                    <input type="checkbox" id="Aktif_Pasif" ${data.Aktif_Pasif !== false ? 'checked' : ''}>
+                    <label for="Aktif_Pasif" style="font-size: 14px; cursor: pointer;">Aktif</label>
+                </div>
+                <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="action-btn" onclick="hideModal()">İptal</button>
+                    <button type="submit" class="action-btn primary">Kaydet</button>
+                </div>
+            </form>
+        `;
+    }
+
+    function openAddModal() {
+        showModal('Yeni Üst Kategori', ustKategoriFormHtml(false));
+        document.getElementById('ustKatForm').addEventListener('submit', handleFormSubmit);
+    }
+
+    function openEditModal(data) {
+        showModal('Üst Kategori Düzenle', ustKategoriFormHtml(true, data));
+        document.getElementById('ustKatForm').addEventListener('submit', handleFormSubmit);
+    }
+
+    async function handleFormSubmit(e) {
+        e.preventDefault();
+        const form = e.target;
+        const mode = form.dataset.mode;
+        const id = form.dataset.id;
+        const data = {
+            UstKategori_Adi: document.getElementById('UstKategori_Adi').value.trim(),
+            Aktif_Pasif: document.getElementById('Aktif_Pasif').checked
+        };
+
+        const url = mode === 'add' ? '/api/v1/ust-kategoriler' : `/api/v1/ust-kategoriler/${id}`;
+        const method = mode === 'add' ? 'POST' : 'PUT';
+
+        try {
+            const res = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (res.ok) {
+                showToast(mode === 'add' ? 'Kayıt eklendi.' : 'Kayıt güncellendi.');
+                hideModal();
+                setTimeout(() => location.reload(), 800);
+            } else {
+                const err = await res.json();
+                showToast(err.error || 'İşlem başarısız.', 'error');
+            }
+        } catch { showToast('Sunucu bağlantı hatası.', 'error'); }
+    }
+
+    async function deleteUstKategori(id, name) {
+        if (!confirm(`'${name}' üst kategorisini silmek istediğinize emin misiniz?`)) return;
+        try {
+            const res = await fetch(`/api/v1/ust-kategoriler/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                showToast('Kayıt silindi.');
+                setTimeout(() => location.reload(), 800);
+            } else {
+                const err = await res.json();
+                showToast(err.error || 'Silinirken hata oluştu.', 'error');
+            }
+        } catch { showToast('Sunucu bağlantı hatası.', 'error'); }
+    }
+
+    function exportToExcel() {
+        const table = document.getElementById('ust-kat-table');
+        const wb = XLSX.utils.table_to_book(table, { sheet: "Üst Kategoriler" });
+        XLSX.writeFile(wb, "SilverCloud_UstKategoriler.xlsx");
+    }
+</script>
+{% endblock %}

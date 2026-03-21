@@ -1,0 +1,548 @@
+{% extends "base.html" %}
+{% block title %}VPS Dashboard{% endblock %}
+{% block nav_vps_dashboard %}active{% endblock %}
+
+{% block extra_style %}
+<style>
+    :root {
+        --primary-dark: #1e293b;
+        --accent-blue: #3b82f6;
+        --accent-green: #10b981;
+        --accent-red: #ef4444;
+        --accent-purple: #8b5cf6;
+        --glass-bg: rgba(255, 255, 255, 0.75);
+        --glass-border: rgba(255, 255, 255, 0.4);
+    }
+
+    /* Fixed Viewport Setup */
+    .dashboard-content {
+        padding: 0 !important;
+        overflow: hidden !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="vps-viewport-wrapper">
+    <style>
+
+        .vps-viewport-wrapper {
+            display: flex;
+            height: calc(100vh - 64px);
+            width: 100%;
+            overflow: hidden;
+            background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+        }
+
+        /* Main Data Area */
+        .vps-data-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: 1.5rem 2rem;
+            width: 100%;
+        }
+
+        .vps-scrollable-content {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+
+        /* Integrated Header Filters */
+        .report-header-compact {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            padding: 0.75rem 1.5rem;
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+        }
+
+        .header-left {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .report-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #1e293b, #475569);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
+        }
+
+        .filter-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .filter-item label {
+            font-weight: 700;
+            font-size: 0.75rem;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+
+        .vps-select {
+            border: 2px solid white;
+            border-radius: 12px;
+            padding: 0.4rem 1rem;
+            font-size: 0.85rem;
+            background: rgba(255, 255, 255, 0.8);
+            color: #1e293b;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s;
+            min-width: 140px;
+        }
+
+        .vps-select:hover {
+            background: white;
+            transform: translateY(-1px);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Stat Cards Layout */
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 1rem 1.25rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .stat-icon-box {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .icon-blue {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        }
+
+        .icon-green {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .icon-yellow {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+
+        .icon-red {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+
+        .stat-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 0.1rem;
+        }
+
+        .stat-value {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #1e293b;
+        }
+
+        /* Tables and Scrolling */
+        .table-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border-radius: 24px;
+            box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--glass-border);
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+
+        .table-header-dark {
+            background: linear-gradient(90deg, #1e293b 0%, #334155 100%);
+            padding: 1rem 1.5rem;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .vps-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 0.8rem;
+        }
+
+        .vps-table thead th {
+            padding: 0.75rem 0.4rem;
+            background: #f8fafc;
+            color: #475569;
+            font-weight: 700;
+            text-align: center;
+            border-bottom: 2px solid #e2e8f0;
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+        }
+
+        .sticky-col {
+            position: sticky;
+            left: 0;
+            background: #f8fafc !important;
+            z-index: 30 !important;
+            border-right: 2px solid #e2e8f0;
+            padding-left: 1rem !important;
+            text-align: left !important;
+            min-width: 180px;
+        }
+
+        .total-col {
+            position: sticky;
+            right: 0;
+            background: #f8fafc !important;
+            z-index: 25;
+            border-left: 2px solid #e2e8f0;
+            font-weight: 800;
+            color: #1e293b;
+            min-width: 70px;
+        }
+
+        thead th.sticky-col {
+            top: 0;
+            left: 0;
+            z-index: 40 !important;
+        }
+
+        .vps-table tbody td {
+            padding: 0.6rem 0.4rem;
+            border-bottom: 1px solid #f1f5f9;
+            text-align: center;
+            background: white;
+        }
+
+        .metric-icon-small {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.75rem;
+        }
+
+        .weekend-cell {
+            background-color: rgba(239, 68, 68, 0.03) !important;
+            color: #ef4444 !important;
+        }
+
+        .weekend-header {
+            background: linear-gradient(to bottom, #fee2e2, #fecaca) !important;
+            color: #991b1b !important;
+        }
+
+        .avg-label {
+            font-size: 0.65rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .separator-bar {
+            background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+            padding: 0.75rem;
+            text-align: center;
+            font-weight: 700;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+        }
+
+        .number-box {
+            background: #f1f5f9;
+            border-radius: 6px;
+            padding: 0.35rem;
+            font-weight: 700;
+            color: #475569;
+        }
+
+        .total-box {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            color: #1e40af;
+            padding: 0.4rem;
+            border-radius: 6px;
+        }
+
+        .multiplier-badge {
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 0.1rem 0.4rem;
+            border-radius: 6px;
+            border: 1.2px solid;
+            margin-left: 0.4rem;
+        }
+
+        /* Gradient helpers */
+        .bg-gradient-from-blue-500.to-blue-600 {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        }
+
+        .bg-gradient-from-green-500.to-green-600 {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .bg-gradient-from-yellow-500.to-yellow-600 {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+
+        .bg-gradient-from-purple-500.to-purple-600 {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        }
+
+        .bg-gradient-from-orange-500.to-orange-600 {
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+        }
+
+        .bg-gradient-from-indigo-500.to-indigo-600 {
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+
+    <!-- Main Content Area -->
+    <div class="vps-data-area">
+        <header class="report-header-compact">
+            <div class="header-left">
+                <h1 class="report-title">VPS Dashboard</h1>
+                <p style="color: #64748b; font-weight: 500; margin: 0; font-size: 0.75rem;">Verimlilik ve personel
+                    analizi</p>
+            </div>
+            <div class="header-right">
+                <div class="filter-item">
+                    <label>Birim:</label>
+                    <select class="vps-select"
+                        onchange="window.location.href='/vps-dashboard?sube_id=' + this.value + '&donem={{ secili_donem }}'">
+                        {% for s in auth_suber %}
+                        <option value="{{ s.Sube_ID }}" {% if s.Sube_ID==secili_sube_id %}selected{% endif %}>{{
+                            s.Sube_Adi }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label>Dönem:</label>
+                    <select class="vps-select"
+                        onchange="window.location.href='/vps-dashboard?sube_id={{ secili_sube_id }}&donem=' + this.value">
+                        {% for d in donem_listesi %}
+                        <option value="{{ d }}" {% if d==secili_donem %}selected{% endif %}>
+                            {{ d // 100 + 2000 }} / {{ "%02d" % (d % 100) }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </header>
+
+        <div class="vps-scrollable-content">
+            <!-- Stats -->
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="stat-icon-box icon-blue"><i class="fas fa-users"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label">Çalışan Ortalaması</span>
+                        <span class="stat-value">{{ dashboard_data.stats.calisan_ort }}</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-box icon-green"><i class="fas fa-walking"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label">Aktif Çalışan Ort.</span>
+                        <span class="stat-value">{{ dashboard_data.stats.aktif_ort }}</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-box icon-yellow"><i class="fas fa-user-plus"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label">İşe Giren</span>
+                        <span class="stat-value">{{ dashboard_data.stats.ise_giren }}</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-box icon-red"><i class="fas fa-user-minus"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-label">İşten Çıkan</span>
+                        <span class="stat-value">{{ dashboard_data.stats.isten_cikan }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analysis Table -->
+            <div class="table-card">
+                <div class="table-header-dark">
+                    <i class="fas fa-analytics"></i>
+                    <span style="font-weight: 700;">Detaylı Analiz</span>
+                </div>
+                <div class="table-container">
+                    <table class="vps-table">
+                        <thead>
+                            <tr>
+                                <th class="sticky-col">Metrik</th>
+                                {% for day in dashboard_data.dates %}
+                                {% set is_weekend = ((dashboard_data.year, dashboard_data.month, day) |
+                                date_day_of_week) in [0, 6] %}
+                                <th class="{{ 'weekend-header' if is_weekend else '' }}">
+                                    <div
+                                        style="width: 24px; height: 24px; border-radius: 5px; display: flex; align-items: center; justify-content: center; margin: 0 auto; background: {{ '#fecaca' if is_weekend else '#e2e8f0' }}; color: {{ '#991b1b' if is_weekend else '#475569' }}; font-size: 0.75rem;">
+                                        {{ day }}
+                                    </div>
+                                </th>
+                                {% endfor %}
+                                <th class="total-col">Toplam</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in dashboard_data.main_rows %}
+                            <tr>
+                                <td class="sticky-col">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="metric-icon-small bg-gradient-{{ row.color }}"><i
+                                                class="fas fa-{{ row.icon }}"></i></div>
+                                        <div>
+                                            <div style="font-weight: 700; color: #1e293b; font-size: 0.75rem;">{{
+                                                row.label }}</div>
+                                            {% if row.avg %}<div class="avg-label">Ort: {{ row.avg }}</div>{% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                {% for val in row.data_points %}
+                                {% set is_weekend = ((dashboard_data.year, dashboard_data.month, loop.index) |
+                                date_day_of_week) in [0, 6] %}
+                                <td class="{{ 'weekend-cell' if is_weekend else '' }}">
+                                    <div class="number-box">{{ val }}</div>
+                                </td>
+                                {% endfor %}
+                                <td class="total-col">
+                                    <div class="total-box">{{ row.total }}</div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+
+                            <!-- Separator -->
+                            <tr class="no-hover">
+                                <td colspan="{{ dashboard_data.days_in_month + 2 }}" style="padding: 0;">
+                                    <div class="separator-bar"><i class="fas fa-clipboard-list"></i>Puantaj Detayı</div>
+                                </td>
+                            </tr>
+
+                            <!-- Sub Header for Puantaj -->
+                            <tr>
+                                <th class="sticky-col">Puantaj Türü</th>
+                                {% for day in dashboard_data.dates %}
+                                {% set is_weekend = ((dashboard_data.year, dashboard_data.month, day) |
+                                date_day_of_week) in [0, 6] %}
+                                <th class="{{ 'weekend-header' if is_weekend else '' }}">
+                                    <div style="font-size: 0.7rem;">{{ day }}</div>
+                                </th>
+                                {% endfor %}
+                                <th class="total-col">Genel</th>
+                            </tr>
+
+                            {% for row in dashboard_data.puantaj_ozeti %}
+                            <tr>
+                                <td class="sticky-col">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <span style="font-weight: 700; color: #334155; font-size: 0.75rem;">{{ row.label
+                                            }}</span>
+                                        <span class="multiplier-badge"
+                                            style="color: {{ row.color }}; border-color: {{ row.color }}; background: {{ row.color }}15;">{{
+                                            row.multiplier }}</span>
+                                    </div>
+                                </td>
+                                {% for count in row.counts %}
+                                {% set is_weekend = ((dashboard_data.year, dashboard_data.month, loop.index) |
+                                date_day_of_week) in [0, 6] %}
+                                <td class="{{ 'weekend-cell' if is_weekend else '' }}">
+                                    <div
+                                        style="font-size: 0.7rem; font-weight: 800; color: #64748b; background: #f1f5f9; padding: 0.2rem 0.3rem; border-radius: 5px; display: inline-block; min-width: 20px;">
+                                        {{ count }}</div>
+                                </td>
+                                {% endfor %}
+                                <td class="total-col">
+                                    <div style="font-weight: 800; color: #475569;">{{ row.total }}</div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <p style="text-align: center; color: #94a3b8; font-size: 0.75rem; margin-top: 1rem;">© SilverCloud VPS
+                Analiz Modülü</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

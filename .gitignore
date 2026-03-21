@@ -1,6 +1,10 @@
 __pycache__/
 *.pyc
-.env
+.env*
 instance/
 .pytest_cache/
 silvercloud.db
+Gumusbulut/
+Scr*.png
+Scr1.png
+GumusBulut

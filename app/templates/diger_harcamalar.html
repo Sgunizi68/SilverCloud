@@ -1,0 +1,671 @@
+{% extends "base.html" %}
+
+{% block title %}Diğer Harcamalar - SilverCloud{% endblock %}
+{% block nav_diger_harcamalar %}active{% endblock %}
+{% block acc_fatura_harcama %}active{% endblock %}
+{% block acc_fatura_harcama_content %}show{% endblock %}
+
+{% block extra_style %}
+<style>
+    .ref-page-container {
+        padding: 20px;
+    }
+
+    .card-glass {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        margin-bottom: 20px;
+    }
+
+    .header-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .header-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .action-btn {
+        padding: 8px 14px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        background: white;
+        font-size: 13px;
+        font-weight: 500;
+        color: #475569;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+        color: #334155;
+    }
+
+    .action-btn.primary {
+        background: #3b82f6;
+        color: white;
+        border-color: #3b82f6;
+        font-weight: 600;
+    }
+
+    .action-btn.primary:hover {
+        background: #2563eb;
+    }
+
+    .toolbar-input {
+        padding: 8px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 13px;
+        outline: none;
+        background: white;
+        color: #475569;
+    }
+
+    .toolbar-input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+    }
+
+    .search-input {
+        width: 180px;
+    }
+
+    .type-select {
+        width: 120px;
+    }
+
+    .donem-select {
+        width: 160px;
+    }
+
+    /* Table styling */
+    .ref-table-wrapper {
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .ref-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .ref-table th {
+        background: #fdfdfd;
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 12px 20px;
+        text-align: left;
+        border-bottom: 1px solid #e2e8f0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .ref-table td {
+        padding: 10px 20px;
+        color: #475569;
+        font-size: 13px;
+        border-bottom: 1px solid #e2e8f0;
+        vertical-align: middle;
+    }
+
+    .ref-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .ref-table tr:hover {
+        background-color: #f8fafc;
+    }
+
+    .cell-bold {
+        color: #334155;
+        font-weight: 500;
+    }
+
+    .cell-muted {
+        color: #64748b;
+    }
+
+    .text-right {
+        text-align: right !important;
+    }
+
+    .text-center {
+        text-align: center !important;
+    }
+
+    .action-icons {
+        display: flex;
+        gap: 6px;
+        justify-content: flex-end;
+    }
+
+    .icon-btn {
+        width: 28px;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: #64748b;
+    }
+
+    .icon-btn.edit:hover {
+        background: #eff6ff;
+        border-color: #bfdbfe;
+        color: #3b82f6;
+    }
+
+    .icon-btn.delete {
+        color: #ef4444;
+        border-color: #fca5a5;
+    }
+
+    .icon-btn.delete:hover {
+        background: #fef2f2;
+        border-color: #f87171;
+    }
+
+    .checkbox-icon {
+        color: #10b981;
+        font-size: 14px;
+    }
+
+    .checkbox-empty {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 2px;
+    }
+
+    .image-link {
+        color: #3b82f6;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+    }
+
+    .image-link:hover {
+        text-decoration: underline;
+    }
+
+    /* Modal form styling */
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        margin-bottom: 15px;
+    }
+
+    .form-group label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #475569;
+    }
+
+    .form-control {
+        padding: 9px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 14px;
+        outline: none;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .form-control:focus {
+        border-color: #3b82f6;
+    }
+
+    .row {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .col-6 {
+        flex: 1;
+        min-width: calc(50% - 15px);
+    }
+
+    .col-12 {
+        flex: 1;
+        min-width: 100%;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ref-page-container">
+
+    <!-- Header -->
+    <div class="card-glass header-bar">
+        {% set sube_name = '' %}
+        {% for s in subeler %}
+        {% if s.Sube_ID == secili_sube_id %}
+        {% set sube_name = s.Sube_Adi %}
+        {% endif %}
+        {% endfor %}
+        <h1 class="header-title">Diğer Harcamalar (Şube: {{ sube_name or 'Tümü' }})</h1>
+
+        <div class="header-actions">
+            <!-- Print -->
+            <button class="action-btn" onclick="printData()" title="Yazdır">
+                <i class="fas fa-print"></i>
+            </button>
+            <!-- Export -->
+            <button class="action-btn" onclick="exportToExcel()" title="Excel'e Aktar">
+                <i class="fas fa-download"></i>
+            </button>
+            <!-- Search -->
+            <input type="text" class="toolbar-input search-input" placeholder="Alıcı/Belge No ara..." id="searchInput">
+            <!-- Type Filter -->
+            <select class="toolbar-input type-select" id="filterTip">
+                <option value="">Tüm Tipler</option>
+                <option value="Nakit">Nakit</option>
+                <option value="Banka Ödeme">Banka Ödeme</option>
+                <option value="Kredi Kartı">Kredi Kartı</option>
+            </select>
+            <!-- Donem Dropdown -->
+            <select class="toolbar-input donem-select" id="filterDonem" onchange="onDonemChange(this.value)">
+                {% for d in donem_listesi %}
+                <option value="{{ d }}" {% if d==secili_donem %}selected{% endif %}>
+                    {{ d }} &ndash;
+                    {%- set yy = (d // 100) %}
+                    {%- set mm = (d % 100) %}
+                    {%- set ay_adlari = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas',
+                    'Ara'] %}
+                    {{ ay_adlari[mm - 1] if mm >= 1 and mm <= 12 else '' }} {{ 2000 + yy }} </option>
+                        {% endfor %}
+            </select>
+            <!-- New -->
+            <button class="action-btn primary" onclick="openAddModal()">
+                <i class="fas fa-plus"></i> Yeni Harcama
+            </button>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="card-glass ref-table-wrapper">
+        <table class="ref-table" id="dataTable">
+            <thead>
+                <tr>
+                    <th>ALICI ADI</th>
+                    <th>BELGE NO</th>
+                    <th>BELGE TARİHİ</th>
+                    <th class="text-right">TUTAR</th>
+                    <th>KATEGORİ</th>
+                    <th>TİP</th>
+                    <th class="text-center">GÜNLÜK</th>
+                    <th class="text-center">RESİM</th>
+                    <th class="text-right hide-on-print">İŞLEMLER</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                {% for item in harcamalar %}
+                <tr data-alici="{{ item.Alici_Adi|lower }}" data-belgeno="{{ item.Belge_Numarasi|lower }}"
+                    data-tip="{{ item.Harcama_Tipi }}" data-donem="{{ item.Donem }}">
+                    <td class="cell-bold">{{ item.Alici_Adi }}</td>
+                    <td class="cell-muted">{{ item.Belge_Numarasi }}</td>
+                    <td class="cell-muted">{{ item.Belge_Tarihi }}</td>
+                    <td class="text-right cell-bold">₺{{ '{:,.2f}'.format(item.Tutar) }}</td>
+                    <td class="cell-muted">{{ kategori_map.get(item.Kategori_ID, '') }}</td>
+                    <td class="cell-muted">{{ item.Harcama_Tipi }}</td>
+                    <td class="text-center">
+                        {% if item.Gunluk_Harcama %}
+                        <i class="fas fa-check-square checkbox-icon"></i>
+                        {% else %}
+                        <span class="checkbox-empty"></span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        {% if item.has_imaj and item.Imaj_Adi %}
+                        <a href="#" class="image-link"
+                            onclick="viewImage('{{ item.Imaj_Base64 }}', '{{ item.Imaj_Adi }}'); return false;">
+                            <i class="fas fa-download"></i> {{ item.Imaj_Adi }}
+                        </a>
+                        {% endif %}
+                    </td>
+                    <td class="text-right hide-on-print">
+                        <div class="action-icons">
+                            <button class="icon-btn edit" onclick='openEditModal({{ item | tojson | safe }})'
+                                title="Düzenle"><i class="fas fa-pen"></i></button>
+                            <button class="icon-btn delete" onclick="deleteRecord({{ item.Harcama_ID }})" title="Sil"><i
+                                    class="fas fa-trash-alt"></i></button>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" class="text-center cell-muted" style="padding: 40px;">
+                        Kayıt bulunamadı.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<!-- Image Viewer Overlay -->
+<div id="imageOverlay"
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center; flex-direction:column;">
+    <div style="width:100%; max-width:800px; text-align:right; padding:10px;">
+        <button onclick="document.getElementById('imageOverlay').style.display='none'"
+            style="background:transparent; border:none; color:white; font-size:24px; cursor:pointer;"><i
+                class="fas fa-times"></i></button>
+    </div>
+    <div style="background:white; padding:10px; border-radius:8px; max-width:90%; max-height:80vh; overflow:auto;">
+        <img id="viewerImage" src="" style="max-width:100%; display:none;">
+        <iframe id="viewerPdf" src=""
+            style="width:800px; height:600px; max-width:100%; display:none; border:none;"></iframe>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+    const KATEGORILER = {{ kategoriler | tojson | safe }};
+    let kategorilerMap = {};
+    KATEGORILER.forEach(cat => {
+        kategorilerMap[cat.Kategori_ID] = cat.Kategori_Adi;
+    });
+
+    // --- Client-side Search/Filter ---
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('searchInput').addEventListener('input', applyClientFilter);
+        document.getElementById('filterTip').addEventListener('change', applyClientFilter);
+        // filterDonem is now server-side; no client listener needed
+
+        // Sync with global branch-select — preserve current donem selection
+        const branchSelect = document.getElementById('branch-select');
+        if (branchSelect) {
+            branchSelect.addEventListener('change', function () {
+                const subeId = this.value;
+                const donemSel = document.getElementById('filterDonem');
+                const donemVal = donemSel ? donemSel.value : '';
+                let url = '/diger-harcamalar?sube_id=' + subeId;
+                if (donemVal) url += '&donem=' + donemVal;
+                window.location.href = url;
+            });
+        }
+    });
+
+    // Dönem dropdown change — reload page with selected period
+    function onDonemChange(donemVal) {
+        const params = new URLSearchParams(window.location.search);
+        if (donemVal) {
+            params.set('donem', donemVal);
+        } else {
+            params.delete('donem');
+        }
+        window.location.href = '/diger-harcamalar?' + params.toString();
+    }
+
+    function applyClientFilter() {
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        const tip = document.getElementById('filterTip').value;
+
+        document.querySelectorAll('#tableBody tr[data-alici]').forEach(row => {
+            let visible = true;
+            if (search) {
+                const alici = row.getAttribute('data-alici') || '';
+                const belgeno = row.getAttribute('data-belgeno') || '';
+                visible = visible && (alici.includes(search) || belgeno.includes(search));
+            }
+            if (tip) {
+                visible = visible && (row.getAttribute('data-tip') === tip);
+            }
+            row.style.display = visible ? '' : 'none';
+        });
+    }
+
+    function viewImage(base64, filename) {
+        if (!base64) return;
+        let mime = 'image/jpeg';
+        if (filename.toLowerCase().endsWith('.pdf')) mime = 'application/pdf';
+        else if (filename.toLowerCase().endsWith('.png')) mime = 'image/png';
+        const dataUrl = 'data:' + mime + ';base64,' + base64;
+        if (mime === 'application/pdf') {
+            document.getElementById('viewerImage').style.display = 'none';
+            document.getElementById('viewerPdf').src = dataUrl;
+            document.getElementById('viewerPdf').style.display = 'block';
+        } else {
+            document.getElementById('viewerPdf').style.display = 'none';
+            document.getElementById('viewerImage').src = dataUrl;
+            document.getElementById('viewerImage').style.display = 'block';
+        }
+        document.getElementById('imageOverlay').style.display = 'flex';
+    }
+
+    // --- Modal Form ---
+    function harcamaFormHtml(isEdit = false, item = null) {
+        const subeOpts = `{% for sube in subeler %}<option value="{{ sube.Sube_ID }}">{{ sube.Sube_Adi }}</option>{% endfor %}`;
+        let katOpts = '<option value="">Seçiniz...</option>';
+        KATEGORILER.forEach(k => {
+            const sel = (item && k.Kategori_ID == item.Kategori_ID) ? 'selected' : '';
+            katOpts += '<option value="' + k.Kategori_ID + '" ' + sel + '>' + k.Kategori_Adi + '</option>';
+        });
+
+        return `
+            <form id="harcamaForm" onsubmit="saveData(event)">
+                <input type="hidden" id="harcamaId" value="${item ? item.Harcama_ID : ''}">
+                <div class="row">
+                    <div class="col-6 form-group">
+                        <label>Şube *</label>
+                        <select class="form-control" id="formSube" required>${subeOpts}</select>
+                    </div>
+                    <div class="col-6 form-group">
+                        <label>Kategori *</label>
+                        <select class="form-control" id="formKategori" required>${katOpts}</select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-6 form-group">
+                        <label>Alıcı Adı *</label>
+                        <input type="text" class="form-control" id="formAliciAdi" required maxlength="200" value="${item ? item.Alici_Adi : ''}">
+                    </div>
+                    <div class="col-6 form-group">
+                        <label>Tutar *</label>
+                        <input type="number" step="0.01" class="form-control" id="formTutar" required value="${item ? item.Tutar : ''}">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-6 form-group">
+                        <label>Belge No</label>
+                        <input type="text" class="form-control" id="formBelgeNo" maxlength="50" value="${item ? item.Belge_Numarasi : ''}">
+                    </div>
+                    <div class="col-6 form-group">
+                        <label>Belge Tarihi *</label>
+                        <input type="date" class="form-control" id="formBelgeTarihi" required value="${item ? item.Belge_Tarihi_Input : new Date().toISOString().split('T')[0]}">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-6 form-group">
+                        <label>Harcama Tipi *</label>
+                        <select class="form-control" id="formHarcamaTipi" required>
+                            <option value="Nakit" ${item && item.Harcama_Tipi === 'Nakit' ? 'selected' : ''}>Nakit</option>
+                            <option value="Banka Ödeme" ${item && item.Harcama_Tipi === 'Banka Ödeme' ? 'selected' : ''}>Banka Ödeme</option>
+                            <option value="Kredi Kartı" ${item && item.Harcama_Tipi === 'Kredi Kartı' ? 'selected' : ''}>Kredi Kartı</option>
+                        </select>
+                    </div>
+                    <div class="col-6 form-group">
+                        <label>Dönem (YYMM) *</label>
+                        <input type="number" class="form-control" id="formDonem" required value="${item ? item.Donem : ''}">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12 form-group">
+                        <label>Açıklama</label>
+                        <input type="text" class="form-control" id="formAciklama" maxlength="45" value="${item ? (item.Aciklama || '') : ''}">
+                    </div>
+                </div>
+                <div class="row" style="align-items: center; margin-top: 10px;">
+                    <div class="col-6 form-group" style="flex-direction: row; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="formGunlukHarcama" style="width: 16px; height: 16px;" ${item && item.Gunluk_Harcama ? 'checked' : ''}>
+                        <label for="formGunlukHarcama" style="margin: 0;">Günlük Harcama</label>
+                    </div>
+                    <div class="col-6 form-group">
+                        <label>Fiş / Fatura Görseli (İsteğe Bağlı)</label>
+                        <input type="file" style="font-size: 12px;" id="formImaj" accept="image/*,.pdf">
+                        ${item && item.has_imaj && item.Imaj_Adi ? `<div id="currentImajContainer" style="margin-top: 5px; font-size: 11px; color: #64748b;">Mevcut: ${item.Imaj_Adi} <button type="button" onclick="clearImage()" style="background:none; border:none; color:#ef4444; cursor:pointer;" title="Kaldır"><i class="fas fa-times"></i></button></div>` : ''}
+                    </div>
+                </div>
+                <div class="modal-footer" style="margin-top: 25px;">
+                    <button type="button" class="btn btn-secondary" onclick="hideModal()">İptal</button>
+                    <button type="submit" class="btn btn-primary" style="background:#3b82f6; color:white; border:none;">Kaydet</button>
+                </div>
+            </form>
+        `;
+    }
+
+    function attachDateListener() {
+        const el = document.getElementById('formBelgeTarihi');
+        if (el) {
+            el.addEventListener('change', function () {
+                if (!this.value) return;
+                const d = new Date(this.value);
+                const yy = d.getFullYear().toString().slice(-2);
+                const mm = (d.getMonth() + 1).toString().padStart(2, '0');
+                document.getElementById('formDonem').value = yy + mm;
+            });
+        }
+    }
+
+    function openAddModal() {
+        showModal('Yeni Harcama', harcamaFormHtml(false));
+        attachDateListener();
+        // Set defaults
+        const branchSelect = document.getElementById('branch-select');
+        if (branchSelect) document.getElementById('formSube').value = branchSelect.value;
+        document.getElementById('formBelgeTarihi').dispatchEvent(new Event('change'));
+    }
+
+    function openEditModal(item) {
+        showModal('Harcama Düzenle', harcamaFormHtml(true, item));
+        attachDateListener();
+        document.getElementById('formSube').value = item.Sube_ID;
+    }
+
+    function clearImage() {
+        const c = document.getElementById('currentImajContainer');
+        if (c) c.style.display = 'none';
+        const f = document.getElementById('formImaj');
+        if (f) f.dataset.clearImage = 'true';
+    }
+
+    async function saveData(e) {
+        e.preventDefault();
+        const id = document.getElementById('harcamaId').value;
+        const formData = new FormData();
+
+        formData.append('Sube_ID', document.getElementById('formSube').value);
+        formData.append('Kategori_ID', document.getElementById('formKategori').value);
+        formData.append('Alici_Adi', document.getElementById('formAliciAdi').value);
+        formData.append('Tutar', document.getElementById('formTutar').value);
+        formData.append('Belge_Numarasi', document.getElementById('formBelgeNo').value);
+        formData.append('Belge_Tarihi', document.getElementById('formBelgeTarihi').value);
+        formData.append('Harcama_Tipi', document.getElementById('formHarcamaTipi').value);
+        formData.append('Donem', document.getElementById('formDonem').value);
+        formData.append('Aciklama', document.getElementById('formAciklama').value);
+        formData.append('Gunluk_Harcama', document.getElementById('formGunlukHarcama').checked);
+
+        const fileInput = document.getElementById('formImaj');
+        if (fileInput.files.length > 0) {
+            formData.append('image', fileInput.files[0]);
+        } else if (fileInput.dataset && fileInput.dataset.clearImage === 'true') {
+            formData.append('Imaj_Adi', '');
+        }
+
+        const url = id ? '/api/v1/diger-harcamalar/' + id : '/api/v1/diger-harcamalar';
+        const method = id ? 'PUT' : 'POST';
+
+        try {
+            const res = await fetch(url, { method: method, body: formData });
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || "Beklenmeyen bir hata oluştu.");
+            }
+            hideModal();
+            showToast(id ? 'Harcama güncellendi.' : 'Yeni harcama eklendi.');
+            setTimeout(() => location.reload(), 900);
+        } catch (error) {
+            showToast(error.message, 'error');
+        }
+    }
+
+    async function deleteRecord(id) {
+        if (!confirm("Bu kaydı silmek istediğinize emin misiniz?")) return;
+        try {
+            const res = await fetch('/api/v1/diger-harcamalar/' + id, { method: 'DELETE' });
+            if (!res.ok) throw new Error("Silme işlemi başarısız.");
+            showToast('Harcama silindi.');
+            setTimeout(() => location.reload(), 900);
+        } catch (error) {
+            showToast(error.message, 'error');
+        }
+    }
+
+    function exportToExcel() {
+        const table = document.getElementById('dataTable');
+        const clone = table.cloneNode(true);
+        clone.querySelectorAll('th:last-child, td:last-child').forEach(el => el.remove());
+        const wb = XLSX.utils.table_to_book(clone, { sheet: "Diğer Harcamalar" });
+        XLSX.writeFile(wb, "Diger_Harcamalar.xlsx");
+    }
+
+    function printData() {
+        const table = document.getElementById('dataTable');
+        if (!table) return;
+        const clone = table.cloneNode(true);
+        clone.querySelectorAll('th:last-child, td:last-child').forEach(el => el.remove());
+        const now = new Date().toLocaleString('tr-TR');
+        const html = '<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">' +
+            '<title>Diğer Harcamalar</title>' +
+            '<style>body{font-family:Arial,sans-serif;padding:20mm;color:#111}h1{font-size:20px;margin:0 0 4px}p{font-size:12px;color:#666;border-bottom:1px solid #ccc;padding-bottom:10px;margin-bottom:16px}table{width:100%;border-collapse:collapse}th{background:#f3f4f6;font-size:11px;text-transform:uppercase;padding:10px 12px;text-align:left;border:1px solid #ddd}td{padding:10px 12px;font-size:13px;border:1px solid #eee}tr:nth-child(even){background:#fafafa}.text-right{text-align:right}.text-center{text-align:center}</style>' +
+            '</head><body>' +
+            '<h1>SilverCloud - Diğer Harcamalar</h1>' +
+            '<p>Rapor Tarihi: ' + now + '</p>' +
+            clone.outerHTML +
+            '</body></html>';
+        const win = window.open('', '_blank', 'width=900,height=700');
+        win.document.write(html);
+        win.document.close();
+        win.focus();
+        win.print();
+        win.onafterprint = () => win.close();
+    }
+</script>
+{% endblock %}

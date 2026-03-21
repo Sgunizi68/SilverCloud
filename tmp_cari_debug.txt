@@ -1,0 +1,38 @@
+﻿=== Checking tables and data ===
+Cari rows: 20
+  (1, 'COCA COLA SATI┼₧ VE DA─₧ITIM A.┼₧.', 1, 14, 23)
+  (2, 'FASDAT GIDA DA─₧ITIM SANAY─░ VE T─░CARET ANON─░M ┼₧─░RKET─░', 1, 17, 15)
+  (3, 'G2MEKSPER SATI┼₧ VE DA─₧ITIM H─░ZMETLER─░ ANON─░M ┼₧─░RKET─░', 1, 16, 18)
+  (4, 'VOLKAN ┼₧ERBET├ç─░', 1, 18, 19)
+  (5, 'Pepsi Cola Servis ve Da─ƒ─▒t─▒m Ltd. ┼₧ti.', 1, 14, 24)
+
+e_Fatura (incoming) rows for sube 1: 1629
+
+Join matches (Cari found): 5
+  ('COCA COLA SATI┼₧ VE DA─₧ITIM A.┼₧.', 1, 1, Decimal('201.53'))
+  ('COCA COLA SATI┼₧ VE DA─₧ITIM A.┼₧.', 1, 1, Decimal('225.26'))
+  ('COCA COLA SATI┼₧ VE DA─₧ITIM A.┼₧.', 1, 1, Decimal('844.80'))
+  ('COCA COLA SATI┼₧ VE DA─₧ITIM A.┼₧.', 1, 1, Decimal('9371.95'))
+  ('COCA COLA SATI┼₧ VE DA─₧ITIM A.┼₧.', 1, 1, Decimal('13897.05'))
+
+All e_Fatura firms (with Cari status, no kategori join):
+  ('Seher G─▒da Pazarlama Sanayi Ve Ticaret Anonim ┼₧irketi', 1, 15)
+  ('M─░GROS T─░CARET A.┼₧.', None, 20)
+  ('G2MEKSPER SATI┼₧ VE DA─₧ITIM H─░ZMETLER─░ ANON─░M ┼₧─░RKET─░', 1, 16)
+  ('K├£BRA ┼₧ERBET├ç─░', None, 18)
+  ('TAVUK D├£NYASI GIDA SANAY─░ VE T─░CARET ANON─░M ┼₧─░RKET─░', None, 13)
+  ('Pepsi Cola Servis ve Da─ƒ─▒t─▒m Ltd. ┼₧ti.', 1, 14)
+  ('TAVUK D├£NYASI GIDA SANAY─░ VE T─░CARET ANON─░M ┼₧─░RKET─░', None, 29)
+  ('TAVUK D├£NYASI GIDA SANAY─░ VE T─░CARET ANON─░M ┼₧─░RKET─░', None, 28)
+  ('TAVUK D├£NYASI GIDA SANAY─░ VE T─░CARET ANON─░M ┼₧─░RKET─░', None, 23)
+  ('FASDAT GIDA DA─₧ITIM SANAY─░ VE T─░CARET ANON─░M ┼₧─░RKET─░', 1, 17)
+
+Cari table columns:
+  ('Cari_ID', 'int', 'NO', 'PRI', None, 'auto_increment')
+  ('e_Fatura_Kategori_ID', 'int', 'NO', 'MUL', None, '')
+  ('Alici_Unvani', 'varchar(200)', 'NO', '', None, '')
+  ('Referans_ID', 'int', 'YES', 'MUL', None, '')
+  ('Cari', 'tinyint(1)', 'YES', '', '0', '')
+  ('Aciklama', 'text', 'YES', '', None, '')
+  ('Kayit_Tarihi', 'datetime', 'YES', '', 'CURRENT_TIMESTAMP', 'DEFAULT_GENERATED')
+  ('Aktif_Pasif', 'tinyint(1)', 'YES', '', '1', '')

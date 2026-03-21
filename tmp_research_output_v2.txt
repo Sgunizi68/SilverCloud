@@ -1,0 +1,33 @@
+--- Categories with 'Online', 'Platform', 'Yemek', 'Trendyol', 'Getir', 'Migros' ---
+ID: 1 | Name: Yemek Sepeti Online  | Tip: Gelir
+ID: 2 | Name: Trendyol Online | Tip: Gelir
+ID: 3 | Name: Getir Online | Tip: Gelir
+ID: 4 | Name: Migros Yemek Online | Tip: Gelir
+ID: 5 | Name: Online kupon  | Tip: Gelir
+ID: 22 | Name: Yemek Çekleri Komisyonu | Tip: Gider
+ID: 23 | Name: Yemek Sepeti (Online) Komisyonu | Tip: Gider
+ID: 26 | Name: Personel Yemek Giderleri | Tip: Gider
+
+--- B2BEkstre Sample (Alacak > 0) ---
+
+--- Gelir Sample (Online) ---
+Date: 2025-07-01 | KatID: 1 | Tutar: 3442.50
+Date: 2025-07-02 | KatID: 1 | Tutar: 1095.00
+Date: 2025-07-03 | KatID: 1 | Tutar: 6085.00
+Date: 2025-07-04 | KatID: 1 | Tutar: 3425.00
+Date: 2025-07-05 | KatID: 1 | Tutar: 3500.00
+Date: 2025-07-06 | KatID: 1 | Tutar: 5180.00
+Date: 2025-07-07 | KatID: 1 | Tutar: 5855.00
+Date: 2025-07-08 | KatID: 1 | Tutar: 5865.00
+Date: 2025-07-09 | KatID: 1 | Tutar: 2095.00
+Date: 2025-07-10 | KatID: 1 | Tutar: 5100.00
+Date: 2025-07-11 | KatID: 1 | Tutar: 4080.00
+Date: 2025-07-12 | KatID: 1 | Tutar: 5310.00
+Date: 2025-07-13 | KatID: 1 | Tutar: 11005.00
+Date: 2025-07-14 | KatID: 1 | Tutar: 4275.00
+Date: 2025-07-15 | KatID: 1 | Tutar: 3220.00
+Date: 2025-07-16 | KatID: 1 | Tutar: 2385.00
+Date: 2025-07-17 | KatID: 1 | Tutar: 4195.00
+Date: 2025-07-18 | KatID: 1 | Tutar: 4155.00
+Date: 2025-07-19 | KatID: 1 | Tutar: 3180.00
+Date: 2025-07-20 | KatID: 1 | Tutar: 6460.00

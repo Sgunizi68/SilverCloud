@@ -1,0 +1,98 @@
+--- GELİR KATEGORİSİ LİSTESİ ---
+ID:3 | Getir Online | Üst:E-Ticaret Kredi Kart | Tip:Gelir
+ID:9 | Metropal | Üst:Yemek Çeki  | Tip:Gelir
+ID:4 | Migros Yemek Online | Üst:E-Ticaret Kredi Kart | Tip:Gelir
+ID:6 | Multinet | Üst:Yemek Çeki  | Tip:Gelir
+ID:11 | Nakit | Üst:Nakit | Tip:Gelir
+ID:12 | POS | Üst:Kredi Kartı | Tip:Gelir
+ID:10 | Setcard | Üst:Yemek Çeki  | Tip:Gelir
+ID:8 | Sodexo  | Üst:Yemek Çeki  | Tip:Gelir
+ID:7 | Ticket | Üst:Yemek Çeki  | Tip:Gelir
+ID:2 | Trendyol Online | Üst:E-Ticaret Kredi Kart | Tip:Gelir
+ID:1 | Yemek Sepeti Online | Üst:E-Ticaret Kredi Kart | Tip:Gelir
+
+--- GİDER vs DİĞER KATEGORİ LİSTESİ ---
+ID:64 |  Avans Ödemesi | Üst:Ödeme Sistemleri | Tip:Ödeme
+ID:60 | ATM Para Yatırma | Üst:Ödeme Sistemleri | Tip:Ödeme
+ID:36 | Aylık Dukkan Tip | Üst:Maaş Giderleri | Tip:Gider
+ID:15 | Ayran/Süt (Seher) | Üst:Satışların Maliyeti | Tip:Gider
+ID:32 | Bakım Onarım | Üst:Diğer Giderler | Tip:Gider
+ID:21 | Banka Komisyonu | Üst:Satıştan İndirimler & Komisyonlar | Tip:Gider
+ID:53 | Bankaya Gelen EFT Yatırma | Üst:Ödeme Sistemleri | Tip:Ödeme
+ID:79 | BES Ödemesi | Üst:Ödeme Sistemleri | Tip:Ödeme
+ID:49 | Bilgi | Üst:Bilgi | Tip:Bilgi
+ID:88 | Bölünmüş Fatura | Üst:Bilgi | Tip:Bilgi
+ID:89 | Ciro Kira | Üst:Kira Giderleri | Tip:Gider
+ID:14 | Cola | Üst:Satışların Maliyeti | Tip:Gider
+ID:73 | Cola Ödemesi | Üst:Ödeme Sistemleri | Tip:Ödeme
+ID:39 | ÇTV, İşgaliye, İlan Reklam Vergi Bedelleri | Üst:Diğer Giderler | Tip:Gider
+ID:57 | DBS Ödemesi | Üst:Ödeme Sistemleri | Tip:Ödeme
+ID:90 | Depo Kira | Üst:Kira Giderleri | Tip:Gider
+ID:27 | Diğer Hizmetler – Cari | Üst:Diğer Giderler | Tip:Gider
+ID:83 | Diğer Ödeme ve İşlemler | Üst:Ödeme Sistemleri | Tip:Ödeme
+ID:19 | Diğer yerli firmalar | Üst:Satışların Maliyeti | Tip:Gider
+ID:30 | Doğalgaz Gideri | Üst:Diğer Giderler | Tip:Gider
+ID:16 | Donuk Ekmek(G2M) | Üst:Satışların Maliyeti | Tip:Gider
+ID:17 | Donuk Urun (Fasdat patates) | Üst:Satışların Maliyeti | Tip:Gider
+ID:52 | e-Fatura Gideri | Üst:Diğer Giderler | Tip:Gider
+ID:59 | EFT / Havale Transfer (Muhtelif) | Üst:Ödeme Sistemleri | Tip:Ödeme
+ID:28 | Elektrik | Üst:Diğer Giderler | Tip:Gider
+ID:65 | Fasdat Ödemesi | Üst:Ödeme Sistemleri | Tip:Ödeme
+ID:68 | G2M Ödemesi | Üst:Ödeme Sistemleri | Tip:Ödeme
+ID:87 | Giden Fatura | Üst:Giden Fatura | Tip:Giden Fatura
+ID:20 | Gunluk Eksik Gıda | Üst:Satışların Maliyeti | Tip:Gider
+ID:41 | Gunluk Harcama | Üst:Diğer Giderler | Tip:Gider
+ID:18 | Hal | Üst:Satışların Maliyeti | Tip:Gider
+ID:94 | Hijyen / Gizli Müşteri Denetimi | Üst:Diğer Giderler | Tip:Gider
+ID:98 | İade Fatura | Üst:Giden Fatura | Tip:Giden Fatura
+ID:61 | İGDAŞ Ödemesi | Üst:Ödeme Sistemleri | Tip:Ödeme
+ID:92 | İlaçlama | Üst:Diğer Giderler | Tip:Gider
+ID:31 | İnternet ve Telefon | Üst:Diğer Giderler | Tip:Gider
+ID:85 | İptal Fatura | Üst:Bilgi | Tip:Bilgi
+ID:96 | İşyeri Sigorta Gideri | Üst:Diğer Giderler | Tip:Gider
+ID:97 | Kargo | Üst:Diğer Giderler | Tip:Gider
+ID:42 | Kdv / Vergi | Üst:Diğer Giderler | Tip:Gider
+ID:58 | Kendi Hesabına Transfer | Üst:Ödeme Sistemleri | Tip:Ödeme
+ID:95 | Kırtasiye | Üst:Diğer Giderler | Tip:Gider
+ID:55 | Kredi Kart Ödeme | Üst:Ödeme Sistemleri | Tip:Ödeme
+ID:82 | Kredi Kartı Harcaması | Üst:Ödeme Sistemleri | Tip:Ödeme
+ID:81 | Kredi Kartı Komisyon ve  BSMV Ödemesi | Üst:Ödeme Sistemleri | Tip:Ödeme
+ID:80 | Kredi Kartı Ödemesi | Üst:Ödeme Sistemleri | Tip:Ödeme
+ID:86 | Kredi Kartları Otomatik Tahsilat | Üst:Ödeme Sistemleri | Tip:Ödeme
+ID:62 | Maaş Ödemesi | Üst:Ödeme Sistemleri | Tip:Ödeme
+ID:77 | Metropol Ödemesi | Üst:Ödeme Sistemleri | Tip:Ödeme
+ID:67 | Muhasebeci Ödemesi | Üst:Ödeme Sistemleri | Tip:Ödeme
+ID:34 | Muhtasar (G.Stopaj) | Üst:Maaş Giderleri | Tip:Gider
+ID:78 | Multinet Ödemesi | Üst:Ödeme Sistemleri | Tip:Ödeme
+ID:43 | Müşavirlik Ücreti | Üst:Diğer Giderler | Tip:Gider
+ID:38 | Ortak Gider | Üst:Kira Giderleri | Tip:Gider
+ID:46 | Personel Avans | Üst:Maaş Giderleri | Tip:Gider
+ID:45 | Personel Maaslar | Üst:Maaş Giderleri | Tip:Gider
+ID:93 | Personel Tazminat (Kıdem, İhbar vb.) | Üst:Diğer Giderler | Tip:Gider
+ID:26 | Personel Yemek Giderleri | Üst:Diğer Giderler | Tip:Gider
+ID:48 | Plan Dışı Giderler | Üst:Diğer Giderler | Tip:Gider
+ID:72 | Robotpos Ödemesi | Üst:Ödeme Sistemleri | Tip:Ödeme
+ID:37 | Sabit Kira | Üst:Kira Giderleri | Tip:Gider
+ID:70 | Seher Gıda Ödemesi | Üst:Ödeme Sistemleri | Tip:Ödeme
+ID:74 | SetCard Ödemesi | Üst:Ödeme Sistemleri | Tip:Ödeme
+ID:35 | Sgk | Üst:Maaş Giderleri | Tip:Gider
+ID:54 | SGK Ödemesi | Üst:Ödeme Sistemleri | Tip:Ödeme
+ID:76 | Sodexo Ödemesi | Üst:Ödeme Sistemleri | Tip:Ödeme
+ID:29 | Su | Üst:Diğer Giderler | Tip:Gider
+ID:13 | Tavuk Dünyası | Üst:Satışların Maliyeti | Tip:Gider
+ID:40 | Tavuk Dünyası Ciro Primi | Üst:TD Ciro/Reklam Primi & Lojistik | Tip:Gider
+ID:44 | Tavuk Dünyası Lojistik | Üst:TD Ciro/Reklam Primi & Lojistik | Tip:Gider
+ID:71 | Tavuk Dünyası Ödemesi | Üst:Ödeme Sistemleri | Tip:Ödeme
+ID:91 | Tavuk Dünyası Reklam Primi | Üst:TD Ciro/Reklam Primi & Lojistik | Tip:Gider
+ID:24 | Temizlik Giderleri | Üst:Diğer Giderler | Tip:Gider
+ID:100 | Test Kategori Updated | Üst:Nakit | Tip:Gider
+ID:75 | Ticket Ödemesi | Üst:Ödeme Sistemleri | Tip:Ödeme
+ID:63 | Türk Telekom Ödemesi | Üst:Ödeme Sistemleri | Tip:Ödeme
+ID:56 | Vergi Ödemesi | Üst:Ödeme Sistemleri | Tip:Ödeme
+ID:99 | Volkan Şerbetçi Ödemesi | Üst:Ödeme Sistemleri | Tip:Ödeme
+ID:84 | Yatırımcının Ödemesi | Üst:Ödeme Sistemleri | Tip:Ödeme
+ID:66 | Yatıtımcıya Ödeme | Üst:Ödeme Sistemleri | Tip:Ödeme
+ID:22 | Yemek Çekleri Komisyonu | Üst:Satıştan İndirimler & Komisyonlar | Tip:Gider
+ID:23 | Yemek Sepeti (Online) Komisyonu | Üst:Satıştan İndirimler & Komisyonlar | Tip:Gider
+ID:33 | Yonetim Gideri | Üst:Diğer Giderler | Tip:Gider
+ID:25 | Zuccaciye | Üst:Diğer Giderler | Tip:Gider

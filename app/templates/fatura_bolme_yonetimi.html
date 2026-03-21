@@ -1,0 +1,593 @@
+{% extends "base.html" %}
+
+{% block title %}Fatura Bölme Yönetimi{% endblock %}
+
+{% block content %}
+<div class="fbm-page">
+
+  <!-- ── Header ── -->
+  <div class="fbm-topbar">
+    <h1 class="fbm-title">Fatura Bölme Yönetimi</h1>
+    <div class="fbm-topbar-right">
+      <div class="fbm-donem-filter">
+        <label>Dönem:</label>
+        <select id="donemSelect" onchange="filterByDonem()">
+          <option value="">Tüm Dönemler</option>
+        </select>
+      </div>
+      <button class="fbm-btn-primary" onclick="openYeniModal()">
+        <i class="fas fa-plus"></i> Yeni Fatura Bölme
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Invoice Groups ── -->
+  <div id="faturaListContainer" class="fbm-list">
+    <div class="fbm-loading"><i class="fas fa-spinner fa-spin"></i> Yükleniyor...</div>
+  </div>
+
+</div>
+
+<!-- ── Yeni Fatura Bölme Modal ── -->
+<div id="yeniModal" class="fbm-modal-overlay" style="display:none">
+  <div class="fbm-modal">
+    <div class="fbm-modal-head">
+      <h3>Yeni Fatura Bölme</h3>
+      <span class="fbm-modal-close" onclick="closeYeniModal()">&times;</span>
+    </div>
+    <div class="fbm-modal-body">
+      <label class="fbm-label">Fatura Numarası</label>
+      <div class="fbm-search-row">
+        <input type="text" id="yeniFaturaNo" class="fbm-input" placeholder="Fatura numarasını giriniz" onkeydown="if(event.key==='Enter') bulFatura()">
+        <button class="fbm-btn-icon" onclick="bulFatura()"><i class="fas fa-search"></i></button>
+      </div>
+      <div id="bulunmusFatura" style="display:none; margin-top:16px; border-top:1px solid #e5e7eb; padding-top:16px;">
+        <h4 style="margin-bottom:10px; font-weight:600">Bulunan Fatura:</h4>
+        <div class="fbm-found-card">
+          <p><strong>Alıcı:</strong> <span id="bfAlici"></span></p>
+          <p><strong>Tarih:</strong> <span id="bfTarih"></span></p>
+          <p><strong>Tutar:</strong> <span id="bfTutar"></span></p>
+          <p><strong>Açıklama:</strong> <span id="bfAciklama"></span></p>
+        </div>
+      </div>
+    </div>
+    <div class="fbm-modal-foot">
+      <button id="bolBtn" class="fbm-btn-green" onclick="kaydetBolme()" disabled>Faturayı Böl</button>
+      <button class="fbm-btn-gray" onclick="closeYeniModal()">İptal</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Styles ── -->
+<style>
+.fbm-page { max-width: 1200px; margin: 0 auto; padding: 24px; font-family: 'Inter', 'Segoe UI', sans-serif; }
+
+/* Topbar */
+.fbm-topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+.fbm-title { font-size:22px; font-weight:700; color:#111827; margin:0; }
+.fbm-topbar-right { display:flex; align-items:center; gap:16px; }
+.fbm-donem-filter { display:flex; align-items:center; gap:8px; font-size:14px; color:#374151; font-weight:500; }
+.fbm-donem-filter select { padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px; cursor:pointer; }
+.fbm-btn-primary { background:#2563eb; color:#fff; border:none; padding:9px 18px; border-radius:6px; font-size:14px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:8px; }
+.fbm-btn-primary:hover { background:#1d4ed8; }
+
+/* Invoice Group Card */
+.fbm-group { background:#fff; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,.1); margin-bottom:16px; overflow:hidden; }
+.fbm-group-header { padding:16px 22px; border-bottom:1px solid #e5e7eb; cursor:pointer; display:flex; justify-content:space-between; align-items:flex-start; user-select:none; }
+.fbm-group-header:hover { background:#f9fafb; }
+.fbm-group-header.mismatch { background:#fef2f2; border-bottom-color:#fca5a5; }
+.fbm-group-left { display:flex; align-items:flex-start; gap:12px; }
+.fbm-chevron { color:#9ca3af; font-size:14px; margin-top:3px; transition:transform .2s; }
+.fbm-group.open .fbm-chevron { transform:rotate(180deg); }
+.fbm-group-meta h3 { font-size:16px; font-weight:700; color:#111827; margin:0 0 4px; }
+.fbm-group-meta p { font-size:13px; color:#6b7280; margin:0 0 6px; }
+.fbm-group-meta .fbm-check-row { display:flex; align-items:center; gap:6px; font-size:13px; color:#374151; }
+.fbm-group-right { display:flex; gap:28px; text-align:center; flex-shrink:0; }
+.fbm-stat label { font-size:12px; color:#6b7280; display:block; margin-bottom:2px; }
+.fbm-stat .val { font-size:16px; font-weight:700; }
+.fbm-stat .val.gray { color:#111827; }
+.fbm-stat .val.ok { color:#16a34a; }
+.fbm-stat .val.bad { color:#dc2626; }
+.fbm-stat .val.blue { color:#2563eb; }
+.fbm-mismatch-alert { font-size:13px; color:#dc2626; font-weight:500; padding:4px 22px 10px; }
+
+/* Expanded Details */
+.fbm-details { display:none; padding:16px 22px; }
+.fbm-group.open .fbm-details { display:block; }
+.fbm-details-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+.fbm-details-head h4 { font-size:14px; font-weight:700; color:#111827; margin:0; }
+.fbm-btn-green { background:#16a34a; color:#fff; border:none; padding:7px 14px; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
+.fbm-btn-green:hover { background:#15803d; }
+.fbm-btn-green:disabled { background:#86efac; cursor:not-allowed; }
+.fbm-btn-gray { background:#6b7280; color:#fff; border:none; padding:7px 14px; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; }
+
+/* Table */
+.fbm-table-wrap { overflow-x:auto; }
+table.fbm-table { width:100%; border-collapse:collapse; font-size:13px; }
+.fbm-table thead tr { background:#f9fafb; }
+.fbm-table th { padding:9px 12px; text-align:left; font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:.03em; border-bottom:1px solid #e5e7eb; white-space:nowrap; }
+.fbm-table td { padding:10px 12px; border-bottom:1px solid #f3f4f6; vertical-align:middle; }
+.fbm-table tbody tr:hover { background:#f9fafb; }
+.fbm-table tfoot td { padding:10px 12px; background:#f9fafb; font-weight:700; }
+.fbm-table td.fatura-no { font-family:monospace; color:#2563eb; white-space:nowrap; }
+.fbm-table td.amount { font-weight:600; white-space:nowrap; }
+td.ok-amount { color:#16a34a; }
+td.bad-amount { color:#dc2626; }
+
+/* Inline edit inputs */
+.fbm-edit-input { padding:5px 8px; border:1px solid #d1d5db; border-radius:5px; font-size:13px; }
+.fbm-edit-input.w-money { width:90px; }
+.fbm-edit-input.w-kat { width:140px; }
+.fbm-edit-input.w-donem { width:120px; }
+.fbm-action-btn { width:28px; height:28px; border-radius:5px; border:none; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; font-size:13px; }
+.fbm-action-btn.edit { background:#eff6ff; color:#2563eb; }
+.fbm-action-btn.del { background:#fef2f2; color:#dc2626; }
+.fbm-action-btn.save { background:#f0fdf4; color:#16a34a; }
+.fbm-action-btn.cancel { background:#f3f4f6; color:#6b7280; }
+.fbm-action-btn:disabled { opacity:.4; cursor:not-allowed; }
+
+/* Modal */
+.fbm-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; z-index:1000; backdrop-filter:blur(3px); }
+.fbm-modal { background:#fff; border-radius:12px; width:460px; max-width:92vw; box-shadow:0 20px 40px rgba(0,0,0,.2); }
+.fbm-modal-head { display:flex; justify-content:space-between; align-items:center; padding:20px 24px; border-bottom:1px solid #e5e7eb; }
+.fbm-modal-head h3 { margin:0; font-size:17px; font-weight:700; }
+.fbm-modal-close { font-size:26px; cursor:pointer; color:#9ca3af; line-height:1; }
+.fbm-modal-body { padding:20px 24px; }
+.fbm-modal-foot { display:flex; gap:10px; padding:16px 24px; border-top:1px solid #e5e7eb; }
+.fbm-modal-foot button { flex:1; padding:10px; font-size:14px; }
+.fbm-label { display:block; font-size:13px; font-weight:600; color:#374151; margin-bottom:7px; }
+.fbm-input { width:100%; padding:9px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px; box-sizing:border-box; }
+.fbm-search-row { display:flex; gap:8px; }
+.fbm-search-row .fbm-input { flex:1; }
+.fbm-btn-icon { background:#2563eb; color:#fff; border:none; padding:9px 13px; border-radius:6px; cursor:pointer; }
+.fbm-found-card { background:#f9fafb; border-radius:6px; padding:14px; font-size:13px; color:#374151; }
+.fbm-found-card p { margin:0 0 6px; }
+
+/* Loading / Empty */
+.fbm-loading, .fbm-empty { text-align:center; padding:60px 20px; color:#9ca3af; font-size:15px; }
+</style>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+const API = '/api/v1';
+let allGroups = [];       // [{id, orijinalFaturaNo, aliciUnvani, faturaTarihi, toplamTutar, aciklama, donem, gunluk, subeId, detaylar:[{id,faturaNo,tutar,kategori,kategoriId,ozel,donem,aciklama,isNew}]}]
+let kategoriler = [];     // [{Kategori_ID, Kategori_Adi}]
+let donemler = [];        // unique donem strings
+let editingId = null;     // detay.id being edited
+let tempVals = {};
+let foundInvoice = null;  // from modal search
+
+// ── Init ──────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  await Promise.all([loadKategoriler(), loadData()]);
+});
+
+async function loadKategoriler() {
+  try {
+    const r = await fetch(`${API}/kategoriler?limit=2000`);
+    kategoriler = await r.json();
+  } catch(e) { console.error('Kategoriler yüklenemedi', e); }
+}
+
+async function loadData() {
+  const container = document.getElementById('faturaListContainer');
+  container.innerHTML = '<div class="fbm-loading"><i class="fas fa-spinner fa-spin"></i> Yükleniyor...</div>';
+  try {
+    const r = await fetch(`${API}/fatura-bolme/bolunmus-faturalar`);
+    const rows = await r.json();
+    if (r.status !== 200) throw new Error(rows.error || 'Hata');
+
+    // Group by Ana_Fatura using parent fields from SQL
+    const grouped = {};
+    rows.forEach(row => {
+      const ak = row.Ana_Fatura;
+      if (!grouped[ak]) {
+        grouped[ak] = {
+          id: ak,
+          orijinalFaturaNo: ak,
+          aliciUnvani: row.Ana_Alici_Unvani || row.Alici_Unvani,
+          faturaTarihi: row.Ana_Fatura_Tarihi || row.Fatura_Tarihi,
+          toplamTutar: parseFloat(row.Ana_Tutar) || 0,
+          aciklama: row.Ana_Aciklama || row.Aciklama,
+          donem: row.Ana_Donem || (row.Donem ? row.Donem.toString() : ''),
+          gunluk: row.Ana_Gunluk || row.Gunluk_Harcama,
+          subeId: row.Ana_Sube_ID || row.Sube_ID,
+          acik: false,
+          detaylar: []
+        };
+      }
+      // If Fatura_ID exists, this is a real child split row (not just a LEFT JOIN parent-only row)
+      if (row.Fatura_ID) {
+        grouped[ak].detaylar.push({
+          id: row.Fatura_ID,
+          faturaNo: row.Fatura_Numarasi,
+          tutar: parseFloat(row.Tutar) || 0,
+          kategori: row.Kategori_Adi || '',
+          kategoriId: row.Kategori_ID,
+          ozel: row.Ozel,
+          donem: row.Donem ? row.Donem.toString() : '',
+          aciklama: row.Aciklama,
+          isNew: false
+        });
+      }
+    });
+
+    // Fetch parent invoice for correct toplamTutar if needed
+    allGroups = Object.values(grouped).sort((a,b) => b.orijinalFaturaNo.localeCompare(a.orijinalFaturaNo));
+
+    // Populate donem dropdown
+    donemler = [...new Set(allGroups.map(g => g.donem))].filter(Boolean).sort();
+    const sel = document.getElementById('donemSelect');
+    sel.innerHTML = '<option value="">Tüm Dönemler</option>';
+    donemler.forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d;
+      opt.textContent = donemFormatla(d);
+      sel.appendChild(opt);
+    });
+
+    renderList();
+  } catch(e) {
+    container.innerHTML = `<div class="fbm-empty">Hata: ${e.message}</div>`;
+  }
+}
+
+// ── Render ────────────────────────────────────────────────────────────────
+function renderList() {
+  const filterDonem = document.getElementById('donemSelect').value;
+  const visible = filterDonem ? allGroups.filter(g => g.donem === filterDonem) : allGroups;
+  const container = document.getElementById('faturaListContainer');
+
+  if (!visible.length) {
+    container.innerHTML = `<div class="fbm-empty">${filterDonem ? `Seçili dönem (${donemFormatla(filterDonem)}) için bölünmüş fatura bulunmuyor.` : 'Bölünmüş fatura bulunmuyor.'}</div>`;
+    return;
+  }
+
+  container.innerHTML = visible.map(g => renderGroup(g)).join('');
+}
+
+function renderGroup(g) {
+  const detayToplami = g.detaylar.reduce((s, d) => s + d.tutar, 0);
+  const tutarUyumlu = Math.abs(detayToplami - g.toplamTutar) < 0.01;
+  const openClass = g.acik ? 'open' : '';
+  const mismatchHeader = !tutarUyumlu ? 'mismatch' : '';
+
+  return `
+<div id="grp-${g.id}" class="fbm-group ${openClass}">
+  <div class="fbm-group-header ${mismatchHeader}" onclick="toggleGroup('${g.id}')">
+    <div class="fbm-group-left">
+      <i class="fas fa-chevron-down fbm-chevron"></i>
+      <div class="fbm-group-meta">
+        <h3>${g.orijinalFaturaNo} - ${escHtml(g.aliciUnvani)}</h3>
+        <p>${g.faturaTarihi || ''} | ${donemFormatla(g.donem)} | ${escHtml(g.aciklama || '')}</p>
+        <div class="fbm-check-row">
+          <input type="checkbox" ${g.gunluk ? 'checked' : ''} disabled style="width:14px;height:14px">
+          <span>Günlük</span>
+        </div>
+      </div>
+    </div>
+    <div class="fbm-group-right">
+      <div class="fbm-stat">
+        <label>Toplam Tutar</label>
+        <span class="val gray">${fmtTL(g.toplamTutar)}</span>
+      </div>
+      <div class="fbm-stat">
+        <label>Detay Toplamı</label>
+        <span class="val ${tutarUyumlu ? 'ok' : 'bad'}">${fmtTL(detayToplami)}</span>
+      </div>
+      <div class="fbm-stat">
+        <label>Detay Sayısı</label>
+        <span class="val blue">${g.detaylar.length}</span>
+      </div>
+    </div>
+  </div>
+  ${!tutarUyumlu ? `<div class="fbm-mismatch-alert">⚠️ Detay toplamı ana fatura tutarı ile eşleşmiyor! Fark: ${fmtTL(g.toplamTutar - detayToplami)}</div>` : ''}
+  <div class="fbm-details">
+    <div class="fbm-details-head">
+      <h4>Bölünmüş Fatura Detayları</h4>
+      <button class="fbm-btn-green" onclick="yeniDetayEkle('${g.id}')">
+        <i class="fas fa-plus"></i> Yeni Detay Ekle
+      </button>
+    </div>
+    <div class="fbm-table-wrap">
+      <table class="fbm-table">
+        <thead>
+          <tr>
+            <th>Fatura No</th>
+            <th>Alıcı Ünvanı</th>
+            <th>Fatura Tarihi</th>
+            <th>Tutar</th>
+            <th>Kategori</th>
+            <th>Açıklama</th>
+            <th>Dönem</th>
+            <th>Günlük</th>
+            <th>Özel</th>
+            <th>İşlemler</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${g.detaylar.map(d => renderDetayRow(g, d, detayToplami)).join('')}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3" style="text-align:right">TOPLAM:</td>
+            <td class="${tutarUyumlu ? 'ok-amount' : 'bad-amount'}">${fmtTL(detayToplami)}</td>
+            <td colspan="6"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+</div>`;
+}
+
+function renderDetayRow(g, d, detayToplami) {
+  const isEditing = editingId === d.id;
+
+  if (isEditing) {
+    // Editable row
+    const katOptions = kategoriler.map(k =>
+      `<option value="${k.Kategori_ID}" ${k.Kategori_ID === tempVals.kategoriId ? 'selected' : ''}>${escHtml(k.Kategori_Adi)}</option>`
+    ).join('');
+    const donemOptions = donemler.map(dm =>
+      `<option value="${dm}" ${dm === tempVals.donem ? 'selected' : ''}>${donemFormatla(dm)}</option>`
+    ).join('');
+    return `
+<tr style="background:#fffbeb">
+  <td class="fatura-no">${escHtml(d.faturaNo)}</td>
+  <td>${escHtml(g.aliciUnvani)}</td>
+  <td>${g.faturaTarihi || ''}</td>
+  <td><input type="number" class="fbm-edit-input w-money" id="et-tutar" value="${tempVals.tutar}" step="0.01"></td>
+  <td><select class="fbm-edit-input w-kat" id="et-kat">${katOptions}</select></td>
+  <td>${escHtml(g.aciklama || '')}</td>
+  <td><select class="fbm-edit-input w-donem" id="et-donem">${donemOptions}</select></td>
+  <td><input type="checkbox" disabled ${g.gunluk ? 'checked' : ''} style="width:14px;height:14px"></td>
+  <td><input type="checkbox" id="et-ozel" ${tempVals.ozel ? 'checked' : ''} style="width:14px;height:14px"></td>
+  <td>
+    <div style="display:flex;gap:4px">
+      <button class="fbm-action-btn save" onclick="kaydetDetay('${g.id}', '${d.id}')" title="Kaydet"><i class="fas fa-check"></i></button>
+      <button class="fbm-action-btn cancel" onclick="iptalDetay('${g.id}')" title="İptal"><i class="fas fa-times"></i></button>
+    </div>
+  </td>
+</tr>`;
+  }
+
+  // Read-only row
+  return `
+<tr>
+  <td class="fatura-no">${escHtml(d.faturaNo)}</td>
+  <td>${escHtml(g.aliciUnvani)}</td>
+  <td>${g.faturaTarihi || ''}</td>
+  <td class="amount">${fmtTL(d.tutar)}</td>
+  <td>${escHtml(d.kategori || '')}</td>
+  <td>${escHtml(g.aciklama || '')}</td>
+  <td>${donemFormatla(d.donem)}</td>
+  <td><input type="checkbox" disabled ${g.gunluk ? 'checked' : ''} style="width:14px;height:14px"></td>
+  <td><input type="checkbox" disabled ${d.ozel ? 'checked' : ''} style="width:14px;height:14px"></td>
+  <td>
+    <div style="display:flex;gap:4px">
+      <button class="fbm-action-btn edit" onclick="baslatEdit('${g.id}', '${d.id}')" title="Düzenle"><i class="fas fa-pencil-alt"></i></button>
+      <button class="fbm-action-btn del" onclick="silDetay('${g.id}', '${d.id}')" ${g.detaylar.length <= 2 ? 'disabled' : ''} title="Sil"><i class="fas fa-trash"></i></button>
+    </div>
+  </td>
+</tr>`;
+}
+
+// ── Interactions ──────────────────────────────────────────────────────────
+function filterByDonem() { renderList(); }
+
+function toggleGroup(id) {
+  const g = allGroups.find(x => x.id === id);
+  if (g) { g.acik = !g.acik; renderList(); }
+}
+
+function baslatEdit(grupId, detayId) {
+  const g = allGroups.find(x => x.id === grupId);
+  const d = g.detaylar.find(x => x.id == detayId);
+  editingId = d.id;
+  tempVals = { tutar: d.tutar, kategoriId: d.kategoriId, donem: d.donem, ozel: d.ozel };
+  g.acik = true;
+  renderList();
+}
+
+function iptalDetay(grupId) {
+  const g = allGroups.find(x => x.id === grupId);
+  // Remove tmp new rows on cancel
+  g.detaylar = g.detaylar.filter(d => !d.isNew || d.id !== editingId);
+  editingId = null;
+  tempVals = {};
+  renderList();
+}
+
+async function kaydetDetay(grupId, detayId) {
+  const g = allGroups.find(x => x.id === grupId);
+  const d = g.detaylar.find(x => x.id == detayId);
+
+  const yeniTutar = parseFloat(document.getElementById('et-tutar').value) || 0;
+  const yeniKatId = parseInt(document.getElementById('et-kat').value);
+  const yeniDonem = document.getElementById('et-donem').value;
+  const yeniOzel = document.getElementById('et-ozel').checked;
+
+  // Validate: other details + this new amount must not exceed main total
+  const digerToplam = g.detaylar.filter(x => x.id != detayId).reduce((s, x) => s + x.tutar, 0);
+  if (digerToplam + yeniTutar > g.toplamTutar + 0.001) {
+    alert(`Toplam tutar ${fmtTL(g.toplamTutar)} değerini aşamaz!\nMevcut diğer detaylar: ${fmtTL(digerToplam)}\nGirilebilecek max: ${fmtTL(g.toplamTutar - digerToplam)}`);
+    return;
+  }
+
+  const payload = {
+    Fatura_Tarihi: g.faturaTarihi,
+    Fatura_Numarasi: d.faturaNo,
+    Alici_Unvani: g.aliciUnvani,
+    Tutar: yeniTutar,
+    Kategori_ID: yeniKatId,
+    Aciklama: g.aciklama,
+    Donem: parseInt(yeniDonem),
+    Ozel: yeniOzel,
+    Gunluk_Harcama: g.gunluk,
+    Giden_Fatura: false,
+    Sube_ID: g.subeId
+  };
+
+  try {
+    let resp;
+    if (d.isNew) {
+      resp = await fetch(`${API}/efaturalar`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+    } else {
+      resp = await fetch(`${API}/efaturalar/${d.id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+    }
+    if (!resp.ok) throw new Error((await resp.json()).error || 'Hata');
+    const saved = await resp.json();
+
+    // Update local state
+    const idx = g.detaylar.findIndex(x => x.id == detayId);
+    g.detaylar[idx] = {
+      ...d,
+      id: saved.Fatura_ID || d.id,
+      tutar: yeniTutar,
+      kategoriId: yeniKatId,
+      kategori: (kategoriler.find(k => k.Kategori_ID === yeniKatId) || {}).Kategori_Adi || '',
+      donem: yeniDonem,
+      ozel: yeniOzel,
+      isNew: false
+    };
+    editingId = null;
+    tempVals = {};
+    renderList();
+  } catch(e) { alert('Kaydetme hatası: ' + e.message); }
+}
+
+async function silDetay(grupId, detayId) {
+  if (!confirm('Bu detayı silmek istediğinizden emin misiniz?')) return;
+  try {
+    const resp = await fetch(`${API}/efaturalar/${detayId}`, { method:'DELETE' });
+    if (!resp.ok) throw new Error('Silinemedi');
+    const g = allGroups.find(x => x.id === grupId);
+    g.detaylar = g.detaylar.filter(d => d.id != detayId);
+    renderList();
+  } catch(e) { alert(e.message); }
+}
+
+function yeniDetayEkle(grupId) {
+  const g = allGroups.find(x => x.id === grupId);
+  const maxNo = g.detaylar.reduce((max, d) => {
+    const m = d.faturaNo.match(/-(\d+)$/);
+    return m ? Math.max(max, parseInt(m[1])) : max;
+  }, 0);
+  const mevcutToplam = g.detaylar.reduce((s, d) => s + d.tutar, 0);
+  const kalanTutar = Math.max(0, g.toplamTutar - mevcutToplam);
+
+  const tmpId = 'new-' + Date.now();
+  g.detaylar.push({
+    id: tmpId,
+    faturaNo: `${g.orijinalFaturaNo}-${maxNo + 1}`,
+    tutar: 0,
+    kategori: '',
+    kategoriId: kategoriler.length ? kategoriler[0].Kategori_ID : null,
+    ozel: false,
+    donem: g.donem,
+    aciklama: g.aciklama,
+    isNew: true
+  });
+
+  editingId = tmpId;
+  tempVals = { tutar: 0, kategoriId: kategoriler.length ? kategoriler[0].Kategori_ID : null, donem: g.donem, ozel: false };
+  g.acik = true;
+  renderList();
+}
+
+// ── New Split Modal ───────────────────────────────────────────────────────
+function openYeniModal() {
+  document.getElementById('yeniModal').style.display = 'flex';
+  document.getElementById('yeniFaturaNo').value = '';
+  document.getElementById('bulunmusFatura').style.display = 'none';
+  document.getElementById('bolBtn').disabled = true;
+  foundInvoice = null;
+}
+function closeYeniModal() { document.getElementById('yeniModal').style.display = 'none'; }
+
+async function bulFatura() {
+  const no = document.getElementById('yeniFaturaNo').value.trim();
+  if (!no) return alert('Lütfen fatura numarası giriniz!');
+  try {
+    const resp = await fetch(`${API}/efaturalar/fatura-no/${encodeURIComponent(no)}`);
+    if (!resp.ok) throw new Error('Fatura bulunamadı');
+    const inv = await resp.json();
+    foundInvoice = inv;
+    document.getElementById('bfAlici').textContent = inv.Alici_Unvani;
+    document.getElementById('bfTarih').textContent = inv.Fatura_Tarihi || '';
+    document.getElementById('bfTutar').textContent = fmtTL(inv.Tutar);
+    document.getElementById('bfAciklama').textContent = inv.Aciklama || '-';
+    document.getElementById('bulunmusFatura').style.display = 'block';
+    document.getElementById('bolBtn').disabled = false;
+  } catch(e) { alert(e.message); }
+}
+
+async function kaydetBolme() {
+  if (!foundInvoice) return;
+  const inv = foundInvoice;
+  const yariTutar = parseFloat(inv.Tutar) / 2;
+
+  // 1. Update parent category to "Bölünmüş Fatura"
+  const updResp = await fetch(`${API}/efaturalar/${inv.Fatura_ID}`, {
+    method:'PUT', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      Kategori_ID: 88,
+      Fatura_Numarasi: inv.Fatura_Numarasi,
+      Tutar: inv.Tutar,
+      Fatura_Tarihi: inv.Fatura_Tarihi,
+      Alici_Unvani: inv.Alici_Unvani,
+      Donem: inv.Donem,
+      Ozel: inv.Ozel,
+      Gunluk_Harcama: inv.Gunluk_Harcama,
+      Aciklama: inv.Aciklama,
+      Giden_Fatura: false,
+      Sube_ID: inv.Sube_ID
+    })
+  });
+  if (!updResp.ok) { alert('Ana fatura güncellenemedi'); return; }
+
+  // 2. Create 2 split invoices
+  for (let i = 1; i <= 2; i++) {
+    const payload = {
+      Sube_ID: inv.Sube_ID,
+      Kategori_ID: inv.Kategori_ID,
+      Fatura_Numarasi: `${inv.Fatura_Numarasi}-${i}`,
+      Tutar: yariTutar,
+      Fatura_Tarihi: inv.Fatura_Tarihi,
+      Alici_Unvani: inv.Alici_Unvani,
+      Donem: inv.Donem,
+      Aciklama: inv.Aciklama,
+      Ozel: inv.Ozel || false,
+      Gunluk_Harcama: inv.Gunluk_Harcama || false,
+      Giden_Fatura: false
+    };
+    const r = await fetch(`${API}/efaturalar`, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
+    });
+    if (!r.ok) { alert(`${i}. parça oluşturulamadı`); }
+  }
+
+  closeYeniModal();
+  await loadData();
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+function donemFormatla(d) {
+  if (!d || d.toString().length !== 4) return d || '';
+  const ds = d.toString();
+  const aylar = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  const yil = '20' + ds.substring(0,2);
+  const ay  = parseInt(ds.substring(2,4));
+  return `${ds} - ${aylar[ay-1]} ${yil}`;
+}
+
+function fmtTL(v) {
+  return new Intl.NumberFormat('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}).format(v || 0) + '₺';
+}
+
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+{% endblock %}

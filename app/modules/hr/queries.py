@@ -74,8 +74,8 @@ def create_calisan(
         Hesap_No=hesap_no,
         IBAN=iban,
         Net_Maas=Decimal(str(net_maas)) if net_maas else None,
-        Sigorta_Giris=sigorta_giris,
-        Sigorta_Cikis=sigorta_cikis,
+        Sigorta_Giris=date.fromisoformat(sigorta_giris) if isinstance(sigorta_giris, str) and sigorta_giris else sigorta_giris,
+        Sigorta_Cikis=date.fromisoformat(sigorta_cikis) if isinstance(sigorta_cikis, str) and sigorta_cikis else sigorta_cikis,
         Aktif_Pasif=aktif_pasif
     )
     db.add(new_calisan)
@@ -92,6 +92,7 @@ def update_calisan(
     hesap_no: Optional[str] = None,
     iban: Optional[str] = None,
     net_maas: Optional[float] = None,
+    sigorta_giris: Optional[date] = None,
     sigorta_cikis: Optional[date] = None,
     aktif_pasif: Optional[bool] = None
 ) -> Optional[Calisan]:
@@ -108,9 +109,29 @@ def update_calisan(
         calisan.Hesap_No = hesap_no
     if iban is not None:
         calisan.IBAN = iban
-    if net_maas is not None:
+    if net_maas == "":
+        calisan.Net_Maas = None
+    elif net_maas is not None:
         calisan.Net_Maas = Decimal(str(net_maas))
-    if sigorta_cikis is not None:
+        
+    if sigorta_giris == "":
+        calisan.Sigorta_Giris = None
+    elif isinstance(sigorta_giris, str):
+        try:
+            calisan.Sigorta_Giris = date.fromisoformat(sigorta_giris)
+        except ValueError:
+            pass
+    elif sigorta_giris is not None:
+        calisan.Sigorta_Giris = sigorta_giris
+        
+    if sigorta_cikis == "":
+        calisan.Sigorta_Cikis = None
+    elif isinstance(sigorta_cikis, str):
+        try:
+            calisan.Sigorta_Cikis = date.fromisoformat(sigorta_cikis)
+        except ValueError:
+            pass
+    elif sigorta_cikis is not None:
         calisan.Sigorta_Cikis = sigorta_cikis
     if aktif_pasif is not None:
         calisan.Aktif_Pasif = aktif_pasif
@@ -336,6 +357,30 @@ def delete_puantaj(db: Session, puantaj_id: int) -> bool:
     return True
 
 
+def get_puantajlar_for_month(
+    db: Session,
+    sube_id: int,
+    year: int,
+    month: int
+) -> List[Puantaj]:
+    """
+    Get all puantaj records for a branch and a specific month.
+    Used for the attendance grid (puantaj girisi) screen.
+    """
+    import calendar
+    _, last_day = calendar.monthrange(year, month)
+    tarihten = date(year, month, 1)
+    tarihine = date(year, month, last_day)
+    
+    stmt = (
+        select(Puantaj)
+        .where(Puantaj.Sube_ID == sube_id)
+        .where(Puantaj.Tarih >= tarihten)
+        .where(Puantaj.Tarih <= tarihine)
+    )
+    return db.scalars(stmt).all()
+
+
 # ============================================================================
 # AVANS ISTEK (ADVANCE REQUEST) QUERIES
 # ============================================================================
@@ -514,6 +559,24 @@ def create_calisan_talep(
     sigorta_cikis: Optional[date] = None
 ) -> CalisanTalep:
     """Create a new employee request."""
+    if isinstance(dogum_tarihi, str) and dogum_tarihi:
+        try:
+            dogum_tarihi = date.fromisoformat(dogum_tarihi)
+        except ValueError:
+            dogum_tarihi = None
+            
+    if isinstance(sigorta_giris, str) and sigorta_giris:
+        try:
+            sigorta_giris = date.fromisoformat(sigorta_giris)
+        except ValueError:
+            sigorta_giris = None
+            
+    if isinstance(sigorta_cikis, str) and sigorta_cikis:
+        try:
+            sigorta_cikis = date.fromisoformat(sigorta_cikis)
+        except ValueError:
+            sigorta_cikis = None
+
     new_talep = CalisanTalep(
         Talep=talep,
         TC_No=tc_no,
@@ -550,9 +613,23 @@ def update_calisan_talep(
     talep_id: int,
     adi: Optional[str] = None,
     soyadi: Optional[str] = None,
+    ilk_soyadi: Optional[str] = None,
     hesap_no: Optional[str] = None,
     iban: Optional[str] = None,
+    ogrenim_durumu: Optional[str] = None,
+    cinsiyet: Optional[str] = None,
+    gorevi: Optional[str] = None,
+    anne_adi: Optional[str] = None,
+    baba_adi: Optional[str] = None,
+    dogum_yeri: Optional[str] = None,
+    dogum_tarihi: Optional[date] = None,
+    medeni_hali: Optional[str] = None,
+    cep_no: Optional[str] = None,
+    adres_bilgileri: Optional[str] = None,
+    gelir_vergisi_matrahi: Optional[float] = None,
+    ssk_cikis_nedeni: Optional[str] = None,
     net_maas: Optional[float] = None,
+    sigorta_giris: Optional[date] = None,
     sigorta_cikis: Optional[date] = None
 ) -> Optional[CalisanTalep]:
     """Update employee request."""
@@ -564,14 +641,63 @@ def update_calisan_talep(
         talep.Adi = adi
     if soyadi is not None:
         talep.Soyadi = soyadi
+    if ilk_soyadi is not None:
+        talep.Ilk_Soyadi = ilk_soyadi
     if hesap_no is not None:
         talep.Hesap_No = hesap_no
     if iban is not None:
         talep.IBAN = iban
+    if ogrenim_durumu is not None:
+        talep.Ogrenim_Durumu = ogrenim_durumu
+    if cinsiyet is not None:
+        talep.Cinsiyet = cinsiyet
+    if gorevi is not None:
+        talep.Gorevi = gorevi
+    if anne_adi is not None:
+        talep.Anne_Adi = anne_adi
+    if baba_adi is not None:
+        talep.Baba_Adi = baba_adi
+    if dogum_yeri is not None:
+        talep.Dogum_Yeri = dogum_yeri
+    if dogum_tarihi is not None:
+        if isinstance(dogum_tarihi, str) and dogum_tarihi:
+            try:
+                talep.Dogum_Tarihi = date.fromisoformat(dogum_tarihi)
+            except ValueError:
+                pass
+        else:
+            talep.Dogum_Tarihi = dogum_tarihi
+            
+    if medeni_hali is not None:
+        talep.Medeni_Hali = medeni_hali
+    if cep_no is not None:
+        talep.Cep_No = cep_no
+    if adres_bilgileri is not None:
+        talep.Adres_Bilgileri = adres_bilgileri
+    if gelir_vergisi_matrahi is not None:
+        talep.Gelir_Vergisi_Matrahi = Decimal(str(gelir_vergisi_matrahi))
+    if ssk_cikis_nedeni is not None:
+        talep.SSK_Cikis_Nedeni = ssk_cikis_nedeni
     if net_maas is not None:
         talep.Net_Maas = Decimal(str(net_maas))
+        
+    if sigorta_giris is not None:
+        if isinstance(sigorta_giris, str) and sigorta_giris:
+            try:
+                talep.Sigorta_Giris = date.fromisoformat(sigorta_giris)
+            except ValueError:
+                pass
+        else:
+            talep.Sigorta_Giris = sigorta_giris
+            
     if sigorta_cikis is not None:
-        talep.Sigorta_Cikis = sigorta_cikis
+        if isinstance(sigorta_cikis, str) and sigorta_cikis:
+            try:
+                talep.Sigorta_Cikis = date.fromisoformat(sigorta_cikis)
+            except ValueError:
+                pass
+        else:
+            talep.Sigorta_Cikis = sigorta_cikis
     
     db.commit()
     db.refresh(talep)
@@ -587,3 +713,56 @@ def delete_calisan_talep(db: Session, talep_id: int) -> bool:
     db.delete(talep)
     db.commit()
     return True
+
+
+def approve_calisan_talep_hr(db: Session, talep_id: int, user_id: int) -> Optional[CalisanTalep]:
+    """Approve employee request by HR."""
+    talep = get_calisan_talep_by_id(db, talep_id)
+    if not talep:
+        return None
+    
+    talep.Is_Onay_Veren_Kullanici_ID = user_id
+    talep.Is_Onay_Tarih = datetime.now()
+    
+    db.commit()
+    db.refresh(talep)
+    return talep
+
+
+def approve_calisan_talep_ssk(db: Session, talep_id: int, user_id: int) -> Optional[CalisanTalep]:
+    """Approve employee request by SSK."""
+    talep = get_calisan_talep_by_id(db, talep_id)
+    if not talep:
+        return None
+    
+    talep.SSK_Onay_Veren_Kullanici_ID = user_id
+    talep.SSK_Onay_Tarih = datetime.now()
+    
+    # Gümüşbulut Logic: Auto-create employee or update exit date
+    if talep.Talep == 'İşe Giriş':
+        existing = get_calisan_by_tc_no(db, talep.TC_No)
+        if not existing:
+            create_calisan(
+                db=db,
+                tc_no=talep.TC_No,
+                adi=talep.Adi,
+                soyadi=talep.Soyadi,
+                sube_id=talep.Sube_ID,
+                hesap_no=talep.Hesap_No,
+                iban=talep.IBAN,
+                net_maas=talep.Net_Maas,
+                sigorta_giris=talep.Sigorta_Giris,
+                sigorta_cikis=talep.Sigorta_Cikis,
+                aktif_pasif=True
+            )
+    elif talep.Talep == 'İşten Çıkış':
+        update_calisan(
+            db=db,
+            tc_no=talep.TC_No,
+            sigorta_cikis=talep.Sigorta_Cikis,
+            aktif_pasif=False  # Typically disabled when they exit
+        )
+    
+    db.commit()
+    db.refresh(talep)
+    return talep

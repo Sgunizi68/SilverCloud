@@ -82,17 +82,33 @@ def dashboard():
     # Get statistics
     try:
         kategoriler = ref_queries.get_kategoriler(db_session, limit=1000, aktif_only=False)
-        suber = ref_queries.get_suber(db_session, limit=1000)
+        all_suber = ref_queries.get_suber(db_session, limit=1000)
         kullanicilar = ref_queries.get_kullanicilar(db_session, limit=1000, aktif_only=False)
         degerler = ref_queries.get_degerler(db_session, limit=1000)
         
+        # Branch authorization logic
+        is_admin = False
+        if user.Kullanici_Adi and user.Kullanici_Adi.lower() == 'admin':
+            is_admin = True
+        else:
+            roles = queries.get_user_roles(db_session, user.Kullanici_ID)
+            if 'admin' in [r.lower() for r in roles]:
+                is_admin = True
+                
+        if is_admin:
+            subeler = all_suber
+        else:
+            authorized_branch_ids = queries.get_user_branches(db_session, user.Kullanici_ID)
+            subeler = [s for s in all_suber if s.Sube_ID in authorized_branch_ids]
+
         stats = {
             'kategori_count': len(kategoriler),
-            'sube_count': len(suber),
+            'sube_count': len(subeler), # Should use filtered count or all branches? Used filtered.
             'kullanici_count': len(kullanicilar),
             'deger_count': len(degerler),
         }
     except Exception as e:
+        subeler = []
         stats = {
             'kategori_count': 0,
             'sube_count': 0,
@@ -100,13 +116,20 @@ def dashboard():
             'deger_count': 0,
         }
     
+    # Determine if user can view Gizli (hidden) categories
+    has_gizli_permission = is_admin  # Admins always see everything
+    if not is_admin:
+        has_gizli_permission = queries.has_permission(
+            db_session, user.Kullanici_ID, "Gizli Kategori Veri Erişimi"
+        )
     db_session.close()
     
     return render_template(
         "dashboard.html",
         user=user,
         stats=stats,
-        suber=suber
+        subeler=subeler,
+        has_gizli_permission=has_gizli_permission
     )
 
 

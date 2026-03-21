@@ -95,7 +95,7 @@ class ProductionConfig(Config):
     
     SQLALCHEMY_DATABASE_URI = (
         f"mysql+mysqlconnector://{db_user}:{db_password}@"
-        f"{db_host}:{db_port}/{db_name}"
+        f"{db_host}:{db_port}/{db_name}?ssl_disabled=False"
     )
 
 

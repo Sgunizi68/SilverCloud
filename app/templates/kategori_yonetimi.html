@@ -1,0 +1,420 @@
+{% extends "base.html" %}
+
+{% block title %}Kategori Yönetimi - SilverCloud{% endblock %}
+
+/* Nav active block */
+{% block acc_kategori_sistemi %}active{% endblock %}
+{% block acc_kategori_sistemi_content %}open{% endblock %}
+
+{% block extra_style %}
+<style>
+    .ref-page-container {
+        padding: 20px;
+    }
+
+    .card-glass {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        margin-bottom: 20px;
+    }
+
+    .header-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .header-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .action-btn {
+        padding: 8px 14px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        background: white;
+        font-size: 13px;
+        font-weight: 500;
+        color: #475569;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+    }
+
+    .action-btn.primary {
+        background: #3b82f6;
+        color: white;
+        border-color: #3b82f6;
+        font-weight: 600;
+    }
+
+    .action-btn.primary:hover {
+        background: #2563eb;
+    }
+
+    .search-input {
+        padding: 8px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        width: 180px;
+        font-size: 13px;
+        outline: none;
+        background: white;
+    }
+
+    .filter-select {
+        padding: 8px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 13px;
+        outline: none;
+        background: white;
+        color: #475569;
+    }
+
+    .ref-table-wrapper {
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .ref-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .ref-table th {
+        background: #fdfdfd;
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 12px 20px;
+        text-align: left;
+        border-bottom: 1px solid #e2e8f0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .ref-table td {
+        padding: 12px 20px;
+        color: #475569;
+        font-size: 13px;
+        border-bottom: 1px solid #e2e8f0;
+        vertical-align: middle;
+    }
+
+    .ref-table tr:hover {
+        background-color: #f8fafc;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        font-size: 10px;
+    }
+
+    .status-active {
+        color: #16a34a;
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+    }
+
+    .status-passive {
+        color: #dc2626;
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+    }
+
+    .gizli-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        font-size: 10px;
+        color: #64748b;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+    }
+
+    .gizli-true {
+        color: #f59e0b;
+        background: #fffbeb;
+        border-color: #fef3c7;
+    }
+
+    .action-icons {
+        display: flex;
+        gap: 6px;
+        justify-content: flex-end;
+    }
+
+    .icon-btn {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: #64748b;
+    }
+
+    .icon-btn:hover {
+        background: #f8fafc;
+        color: #3b82f6;
+        border-color: #3b82f6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ref-page-container">
+    <div class="card-glass header-bar">
+        <h1 class="header-title">Kategori Yönetimi</h1>
+        <div class="header-actions">
+            <button class="icon-btn" onclick="window.print()" title="Yazdır"><i class="fas fa-print"></i></button>
+            <button class="icon-btn" onclick="exportToExcel()" title="Excel"><i class="fas fa-download"></i></button>
+
+            <input type="text" class="search-input" placeholder="Kategori ara..." id="kat-search">
+
+            <select class="filter-select" id="filter-ust-kat">
+                <option value="">Tüm Üst Kategoriler</option>
+                {% for uk in ust_kategoriler %}
+                <option value="{{ uk.UstKategori_Adi }}">{{ uk.UstKategori_Adi }}</option>
+                {% endfor %}
+            </select>
+
+            <select class="filter-select" id="filter-tip">
+                <option value="">Tüm Tipler</option>
+                <option value="Gelir">Gelir</option>
+                <option value="Gider">Gider</option>
+                <option value="Bilgi">Bilgi</option>
+                <option value="Ödeme">Ödeme</option>
+                <option value="Giden Fatura">Giden Fatura</option>
+            </select>
+
+            <button class="action-btn primary" onclick="openAddModal()">
+                <i class="fas fa-plus"></i> Yeni Kategori
+            </button>
+        </div>
+    </div>
+
+    <div class="card-glass ref-table-wrapper">
+        <table class="ref-table" id="kat-table">
+            <thead>
+                <tr>
+                    <th style="width: 60px;">ID</th>
+                    <th>KATEGORİ ADI</th>
+                    <th>ÜST KATEGORİ</th>
+                    <th style="width: 120px;">TİP</th>
+                    <th style="width: 80px; text-align: center;">AKTİF</th>
+                    <th style="width: 80px; text-align: center;">GİZLİ</th>
+                    <th style="width: 100px; text-align: center;">İŞLEMLER</th>
+                </tr>
+            </thead>
+            <tbody id="kat-tbody">
+                {% for k in kategoriler %}
+                <tr data-id="{{ k.Kategori_ID }}" data-ust-kat="{{ k.UstKategori_Adi }}" data-tip="{{ k.Tip }}">
+                    <td>{{ k.Kategori_ID }}</td>
+                    <td class="kat-name">{{ k.Kategori_Adi }}</td>
+                    <td>{{ k.UstKategori_Adi }}</td>
+                    <td>{{ k.Tip }}</td>
+                    <td style="text-align: center;">
+                        <span class="status-badge {{ 'status-active' if k.Aktif_Pasif else 'status-passive' }}">
+                            <i class="fas {{ 'fa-check' if k.Aktif_Pasif else 'fa-times' }}"></i>
+                        </span>
+                    </td>
+                    <td style="text-align: center;">
+                        <span class="gizli-badge {{ 'gizli-true' if k.Gizli else '' }}">
+                            <i class="fas {{ 'fa-eye-slash' if k.Gizli else 'fa-eye' }}"></i>
+                        </span>
+                    </td>
+                    <td class="hide-on-print">
+                        <div class="action-icons">
+                            <button class="icon-btn edit" title="Düzenle"
+                                onclick='openEditModal({{ k | tojson | safe }})'>
+                                <i class="fas fa-pen"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 40px; color: #94a3b8;">
+                        Henüz kategori bulunmuyor.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const searchInput = document.getElementById('kat-search');
+        const filterUstKat = document.getElementById('filter-ust-kat');
+        const filterTip = document.getElementById('filter-tip');
+
+        function applyFilters() {
+            const term = searchInput.value.toLowerCase();
+            const ustKat = filterUstKat.value;
+            const tip = filterTip.value;
+
+            document.querySelectorAll('#kat-tbody tr').forEach(row => {
+                const name = row.querySelector('.kat-name')?.textContent.toLowerCase() || '';
+                const rowUstKat = row.dataset.ustKat;
+                const rowTip = row.dataset.tip;
+
+                const matchName = name.includes(term);
+                const matchUstKat = !ustKat || rowUstKat === ustKat;
+                const matchTip = !tip || rowTip === tip;
+
+                row.style.display = (matchName && matchUstKat && matchTip) ? '' : 'none';
+            });
+        }
+
+        searchInput.addEventListener('input', applyFilters);
+        filterUstKat.addEventListener('change', applyFilters);
+        filterTip.addEventListener('change', applyFilters);
+    });
+
+    const USET_KATEGORILER = {{ ust_kategoriler | tojson | safe }};
+
+    function kategoriFormHtml(isEdit = false, data = {}) {
+        let ustKatOptions = '<option value="">(Üst Kategori Yok)</option>';
+        USET_KATEGORILER.forEach(uk => {
+            const selected = data.Ust_Kategori_ID == uk.UstKategori_ID ? 'selected' : '';
+            ustKatOptions += `<option value="${uk.UstKategori_ID}" ${selected}>${uk.UstKategori_Adi}</option>`;
+        });
+
+        const tips = ['Gelir', 'Gider', 'Bilgi', 'Ödeme', 'Giden Fatura'];
+        let tipOptions = '';
+        tips.forEach(t => {
+            const selected = data.Tip == t ? 'selected' : '';
+            tipOptions += `<option value="${t}" ${selected}>${t}</option>`;
+        });
+
+        return `
+            <form id="katForm" data-mode="${isEdit ? 'edit' : 'add'}" data-id="${data.Kategori_ID || ''}">
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label style="display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 5px;">Kategori Adı *</label>
+                    <input type="text" id="Kategori_Adi" class="form-control" 
+                        style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;"
+                        value="${data.Kategori_Adi || ''}" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label style="display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 5px;">Üst Kategori</label>
+                    <select id="Ust_Kategori_ID" class="form-control" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        ${ustKatOptions}
+                    </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label style="display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 5px;">Tip *</label>
+                    <select id="Tip" class="form-control" style="width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;" required>
+                        ${tipOptions}
+                    </select>
+                </div>
+                <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+                    <div class="form-check" style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="Aktif_Pasif" ${data.Aktif_Pasif !== false ? 'checked' : ''}>
+                        <label for="Aktif_Pasif" style="font-size: 14px; cursor: pointer;">Aktif</label>
+                    </div>
+                    <div class="form-check" style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="Gizli" ${data.Gizli ? 'checked' : ''}>
+                        <label for="Gizli" style="font-size: 14px; cursor: pointer;">Gizli</label>
+                    </div>
+                </div>
+                <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; padding-top: 15px; border-top: 1px solid #e2e8f0;">
+                    <button type="button" class="action-btn" onclick="hideModal()">İptal</button>
+                    <button type="submit" class="action-btn primary">Kaydet</button>
+                </div>
+            </form>
+        `;
+    }
+
+    function openAddModal() {
+        showModal('Yeni Kategori', kategoriFormHtml(false));
+        document.getElementById('katForm').addEventListener('submit', handleFormSubmit);
+    }
+
+    function openEditModal(data) {
+        showModal('Kategori Düzenle', kategoriFormHtml(true, data));
+        document.getElementById('katForm').addEventListener('submit', handleFormSubmit);
+    }
+
+    async function handleFormSubmit(e) {
+        e.preventDefault();
+        const form = e.target;
+        const mode = form.dataset.mode;
+        const id = form.dataset.id;
+
+        const data = {
+            Kategori_Adi: document.getElementById('Kategori_Adi').value.trim(),
+            Ust_Kategori_ID: document.getElementById('Ust_Kategori_ID').value || null,
+            Tip: document.getElementById('Tip').value,
+            Aktif_Pasif: document.getElementById('Aktif_Pasif').checked,
+            Gizli: document.getElementById('Gizli').checked
+        };
+
+        const url = mode === 'add' ? '/api/v1/kategoriler' : `/api/v1/kategoriler/${id}`;
+        const method = mode === 'add' ? 'POST' : 'PUT';
+
+        try {
+            const res = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (res.ok) {
+                showToast(mode === 'add' ? 'Kayıt eklendi.' : 'Kayıt güncellendi.');
+                hideModal();
+                setTimeout(() => location.reload(), 800);
+            } else {
+                const err = await res.json();
+                showToast(err.error || 'İşlem başarısız.', 'error');
+            }
+        } catch { showToast('Sunucu bağlantı hatası.', 'error'); }
+    }
+
+    function exportToExcel() {
+        const table = document.getElementById('kat-table');
+        const wb = XLSX.utils.table_to_book(table, { sheet: "Kategoriler" });
+        XLSX.writeFile(wb, "SilverCloud_Kategoriler.xlsx");
+    }
+</script>
+{% endblock %}

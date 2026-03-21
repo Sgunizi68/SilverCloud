@@ -1,0 +1,270 @@
+{
+  "mutabakat": [
+    {
+      "Mutabakat_ID": 4,
+      "Cari_ID": 4,
+      "Mutabakat_Tarihi": "2025-12-13",
+      "Tutar": "1747.44",
+      "Aciklama": null,
+      "Sube_ID": 1,
+      "Kayit_Tarihi": "2025-12-12T22:22:28"
+    },
+    {
+      "Mutabakat_ID": 5,
+      "Cari_ID": 5,
+      "Mutabakat_Tarihi": "2025-12-25",
+      "Tutar": "28453.07",
+      "Aciklama": null,
+      "Sube_ID": 1,
+      "Kayit_Tarihi": "2026-01-01T14:06:20"
+    },
+    {
+      "Mutabakat_ID": 10,
+      "Cari_ID": 2,
+      "Mutabakat_Tarihi": "2025-11-22",
+      "Tutar": "55536.21",
+      "Aciklama": null,
+      "Sube_ID": 1,
+      "Kayit_Tarihi": "2025-11-24T20:16:18"
+    },
+    {
+      "Mutabakat_ID": 11,
+      "Cari_ID": 1,
+      "Mutabakat_Tarihi": "2025-11-22",
+      "Tutar": "1788.06",
+      "Aciklama": null,
+      "Sube_ID": 1,
+      "Kayit_Tarihi": "2025-11-24T20:17:40"
+    },
+    {
+      "Mutabakat_ID": 12,
+      "Cari_ID": 3,
+      "Mutabakat_Tarihi": "2025-11-24",
+      "Tutar": "28596.53",
+      "Aciklama": null,
+      "Sube_ID": 1,
+      "Kayit_Tarihi": "2025-11-24T20:18:54"
+    },
+    {
+      "Mutabakat_ID": 13,
+      "Cari_ID": 6,
+      "Mutabakat_Tarihi": "2025-11-24",
+      "Tutar": "7721.25",
+      "Aciklama": null,
+      "Sube_ID": 1,
+      "Kayit_Tarihi": "2025-11-24T20:20:06"
+    }
+  ],
+  "cari": [
+    {
+      "Cari_ID": 1,
+      "e_Fatura_Kategori_ID": 14,
+      "Alici_Unvani": "COCA COLA SATIŞ VE DAĞITIM A.Ş.",
+      "Referans_ID": 23,
+      "Cari": 1,
+      "Aciklama": "Cola",
+      "Kayit_Tarihi": "2025-10-17T00:00:00",
+      "Aktif_Pasif": 1
+    },
+    {
+      "Cari_ID": 2,
+      "e_Fatura_Kategori_ID": 17,
+      "Alici_Unvani": "FASDAT GIDA DAĞITIM SANAYİ VE TİCARET ANONİM ŞİRKETİ",
+      "Referans_ID": 15,
+      "Cari": 1,
+      "Aciklama": "Fasdat",
+      "Kayit_Tarihi": "2025-10-17T00:00:00",
+      "Aktif_Pasif": 1
+    },
+    {
+      "Cari_ID": 3,
+      "e_Fatura_Kategori_ID": 16,
+      "Alici_Unvani": "G2MEKSPER SATIŞ VE DAĞITIM HİZMETLERİ ANONİM ŞİRKETİ",
+      "Referans_ID": 18,
+      "Cari": 1,
+      "Aciklama": "G2M",
+      "Kayit_Tarihi": "2025-10-17T00:00:00",
+      "Aktif_Pasif": 1
+    },
+    {
+      "Cari_ID": 4,
+      "e_Fatura_Kategori_ID": 18,
+      "Alici_Unvani": "VOLKAN ŞERBETÇİ",
+      "Referans_ID": 19,
+      "Cari": 1,
+      "Aciklama": "Kübra Şerbetçi",
+      "Kayit_Tarihi": "2025-12-12T19:16:34",
+      "Aktif_Pasif": 1
+    },
+    {
+      "Cari_ID": 5,
+      "e_Fatura_Kategori_ID": 14,
+      "Alici_Unvani": "Pepsi Cola Servis ve Dağıtım Ltd. Şti.",
+      "Referans_ID": 24,
+      "Cari": 1,
+      "Aciklama": "Pepsi",
+      "Kayit_Tarihi": "2025-10-17T00:00:00",
+      "Aktif_Pasif": 1
+    },
+    {
+      "Cari_ID": 6,
+      "e_Fatura_Kategori_ID": 15,
+      "Alici_Unvani": "Seher Gıda Pazarlama Sanayi Ve Ticaret Anonim Şirketi",
+      "Referans_ID": 20,
+      "Cari": 1,
+      "Aciklama": "Seher",
+      "Kayit_Tarihi": "2025-10-17T00:00:00",
+      "Aktif_Pasif": 1
+    },
+    {
+      "Cari_ID": 7,
+      "e_Fatura_Kategori_ID": 52,
+      "Alici_Unvani": "TÜRMOB-TESMER EĞİTİM YAYIN VE YAZILIM HİZMETLERİ İKTİSADİ İŞLETMESİ",
+      "Referans_ID": null,
+      "Cari": 0,
+      "Aciklama": "Türmod",
+      "Kayit_Tarihi": "2025-10-17T00:00:00",
+      "Aktif_Pasif": 1
+    },
+    {
+      "Cari_ID": 8,
+      "e_Fatura_Kategori_ID": 30,
+      "Alici_Unvani": "İGDAŞ İSTANBUL GAZ DAĞITIM SANAYİ VE TİCARET ANONİM ŞİRKETİ",
+      "Referans_ID": null,
+      "Cari": 0,
+      "Aciklama": null,
+      "Kayit_Tarihi": "2025-10-17T00:00:00",
+      "Aktif_Pasif": 1
+    },
+    {
+      "Cari_ID": 9,
+      "e_Fatura_Kategori_ID": 25,
+      "Alici_Unvani": "Lion Tekstil San ve Tic Ltd Şti",
+      "Referans_ID": null,
+      "Cari": 0,
+      "Aciklama": null,
+      "Kayit_Tarihi": "2025-10-17T00:00:00",
+      "Aktif_Pasif": 1
+    },
+    {
+      "Cari_ID": 10,
+      "e_Fatura_Kategori_ID": 22,
+      "Alici_Unvani": "METROPAL KURUMSAL HİZMETLER A.Ş.",
+      "Referans_ID": null,
+      "Cari": 0,
+      "Aciklama": null,
+      "Kayit_Tarihi": "2025-10-17T00:00:00",
+      "Aktif_Pasif": 1
+    },
+    {
+      "Cari_ID": 11,
+      "e_Fatura_Kategori_ID": 22,
+      "Alici_Unvani": "MULTINET KURUMSAL HİZMETLER ANONİM ŞİRKETİ",
+      "Referans_ID": null,
+      "Cari": 0,
+      "Aciklama": null,
+      "Kayit_Tarihi": "2025-10-17T00:00:00",
+      "Aktif_Pasif": 1
+    },
+    {
+      "Cari_ID": 12,
+      "e_Fatura_Kategori_ID": 97,
+      "Alici_Unvani": "POSTA VE TELGRAF TEŞKİLATI ANONİM ŞİRKETİ",
+      "Referans_ID": null,
+      "Cari": 0,
+      "Aciklama": null,
+      "Kayit_Tarihi": "2025-10-17T00:00:00",
+      "Aktif_Pasif": 1
+    },
+    {
+      "Cari_ID": 13,
+      "e_Fatura_Kategori_ID": 48,
+      "Alici_Unvani": "ROBOTPOS BİLGİSAYAR SİSTEMLERİ A.Ş.",
+      "Referans_ID": null,
+      "Cari": 0,
+      "Aciklama": null,
+      "Kayit_Tarihi": "2025-10-17T00:00:00",
+      "Aktif_Pasif": 1
+    },
+    {
+      "Cari_ID": 14,
+      "e_Fatura_Kategori_ID": 22,
+      "Alici_Unvani": "SET KURUMSAL HİZMETLER TİCARET A.Ş.",
+      "Referans_ID": null,
+      "Cari": 0,
+      "Aciklama": null,
+      "Kayit_Tarihi": "2025-10-17T00:00:00",
+      "Aktif_Pasif": 1
+    },
+    {
+      "Cari_ID": 15,
+      "e_Fatura_Kategori_ID": 22,
+      "Alici_Unvani": "PLUXEE ÇALIŞAN DENEYİMİ DANIŞMANLIK VE PAZARLAMA HİZMETLERİ ANONİM ŞİRKETİ",
+      "Referans_ID": null,
+      "Cari": 0,
+      "Aciklama": null,
+      "Kayit_Tarihi": "2025-10-17T00:00:00",
+      "Aktif_Pasif": 1
+    },
+    {
+      "Cari_ID": 16,
+      "e_Fatura_Kategori_ID": 13,
+      "Alici_Unvani": "TAVUK DÜNYASI GIDA SANAYİ VE TİCARET A.Ş",
+      "Referans_ID": null,
+      "Cari": 0,
+      "Aciklama": null,
+      "Kayit_Tarihi": "2025-10-17T00:00:00",
+      "Aktif_Pasif": 1
+    },
+    {
+      "Cari_ID": 17,
+      "e_Fatura_Kategori_ID": 22,
+      "Alici_Unvani": "EDENRED KURUMSAL ÇÖZÜMLER A.Ş.",
+      "Referans_ID": null,
+      "Cari": 0,
+      "Aciklama": null,
+      "Kayit_Tarihi": "2025-10-17T00:00:00",
+      "Aktif_Pasif": 1
+    },
+    {
+      "Cari_ID": 18,
+      "e_Fatura_Kategori_ID": 31,
+      "Alici_Unvani": "TTNET A.Ş.",
+      "Referans_ID": null,
+      "Cari": 0,
+      "Aciklama": null,
+      "Kayit_Tarihi": "2025-10-17T00:00:00",
+      "Aktif_Pasif": 1
+    },
+    {
+      "Cari_ID": 19,
+      "e_Fatura_Kategori_ID": 31,
+      "Alici_Unvani": "Türk Telekomünikasyon A.Ş.",
+      "Referans_ID": null,
+      "Cari": 0,
+      "Aciklama": null,
+      "Kayit_Tarihi": "2025-10-17T00:00:00",
+      "Aktif_Pasif": 1
+    },
+    {
+      "Cari_ID": 20,
+      "e_Fatura_Kategori_ID": 97,
+      "Alici_Unvani": "YURTİÇİ KARGO SERVİSİ ANONİM ŞİRKETİ",
+      "Referans_ID": null,
+      "Cari": 0,
+      "Aciklama": "Yurtiçi Kargo",
+      "Kayit_Tarihi": "2025-10-19T18:39:35",
+      "Aktif_Pasif": 1
+    }
+  ],
+  "fatura_stats": [
+    {
+      "Giden_Fatura": 0,
+      "cnt": 1669
+    },
+    {
+      "Giden_Fatura": 1,
+      "cnt": 117
+    }
+  ]
+}

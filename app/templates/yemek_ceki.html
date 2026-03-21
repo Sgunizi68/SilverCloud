@@ -1,0 +1,474 @@
+{% extends "base.html" %}
+
+{% block title %}Yemek Çeki - SilverCloud{% endblock %}
+{% block nav_yemek_ceki %}active{% endblock %}
+{% block acc_fatura_harcama %}active{% endblock %}
+{% block acc_fatura_harcama_content %}open{% endblock %}
+
+{% block extra_style %}
+<style>
+    .ref-page-container {
+        padding: 20px;
+    }
+
+    .card-glass {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        margin-bottom: 20px;
+    }
+
+    .header-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .header-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .action-btn {
+        padding: 8px 14px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        background: white;
+        font-size: 13px;
+        font-weight: 500;
+        color: #475569;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+        color: #334155;
+    }
+
+    .action-btn.primary {
+        background: #3b82f6;
+        color: white;
+        border-color: #3b82f6;
+        font-weight: 600;
+    }
+
+    .toolbar-input {
+        padding: 8px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 13px;
+        outline: none;
+        background: white;
+        color: #475569;
+    }
+
+    /* Table styling */
+    .ref-table-wrapper {
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .ref-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .ref-table th {
+        background: #fdfdfd;
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 12px 20px;
+        text-align: left;
+        border-bottom: 1px solid #e2e8f0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .ref-table td {
+        padding: 10px 20px;
+        color: #475569;
+        font-size: 13px;
+        border-bottom: 1px solid #e2e8f0;
+        vertical-align: middle;
+    }
+
+    .ref-table tr:hover {
+        background-color: #f8fafc;
+    }
+
+    .cell-bold {
+        color: #334155;
+        font-weight: 500;
+    }
+
+    .text-right {
+        text-align: right !important;
+    }
+
+    .text-center {
+        text-align: center !important;
+    }
+
+    .action-icons {
+        display: flex;
+        gap: 6px;
+        justify-content: flex-end;
+    }
+
+    .icon-btn {
+        width: 28px;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: #64748b;
+    }
+
+    .icon-btn.edit:hover {
+        background: #eff6ff;
+        border-color: #bfdbfe;
+        color: #3b82f6;
+    }
+
+    .icon-btn.delete {
+        color: #ef4444;
+        border-color: #fca5a5;
+    }
+
+    .image-link {
+        color: #3b82f6;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+    }
+
+    /* Modal form styling */
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        margin-bottom: 15px;
+    }
+
+    .form-group label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #475569;
+    }
+
+    .form-control {
+        padding: 9px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 14px;
+        outline: none;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .row {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .col-6 {
+        flex: 1;
+        min-width: calc(50% - 15px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ref-page-container">
+
+    <!-- Header -->
+    <div class="card-glass header-bar">
+        {% set sube_name = '' %}
+        {% for s in subeler %}
+        {% if s.Sube_ID == secili_sube_id %}{% set sube_name = s.Sube_Adi %}{% endif %}
+        {% endfor %}
+        <h1 class="header-title">Yemek Çeki (Şube: {{ sube_name or 'Tümü' }})</h1>
+
+        <div class="header-actions">
+            <button class="action-btn" onclick="window.print()" title="Yazdır">
+                <i class="fas fa-print"></i>
+            </button>
+            <input type="text" class="toolbar-input" placeholder="Kategori ara..." id="searchInput">
+
+            <select class="toolbar-input" id="filterDonem" onchange="onDonemChange(this.value)">
+                {% for d in donem_listesi %}
+                <option value="{{ d }}" {% if d==secili_donem %}selected{% endif %}>
+                    {{ d }} &ndash;
+                    {%- set yy = (d // 100) %}
+                    {%- set mm = (d % 100) %}
+                    {%- set ay_adlari = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas',
+                    'Ara'] %}
+                    {{ ay_adlari[mm - 1] if mm >= 1 and mm <= 12 else '' }} {{ 2000 + yy }} </option>
+                        {% endfor %}
+            </select>
+
+            <button class="action-btn primary" onclick="openAddModal()">
+                <i class="fas fa-plus"></i> Yeni Kayıt
+            </button>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="card-glass ref-table-wrapper">
+        <table class="ref-table" id="dataTable">
+            <thead>
+                <tr>
+                    <th>KATEGORİ</th>
+                    <th>TARİH</th>
+                    <th class="text-right">TUTAR</th>
+                    <th>ÖDEME TARİHİ</th>
+                    <th>İLK TARİH</th>
+                    <th>SON TARİH</th>
+                    <th class="text-center">RESİM</th>
+                    <th class="text-right">İŞLEMLER</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                {% for item in cekiler %}
+                <tr data-kategori="{{ item.Kategori_Adi|lower }}">
+                    <td class="cell-bold">{{ item.Kategori_Adi }}</td>
+                    <td class="cell-muted">{{ item.Tarih }}</td>
+                    <td class="text-right cell-bold">₺{{ '{:,.2f}'.format(item.Tutar) }}</td>
+                    <td class="cell-muted">{{ item.Odeme_Tarih }}</td>
+                    <td class="cell-muted">{{ item.Ilk_Tarih }}</td>
+                    <td class="cell-muted">{{ item.Son_Tarih }}</td>
+                    <td class="text-center">
+                        {% if item.has_imaj %}
+                        <a href="#" class="image-link" onclick="viewImage('{{ item.Imaj_Base64 }}'); return false;">
+                            Görüntüle
+                        </a>
+                        {% endif %}
+                    </td>
+                    <td class="text-right">
+                        <div class="action-icons">
+                            <button class="icon-btn edit" data-id="{{ item.ID }}" data-kat="{{ item.Kategori_ID }}"
+                                data-tarih="{{ item.Tarih }}" data-tutar="{{ item.Tutar }}"
+                                data-odeme="{{ item.Odeme_Tarih }}" data-ilk="{{ item.Ilk_Tarih }}"
+                                data-son="{{ item.Son_Tarih }}" onclick="openEditModal(this)" title="Düzenle">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="icon-btn delete" data-id="{{ item.ID }}"
+                                onclick="deleteRecord(this.dataset.id)" title="Sil">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="text-center cell-muted" style="padding: 40px;">Kayıt bulunamadı.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<!-- Image Viewer Overlay -->
+<div id="imageOverlay"
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
+    <div style="background:white; padding:10px; border-radius:8px; max-width:90%; max-height:80vh;">
+        <img id="viewerImage" src="" style="max-width:100%;">
+        <div style="text-align:right; margin-top:10px;">
+            <button onclick="document.getElementById('imageOverlay').style.display='none'"
+                class="btn btn-secondary">Kapat</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('searchInput').addEventListener('input', function () {
+        const val = this.value.toLowerCase();
+        document.querySelectorAll('#tableBody tr').forEach(row => {
+            const kat = row.dataset.kategori || '';
+            row.style.display = kat.includes(val) ? '' : 'none';
+        });
+    });
+
+    const branchSelect = document.getElementById('branch-select');
+    if (branchSelect) {
+        branchSelect.addEventListener('change', function () {
+            const donemVal = document.getElementById('filterDonem').value;
+            window.location.href = `/yemek-ceki?sube_id=${this.value}&donem=${donemVal}`;
+        });
+    }
+
+    function onDonemChange(val) {
+        const subeId = branchSelect ? branchSelect.value : '{{ secili_sube_id }}';
+        window.location.href = `/yemek-ceki?sube_id=${subeId}&donem=${val}`;
+    }
+
+    function viewImage(base64) {
+        document.getElementById('viewerImage').src = 'data:image/jpeg;base64,' + base64;
+        document.getElementById('imageOverlay').style.display = 'flex';
+    }
+
+    function openAddModal() {
+        const categories = {{ all_kategoriler | tojson | safe
+    }};
+    let catOpts = categories.map(k => `<option value="${k.Kategori_ID}">${k.Kategori_Adi}</option>`).join('');
+
+    const html = `
+            <form id="saveForm" onsubmit="saveData(event)">
+                <div class="row">
+                    <div class="col-6 form-group">
+                        <label>Kategori</label>
+                        <select class="form-control" name="Kategori_ID" required>${catOpts}</select>
+                    </div>
+                    <div class="col-6 form-group">
+                        <label>Tarih</label>
+                        <input type="date" class="form-control" name="Tarih" required value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-6 form-group">
+                        <label>Tutar</label>
+                        <input type="number" step="0.01" class="form-control" name="Tutar" required>
+                    </div>
+                    <div class="col-6 form-group">
+                        <label>Ödeme Tarihi</label>
+                        <input type="date" class="form-control" name="Odeme_Tarih" required>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-6 form-group">
+                        <label>İlk Tarih</label>
+                        <input type="date" class="form-control" name="Ilk_Tarih" required>
+                    </div>
+                    <div class="col-6 form-group">
+                        <label>Son Tarih</label>
+                        <input type="date" class="form-control" name="Son_Tarih" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Resim</label>
+                    <input type="file" class="form-control" name="image" accept="image/*">
+                </div>
+                <div style="margin-top:20px; text-align:right;">
+                    <button type="button" class="btn btn-secondary" onclick="hideModal()">İptal</button>
+                    <button type="submit" class="btn btn-primary">Kaydet</button>
+                </div>
+            </form>
+        `;
+    showModal('Yeni Yemek Çeki Kaydı', html);
+    }
+
+    function openEditModal(btn) {
+        const ds = btn.dataset;
+        const categories = {{ all_kategoriler | tojson | safe
+    }};
+    let editCatOpts = categories.map(k => `<option value="${k.Kategori_ID}" ${k.Kategori_ID == ds.kat ? 'selected' : ''}>${k.Kategori_Adi}</option>`).join('');
+
+    const editHtml = `
+            <form id="saveForm" onsubmit="saveData(event, ${ds.id})">
+                <div class="row">
+                    <div class="col-6 form-group">
+                        <label>Kategori</label>
+                        <select class="form-control" name="Kategori_ID" required>${editCatOpts}</select>
+                    </div>
+                    <div class="col-6 form-group">
+                        <label>Tarih</label>
+                        <input type="date" class="form-control" name="Tarih" required value="${ds.tarih}">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-6 form-group">
+                        <label>Tutar</label>
+                        <input type="number" step="0.01" class="form-control" name="Tutar" required value="${ds.tutar}">
+                    </div>
+                    <div class="col-6 form-group">
+                        <label>Ödeme Tarihi</label>
+                        <input type="date" class="form-control" name="Odeme_Tarih" required value="${ds.odeme}">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-6 form-group">
+                        <label>İlk Tarih</label>
+                        <input type="date" class="form-control" name="Ilk_Tarih" required value="${ds.ilk}">
+                    </div>
+                    <div class="col-6 form-group">
+                        <label>Son Tarih</label>
+                        <input type="date" class="form-control" name="Son_Tarih" required value="${ds.son}">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Resim Değiştir (Boş bırakılırsa mevcut kalır)</label>
+                    <input type="file" class="form-control" name="image" accept="image/*">
+                </div>
+                <div class="form-group" style="flex-direction:row; align-items:center; gap:8px;">
+                    <input type="checkbox" name="clear_imaj" id="clearImaj" value="true">
+                    <label for="clearImaj" style="margin:0;">Mevcut Resmi Sil</label>
+                </div>
+                <div style="margin-top:20px; text-align:right;">
+                    <button type="button" class="btn btn-secondary" onclick="hideModal()">İptal</button>
+                    <button type="submit" class="btn btn-primary">Güncelle</button>
+                </div>
+            </form>
+        `;
+    showModal('Yemek Çeki Düzenle', editHtml);
+    }
+
+    async function saveData(e, id = null) {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        formData.append('Sube_ID', branchSelect ? branchSelect.value : '{{ secili_sube_id }}');
+
+        const method = id ? 'PUT' : 'POST';
+        const url = id ? `/api/v1/yemek-cekileri/${id}` : '/api/v1/yemek-cekileri';
+
+        try {
+            const res = await fetch(url, { method: method, body: formData });
+            if (!res.ok) throw new Error("İşlem başarısız.");
+            location.reload();
+        } catch (err) {
+            alert(err.message);
+        }
+    }
+
+    async function deleteRecord(id) {
+        if (!confirm("Silmek istediğinize emin misiniz?")) return;
+        try {
+            const res = await fetch(`/api/v1/yemek-cekileri/${id}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error("Silme işlemi başarısız.");
+            location.reload();
+        } catch (err) {
+            alert(err.message);
+        }
+    }
+</script>
+{% endblock %}

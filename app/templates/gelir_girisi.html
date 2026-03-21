@@ -1,0 +1,951 @@
+{% extends "base.html" %}
+{% block title %}Gelir Girişi - SilverCloud{% endblock %}
+{% block nav_gelir_girisi %}active{% endblock %}
+
+{% block content %}
+<style>
+    /* PAGE SCROLL LOCK */
+    html,
+    body {
+        overflow-x: hidden !important;
+        max-width: 100vw !important;
+        position: relative;
+    }
+
+    /* Fixed Layout Structure */
+    .glass-panel {
+        background: rgba(255, 255, 255, 0.95);
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 110px);
+        /* Height restricted to viewport minus topbar */
+        overflow: hidden;
+        /* Prevent glass-panel from scrolling itself */
+        margin-bottom: 0;
+        width: 100%;
+        max-width: 100%;
+        /* Force containment */
+        box-sizing: border-box;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        flex-shrink: 0;
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .filter-group {
+        display: flex;
+        gap: 16px;
+        align-items: flex-end;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .form-group label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #64748b;
+    }
+
+    .form-control {
+        padding: 8px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        background: white;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .btn {
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-secondary {
+        background: #f1f5f9;
+        color: #475569;
+        border: 1px solid #cbd5e1;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+        background: #e2e8f0;
+    }
+
+    .btn-secondary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .table-container {
+        flex: 1;
+        overflow: auto;
+        /* ALLOW BOTH HORIZONTAL AND VERTICAL SCROLL */
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        position: relative;
+        min-width: 0;
+        /* CRITICAL: Prevents flex container from being pushed by large table */
+        max-width: 100%;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: separate;
+        /* Required for sticky borders to work */
+        border-spacing: 0;
+        min-width: 1800px;
+        /* Force overflow for horizontal scroll */
+    }
+
+    /* STICKY FIRST COLUMN (Gelir Kalemi) */
+    .frozen-col,
+    td:first-child {
+        position: sticky !important;
+        left: 0 !important;
+        background-color: #f8fafc !important;
+        z-index: 20 !important;
+        text-align: left;
+        padding: 2px 16px !important; /* Reduced for 16px height */
+        border-right: 2px solid #cbd5e1 !important;
+        min-width: 200px;
+        box-shadow: 2px 0 0 #cbd5e1;
+        transform: translateZ(0);
+    }
+
+    th:first-child {
+        position: sticky !important;
+        left: 0 !important;
+        background-color: #f8fafc !important;
+        z-index: 20 !important;
+        text-align: left;
+        padding: 12px 16px !important; /* Keep original padding for header */
+        border-right: 2px solid #cbd5e1 !important;
+        min-width: 200px;
+        box-shadow: 2px 0 0 #cbd5e1;
+        transform: translateZ(0);
+    }
+
+    /* STICKY HEADER ROW (Day Numbers) */
+    thead th {
+        position: sticky !important;
+        top: 0 !important;
+        background-color: #f8fafc !important;
+        z-index: 10 !important;
+        border-bottom: 2px solid #cbd5e1 !important;
+        box-shadow: 0 2px 0 #cbd5e1;
+    }
+
+    /* TOP-LEFT CORNER (Gelir Kalemi Header) - Highest Priority */
+    thead th:first-child {
+        z-index: 30 !important;
+        left: 0 !important;
+        top: 0 !important;
+        box-shadow: 2px 2px 0 #cbd5e1;
+    }
+
+    /* Opaque backgrounds for special row frozen cells to override row colors */
+    .row-robotpos td:first-child {
+        background-color: #dbeafe !important;
+    }
+
+    .row-zrapor td:first-child {
+        background-color: #fef9c3 !important;
+    }
+
+    .row-total-satis td:first-child {
+        background-color: #ccfbf1 !important;
+    }
+
+    .row-gunluk-toplam td:first-child {
+        background-color: #f3e8ff !important;
+    }
+
+    .row-harcama-efatura td:first-child {
+        background-color: #ffedd5 !important;
+    }
+
+    .row-harcama-diger td:first-child {
+        background-color: #fce7f3 !important;
+    }
+
+    .row-fatura td:first-child {
+        background-color: #fef9c3 !important;
+    }
+
+    .row-eksik-fazla td:first-child {
+        background-color: #f8fafc !important;
+    }
+
+    .group-header td:first-child {
+        background-color: #f1f5f9 !important;
+    }
+
+    td {
+        padding: 0;
+        border-bottom: 1px solid #f1f5f9;
+        border-right: 1px solid #f1f5f9;
+        text-align: center;
+        min-width: 90px;
+        /* Reduced from 110px */
+    }
+
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        appearance: none;
+        margin: 0;
+    }
+
+    input[type=number] {
+        -moz-appearance: textfield;
+        appearance: textfield;
+    }
+
+    .cell-input {
+        width: 100%;
+        height: 16px; /* Reduced to 16px */
+        border: none;
+        background: transparent;
+        text-align: right;
+        font-size: 11px;
+        padding: 0 8px; /* Zero vertical padding */
+        border-radius: 0;
+        color: #1e293b;
+        font-family: 'Inter', 'Segoe UI', sans-serif;
+        font-weight: 600;
+        display: block;
+        transition: background 0.1s, box-shadow 0.1s;
+    }
+
+    .cell-input:focus {
+        outline: none;
+        background: #ffffff;
+        box-shadow: inset 0 0 0 2px #2563eb;
+        border-radius: 2px;
+    }
+
+    .cell-input:disabled {
+        background: transparent;
+        color: #64748b;
+        cursor: not-allowed;
+    }
+
+    .group-header td {
+        background: #f1f5f9 !important;
+        font-weight: 700;
+        color: #334155;
+        padding: 2px 16px !important; /* Reduced for 16px height */
+        text-align: left;
+        font-size: 0.8rem;
+        /* Slightly smaller */
+        border-bottom: 1px solid #cbd5e1;
+    }
+
+    .group-total-cell {
+        font-weight: 700 !important;
+        color: #1e293b !important;
+        background: #f1f5f9 !important;
+        font-size: 0.85rem;
+        text-align: right;
+        padding: 0 8px !important;
+    }
+
+    /* Gümüşbulut Esintili Satır Renkleri */
+    .row-robotpos td {
+        background: #dbeafe !important;
+        /* Blue 100 */
+        font-weight: 500;
+    }
+
+    .row-zrapor td {
+        background: #fef9c3 !important;
+        /* Yellow 100 */
+        font-weight: 500;
+    }
+
+    .row-total-satis td {
+        background: #ccfbf1 !important;
+        /* Teal 100 */
+        font-weight: 600;
+    }
+
+    .row-gunluk-toplam td {
+        background: #f3e8ff !important;
+        /* Purple 100 */
+        font-weight: 600;
+    }
+
+    .row-harcama-efatura td {
+        background: #ffedd5 !important;
+        /* Orange 100 */
+    }
+
+    .row-harcama-diger td {
+        background: #fce7f3 !important;
+        /* Pink 100 */
+    }
+
+    .row-fatura td {
+        background: #fef9c3 !important;
+        font-weight: 500;
+    }
+
+    .row-eksik-fazla td {
+        font-weight: 700;
+    }
+
+    .row-eksik-fazla td.pozitif {
+        background: #dcfce7 !important;
+        color: #166534;
+    }
+
+    .row-eksik-fazla td.negatif {
+        background: #fee2e2 !important;
+        color: #991b1b;
+    }
+
+    .text-right {
+        text-align: right;
+        padding-right: 12px;
+        font-size: 0.85rem;
+    }
+
+    .text-center {
+        text-align: center;
+    }
+
+    #toast-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 9999;
+    }
+
+    .toast-msg {
+        background: #333;
+        color: #fff;
+        padding: 12px 20px;
+        border-radius: 6px;
+        margin-top: 10px;
+        font-size: 0.9rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        opacity: 0;
+        transform: translateY(20px);
+        transition: all 0.3s ease;
+    }
+
+    .toast-msg.show {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .toast-msg.success {
+        background: #10b981;
+    }
+
+    .toast-msg.danger {
+        background: #ef4444;
+    }
+
+    .toast-msg.warning {
+        background: #f59e0b;
+    }
+</style>
+
+<div class="glass-panel">
+    <div class="page-header">
+        <h1 class="page-title">
+            Gelir Girişi <small style="font-size: 0.8rem; color: #94a3b8;">(Toplam {{ gunler|length }} Gün)</small>
+            {% for s in subeler %}
+            {% if s.Sube_ID == secili_sube_id %}
+            <span style="color:#64748b; font-size:1.1rem; font-weight:normal;">(Şube: {{ s.Sube_Adi }})</span>
+            {% endif %}
+            {% endfor %}
+        </h1>
+
+        <div class="filter-group">
+            {% set prev_month = d_month - 1 %}
+            {% set prev_year = d_year %}
+            {% if prev_month == 0 %}
+            {% set prev_month = 12 %}
+            {% set prev_year = prev_year - 1 %}
+            {% endif %}
+            {% set prev_donem_val = '%02d%02d' | format(prev_year % 100, prev_month) %}
+
+            {% set next_month = d_month + 1 %}
+            {% set next_year = d_year %}
+            {% if next_month == 13 %}
+            {% set next_month = 1 %}
+            {% set next_year = next_year + 1 %}
+            {% endif %}
+            {% set next_donem_val = '%02d%02d' | format(next_year % 100, next_month) %}
+
+            <button class="btn btn-secondary" onclick="onDonemChange('{{ prev_donem_val }}')" {% if not
+                can_access_history %}disabled title="Geçmiş Dönem Yetkiniz Yok" {% endif %}>
+                <i class="fas fa-chevron-left"></i> Önceki Dönem
+            </button>
+
+            <div class="form-group" style="margin: 0 10px;">
+                <select id="filterDonem" class="form-control" onchange="onDonemChange(this.value)"
+                    style="font-weight: bold; font-size: 1.1rem; padding: 6px 16px;">
+                    {% for d in donem_listesi %}
+                    <option value="{{ d }}" {% if d==secili_donem %}selected{% endif %}>{{ d }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button class="btn btn-secondary" onclick="onDonemChange('{{ next_donem_val }}')" {% if
+                secili_donem==current_donem %}disabled{% endif %}>
+                Sonraki Dönem <i class="fas fa-chevron-right"></i>
+            </button>
+
+            <button class="btn btn-secondary" onclick="exportToExcel()" style="margin-left: 20px;">
+                <i class="fas fa-file-excel"></i> Dışa Aktar
+            </button>
+        </div>
+    </div>
+
+    {% if is_editing_disabled %}
+    <div
+        style="background-color: #fef2f2; border: 1px solid #fca5a5; color: #b91c1c; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-weight: 500;">
+        <i class="fas fa-info-circle" style="margin-right: 8px;"></i> Bu dönem için veri girişi salt-okunurdur
+        (ReadOnly). Değişiklik yapılamaz.
+    </div>
+    {% endif %}
+
+    <div class="table-container">
+        <table id="gelirTable">
+            <thead>
+                <tr>
+                    <th>Gelir Kalemi</th>
+                    {% for g in gunler %}
+                    <th>{{ g }}</th>
+                    {% endfor %}
+                    <th>Aylık Toplam</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- RobotPos ve Z Rapor (Üst Sabit Satırlar) -->
+                <tr class="row-robotpos">
+                    <td class="frozen-col">RobotPos Tutar</td>
+                    {% set robot_total = namespace(val=0) %}
+                    {% for g in gunler %}
+                    {% set r_val = ekstra_data.get(g, {}).get('RobotPos_Tutar', 0.0) %}
+                    {% set robot_total.val = robot_total.val + r_val %}
+                    <td>
+                        <input type="text" class="cell-input extra-input" data-type="RobotPos" data-gun="{{ g }}"
+                            value="{{ '%.2f' | format(r_val) if r_val else '' }}" onfocus="onInputFocus(this)"
+                            onblur="onInputBlur(this); saveCell(this)" onchange="calculateTotals()" {% if
+                            is_editing_disabled %}disabled{% endif %}>
+                    </td>
+                    {% endfor %}
+                    <td class="text-right" style="font-weight: 600;" id="row-toplam-RobotPos">
+                        {{ '%.2f' | format(robot_total.val) }}
+                    </td>
+                </tr>
+                <tr class="row-zrapor">
+                    <td class="frozen-col">Z Rapor Tutar</td>
+                    {% set z_total = namespace(val=0) %}
+                    {% for g in gunler %}
+                    {% set z_val = ekstra_data.get(g, {}).get('ZRapor_Tutar', 0.0) %}
+                    {% set z_total.val = z_total.val + z_val %}
+                    <td>
+                        <input type="text" class="cell-input extra-input" data-type="ZRapor" data-gun="{{ g }}"
+                            value="{{ '%.2f' | format(z_val) if z_val else '' }}" onfocus="onInputFocus(this)"
+                            onblur="onInputBlur(this); saveCell(this)" onchange="calculateTotals()" {% if
+                            is_editing_disabled %}disabled{% endif %}>
+                    </td>
+                    {% endfor %}
+                    <td class="text-right" style="font-weight: 600;" id="row-toplam-ZRapor">
+                        {{ '%.2f' | format(z_total.val) }}
+                    </td>
+                </tr>
+                {# Kategorileri Grupla #}
+                {% set grouped_kategoriler = {} %}
+                {% set ungrouped_kategoriler = [] %}
+
+                {% for kat in kategoriler %}
+                {% if kat.Ust_Kategori_ID and kat.Ust_Kategori_ID in ust_kategoriler %}
+                {% set u_name = ust_kategoriler[kat.Ust_Kategori_ID] %}
+                {% if u_name not in grouped_kategoriler %}
+                {% set _ = grouped_kategoriler.update({u_name: []}) %}
+                {% endif %}
+                {% set _ = grouped_kategoriler[u_name].append(kat) %}
+                {% else %}
+                {% set _ = ungrouped_kategoriler.append(kat) %}
+                {% endif %}
+                {% endfor %}
+
+                {# Gruplanmış Kategorileri Ekrana Bas #}
+                {% for group_name, kats in grouped_kategoriler.items()|sort %}
+                {% set outer_loop = loop %}
+                <tr class="group-header" data-group-index="{{ outer_loop.index }}">
+                    <td class="frozen-col">{{ group_name }}</td>
+                    {% for g in gunler %}
+                    <td id="group-total-{{ outer_loop.index }}-{{ g }}" class="group-total-cell">0.00</td>
+                    {% endfor %}
+                    <td id="group-total-{{ outer_loop.index }}-aylik" class="group-total-cell">0.00</td>
+                </tr>
+                {% for kat in kats %}
+                <tr class="gelir-row" data-katid="{{ kat.Kategori_ID }}" data-group-index="{{ outer_loop.index }}">
+                    <td class="frozen-col" style="font-weight: 500;">
+                        {{ kat.Kategori_Adi }}
+                    </td>
+                    {% set row_total = namespace(val=0) %}
+                    {% for g in gunler %}
+                    {% set val = matrix_data.get((kat.Kategori_ID, g), 0.0) %}
+                    {% set row_total.val = row_total.val + val %}
+                    <td>
+                        <input type="text" class="cell-input val-input" data-katid="{{ kat.Kategori_ID }}"
+                            data-gun="{{ g }}" value="{{ '%.2f' | format(val) if val else '' }}"
+                            onfocus="onInputFocus(this)" onblur="onInputBlur(this); saveCell(this)"
+                            onchange="calculateTotals()" {% if is_editing_disabled %}disabled{% endif %}>
+                    </td>
+                    {% endfor %}
+                    <td class="text-right" style="font-weight: 600; background: #f8fafc;"
+                        id="row-toplam-{{ kat.Kategori_ID }}">
+                        {{ '%.2f' | format(row_total.val) }}
+                    </td>
+                </tr>
+                {% endfor %}
+                {% endfor %}
+
+                {# Gruplanmamış Kategorileri Ekrana Bas #}
+                {% if ungrouped_kategoriler %}
+                <tr class="group-header" data-group-index="99">
+                    <td class="frozen-col">Diğer Gelirler</td>
+                    {% for g in gunler %}
+                    <td id="group-total-99-{{ g }}" class="group-total-cell">0.00</td>
+                    {% endfor %}
+                    <td id="group-total-99-aylik" class="group-total-cell">0.00</td>
+                </tr>
+                {% for kat in ungrouped_kategoriler %}
+                <tr class="gelir-row" data-katid="{{ kat.Kategori_ID }}" data-group-index="99">
+                    <td class="frozen-col" style="font-weight: 500;">
+                        {{ kat.Kategori_Adi }}
+                    </td>
+                    {% set row_total = namespace(val=0) %}
+                    {% for g in gunler %}
+                    {% set val = matrix_data.get((kat.Kategori_ID, g), 0.0) %}
+                    {% set row_total.val = row_total.val + val %}
+                    <td>
+                        <input type="text" class="cell-input val-input" data-katid="{{ kat.Kategori_ID }}"
+                            data-gun="{{ g }}" value="{{ '%.2f' | format(val) if val else '' }}"
+                            onfocus="onInputFocus(this)" onblur="onInputBlur(this); saveCell(this)"
+                            onchange="calculateTotals()" {% if is_editing_disabled %}disabled{% endif %}>
+                    </td>
+                    {% endfor %}
+                    <td class="text-right" style="font-weight: 600; background: #f8fafc;"
+                        id="row-toplam-{{ kat.Kategori_ID }}">
+                        {{ '%.2f' | format(row_total.val) }}
+                    </td>
+                </tr>
+                {% endfor %}
+                {% endif %}
+
+                <!-- Özel Hesaplama Satırları -->
+                <tr class="row-total-satis">
+                    <td class="frozen-col">TOPLAM SATIŞ</td>
+                    {% for g in gunler %}
+                    <td class="text-right" id="col-satis-{{ g }}">0.00</td>
+                    {% endfor %}
+                    <td class="text-right" id="col-satis-aylik">0.00</td>
+                </tr>
+
+
+                <!-- EKSİK / FAZLA GÜNLÜK -->
+                <tr class="row-eksik-fazla">
+                    <td class="frozen-col">EKSİK / FAZLA</td>
+                    {% for g in gunler %}
+                    <td class="text-right" id="col-fark-{{ g }}">0.00</td>
+                    {% endfor %}
+                    <td class="text-right" id="col-fark-aylik">0.00</td>
+                </tr>
+
+                <!-- Gümüşbulut Harcama Satırları -->
+                <tr class="row-harcama-efatura">
+                    <td class="frozen-col">Harcama-eFatura</td>
+                    {% set ef_total = namespace(val=0) %}
+                    {% for g in gunler %}
+                    {% set ef_val = harcama_data.get(g, {}).get('efatura', 0.0) %}
+                    {% set ef_total.val = ef_total.val + ef_val %}
+                    <td class="text-right" data-gun="{{ g }}">{{ '%.2f' | format(ef_val) if ef_val else '0.00' }}</td>
+                    {% endfor %}
+                    <td class="text-right" style="font-weight: 600;">{{ '%.2f' | format(ef_total.val) }}</td>
+                </tr>
+                <tr class="row-harcama-diger">
+                    <td class="frozen-col">Harcama-Diğer</td>
+                    {% set dg_total = namespace(val=0) %}
+                    {% for g in gunler %}
+                    {% set dg_val = harcama_data.get(g, {}).get('diger', 0.0) %}
+                    {% set dg_total.val = dg_total.val + dg_val %}
+                    <td class="text-right" data-gun="{{ g }}">{{ '%.2f' | format(dg_val) if dg_val else '0.00' }}</td>
+                    {% endfor %}
+                    <td class="text-right" style="font-weight: 600;">{{ '%.2f' | format(dg_total.val) }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="toast-container"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // İlk yüklemede mevcut değerleri formatla
+        document.querySelectorAll('.cell-input').forEach(inp => {
+            if (inp.value) {
+                inp.value = formatMoney(parseFloat(inp.value));
+            }
+        });
+        calculateTotals();
+    });
+
+    const branchSelect = document.getElementById('branch-select');
+    if (branchSelect) {
+        branchSelect.addEventListener('change', function () {
+            const donemVal = document.getElementById('filterDonem').value;
+            window.location.href = `/gelir-girisi?sube_id=${this.value}&donem=${donemVal}`;
+        });
+    }
+
+    function onDonemChange(val) {
+        if (!val) return;
+        const subeId = branchSelect ? branchSelect.value : '{{ secili_sube_id }}';
+        window.location.href = `/gelir-girisi?sube_id=${subeId}&donem=${val}`;
+    }
+
+
+    function formatMoney(n) {
+        if (n === null || n === undefined || isNaN(n) || n === '') return '';
+        let num = parseFloat(n);
+        if (isNaN(num)) return '';
+        return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function unformatMoney(s) {
+        if (!s || typeof s !== 'string') return s;
+        return s.replace(/,/g, '');
+    }
+
+    function onInputFocus(el) {
+        let val = unformatMoney(el.value);
+        if (val !== '') {
+            let num = parseFloat(val);
+            el.value = isNaN(num) ? '' : num.toFixed(2);
+        }
+        // Auto-select text for quick Excel-like overwriting
+        setTimeout(() => el.select(), 0);
+    }
+
+    function onInputBlur(el) {
+        let val = el.value.trim();
+        if (val === '') {
+            el.value = '';
+            return;
+        }
+        let num = parseFloat(val);
+        el.value = (isNaN(num)) ? '' : formatMoney(num);
+    }
+
+    // EXCEL-LIKE KEYBOARD NAVIGATION
+    document.addEventListener('keydown', function (e) {
+        if (!e.target.classList.contains('cell-input')) return;
+
+        const cell = e.target.closest('td');
+        const row = cell.closest('tr');
+        if (!row || !cell) return;
+
+        const cellIndex = Array.from(row.children).indexOf(cell);
+        let nextInput = null;
+
+        if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            let prevRow = row.previousElementSibling;
+            while (prevRow) {
+                const td = prevRow.children[cellIndex];
+                if (td) {
+                    const inp = td.querySelector('.cell-input:not([disabled])');
+                    if (inp) { nextInput = inp; break; }
+                }
+                prevRow = prevRow.previousElementSibling;
+            }
+        } else if (e.key === 'ArrowDown' || e.key === 'Enter') {
+            e.preventDefault();
+            let nextRow = row.nextElementSibling;
+            while (nextRow) {
+                const td = nextRow.children[cellIndex];
+                if (td) {
+                    const inp = td.querySelector('.cell-input:not([disabled])');
+                    if (inp) { nextInput = inp; break; }
+                }
+                nextRow = nextRow.nextElementSibling;
+            }
+        } else if (e.key === 'ArrowLeft') {
+            if (e.target.selectionStart === 0 && e.target.selectionEnd === 0) {
+                e.preventDefault();
+                for (let i = cellIndex - 1; i >= 0; i--) {
+                    const td = row.children[i];
+                    const inp = td.querySelector('.cell-input:not([disabled])');
+                    if (inp) { nextInput = inp; break; }
+                }
+            }
+        } else if (e.key === 'ArrowRight') {
+            if (e.target.selectionEnd === e.target.value.length && e.target.selectionStart === e.target.value.length) {
+                e.preventDefault();
+                for (let i = cellIndex + 1; i < row.children.length; i++) {
+                    const td = row.children[i];
+                    const inp = td.querySelector('.cell-input:not([disabled])');
+                    if (inp) { nextInput = inp; break; }
+                }
+            }
+        }
+
+        if (nextInput) {
+            nextInput.focus();
+        }
+    });
+
+    function calculateTotals() {
+        const gunSayisi = {{ gunler| length
+    }};
+    let aylikToplamSatis = 0.0;
+
+    // 1. Kategori Satır Toplamları (ve Grup Toplamları)
+    let groupDailyTotals = {};
+    let groupMonthlyTotals = {};
+
+    const rows = document.querySelectorAll('.gelir-row');
+    rows.forEach(row => {
+        const katId = row.dataset.katid;
+        const gIdx = row.dataset.groupIndex;
+        const inputs = row.querySelectorAll('.val-input');
+        let rTop = 0.0;
+
+        if (gIdx) {
+            if (!groupDailyTotals[gIdx]) groupDailyTotals[gIdx] = {};
+            if (!groupMonthlyTotals[gIdx]) groupMonthlyTotals[gIdx] = 0.0;
+        }
+
+        inputs.forEach(inp => {
+            const val = parseFloat(unformatMoney(inp.value));
+            if (!isNaN(val)) {
+                rTop += val;
+                if (gIdx) {
+                    const gDay = inp.dataset.gun;
+                    groupDailyTotals[gIdx][gDay] = (groupDailyTotals[gIdx][gDay] || 0.0) + val;
+                }
+            }
+        });
+
+        if (gIdx) groupMonthlyTotals[gIdx] += rTop;
+
+        const rowTopEl = document.getElementById(`row-toplam-${katId}`);
+        if (rowTopEl) rowTopEl.innerText = formatMoney(rTop);
+    });
+
+    // Grup Başlık Hücrelerini Güncelle
+    Object.keys(groupDailyTotals).forEach(gIdx => {
+        for (let g = 1; g <= gunSayisi; g++) {
+            const el = document.getElementById(`group-total-${gIdx}-${g}`);
+            if (el) el.innerText = formatMoney(groupDailyTotals[gIdx][g] || 0.0);
+        }
+        const aylikEl = document.getElementById(`group-total-${gIdx}-aylik`);
+        if (aylikEl) aylikEl.innerText = formatMoney(groupMonthlyTotals[gIdx]);
+    });
+
+    // 2. Sabit Satır Toplamları (RobotPos, ZRapor)
+    ['RobotPos', 'ZRapor'].forEach(type => {
+        const inputs = document.querySelectorAll(`.extra-input[data-type="${type}"]`);
+        let rTop = 0.0;
+        inputs.forEach(inp => {
+            const val = parseFloat(unformatMoney(inp.value));
+            if (!isNaN(val)) rTop += val;
+        });
+        const rowTopEl = document.getElementById(`row-toplam-${type}`);
+        if (rowTopEl) rowTopEl.innerText = formatMoney(rTop);
+    });
+
+    // 3. Günlük Sütun Toplamları
+    for (let g = 1; g <= gunSayisi; g++) {
+        let gunlukSatis = 0.0;
+        const catInputs = document.querySelectorAll(`.val-input[data-gun="${g}"]`);
+        catInputs.forEach(inp => {
+            const val = parseFloat(unformatMoney(inp.value));
+            if (!isNaN(val)) gunlukSatis += val;
+        });
+
+        // Sütun Toplam (Satış)
+        const colSatis = document.getElementById(`col-satis-${g}`);
+        if (colSatis) colSatis.innerText = formatMoney(gunlukSatis);
+        aylikToplamSatis += gunlukSatis;
+
+        // Eksik / Fazla Günlük (Satış - Harcamalar)
+        const efCol = document.querySelector(`.row-harcama-efatura td[data-gun="${g}"]`);
+        const dgCol = document.querySelector(`.row-harcama-diger td[data-gun="${g}"]`);
+        const efVal = efCol ? parseFloat(unformatMoney(efCol.innerText)) || 0 : 0;
+        const dgVal = dgCol ? parseFloat(unformatMoney(dgCol.innerText)) || 0 : 0;
+
+        const gunlukHarcamaTop = efVal + dgVal;
+        const fark = gunlukSatis - gunlukHarcamaTop;
+
+        const colFark = document.getElementById(`col-fark-${g}`);
+        if (colFark) {
+            colFark.innerText = formatMoney(fark);
+            colFark.className = "text-right " + (fark > 0 ? "pozitif" : (fark < 0 ? "negatif" : ""));
+        }
+    }
+
+    // 4. Aylık Kümülatif Toplamlar
+    const elSatisAylik = document.getElementById('col-satis-aylik');
+    if (elSatisAylik) elSatisAylik.innerText = formatMoney(aylikToplamSatis);
+
+    // Aylık Eksik / Fazla
+    let aylikEf = 0, aylikDg = 0;
+    document.querySelectorAll('.row-harcama-efatura td[data-gun]').forEach(td => aylikEf += parseFloat(unformatMoney(td.innerText)) || 0);
+    document.querySelectorAll('.row-harcama-diger td[data-gun]').forEach(td => aylikDg += parseFloat(unformatMoney(td.innerText)) || 0);
+
+    const elFarkAylik = document.getElementById('col-fark-aylik');
+    const aylikFark = aylikToplamSatis - (aylikEf + aylikDg);
+    if (elFarkAylik) {
+        elFarkAylik.innerText = formatMoney(aylikFark);
+        elFarkAylik.className = "text-right " + (aylikFark > 0 ? "pozitif" : (aylikFark < 0 ? "negatif" : ""));
+    }
+    }
+
+    let saveQueue = {};
+    let saveTimeout = null;
+
+    function saveCell(inputElement) {
+        if (inputElement.disabled) return;
+
+        const gun = inputElement.dataset.gun;
+        if (!gun) return;
+
+        let key = "";
+        if (inputElement.classList.contains('extra-input')) {
+            key = `${inputElement.dataset.type}-${gun}`;
+        } else {
+            key = `${inputElement.dataset.katid}-${gun}`;
+        }
+
+        const val = inputElement.value.trim() === '' ? 0 : parseFloat(unformatMoney(inputElement.value));
+        saveQueue[key] = val;
+
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(flushSaveQueue, 800);
+    }
+
+    async function flushSaveQueue() {
+        if (Object.keys(saveQueue).length === 0) return;
+
+        const payloadToSave = { ...saveQueue };
+        saveQueue = {};
+
+        const requestData = {
+            sube_id: branchSelect ? branchSelect.value : '{{ secili_sube_id }}',
+            year: {{ d_year }},
+            month: {{ d_month }},
+            payload: payloadToSave
+        };
+
+    try {
+        const res = await fetch('/api/v1/gelirler/bulk', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestData)
+        });
+
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || "Bilinmeyen bir hata oluştu");
+
+        showToast('Kaydedildi', 'Değişiklikler başarıyla senkronize edildi.', 'success');
+    } catch (err) {
+        showToast('Hata', err.message, 'danger');
+    }
+    }
+
+    function showToast(title, message, type) {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast-msg ${type}`;
+        toast.innerHTML = `<strong>${title}</strong><br>${message}`;
+        container.appendChild(toast);
+
+        // Reflow for transition
+        toast.offsetHeight;
+        toast.classList.add('show');
+
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    function exportToExcel() {
+        let csv = [];
+        const rows = document.querySelectorAll("table tr");
+
+        for (let i = 0; i < rows.length; i++) {
+            let row = [], cols = rows[i].querySelectorAll("td, th");
+            for (let j = 0; j < cols.length; j++) {
+                const input = cols[j].querySelector('input');
+                let data = input ? input.value : cols[j].innerText;
+                data = data.replace(/"/g, '""');
+                row.push('"' + data + '"');
+            }
+            csv.push(row.join(";"));
+        }
+
+        let csvFile = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csv.join("\n")], { type: "text/csv;charset=utf-8;" });
+        let downloadLink = document.createElement("a");
+        downloadLink.download = "Gelir_Girisi_{{ secili_donem }}.csv";
+        downloadLink.href = window.URL.createObjectURL(csvFile);
+        downloadLink.style.display = "none";
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+    }
+</script>
+{% endblock %}

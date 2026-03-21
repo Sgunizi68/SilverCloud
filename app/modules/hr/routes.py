@@ -149,7 +149,8 @@ def update_calisan(tc_no):
             soyadi=data.get("Soyadi"),
             hesap_no=data.get("Hesap_No"),
             iban=data.get("IBAN"),
-            net_maas=float(data.get("Net_Maas")) if "Net_Maas" in data else None,
+            net_maas=data.get("Net_Maas"),
+            sigorta_giris=data.get("Sigorta_Giris"),
             sigorta_cikis=data.get("Sigorta_Cikis"),
             aktif_pasif=data.get("Aktif_Pasif")
         )
@@ -714,8 +715,8 @@ def create_calisan_talep():
     """Create a new employee request."""
     try:
         data = request.get_json()
-        if not data or "TC_No" not in data or "Adi" not in data or "Soyadi" not in data or "Ilk_Soyadi" not in data or "Sube_ID" not in data:
-            return jsonify({"error": "TC_No, Adi, Soyadi, Ilk_Soyadi, and Sube_ID required"}), 400
+        if not data or not all(k in data for k in ("TC_No", "Adi", "Soyadi", "Sube_ID")):
+            return jsonify({"error": "TC_No, Adi, Soyadi, and Sube_ID required"}), 400
         
         db = get_db_session()
         new_talep = queries.create_calisan_talep(
@@ -780,9 +781,23 @@ def update_calisan_talep(talep_id):
             talep_id,
             adi=data.get("Adi"),
             soyadi=data.get("Soyadi"),
+            ilk_soyadi=data.get("Ilk_Soyadi"),
             hesap_no=data.get("Hesap_No"),
             iban=data.get("IBAN"),
-            net_maas=float(data.get("Net_Maas")) if "Net_Maas" in data else None,
+            ogrenim_durumu=data.get("Ogrenim_Durumu"),
+            cinsiyet=data.get("Cinsiyet"),
+            gorevi=data.get("Gorevi"),
+            anne_adi=data.get("Anne_Adi"),
+            baba_adi=data.get("Baba_Adi"),
+            dogum_yeri=data.get("Dogum_Yeri"),
+            dogum_tarihi=data.get("Dogum_Tarihi"),
+            medeni_hali=data.get("Medeni_Hali"),
+            cep_no=data.get("Cep_No"),
+            adres_bilgileri=data.get("Adres_Bilgileri"),
+            gelir_vergisi_matrahi=float(data.get("Gelir_Vergisi_Matrahi")) if "Gelir_Vergisi_Matrahi" in data and data["Gelir_Vergisi_Matrahi"] else None,
+            ssk_cikis_nedeni=data.get("SSK_Cikis_Nedeni"),
+            net_maas=float(data.get("Net_Maas")) if "Net_Maas" in data and data["Net_Maas"] else None,
+            sigorta_giris=data.get("Sigorta_Giris"),
             sigorta_cikis=data.get("Sigorta_Cikis")
         )
         db.close()
@@ -800,6 +815,18 @@ def update_calisan_talep(talep_id):
             "Sube_ID": updated_talep.Sube_ID,
             "Hesap_No": updated_talep.Hesap_No,
             "IBAN": updated_talep.IBAN,
+            "Ogrenim_Durumu": updated_talep.Ogrenim_Durumu,
+            "Cinsiyet": updated_talep.Cinsiyet,
+            "Gorevi": updated_talep.Gorevi,
+            "Anne_Adi": updated_talep.Anne_Adi,
+            "Baba_Adi": updated_talep.Baba_Adi,
+            "Dogum_Yeri": updated_talep.Dogum_Yeri,
+            "Dogum_Tarihi": updated_talep.Dogum_Tarihi.isoformat() if updated_talep.Dogum_Tarihi else None,
+            "Medeni_Hali": updated_talep.Medeni_Hali,
+            "Cep_No": updated_talep.Cep_No,
+            "Adres_Bilgileri": updated_talep.Adres_Bilgileri,
+            "Gelir_Vergisi_Matrahi": float(updated_talep.Gelir_Vergisi_Matrahi) if updated_talep.Gelir_Vergisi_Matrahi else None,
+            "SSK_Cikis_Nedeni": updated_talep.SSK_Cikis_Nedeni,
             "Net_Maas": float(updated_talep.Net_Maas) if updated_talep.Net_Maas else None,
             "Sigorta_Giris": updated_talep.Sigorta_Giris.isoformat() if updated_talep.Sigorta_Giris else None,
             "Sigorta_Cikis": updated_talep.Sigorta_Cikis.isoformat() if updated_talep.Sigorta_Cikis else None,
@@ -824,5 +851,41 @@ def delete_calisan_talep(talep_id):
             return jsonify({"error": "CalisanTalep not found"}), 404
         
         return jsonify({"message": "CalisanTalep deleted"}), 204
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@hr_bp.route("/calisan-talepler/<int:talep_id>/approve-hr", methods=["POST"])
+@auth_required
+def approve_calisan_talep_hr(talep_id):
+    """Approve employee request by HR."""
+    try:
+        user = request.user
+        db = get_db_session()
+        updated = queries.approve_calisan_talep_hr(db, talep_id, user.Kullanici_ID)
+        db.close()
+        
+        if not updated:
+            return jsonify({"error": "CalisanTalep not found"}), 404
+        
+        return jsonify({"message": "HR Approval successful", "talep_id": talep_id}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@hr_bp.route("/calisan-talepler/<int:talep_id>/approve-ssk", methods=["POST"])
+@auth_required
+def approve_calisan_talep_ssk(talep_id):
+    """Approve employee request by SSK."""
+    try:
+        user = request.user
+        db = get_db_session()
+        updated = queries.approve_calisan_talep_ssk(db, talep_id, user.Kullanici_ID)
+        db.close()
+        
+        if not updated:
+            return jsonify({"error": "CalisanTalep not found"}), 404
+        
+        return jsonify({"message": "SSK Approval successful", "talep_id": talep_id}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500

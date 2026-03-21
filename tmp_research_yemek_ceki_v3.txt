@@ -1,0 +1,43 @@
+--- UstKategoriler ---
+ID: 1 | Name: E-Ticaret Kredi Kart
+ID: 2 | Name: E-Ticaret Yemek Çeki
+ID: 3 | Name: Yemek Çeki 
+ID: 4 | Name: Nakit
+ID: 5 | Name: Kredi Kartı
+ID: 6 | Name: Satışların Maliyeti
+ID: 7 | Name: Satıştan İndirimler & Komisyonlar
+ID: 8 | Name: Diğer Giderler
+ID: 9 | Name: Plan Dışı Giderler
+ID: 10 | Name: Bilgi
+ID: 12 | Name: Ödeme Sistemleri
+ID: 13 | Name: Giden Fatura
+ID: 14 | Name: Maaş Giderleri
+ID: 15 | Name: Kira Giderleri
+ID: 16 | Name: TD Ciro/Reklam Primi & Lojistik
+
+--- Kategoriler for Yemek Çeki ---
+ID: 1 | Name: Yemek Sepeti Online  | UK_ID: 1
+ID: 4 | Name: Migros Yemek Online | UK_ID: 1
+ID: 22 | Name: Yemek Çekleri Komisyonu | UK_ID: 7
+ID: 23 | Name: Yemek Sepeti (Online) Komisyonu | UK_ID: 7
+ID: 26 | Name: Personel Yemek Giderleri | UK_ID: 8
+
+--- Cari and OdemeReferans (EFatura Matching) ---
+Cari: COCA COLA SATIŞ VE DAĞITIM A.Ş. | Ref_ID: 23 | Ref_Metin: Transfer İşlemleri - Alıcı:Coca-cola Satış | Kat_ID: 73
+Cari: FASDAT GIDA DAĞITIM SANAYİ VE TİCARET ANONİM ŞİRKETİ | Ref_ID: 15 | Ref_Metin: Transfer İşlemleri - Alıcı : FASDAT GIDA DAĞITIM | Kat_ID: 65
+Cari: G2MEKSPER SATIŞ VE DAĞITIM HİZMETLERİ ANONİM ŞİRKETİ | Ref_ID: 18 | Ref_Metin: Transfer İşlemleri - Alıcı : G2M  Dağıtım  | Kat_ID: 68
+Cari: VOLKAN ŞERBETÇİ | Ref_ID: 19 | Ref_Metin: Transfer İşlemleri - Alıcı : Volkan Şerbetçi | Kat_ID: 99
+Cari: Pepsi Cola Servis ve Dağıtım Ltd. Şti. | Ref_ID: 24 | Ref_Metin: Transfer İşlemleri - Alıcı : pepsi cola servis | Kat_ID: 73
+Cari: Seher Gıda Pazarlama Sanayi Ve Ticaret Anonim Şirketi | Ref_ID: 20 | Ref_Metin: Transfer İşlemleri - Alıcı : SEHER GIDA PAZ.  | Kat_ID: 70
+
+--- YemekCeki Records (Sample) ---
+ID: 7 | Kat_ID: 6 | Tutar: 21552.50 | Dates: 2025-08-27 to 2025-09-02
+ID: 8 | Kat_ID: 8 | Tutar: 735.00 | Dates: 2025-08-01 to 2025-08-31
+ID: 9 | Kat_ID: 8 | Tutar: 136005.00 | Dates: 2025-08-01 to 2025-08-31
+ID: 10 | Kat_ID: 7 | Tutar: 98772.00 | Dates: 2025-08-01 to 2025-08-31
+ID: 11 | Kat_ID: 9 | Tutar: 64512.50 | Dates: 2025-08-01 to 2025-08-31
+ID: 12 | Kat_ID: 6 | Tutar: 27765.00 | Dates: 2025-08-20 to 2025-08-26
+ID: 13 | Kat_ID: 6 | Tutar: 31930.00 | Dates: 2025-08-13 to 2025-08-19
+ID: 14 | Kat_ID: 6 | Tutar: 64001.50 | Dates: 2025-07-30 to 2025-08-12
+ID: 15 | Kat_ID: 6 | Tutar: 88826.50 | Dates: 2025-07-09 to 2025-07-29
+ID: 16 | Kat_ID: 6 | Tutar: 32328.00 | Dates: 2025-09-03 to 2025-09-09

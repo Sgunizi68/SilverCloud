@@ -1,0 +1,586 @@
+{% extends "base.html" %}
+{% block title %}Fatura Raporu - SilverCloud{% endblock %}
+{% block nav_fatura_raporu %}active{% endblock %}
+
+{% block content %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+<style>
+    /* Reset & Base adjustments */
+    .report-container {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        color: #334155;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 24px;
+        background-color: #f8fafc;
+        min-height: calc(100vh - 60px);
+    }
+
+    .card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+
+    /* Header */
+    .header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #e2e8f0;
+        padding-bottom: 16px;
+        margin-bottom: 24px;
+    }
+
+    .header-title {
+        font-size: 1.25rem;
+        font-weight: 500;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        background: white;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        color: #64748b;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-icon:hover {
+        background: #f1f5f9;
+        color: #334155;
+    }
+
+    /* Filters */
+    .filter-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr minmax(150px, auto) minmax(100px, auto);
+        gap: 24px;
+        align-items: end;
+        margin-bottom: 24px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .form-label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #475569;
+    }
+
+    .form-control {
+        height: 40px;
+        padding: 8px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        color: #334155;
+        background-color: white;
+        outline: none;
+        width: 100%;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
+
+    .form-control[multiple] {
+        height: auto;
+        min-height: 40px;
+    }
+
+    .btn-filter {
+        height: 40px;
+        background-color: #2563eb;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-weight: 500;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
+
+    .btn-filter:hover {
+        background-color: #1d4ed8;
+    }
+
+    .btn-clear {
+        height: 40px;
+        background: transparent;
+        color: #0f172a;
+        border: none;
+        font-weight: 500;
+        font-size: 0.875rem;
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .btn-clear:hover {
+        text-decoration: underline;
+    }
+
+    /* Summary Panel */
+    .summary-panel {
+        background-color: #334155;
+        border-radius: 8px;
+        padding: 20px 24px 24px;
+        color: white;
+        margin-bottom: 32px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .summary-title {
+        text-align: center;
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+        color: white;
+    }
+
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+    }
+
+    .summary-box {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+        padding: 16px;
+        text-align: center;
+    }
+
+    .summary-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        opacity: 0.8;
+        margin-bottom: 8px;
+    }
+
+    .summary-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+
+    /* Table */
+    .report-table-wrapper {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        overflow: hidden;
+        background: white;
+    }
+
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+
+    .table th {
+        background-color: #f8fafc;
+        color: #64748b;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 12px 24px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    /* Donem Row */
+    .row-donem {
+        background-color: #2563eb;
+        color: white;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .row-donem:hover {
+        background-color: #1d4ed8;
+    }
+
+    .row-donem td {
+        padding: 12px 24px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        border-bottom: 1px solid #1e40af;
+    }
+
+    /* Kategori Row */
+    .row-kategori {
+        background-color: white;
+        cursor: pointer;
+        border-left: 2px solid #3b82f6;
+    }
+
+    .row-kategori:hover {
+        background-color: #f8fafc;
+    }
+
+    .row-kategori td {
+        padding: 12px 24px 12px 40px;
+        font-size: 0.875rem;
+        border-bottom: 1px solid #e2e8f0;
+        color: #1e293b;
+    }
+
+    /* Detay Row */
+    .row-detay {
+        background-color: #f8fafc;
+        border-left: 2px solid #3b82f6;
+    }
+
+    .row-detay td {
+        padding: 10px 24px 10px 60px;
+        font-size: 0.875rem;
+        border-bottom: 1px solid #e2e8f0;
+        color: #475569;
+    }
+
+    .row-detay:last-child td {
+        border-bottom: 2px solid #e2e8f0;
+    }
+
+    /* Utilities */
+    .text-right {
+        text-align: right;
+    }
+
+    .text-center {
+        text-align: center;
+    }
+
+    .font-medium {
+        font-weight: 500;
+    }
+
+    .text-blue {
+        color: #2563eb;
+    }
+
+    .chevron {
+        display: inline-block;
+        width: 16px;
+        margin-right: 8px;
+        text-align: center;
+        transition: transform 0.2s;
+    }
+
+    .collapsed-icon {
+        display: none;
+    }
+
+    .collapsed .expanded-icon {
+        display: none;
+    }
+
+    .collapsed .collapsed-icon {
+        display: inline-block;
+    }
+
+    /* Badges */
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+    .badge-white {
+        background-color: rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+
+    .badge-light-blue {
+        background-color: #eff6ff;
+        color: #1d4ed8;
+    }
+
+    .badge-red {
+        background-color: #fee2e2;
+        color: #b91c1c;
+        margin-left: 8px;
+    }
+
+    .badge-green {
+        background-color: #dcfce7;
+        color: #15803d;
+        margin-left: 8px;
+    }
+
+    .hidden {
+        display: none !important;
+    }
+</style>
+
+<div class="report-container">
+    <div class="card">
+        <!-- Header -->
+        <div class="header-row">
+            <h1 class="header-title">Fatura Rapor (Şube: {{ sube_adi }})</h1>
+            <div class="header-actions">
+                <button class="btn-icon" title="Yazdır" onclick="window.print()">
+                    <i class="fas fa-print"></i>
+                </button>
+                <button class="btn-icon" title="Excel'e Aktar" onclick="exportToCSV()">
+                    <i class="fas fa-download"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <form id="filterForm" method="GET" action="/fatura-rapor">
+            <input type="hidden" name="sube_id" value="{{ secili_sube_id }}">
+            <div class="filter-row">
+                <div class="form-group">
+                    <label class="form-label">Dönem</label>
+                    <select name="donem" class="form-control" multiple>
+                        {% for d in donem_listesi %}
+                        <option value="{{ d }}" {% if d in secili_donemler %}selected{% endif %}>{{ d }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Kategori</label>
+                    <select name="kategori" class="form-control" multiple>
+                        {% for k in kategoriler %}
+                        <option value="{{ k.id }}" {% if k.id in secili_kategoriler %}selected{% endif %}>{{ k.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn-filter">Filtrele</button>
+                </div>
+                <div class="form-group">
+                    <button type="button" class="btn-clear"
+                        onclick="location.href='/fatura-rapor?sube_id={{ secili_sube_id }}'">Temizle</button>
+                </div>
+            </div>
+        </form>
+
+        <!-- Summary Panel -->
+        <div class="summary-panel">
+            <div class="summary-title">Özet Bilgiler</div>
+            <div class="summary-grid">
+                <div class="summary-box">
+                    <div class="summary-label">Toplam Kayıt</div>
+                    <div class="summary-value">{{ report_data.total_records }}</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-label">Dönem Sayısı</div>
+                    <div class="summary-value">{{ report_data.data|length }}</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-label">Genel Toplam</div>
+                    <div class="summary-value">{{
+                        "{:,.2f}".format(report_data.totals.grand_total).replace(',','|').replace('.',',').replace('|','.')
+                        }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Report Table -->
+        <div class="report-table-wrapper">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th style="width: 50%;">KATEGORİ / FATURA DETAY</th>
+                        <th class="text-center" style="width: 25%;">KAYIT SAYISI</th>
+                        <th class="text-right" style="width: 25%;">TUTAR</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for dg in report_data.data %}
+                    <!-- Dönem Row -->
+                    <tr class="row-donem" data-donem="{{ dg.donem }}" onclick="toggleDonem(this)">
+                        <td>
+                            <span class="chevron">
+                                <i class="fas fa-chevron-down expanded-icon"></i>
+                                <i class="fas fa-chevron-right collapsed-icon"></i>
+                            </span>
+                            Dönem: {{ dg.donem }}
+                        </td>
+                        <td class="text-center">
+                            <span class="badge badge-white">{{ dg.record_count }} kayıt</span>
+                        </td>
+                        <td class="text-right">{{
+                            "{:,.2f}".format(dg.donem_total).replace(',','|').replace('.',',').replace('|','.') }}</td>
+                    </tr>
+
+                    <!-- Kategoriler -->
+                    {% for kg in dg.kategoriler %}
+                    {% set kat_key = dg.donem ~ '-' ~ kg.kategori_id %}
+                    <tr class="row-kategori donem-{{ dg.donem }}" data-kat-key="{{ kat_key }}"
+                        onclick="toggleKategori(this)">
+                        <td>
+                            <span class="chevron" style="color: #64748b;">
+                                <i class="fas fa-chevron-down expanded-icon"></i>
+                                <i class="fas fa-chevron-right collapsed-icon"></i>
+                            </span>
+                            {{ kg.kategori_adi }}
+                        </td>
+                        <td class="text-center">
+                            <span class="badge badge-light-blue">{{ kg.record_count }} kayıt</span>
+                        </td>
+                        <td class="text-right text-blue font-medium">{{
+                            "{:,.2f}".format(kg.kategori_total).replace(',','|').replace('.',',').replace('|','.') }}
+                        </td>
+                    </tr>
+
+                    <!-- Detaylar -->
+                    {% for f in kg.faturalar %}
+                    <tr class="row-detay donem-{{ dg.donem }} kat-{{ kat_key }}">
+                        <td>
+                            <div style="font-weight: 500; color: #1e293b; margin-bottom: 2px;">{{ f.alici_unvani }}
+                            </div>
+                            <div style="font-size: 0.75rem; color: #64748b;">
+                                {{ f.fatura_numarasi }} | {{ f.fatura_tarihi }}
+                                {% if f.ozel %}<span class="badge badge-red">Gizli</span>{% endif %}
+                                {% if f.gunluk_harcama %}<span class="badge badge-green">Günlük</span>{% endif %}
+                            </div>
+                        </td>
+                        <td></td>
+                        <td class="text-right">{{
+                            "{:,.2f}".format(f.tutar).replace(',','|').replace('.',',').replace('|','.') }}</td>
+                    </tr>
+                    {% endfor %} <!-- End Detay -->
+                    {% endfor %} <!-- End Kategori -->
+                    {% endfor %} <!-- End Donem -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleDonem(el) {
+        const donem = el.getAttribute('data-donem');
+        el.classList.toggle('collapsed');
+        const isCollapsed = el.classList.contains('collapsed');
+
+        // Target direct children (categories)
+        const kategoriRows = document.querySelectorAll('.row-kategori.donem-' + donem);
+
+        kategoriRows.forEach(row => {
+            if (isCollapsed) {
+                // If closing Donem, close categories visually but don't change their internal state
+                row.classList.add('hidden');
+
+                // Hide all details belonging to this category
+                const katKey = row.getAttribute('data-kat-key');
+                if (katKey) {
+                    document.querySelectorAll('.row-detay.kat-' + katKey).forEach(detRow => {
+                        detRow.classList.add('hidden');
+                    });
+                }
+            } else {
+                // Expanding Donem
+                row.classList.remove('hidden');
+                // Check if this category itself is expanded or collapsed
+                if (!row.classList.contains('collapsed')) {
+                    const katKey = row.getAttribute('data-kat-key');
+                    if (katKey) {
+                        document.querySelectorAll('.row-detay.kat-' + katKey).forEach(detRow => {
+                            detRow.classList.remove('hidden');
+                        });
+                    }
+                }
+            }
+        });
+    }
+
+    function toggleKategori(el) {
+        const key = el.getAttribute('data-kat-key');
+        el.classList.toggle('collapsed');
+        const isCollapsed = el.classList.contains('collapsed');
+
+        const detayRows = document.querySelectorAll('.row-detay.kat-' + key);
+        detayRows.forEach(row => {
+            if (isCollapsed) {
+                row.classList.add('hidden');
+            } else {
+                row.classList.remove('hidden');
+            }
+        });
+    }
+
+    // Initialize UI states
+    document.addEventListener('DOMContentLoaded', function () {
+        // Start with everything collapsed EXCEPT the first Donem
+        const allDonemRows = document.querySelectorAll('.row-donem');
+        const allKategoriRows = document.querySelectorAll('.row-kategori');
+        const allDetayRows = document.querySelectorAll('.row-detay');
+
+        allKategoriRows.forEach(row => {
+            row.classList.add('collapsed');
+            row.classList.add('hidden');
+        });
+
+        allDetayRows.forEach(row => {
+            row.classList.add('hidden');
+        });
+
+        allDonemRows.forEach((row, index) => {
+            if (index === 0) {
+                // Expand first donem
+                row.classList.remove('collapsed');
+                const donem = row.getAttribute('data-donem');
+                document.querySelectorAll('.row-kategori.donem-' + donem).forEach(kRow => {
+                    kRow.classList.remove('hidden');
+                });
+            } else {
+                row.classList.add('collapsed');
+            }
+        });
+    });
+
+    function exportToCSV() {
+        let csv = "KATEGORI / FATURA DETAY;KAYIT SAYISI;TUTAR\n";
+        document.querySelectorAll('.table tr').forEach(row => {
+            // Exclude header mostly
+            const cells = row.querySelectorAll('td');
+            if (cells.length === 3) {
+                const desc = cells[0].innerText.replace(/\n/g, ' ').trim();
+                const count = cells[1].innerText.trim();
+                const amount = cells[2].innerText.trim();
+                csv += `"${desc}";"${count}";"${amount}"\n`;
+            }
+        });
+
+        const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'fatura_raporu.csv';
+        a.click();
+    }
+</script>
+{% endblock %}

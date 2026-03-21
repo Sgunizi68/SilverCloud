@@ -1,0 +1,28 @@
+--- Meal Voucher Categories ---
+ID: 6 | Name: Multinet | Tip: Gelir
+ID: 7 | Name: Ticket | Tip: Gelir
+ID: 8 | Name: Sodexo  | Tip: Gelir
+ID: 10 | Name: Setcard | Tip: Gelir
+ID: 74 | Name: SetCard Ödemesi | Tip: Ödeme
+ID: 75 | Name: Ticket Ödemesi | Tip: Ödeme
+ID: 76 | Name: Sodexo Ödemesi | Tip: Ödeme
+ID: 77 | Name: Metropol Ödemesi | Tip: Ödeme
+ID: 78 | Name: Multinet Ödemesi | Tip: Ödeme
+
+--- EFatura Samples ---
+KW: Multinet | Date: 2025-06-30 | Desc: Ocak-Mayıs Trendyol Multinet Komisyon Yansıtma | Tutar: 39186.42
+KW: Multinet | Date: 2025-06-30 | Desc: Haziran Trendyol Multinet Komisyon Yansıtma | Tutar: 219.00
+KW: Sodexo | Date: 2025-06-30 | Desc: Ocak-Mayıs Trendyol Sodexo Komisyon Yansıtma | Tutar: 35297.85
+KW: Sodexo | Date: 2025-11-05 | Desc: HATALI DÜZENLENEN SODEXO TUTARINA İADE | Tutar: 11207.00
+KW: Sodexo | Date: 2025-10-30 | Desc: Eylül Ayı Yemek Sepeti Sodexo Satışları | Tutar: 1300.00
+KW: Edenred | Date: 2025-06-30 | Desc: Ocak-Şubat-Mart Trendyol Edenred Komisyon Yansıtma | Tutar: 19564.05
+KW: Edenred | Date: 2025-06-30 | Desc: Nisan-Mayıs Trendyol Edenred Komisyon Yansıtma | Tutar: 7369.20
+KW: Edenred | Date: 2025-10-30 | Desc: Eylül Ayı Yemek Sepeti Edenred Satışları | Tutar: 551.50
+
+--- Odeme Samples ---
+KW: Setcard | Date: 2025-06-30 | Desc: Transfer İşlemleri - Gönderen: SET KURUMSAL HİZMETLER SAN.VE TİC.AŞ. Sorgu No: 6773224 - SETCARD_56495_GÜMÜSBULUT DAN.T A | Tutar: 21961.82
+KW: Setcard | Date: 2025-07-14 | Desc: Transfer İşlemleri - Gönderen: SET KURUMSAL HİZMETLER TİC. ANONİM ŞTİ. Sorgu No: 2871883 - SETCARD_56495_GÜMÜSBULUT DAN.T | Tutar: 36979.96
+KW: Setcard | Date: 2025-07-30 | Desc: Transfer İşlemleri - Gönderen: SET KURUMSAL HİZMETLER TİC. ANONİM ŞTİ. Sorgu No: 0918595 - SETCARD_56495_GÜMÜSBULUT DAN.T | Tutar: 34306.60
+KW: Edenred | Date: 2025-06-30 | Desc: Transfer İşlemleri - Gönderen: EDENRED KURUMSAL ÇÖZÜMLER A.Ş. Sorgu No: 6776324 - 30762145TICKET RESTAURANT ÖDEM AKBANK T | Tutar: 54630.72
+KW: Edenred | Date: 2025-07-16 | Desc: Transfer İşlemleri - Gönderen: EDENRED KURUMSAL ÇÖZÜMLER A.Ş. Sorgu No: 6758020 - 30762145TICKET RESTAURANT ÖDEM AKBANK T | Tutar: 81271.81
+KW: Edenred | Date: 2025-07-30 | Desc: Transfer İşlemleri - Gönderen: EDENRED KURUMSAL ÇÖZÜMLER A.Ş. Sorgu No: 0924447 - 30762145TICKET RESTAURANT ÖDEM AKBANK T | Tutar: 61355.01

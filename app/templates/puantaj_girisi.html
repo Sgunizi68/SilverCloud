@@ -1,0 +1,691 @@
+{% extends "base.html" %}
+
+{% block title %}Puantaj Girişi - SilverCloud{% endblock %}
+
+{% block acc_calisan %}active{% endblock %}
+{% block acc_calisan_content %}open{% endblock %}
+{% block nav_puantaj_girisi %}active{% endblock %}
+
+{% block extra_style %}
+<style>
+    .puantaj-container {
+        padding: 16px;
+    }
+
+    /* ── Header card ── */
+    .header-card {
+        background: rgba(255, 255, 255, 0.88);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        border-radius: 14px;
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
+        padding: 14px 22px;
+        margin-bottom: 18px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .header-title {
+        font-size: 17px;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .header-controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .icon-btn {
+        width: 34px;
+        height: 34px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: #64748b;
+        transition: all 0.2s;
+    }
+
+    .icon-btn:hover {
+        background: #f1f5f9;
+        color: #1e293b;
+    }
+
+    .donem-select {
+        padding: 6px 10px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        background: white;
+        color: #1e293b;
+        cursor: pointer;
+        outline: none;
+    }
+
+    .donem-select:focus {
+        border-color: #3b82f6;
+    }
+
+    /* ── Grid wrapper ── */
+    .grid-wrapper {
+        background: white;
+        border-radius: 14px;
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
+        overflow: auto;
+        max-height: calc(100vh - 220px);
+    }
+
+    /* ── Grid table ── */
+    #puantaj-table {
+        border-collapse: collapse;
+        font-size: 11px;
+        min-width: 100%;
+        white-space: nowrap;
+    }
+
+    #puantaj-table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: #f8fafc;
+        color: #64748b;
+        font-weight: 700;
+        padding: 8px 5px;
+        text-align: center;
+        border-bottom: 2px solid #e2e8f0;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+        font-size: 10px;
+    }
+
+    #puantaj-table thead th.col-calisan {
+        text-align: left;
+        padding-left: 14px;
+        min-width: 160px;
+        position: sticky;
+        left: 0;
+        z-index: 20;
+    }
+
+    #puantaj-table thead th.col-total {
+        min-width: 60px;
+    }
+
+    /* Row employee name cell */
+    #puantaj-table td.emp-cell {
+        position: sticky;
+        left: 0;
+        background: white;
+        z-index: 5;
+        padding: 6px 14px;
+        font-weight: 600;
+        font-size: 12px;
+        color: #1e293b;
+        border-bottom: 1px solid #f1f5f9;
+        min-width: 160px;
+        border-right: 1px solid #e2e8f0;
+    }
+
+    /* Attendance data cell */
+    .att-cell {
+        padding: 2px 3px;
+        text-align: center;
+        cursor: pointer;
+        border-bottom: 1px solid #f1f5f9;
+        border-right: 1px solid #f8fafc;
+        min-width: 55px;
+        vertical-align: middle;
+    }
+
+    .att-cell:hover {
+        background: #f8fafc;
+    }
+
+    .att-badge {
+        display: inline-block;
+        padding: 3px 5px;
+        border-radius: 5px;
+        font-size: 10px;
+        font-weight: 700;
+        color: white;
+        white-space: nowrap;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        min-width: 52px;
+        text-align: center;
+        cursor: pointer;
+    }
+
+    .att-empty {
+        color: #cbd5e1;
+        font-size: 10px;
+        font-weight: 500;
+    }
+
+    .col-total-cell {
+        text-align: center;
+        font-weight: 700;
+        font-size: 12px;
+        color: #1e293b;
+        border-bottom: 1px solid #f1f5f9;
+        padding: 6px 8px;
+        border-left: 2px solid #e2e8f0;
+    }
+
+    /* Alternating row color */
+    #puantaj-table tbody tr:nth-child(even) .emp-cell,
+    #puantaj-table tbody tr:nth-child(even) .att-cell,
+    #puantaj-table tbody tr:nth-child(even) .col-total-cell {
+        background: #fafbfd;
+    }
+
+    /* ── Selection popup ── */
+    #secim-popup {
+        position: fixed;
+        z-index: 9999;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        padding: 8px;
+        display: none;
+        max-width: 240px;
+        min-width: 180px;
+    }
+
+    .popup-title {
+        font-size: 11px;
+        font-weight: 600;
+        color: #64748b;
+        padding: 2px 8px 8px;
+        border-bottom: 1px solid #f1f5f9;
+        margin-bottom: 6px;
+    }
+
+    .popup-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 8px;
+        cursor: pointer;
+        border-radius: 8px;
+        transition: background 0.1s;
+        font-size: 12px;
+        font-weight: 500;
+        color: #1e293b;
+    }
+
+    .popup-item:hover {
+        background: #f1f5f9;
+    }
+
+    .popup-item.active-item {
+        background: #eff6ff;
+    }
+
+    .popup-color-dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 4px;
+        flex-shrink: 0;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .popup-delete {
+        margin-top: 6px;
+        border-top: 1px solid #f1f5f9;
+        padding-top: 6px;
+        color: #ef4444;
+        font-size: 11px;
+    }
+
+    .popup-delete:hover {
+        background: #fef2f2;
+    }
+
+    /* ── Legend ── */
+    .legend-card {
+        background: rgba(255, 255, 255, 0.88);
+        border-radius: 14px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+        padding: 12px 20px;
+        margin-top: 16px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px 20px;
+        align-items: center;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        color: #374151;
+    }
+
+    .legend-dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 3px;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        flex-shrink: 0;
+    }
+
+    /* Toast */
+    #pg-toast {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        background: #1e293b;
+        color: white;
+        padding: 10px 18px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 500;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        display: none;
+        z-index: 10000;
+    }
+
+    #pg-toast.error {
+        background: #ef4444;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="puantaj-container">
+
+    {# ── Header ── #}
+    <div class="header-card">
+        <h1 class="header-title">
+            <i class="fas fa-calendar-check" style="color: #3b82f6; margin-right: 8px;"></i>
+            Puantaj Girişi (Şube: {{ sube_adi }})
+        </h1>
+        <div class="header-controls">
+            <button class="icon-btn" title="Yazdır" onclick="printTable()">
+                <i class="fas fa-print"></i>
+            </button>
+            <button class="icon-btn" title="Excel İndir" onclick="exportExcel()">
+                <i class="fas fa-file-excel" style="color: #10b981;"></i>
+            </button>
+            <label style="font-size: 12px; font-weight: 600; color: #64748b;">Dönem:</label>
+            <select class="donem-select" id="donem-select" onchange="changePeriod(this.value)">
+                {% for opt in donem_options %}
+                <option value="{{ opt.code }}" {% if opt.code==donem %}selected{% endif %}>{{ opt.label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    {# ── Grid ── #}
+    <div class="grid-wrapper">
+        <table id="puantaj-table">
+            <thead>
+                <tr>
+                    <th class="col-calisan">ÇALIŞAN</th>
+                    {% for d in range(1, num_days + 1) %}
+                    <th>{{ d }}</th>
+                    {% endfor %}
+                    <th class="col-total">TOPLAM</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for emp in employees %}
+                <tr>
+                    <td class="emp-cell">{{ emp.Adi }} {{ emp.Soyadi }}</td>
+                    {% for d in range(1, num_days + 1) %}
+                    {% set tc = emp.TC_No %}
+                    {# Attendance data comes from JS for dynamic updates #}
+                    <td class="att-cell" data-tc="{{ tc }}" data-day="{{ d }}" data-sube="{{ current_sube_id }}"
+                        id="cell-{{ tc }}-{{ d }}" onclick="openPopup(event, '{{ tc }}', {{ d }})">
+                        <span class="att-empty">--</span>
+                    </td>
+                    {% endfor %}
+                    <td class="col-total-cell" id="total-{{ emp.TC_No }}">{{ emp.Total }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="{{ num_days + 2 }}" style="text-align: center; padding: 40px; color: #94a3b8;">
+                        <i class="fas fa-users-slash"
+                            style="font-size: 28px; display: block; margin-bottom: 10px; opacity:0.4;"></i>
+                        Bu şubede aktif çalışan bulunamadı.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {# ── Legend ── #}
+    <div class="legend-card">
+        {% for s in secimler %}
+        <div class="legend-item">
+            <span class="legend-dot" style="background: {{ s.Renk_Kodu }};"></span>
+            <span>{{ s.Secim }} ({{ "%.1f" | format(s.Degeri) }})</span>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{# ── Selection Popup ── #}
+<div id="secim-popup">
+    <div class="popup-title" id="popup-title">Seçim</div>
+    <div id="popup-items"></div>
+</div>
+
+{# ── Toast ── #}
+<div id="pg-toast"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // ── Constants injected from server ────────────────────────────────────────
+    const PUANTAJ_MAP = {{ puantaj_map | safe }};
+    const SECIMLER = {{ secimler | tojson | safe }};
+    const SUBE_ID = {{ current_sube_id }};
+    const YEAR = {{ year }};
+    const MONTH = {{ month }};
+    const NUM_DAYS = {{ num_days }};
+    const TODAY_DAY = {{ today_day }};          // day-of-month for today
+    const IS_CURRENT = {{ is_current_period | tojson }};   // bool
+    const CAN_EDIT = {{ can_edit_period | tojson }};     // bool
+    const CIKIS_SECIM_ID = {{ cikis_secim_id }};   // Secim_ID that represents "Çıkış"
+
+    // Per-employee cikis day from server (populated on first Çıkış entry)
+    const EMP_CIKIS_DAY = {{ cikis_days_json | safe }};
+
+    // ── State: live puantaj data (keyed by TC → day → record) ────────────────
+    const puantajData = {};
+    for (const [tc, days] of Object.entries(PUANTAJ_MAP)) {
+        puantajData[tc] = {};
+        for (const [day, rec] of Object.entries(days)) {
+            puantajData[tc][parseInt(day)] = rec;
+        }
+    }
+    // Track cikis day per employee (mutable; changes as user selects Çıkış)
+    const cikisDayFor = Object.assign({}, EMP_CIKIS_DAY);
+
+    // ── Render initial cells on load ──────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+        for (const [tc, days] of Object.entries(puantajData)) {
+            for (const [day, rec] of Object.entries(days)) {
+                renderCell(tc, parseInt(day), rec);
+            }
+        }
+        // Mark disabled cells by CSS after initial render
+        applyCellStates();
+    });
+
+    // ── CSS states for disabled cells ─────────────────────────────────────────
+    function applyCellStates() {
+        document.querySelectorAll('.att-cell').forEach(cell => {
+            const tc = cell.dataset.tc;
+            const day = parseInt(cell.dataset.day);
+            const locked = isCellLocked(tc, day);
+            cell.classList.toggle('locked-cell', locked);
+            cell.style.cursor = locked ? 'not-allowed' : 'pointer';
+            cell.style.opacity = locked ? '0.4' : '1';
+        });
+    }
+
+    // ── Business rule: determine if a cell should be locked ───────────────────
+    function isCellLocked(tc, day) {
+        // Rule: If we can't edit this period at all, all cells locked
+        if (!CAN_EDIT) return true;
+
+        // Rule 1: No future date entry for the current period
+        if (IS_CURRENT && day > TODAY_DAY) return true;
+
+        // Rule 2: After Çıkış, subsequent days are locked
+        const cd = cikisDayFor[tc];
+        if (cd !== null && cd !== undefined && day > cd) return true;
+
+        return false;
+    }
+
+    function renderCell(tc, day, rec) {
+        const cell = document.getElementById(`cell-${tc}-${day}`);
+        if (!cell) return;
+        if (rec) {
+            cell.innerHTML = `<span class="att-badge" style="background:${rec.Renk_Kodu};">${rec.Secim}</span>`;
+        } else {
+            cell.innerHTML = `<span class="att-empty">--</span>`;
+        }
+        // Refresh lock state on this cell
+        const locked = isCellLocked(tc, day);
+        cell.classList.toggle('locked-cell', locked);
+        cell.style.cursor = locked ? 'not-allowed' : 'pointer';
+        cell.style.opacity = locked ? '0.4' : '1';
+    }
+
+    function updateTotal(tc) {
+        const days = puantajData[tc] || {};
+        const total = Object.values(days).reduce((s, d) => s + (d ? d.Degeri : 0), 0);
+        const el = document.getElementById(`total-${tc}`);
+        if (el) el.textContent = total.toFixed(1);
+    }
+
+    // ── Popup ─────────────────────────────────────────────────────────────────
+    let popupTc = null, popupDay = null;
+
+    function openPopup(event, tc, day) {
+        event.stopPropagation();
+
+        // Block opening popup for locked cells
+        if (isCellLocked(tc, day)) return;
+
+        popupTc = tc;
+        popupDay = day;
+
+        const current = (puantajData[tc] || {})[day] || null;
+        const popup = document.getElementById('secim-popup');
+        const items = document.getElementById('popup-items');
+        const dateStr = `${YEAR}-${String(MONTH).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        document.getElementById('popup-title').textContent = dateStr;
+
+        items.innerHTML = '';
+        SECIMLER.forEach(s => {
+            const isActive = current && current.Secim_ID === s.Secim_ID;
+            const div = document.createElement('div');
+            div.className = 'popup-item' + (isActive ? ' active-item' : '');
+            div.innerHTML = `
+                <span class="popup-color-dot" style="background:${s.Renk_Kodu};"></span>
+                <span>${s.Secim} <span style="color:#94a3b8;">(${s.Degeri.toFixed(1)})</span></span>
+                ${isActive ? '<i class="fas fa-check" style="margin-left:auto;color:#3b82f6;font-size:10px;"></i>' : ''}
+            `;
+            div.addEventListener('click', () => {
+                if (isActive) {
+                    deletePuantaj(tc, day, current.Puantaj_ID);
+                } else {
+                    saveOrUpdate(tc, day, s, current);
+                }
+                closePopup();
+            });
+            items.appendChild(div);
+        });
+
+        // Position popup near click
+        const rect = event.currentTarget.getBoundingClientRect();
+        popup.style.display = 'block';
+        const pw = popup.offsetWidth || 200;
+        const ph = popup.offsetHeight || 300;
+        let left = rect.left + window.scrollX;
+        let top = rect.bottom + window.scrollY + 4;
+        if (left + pw > window.innerWidth) left = window.innerWidth - pw - 8;
+        if (top + ph > window.innerHeight + window.scrollY) top = rect.top + window.scrollY - ph - 4;
+        popup.style.left = left + 'px';
+        popup.style.top = top + 'px';
+    }
+
+    function closePopup() {
+        document.getElementById('secim-popup').style.display = 'none';
+        popupTc = null; popupDay = null;
+    }
+    document.addEventListener('click', closePopup);
+
+    // ── CRUD ──────────────────────────────────────────────────────────────────
+    function zeroPad(n) { return String(n).padStart(2, '0'); }
+
+    async function saveOrUpdate(tc, day, secim, existingRec) {
+        const dateStr = `${YEAR}-${zeroPad(MONTH)}-${zeroPad(day)}`;
+
+        if (existingRec) {
+            // PUT – update existing record
+            try {
+                const res = await fetch(`/api/v1/puantajlar/${existingRec.Puantaj_ID}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ Secim_ID: secim.Secim_ID })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (!puantajData[tc]) puantajData[tc] = {};
+                    puantajData[tc][day] = {
+                        Puantaj_ID: data.Puantaj_ID,
+                        Secim_ID: secim.Secim_ID,
+                        Secim: secim.Secim,
+                        Renk_Kodu: secim.Renk_Kodu,
+                        Degeri: secim.Degeri
+                    };
+                    renderCell(tc, day, puantajData[tc][day]);
+                    updateTotal(tc);
+                    // Handle Çıkış rule changes
+                    handleCikisChange(tc, day, secim, existingRec.Secim_ID);
+                    showToastMsg('Güncellendi.');
+                } else {
+                    const err = await res.json();
+                    showToastMsg(err.error || 'Güncelleme hatası.', true);
+                }
+            } catch (e) { showToastMsg('Bağlantı hatası.', true); }
+        } else {
+            // POST – create new record
+            try {
+                const res = await fetch('/api/v1/puantajlar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ TC_No: tc, Secim_ID: secim.Secim_ID, Sube_ID: SUBE_ID, Tarih: dateStr })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (!puantajData[tc]) puantajData[tc] = {};
+                    puantajData[tc][day] = {
+                        Puantaj_ID: data.Puantaj_ID,
+                        Secim_ID: secim.Secim_ID,
+                        Secim: secim.Secim,
+                        Renk_Kodu: secim.Renk_Kodu,
+                        Degeri: secim.Degeri
+                    };
+                    renderCell(tc, day, puantajData[tc][day]);
+                    updateTotal(tc);
+                    handleCikisChange(tc, day, secim, null);
+                    showToastMsg('Kaydedildi.');
+                } else {
+                    const err = await res.json();
+                    showToastMsg(err.error || 'Kayıt hatası.', true);
+                }
+            } catch (e) { showToastMsg('Bağlantı hatası.', true); }
+        }
+    }
+
+    async function deletePuantaj(tc, day, puantaj_id) {
+        try {
+            const res = await fetch(`/api/v1/puantajlar/${puantaj_id}`, { method: 'DELETE' });
+            if (res.ok || res.status === 204) {
+                const wasChikis = (puantajData[tc] && puantajData[tc][day] &&
+                    puantajData[tc][day].Secim_ID === CIKIS_SECIM_ID);
+                if (puantajData[tc]) delete puantajData[tc][day];
+                renderCell(tc, day, null);
+                updateTotal(tc);
+                // If deleted entry was Çıkış, re-evaluate cikis day
+                if (wasChikis) {
+                    recalcCikisDay(tc);
+                    applyCellStates();
+                }
+                showToastMsg('Silindi.');
+            } else {
+                showToastMsg('Silme hatası.', true);
+            }
+        } catch (e) { showToastMsg('Bağlantı hatası.', true); }
+    }
+
+    // ── Rule 2+3: Handle Çıkış selection ─────────────────────────────────────
+    function handleCikisChange(tc, day, newSecim, oldSecimId) {
+        const newIsCikis = (newSecim.Secim_ID === CIKIS_SECIM_ID);
+        const oldIsCikis = (oldSecimId === CIKIS_SECIM_ID);
+
+        if (newIsCikis && !oldIsCikis) {
+            // Çıkış was just selected: update cikis day and lock later cells
+            recalcCikisDay(tc);
+            applyCellStates();
+            // Rule 3: Update Sigorta_Cikis on the employee record
+            const dateStr = `${YEAR}-${zeroPad(MONTH)}-${zeroPad(day)}`;
+            updateSigortaCikis(tc, dateStr);
+        } else if (!newIsCikis && oldIsCikis) {
+            // Çıkış was replaced (e.g., changed back): recalculate
+            recalcCikisDay(tc);
+            applyCellStates();
+        }
+    }
+
+    function recalcCikisDay(tc) {
+        // Find earliest day with Çıkış for this employee
+        const days = puantajData[tc] || {};
+        let earliest = null;
+        for (const [d, rec] of Object.entries(days)) {
+            if (rec && rec.Secim_ID === CIKIS_SECIM_ID) {
+                const dn = parseInt(d);
+                if (earliest === null || dn < earliest) earliest = dn;
+            }
+        }
+        cikisDayFor[tc] = earliest;
+    }
+
+    async function updateSigortaCikis(tc, dateStr) {
+        // Rule 3: PUT /api/v1/calisanlar/{tc} with Sigorta_Cikis = dateStr
+        try {
+            await fetch(`/api/v1/calisanlar/${tc}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ Sigorta_Cikis: dateStr })
+            });
+        } catch (e) { /* Non-critical; ignore silently */ }
+    }
+
+    // ── Period change ─────────────────────────────────────────────────────────
+    function changePeriod(code) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('donem', code);
+        window.location.href = url.toString();
+    }
+
+    // ── Toast ─────────────────────────────────────────────────────────────────
+    let toastTimer;
+    function showToastMsg(msg, isErr = false) {
+        const t = document.getElementById('pg-toast');
+        t.textContent = msg;
+        t.className = isErr ? 'error' : '';
+        t.style.display = 'block';
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => { t.style.display = 'none'; }, 2500);
+    }
+
+    function printTable() { window.print(); }
+
+    function exportExcel() {
+        const table = document.getElementById('puantaj-table');
+        const wb = XLSX.utils.table_to_book(table, { sheet: 'Puantaj' });
+        XLSX.writeFile(wb, `Puantaj_{{ donem }}.xlsx`);
+    }
+</script>
+{% endblock %}

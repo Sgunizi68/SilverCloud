@@ -5,6 +5,7 @@ All endpoints protected by @auth_required decorator.
 """
 
 from functools import wraps
+from datetime import date, datetime
 from flask import Blueprint, request, jsonify
 from app.common.database import get_db_session
 from app.modules.invoicing import queries
@@ -30,26 +31,37 @@ def list_efaturalar():
     """Get all e-invoices with optional filtering."""
     try:
         skip = request.args.get("skip", 0, type=int)
-        limit = min(request.args.get("limit", 100, type=int), 1000)
+        limit = request.args.get("limit", 500, type=int)
         sube_id = request.args.get("sube_id", None, type=int)
         kategori_id = request.args.get("kategori_id", None, type=int)
         status = request.args.get("status", None, type=str)
+        donem = request.args.get("donem", None, type=int)
+        giden_fatura = request.args.get("giden_fatura", None)
+        if giden_fatura is not None:
+            giden_fatura = giden_fatura.lower() == 'true'
+        search = request.args.get("search", None, type=str)
         
         db = get_db_session()
         efaturalar = queries.get_efaturalar(
-            db, skip, limit, sube_id, kategori_id, status
+            db, skip, limit, sube_id, kategori_id, status, donem, giden_fatura, search
         )
         db.close()
         
         result = [
             {
-                "EFatura_ID": e.EFatura_ID,
+                "Fatura_ID": e.Fatura_ID,
                 "Sube_ID": e.Sube_ID,
                 "Kategori_ID": e.Kategori_ID,
-                "Fatura_No": e.Fatura_No,
-                "Fatura_Tutari": float(e.Fatura_Tutari),
-                "Kayit_Tarihi": e.Kayit_Tarihi.isoformat(),
-                "Durum": e.Durum,
+                "Fatura_Numarasi": e.Fatura_Numarasi,
+                "Alici_Unvani": e.Alici_Unvani,
+                "Alici_VKN_TCKN": e.Alici_VKN_TCKN,
+                "Tutar": float(e.Tutar),
+                "Fatura_Tarihi": e.Fatura_Tarihi.isoformat() if e.Fatura_Tarihi else None,
+                "Donem": e.Donem,
+                "Ozel": e.Ozel,
+                "Gunluk_Harcama": e.Gunluk_Harcama,
+                "Giden_Fatura": e.Giden_Fatura,
+                "Kayit_Tarihi": e.Kayit_Tarihi.isoformat() if e.Kayit_Tarihi else None,
                 "Aciklama": e.Aciklama,
             }
             for e in efaturalar
@@ -73,13 +85,47 @@ def get_efatura(efatura_id):
             return jsonify({"error": "EFatura not found"}), 404
         
         result = {
-            "EFatura_ID": efatura.EFatura_ID,
+            "Fatura_ID": efatura.Fatura_ID,
             "Sube_ID": efatura.Sube_ID,
             "Kategori_ID": efatura.Kategori_ID,
-            "Fatura_No": efatura.Fatura_No,
-            "Fatura_Tutari": float(efatura.Fatura_Tutari),
-            "Kayit_Tarihi": efatura.Kayit_Tarihi.isoformat(),
-            "Durum": efatura.Durum,
+            "Fatura_Numarasi": efatura.Fatura_Numarasi,
+            "Tutar": float(efatura.Tutar),
+            "Fatura_Tarihi": efatura.Fatura_Tarihi.isoformat() if efatura.Fatura_Tarihi else None,
+            "Alici_Unvani": efatura.Alici_Unvani,
+            "Donem": efatura.Donem,
+            "Ozel": efatura.Ozel,
+            "Gunluk_Harcama": efatura.Gunluk_Harcama,
+            "Aciklama": efatura.Aciklama,
+        }
+        
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@invoicing_bp.route("/efaturalar/fatura-no/<string:fatura_no>", methods=["GET"])
+@auth_required
+def get_efatura_by_no(fatura_no):
+    """Get e-invoice by Fatura_Numarasi."""
+    try:
+        db = get_db_session()
+        efatura = queries.get_efatura_by_no(db, fatura_no)
+        db.close()
+        
+        if not efatura:
+            return jsonify({"error": "EFatura not found"}), 404
+        
+        result = {
+            "Fatura_ID": efatura.Fatura_ID,
+            "Sube_ID": efatura.Sube_ID,
+            "Kategori_ID": efatura.Kategori_ID,
+            "Fatura_Numarasi": efatura.Fatura_Numarasi,
+            "Tutar": float(efatura.Tutar),
+            "Fatura_Tarihi": efatura.Fatura_Tarihi.isoformat() if efatura.Fatura_Tarihi else None,
+            "Alici_Unvani": efatura.Alici_Unvani,
+            "Donem": efatura.Donem,
+            "Ozel": efatura.Ozel,
+            "Gunluk_Harcama": efatura.Gunluk_Harcama,
             "Aciklama": efatura.Aciklama,
         }
         
@@ -91,36 +137,44 @@ def get_efatura(efatura_id):
 @invoicing_bp.route("/efaturalar", methods=["POST"])
 @auth_required
 def create_efatura():
-    """Create a new e-invoice."""
+    """Create a new e-invoice with split-friendly fields."""
     try:
+        from datetime import datetime
         data = request.get_json()
-        if not data or "Sube_ID" not in data or "Kategori_ID" not in data or "Fatura_No" not in data or "Fatura_Tutari" not in data:
-            return jsonify({"error": "Sube_ID, Kategori_ID, Fatura_No, and Fatura_Tutari required"}), 400
+        required = ["Sube_ID", "Fatura_Numarasi", "Tutar"]
+        for field in required:
+            if field not in data:
+                return jsonify({"error": f"{field} required"}), 400
         
+        # Parse dates and numbers to be safe
+        f_tarihi = data.get("Fatura_Tarihi")
+        if f_tarihi and isinstance(f_tarihi, str):
+            f_tarihi = datetime.strptime(f_tarihi, "%Y-%m-%d").date()
+            
+        k_id = data.get("Kategori_ID")
+        if k_id is not None: k_id = int(k_id)
+        
+        donem = data.get("Donem")
+        if donem is not None: donem = int(donem)
+
         db = get_db_session()
         new_efatura = queries.create_efatura(
             db,
-            sube_id=data["Sube_ID"],
-            kategori_id=data["Kategori_ID"],
-            fatura_no=data["Fatura_No"],
-            fatura_tutari=float(data["Fatura_Tutari"]),
-            kayit_tarihi=data.get("Kayit_Tarihi"),
-            aciklama=data.get("Aciklama")
+            sube_id=int(data["Sube_ID"]),
+            kategori_id=k_id,
+            fatura_no=data["Fatura_Numarasi"],
+            fatura_tutari=float(data["Tutar"]),
+            fatura_tarihi=f_tarihi,
+            alici_unvani=data.get("Alici_Unvani"),
+            donem=donem,
+            aciklama=data.get("Aciklama"),
+            ozel=bool(data.get("Ozel", False)),
+            gunluk=bool(data.get("Gunluk_Harcama", False)),
+            giden=bool(data.get("Giden_Fatura", False))
         )
         db.close()
         
-        result = {
-            "EFatura_ID": new_efatura.EFatura_ID,
-            "Sube_ID": new_efatura.Sube_ID,
-            "Kategori_ID": new_efatura.Kategori_ID,
-            "Fatura_No": new_efatura.Fatura_No,
-            "Fatura_Tutari": float(new_efatura.Fatura_Tutari),
-            "Kayit_Tarihi": new_efatura.Kayit_Tarihi.isoformat(),
-            "Durum": new_efatura.Durum,
-            "Aciklama": new_efatura.Aciklama,
-        }
-        
-        return jsonify(result), 201
+        return jsonify({"Fatura_ID": new_efatura.Fatura_ID}), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -133,12 +187,23 @@ def update_efatura(efatura_id):
         data = request.get_json()
         
         db = get_db_session()
+        
+        # Parse numeric/bool fields
+        k_id = data.get("Kategori_ID")
+        if k_id is not None: k_id = int(k_id)
+        
+        donem = data.get("Donem")
+        if donem is not None: donem = int(donem)
+        
         updated_efatura = queries.update_efatura(
             db,
             efatura_id,
-            fatura_no=data.get("Fatura_No"),
-            fatura_tutari=float(data.get("Fatura_Tutari")) if "Fatura_Tutari" in data else None,
-            durum=data.get("Durum"),
+            fatura_no=data.get("Fatura_Numarasi") or data.get("Fatura_No"),
+            fatura_tutari=float(data.get("Tutar")) if "Tutar" in data else (float(data.get("Fatura_Tutari")) if "Fatura_Tutari" in data else None),
+            kategori_id=k_id,
+            donem=donem,
+            ozel=data.get("Ozel"),
+            gunluk_harcama=data.get("Gunluk_Harcama"),
             aciklama=data.get("Aciklama")
         )
         db.close()
@@ -147,13 +212,18 @@ def update_efatura(efatura_id):
             return jsonify({"error": "EFatura not found"}), 404
         
         result = {
-            "EFatura_ID": updated_efatura.EFatura_ID,
+            "Fatura_ID": updated_efatura.Fatura_ID,
             "Sube_ID": updated_efatura.Sube_ID,
             "Kategori_ID": updated_efatura.Kategori_ID,
-            "Fatura_No": updated_efatura.Fatura_No,
-            "Fatura_Tutari": float(updated_efatura.Fatura_Tutari),
-            "Kayit_Tarihi": updated_efatura.Kayit_Tarihi.isoformat(),
-            "Durum": updated_efatura.Durum,
+            "Fatura_Numarasi": updated_efatura.Fatura_Numarasi,
+            "Alici_Unvani": updated_efatura.Alici_Unvani,
+            "Tutar": float(updated_efatura.Tutar),
+            "Fatura_Tarihi": updated_efatura.Fatura_Tarihi.isoformat() if updated_efatura.Fatura_Tarihi else None,
+            "Donem": updated_efatura.Donem,
+            "Ozel": updated_efatura.Ozel,
+            "Gunluk_Harcama": updated_efatura.Gunluk_Harcama,
+            "Giden_Fatura": updated_efatura.Giden_Fatura,
+            "Kayit_Tarihi": updated_efatura.Kayit_Tarihi.isoformat() if updated_efatura.Kayit_Tarihi else None,
             "Aciklama": updated_efatura.Aciklama,
         }
         
@@ -179,161 +249,170 @@ def delete_efatura(efatura_id):
         return jsonify({"error": str(e)}), 500
 
 
-# ============================================================================
-# ODEME (PAYMENTS) ENDPOINTS
-# ============================================================================
-
-@invoicing_bp.route("/odemeler", methods=["GET"])
+@invoicing_bp.route("/efaturalar/bulk", methods=["POST"])
 @auth_required
-def list_odemeler():
-    """Get all payments with optional filtering."""
-    try:
-        skip = request.args.get("skip", 0, type=int)
-        limit = min(request.args.get("limit", 100, type=int), 1000)
-        sube_id = request.args.get("sube_id", None, type=int)
-        kategori_id = request.args.get("kategori_id", None, type=int)
-        status = request.args.get("status", None, type=str)
-        
-        db = get_db_session()
-        odemeler = queries.get_odemeler(
-            db, skip, limit, sube_id, kategori_id, status
-        )
-        db.close()
-        
-        result = [
-            {
-                "Odeme_ID": o.Odeme_ID,
-                "Sube_ID": o.Sube_ID,
-                "Kategori_ID": o.Kategori_ID,
-                "Odeme_Tutari": float(o.Odeme_Tutari),
-                "Odeme_Tarihi": o.Odeme_Tarihi.isoformat(),
-                "Odeme_Sekli": o.Odeme_Sekli,
-                "Durum": o.Durum,
-                "Aciklama": o.Aciklama,
-            }
-            for o in odemeler
-        ]
-        
-        return jsonify(result), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-@invoicing_bp.route("/odemeler/<int:odeme_id>", methods=["GET"])
-@auth_required
-def get_odeme(odeme_id):
-    """Get payment by ID."""
-    try:
-        db = get_db_session()
-        odeme = queries.get_odeme_by_id(db, odeme_id)
-        db.close()
-        
-        if not odeme:
-            return jsonify({"error": "Odeme not found"}), 404
-        
-        result = {
-            "Odeme_ID": odeme.Odeme_ID,
-            "Sube_ID": odeme.Sube_ID,
-            "Kategori_ID": odeme.Kategori_ID,
-            "Odeme_Tutari": float(odeme.Odeme_Tutari),
-            "Odeme_Tarihi": odeme.Odeme_Tarihi.isoformat(),
-            "Odeme_Sekli": odeme.Odeme_Sekli,
-            "Durum": odeme.Durum,
-            "Aciklama": odeme.Aciklama,
-        }
-        
-        return jsonify(result), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-@invoicing_bp.route("/odemeler", methods=["POST"])
-@auth_required
-def create_odeme():
-    """Create a new payment."""
+def upload_efaturalar_bulk():
+    """Bulk upload e-invoices."""
     try:
         data = request.get_json()
-        if not data or "Sube_ID" not in data or "Kategori_ID" not in data or "Odeme_Tutari" not in data:
-            return jsonify({"error": "Sube_ID, Kategori_ID, and Odeme_Tutari required"}), 400
+        if not data or "efaturalar" not in data:
+            return jsonify({"error": "efaturalar list required"}), 400
         
+        efaturalar = data["efaturalar"]
+        if not isinstance(efaturalar, list):
+            return jsonify({"error": "efaturalar must be a list"}), 400
+            
         db = get_db_session()
-        new_odeme = queries.create_odeme(
-            db,
-            sube_id=data["Sube_ID"],
-            kategori_id=data["Kategori_ID"],
-            odeme_tutari=float(data["Odeme_Tutari"]),
-            odeme_tarihi=data.get("Odeme_Tarihi"),
-            odeme_sekli=data.get("Odeme_Sekli", "Nakit"),
-            aciklama=data.get("Aciklama")
-        )
+        result = queries.create_efatura_bulk(db, efaturalar)
         db.close()
-        
-        result = {
-            "Odeme_ID": new_odeme.Odeme_ID,
-            "Sube_ID": new_odeme.Sube_ID,
-            "Kategori_ID": new_odeme.Kategori_ID,
-            "Odeme_Tutari": float(new_odeme.Odeme_Tutari),
-            "Odeme_Tarihi": new_odeme.Odeme_Tarihi.isoformat(),
-            "Odeme_Sekli": new_odeme.Odeme_Sekli,
-            "Durum": new_odeme.Durum,
-            "Aciklama": new_odeme.Aciklama,
-        }
         
         return jsonify(result), 201
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
-@invoicing_bp.route("/odemeler/<int:odeme_id>", methods=["PUT"])
+@invoicing_bp.route("/fatura-bolme/bolunmus-faturalar", methods=["GET"])
 @auth_required
-def update_odeme(odeme_id):
-    """Update payment."""
+def list_bolunmus_faturalar():
+    """Get split e-invoices grouped by parent invoice."""
     try:
-        data = request.get_json()
-        
+        donem = request.args.get("donem", None, type=int)
         db = get_db_session()
-        updated_odeme = queries.update_odeme(
-            db,
-            odeme_id,
-            odeme_tutari=float(data.get("Odeme_Tutari")) if "Odeme_Tutari" in data else None,
-            odeme_sekli=data.get("Odeme_Sekli"),
-            durum=data.get("Durum"),
-            aciklama=data.get("Aciklama")
-        )
+        result = queries.get_bolunmus_faturalar(db, donem)
         db.close()
         
-        if not updated_odeme:
-            return jsonify({"error": "Odeme not found"}), 404
-        
-        result = {
-            "Odeme_ID": updated_odeme.Odeme_ID,
-            "Sube_ID": updated_odeme.Sube_ID,
-            "Kategori_ID": updated_odeme.Kategori_ID,
-            "Odeme_Tutari": float(updated_odeme.Odeme_Tutari),
-            "Odeme_Tarihi": updated_odeme.Odeme_Tarihi.isoformat(),
-            "Odeme_Sekli": updated_odeme.Odeme_Sekli,
-            "Durum": updated_odeme.Durum,
-            "Aciklama": updated_odeme.Aciklama,
-        }
-        
+        # Serialize types for JSON
+        for row in result:
+            for key in ("Ana_Tutar", "Tutar"):
+                if row.get(key) is not None:
+                    row[key] = float(row[key])
+            for key in ("Fatura_Tarihi", "Ana_Fatura_Tarihi"):
+                if row.get(key) is not None:
+                    v = row[key]
+                    row[key] = v.isoformat() if hasattr(v, "isoformat") else str(v)
+            # Donem may be int or string; normalize
+            for key in ("Donem", "Ana_Donem"):
+                if row.get(key) is not None:
+                    row[key] = str(int(row[key]))
+                    
         return jsonify(result), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
-@invoicing_bp.route("/odemeler/<int:odeme_id>", methods=["DELETE"])
+
+# ============================================================================
+# B2B EKSTRE ENDPOINTS
+# ============================================================================
+
+@invoicing_bp.route("/b2b-ekstreler/bulk", methods=["POST"])
 @auth_required
-def delete_odeme(odeme_id):
-    """Delete payment."""
+def upload_b2b_ekstreler_bulk():
+    """Bulk upload B2B ekstre (statements)."""
     try:
+        data = request.get_json()
+        if not data or "ekstreler" not in data:
+            return jsonify({"error": "ekstreler list required"}), 400
+        
+        ekstreler = data["ekstreler"]
+        if not isinstance(ekstreler, list):
+            return jsonify({"error": "ekstreler must be a list"}), 400
+            
         db = get_db_session()
-        deleted = queries.delete_odeme(db, odeme_id)
+        result = queries.create_b2b_ekstre_bulk(db, ekstreler)
         db.close()
         
-        if not deleted:
-            return jsonify({"error": "Odeme not found"}), 404
+        return jsonify(result), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ============================================================================
+# ODEME (PAYMENT) ENDPOINTS
+# ============================================================================
+
+@invoicing_bp.route("/odemeler", methods=["GET"])
+@auth_required
+def get_odemeler_list():
+    """Get payments with filters for Category Assignment screen."""
+    try:
+        sube_id = request.args.get("sube_id", type=int)
+        donem = request.args.get("donem", type=int)
+        kategori_id = request.args.get("kategori_id", type=int)
+        search_term = request.args.get("search", type=str)
+        sadece_kategorisiz = request.args.get("sadece_kategorisiz", "false").lower() == "true"
+        skip = request.args.get("skip", 0, type=int)
+        limit = min(request.args.get("limit", 5000, type=int), 10000)
         
-        return jsonify({"message": "Odeme deleted"}), 204
+        db = get_db_session()
+        odemeler = queries.get_odemeler(
+            db, 
+            sube_id=sube_id, 
+            donem=donem, 
+            kategori_id=kategori_id,
+            search_term=search_term,
+            sadece_kategorisiz=sadece_kategorisiz,
+            skip=skip, 
+            limit=limit
+        )
+        db.close()
+        
+        result = [
+            {
+                "Odeme_ID": o.Odeme_ID,
+                "Tip": o.Tip,
+                "Hesap_Adi": o.Hesap_Adi,
+                "Tarih": o.Tarih.isoformat() if o.Tarih else None,
+                "Aciklama": o.Aciklama,
+                "Tutar": float(o.Tutar) if o.Tutar else 0.0,
+                "Kategori_ID": o.Kategori_ID,
+                "Donem": o.Donem,
+                "Sube_ID": o.Sube_ID
+            }
+            for o in odemeler
+        ]
+        
+        return jsonify(result), 200
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
+@invoicing_bp.route("/odemeler/<int:odeme_id>", methods=["PUT"])
+@auth_required
+def update_odeme_endpoint(odeme_id):
+    """Update payment inline (category or period)."""
+    try:
+        data = request.get_json()
+        
+        kategori_id = data.get("Kategori_ID")
+        donem = data.get("Donem")
+        kategori_clear = data.get("Kategori_Clear", False)
+        donem_clear = data.get("Donem_Clear", False)
+        
+        db = get_db_session()
+        updated_odeme = queries.update_odeme(
+            db, 
+            odeme_id, 
+            kategori_id=kategori_id, 
+            donem=donem,
+            kategori_clear=kategori_clear,
+            donem_clear=donem_clear
+        )
+        db.close()
+        
+        if not updated_odeme:
+            return jsonify({"error": "Payment not found"}), 404
+            
+        return jsonify({
+            "message": "Payment updated successfully",
+            "Odeme": {
+                "Odeme_ID": updated_odeme.Odeme_ID,
+                "Kategori_ID": updated_odeme.Kategori_ID,
+                "Donem": updated_odeme.Donem
+            }
+        }), 200
+        
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -638,6 +717,9 @@ def delete_gelir(gelir_id):
 # DIGER HARCAMA (OTHER EXPENSES) ENDPOINTS
 # ============================================================================
 
+import base64
+from datetime import datetime
+
 @invoicing_bp.route("/diger-harcamalar", methods=["GET"])
 @auth_required
 def list_diger_harcamalar():
@@ -646,25 +728,40 @@ def list_diger_harcamalar():
         skip = request.args.get("skip", 0, type=int)
         limit = min(request.args.get("limit", 100, type=int), 1000)
         sube_id = request.args.get("sube_id", None, type=int)
+        donem = request.args.get("donem", None, type=int)
+        kategori_id = request.args.get("kategori_id", None, type=int)
+        harcama_tipi = request.args.get("harcama_tipi", None, type=str)
         
         db = get_db_session()
-        harcamalar = queries.get_diger_harcamalar(db, skip, limit, sube_id)
+        harcamalar = queries.get_diger_harcamalar(db, skip, limit, sube_id, donem, kategori_id, harcama_tipi)
         db.close()
         
-        result = [
-            {
-                "DigerHarcama_ID": h.DigerHarcama_ID,
+        result = []
+        for h in harcamalar:
+            item = {
+                "Harcama_ID": h.Harcama_ID,
+                "Alici_Adi": h.Alici_Adi,
+                "Belge_Numarasi": h.Belge_Numarasi,
+                "Belge_Tarihi": h.Belge_Tarihi.isoformat() if h.Belge_Tarihi else None,
+                "Donem": h.Donem,
+                "Tutar": float(h.Tutar) if h.Tutar else 0.0,
+                "Kategori_ID": h.Kategori_ID,
+                "Harcama_Tipi": h.Harcama_Tipi,
+                "Gunluk_Harcama": h.Gunluk_Harcama,
                 "Sube_ID": h.Sube_ID,
-                "Harcama_Adi": h.Harcama_Adi,
-                "Harcama_Tutari": float(h.Harcama_Tutari),
-                "Kayit_Tarihi": h.Kayit_Tarihi.isoformat(),
-                "Aciklama": h.Aciklama,
+                "Aciklama": h.Açıklama,
+                "Kayit_Tarihi": h.Kayit_Tarihi.isoformat() if h.Kayit_Tarihi else None,
+                "Imaj_Adi": h.Imaj_Adi,
+                "has_imaj": bool(h.Imaj)
             }
-            for h in harcamalar
-        ]
-        
+            # Optional: if you need to send image data back for viewing on row click
+            if h.Imaj:
+                item["Imaj_Base64"] = base64.b64encode(h.Imaj).decode('utf-8')
+            result.append(item)
+            
         return jsonify(result), 200
     except Exception as e:
+        import traceback; traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 
@@ -674,21 +771,31 @@ def get_diger_harcama(harcama_id):
     """Get other expense by ID."""
     try:
         db = get_db_session()
-        harcama = queries.get_diger_harcama_by_id(db, harcama_id)
+        h = queries.get_diger_harcama_by_id(db, harcama_id)
         db.close()
         
-        if not harcama:
+        if not h:
             return jsonify({"error": "DigerHarcama not found"}), 404
         
         result = {
-            "DigerHarcama_ID": harcama.DigerHarcama_ID,
-            "Sube_ID": harcama.Sube_ID,
-            "Harcama_Adi": harcama.Harcama_Adi,
-            "Harcama_Tutari": float(harcama.Harcama_Tutari),
-            "Kayit_Tarihi": harcama.Kayit_Tarihi.isoformat(),
-            "Aciklama": harcama.Aciklama,
+            "Harcama_ID": h.Harcama_ID,
+            "Alici_Adi": h.Alici_Adi,
+            "Belge_Numarasi": h.Belge_Numarasi,
+            "Belge_Tarihi": h.Belge_Tarihi.isoformat() if h.Belge_Tarihi else None,
+            "Donem": h.Donem,
+            "Tutar": float(h.Tutar) if h.Tutar else 0.0,
+            "Kategori_ID": h.Kategori_ID,
+            "Harcama_Tipi": h.Harcama_Tipi,
+            "Gunluk_Harcama": h.Gunluk_Harcama,
+            "Sube_ID": h.Sube_ID,
+            "Aciklama": h.Açıklama,
+            "Kayit_Tarihi": h.Kayit_Tarihi.isoformat() if h.Kayit_Tarihi else None,
+            "Imaj_Adi": h.Imaj_Adi,
+            "has_imaj": bool(h.Imaj)
         }
-        
+        if h.Imaj:
+            result["Imaj_Base64"] = base64.b64encode(h.Imaj).decode('utf-8')
+            
         return jsonify(result), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -697,34 +804,50 @@ def get_diger_harcama(harcama_id):
 @invoicing_bp.route("/diger-harcamalar", methods=["POST"])
 @auth_required
 def create_diger_harcama():
-    """Create a new other expense."""
+    """Create a new other expense with file upload."""
     try:
-        data = request.get_json()
-        if not data or "Sube_ID" not in data or "Harcama_Adi" not in data or "Harcama_Tutari" not in data:
-            return jsonify({"error": "Sube_ID, Harcama_Adi, and Harcama_Tutari required"}), 400
+        # Expected inputs can come from form data (multipart)
+        form_data = request.form
         
-        db = get_db_session()
-        new_harcama = queries.create_diger_harcama(
-            db,
-            sube_id=data["Sube_ID"],
-            harcama_adi=data["Harcama_Adi"],
-            harcama_tutari=float(data["Harcama_Tutari"]),
-            kayit_tarihi=data.get("Kayit_Tarihi"),
-            aciklama=data.get("Aciklama")
-        )
-        db.close()
-        
-        result = {
-            "DigerHarcama_ID": new_harcama.DigerHarcama_ID,
-            "Sube_ID": new_harcama.Sube_ID,
-            "Harcama_Adi": new_harcama.Harcama_Adi,
-            "Harcama_Tutari": float(new_harcama.Harcama_Tutari),
-            "Kayit_Tarihi": new_harcama.Kayit_Tarihi.isoformat(),
-            "Aciklama": new_harcama.Aciklama,
+        if "Sube_ID" not in form_data or "Alici_Adi" not in form_data or "Tutar" not in form_data:
+            return jsonify({"error": "Sube_ID, Alici_Adi, and Tutar required"}), 400
+            
+        tarih_str = form_data.get("Belge_Tarihi")
+        try:
+            belge_tarihi = datetime.strptime(tarih_str, '%Y-%m-%d').date() if tarih_str else datetime.now().date()
+        except ValueError:
+            belge_tarihi = datetime.now().date()
+            
+        data = {
+            "Alici_Adi": form_data.get("Alici_Adi"),
+            "Belge_Numarasi": form_data.get("Belge_Numarasi"),
+            "Belge_Tarihi": belge_tarihi,
+            "Donem": int(form_data.get("Donem", f"{belge_tarihi.year % 100:02d}{belge_tarihi.month:02d}")),
+            "Tutar": float(form_data.get("Tutar")),
+            "Kategori_ID": int(form_data.get("Kategori_ID")) if form_data.get("Kategori_ID") else None,
+            "Harcama_Tipi": form_data.get("Harcama_Tipi"),
+            "Gunluk_Harcama": form_data.get("Gunluk_Harcama") == 'true',
+            "Sube_ID": int(form_data.get("Sube_ID")),
+            "Açıklama": form_data.get("Aciklama")
         }
         
-        return jsonify(result), 201
+        # Handle file upload
+        imaj = None
+        imaj_adi = form_data.get("Imaj_Adi")
+        if "image" in request.files:
+            file = request.files["image"]
+            if file and file.filename:
+                imaj = file.read()
+                if not imaj_adi:
+                    imaj_adi = file.filename
+                    
+        db = get_db_session()
+        new_harcama = queries.create_diger_harcama(db, data, imaj, imaj_adi)
+        db.close()
+        
+        return jsonify({"message": "Diger Harcama created", "Harcama_ID": new_harcama.Harcama_ID}), 201
     except Exception as e:
+        import traceback; traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 
@@ -733,32 +856,56 @@ def create_diger_harcama():
 def update_diger_harcama(harcama_id):
     """Update other expense."""
     try:
-        data = request.get_json()
+        form_data = request.form
+        data = {}
         
+        if "Alici_Adi" in form_data:
+            data["Alici_Adi"] = form_data.get("Alici_Adi")
+        if "Belge_Numarasi" in form_data:
+            data["Belge_Numarasi"] = form_data.get("Belge_Numarasi")
+        if "Belge_Tarihi" in form_data:
+            try:
+                data["Belge_Tarihi"] = datetime.strptime(form_data.get("Belge_Tarihi"), '%Y-%m-%d').date()
+            except ValueError:
+                pass
+        if "Donem" in form_data:
+            data["Donem"] = int(form_data.get("Donem"))
+        if "Tutar" in form_data:
+            data["Tutar"] = float(form_data.get("Tutar"))
+        if "Kategori_ID" in form_data:
+            data["Kategori_ID"] = int(form_data.get("Kategori_ID")) if form_data.get("Kategori_ID") else None
+        if "Harcama_Tipi" in form_data:
+            data["Harcama_Tipi"] = form_data.get("Harcama_Tipi")
+        if "Gunluk_Harcama" in form_data:
+            data["Gunluk_Harcama"] = form_data.get("Gunluk_Harcama") == 'true'
+        if "Sube_ID" in form_data:
+            data["Sube_ID"] = int(form_data.get("Sube_ID"))
+        if "Aciklama" in form_data:
+            data["Açıklama"] = form_data.get("Aciklama")
+
+        imaj = None
+        imaj_adi = form_data.get("Imaj_Adi")
+        clear_image = False
+        
+        if "image" in request.files:
+            file = request.files["image"]
+            if file and file.filename:
+                imaj = file.read()
+                if not imaj_adi:
+                    imaj_adi = file.filename
+        elif imaj_adi == "":
+            clear_image = True
+            
         db = get_db_session()
-        updated_harcama = queries.update_diger_harcama(
-            db,
-            harcama_id,
-            harcama_adi=data.get("Harcama_Adi"),
-            harcama_tutari=float(data.get("Harcama_Tutari")) if "Harcama_Tutari" in data else None,
-            aciklama=data.get("Aciklama")
-        )
+        updated = queries.update_diger_harcama(db, harcama_id, data, imaj, imaj_adi, clear_image)
         db.close()
         
-        if not updated_harcama:
+        if not updated:
             return jsonify({"error": "DigerHarcama not found"}), 404
-        
-        result = {
-            "DigerHarcama_ID": updated_harcama.DigerHarcama_ID,
-            "Sube_ID": updated_harcama.Sube_ID,
-            "Harcama_Adi": updated_harcama.Harcama_Adi,
-            "Harcama_Tutari": float(updated_harcama.Harcama_Tutari),
-            "Kayit_Tarihi": updated_harcama.Kayit_Tarihi.isoformat(),
-            "Aciklama": updated_harcama.Aciklama,
-        }
-        
-        return jsonify(result), 200
+            
+        return jsonify({"message": "Diger Harcama updated"}), 200
     except Exception as e:
+        import traceback; traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 
@@ -922,3 +1069,413 @@ def delete_pos_hareketi(hareketi_id):
         return jsonify({"message": "POSHareketleri deleted"}), 204
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+@invoicing_bp.route("/pos-hareketleri/bulk", methods=["POST"])
+@auth_required
+def create_pos_hareketi_bulk():
+    """Bulk create POS transactions."""
+    try:
+        data = request.get_json()
+        if not data or "pos_list" not in data:
+            return jsonify({"error": "pos_list required"}), 400
+        
+        db = get_db_session()
+        result = queries.create_pos_hareketi_bulk(db, data["pos_list"])
+        db.close()
+        
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+@invoicing_bp.route("/tabak-sayisi/bulk", methods=["POST"])
+@auth_required
+def update_tabak_sayisi_bulk():
+    """Bulk update plate counts."""
+    try:
+        data = request.get_json()
+        if not data or "sube_id" not in data or "data_list" not in data:
+            return jsonify({"error": "sube_id and data_list required"}), 400
+        
+        db = get_db_session()
+        result = queries.update_tabak_sayisi_bulk(db, data["sube_id"], data["data_list"])
+        db.close()
+        
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+# ============================================================================
+# YEMEK CEKI (MEAL TICKETS) ENDPOINTS
+# ============================================================================
+
+@invoicing_bp.route("/yemek-cekileri", methods=["GET"])
+@auth_required
+def list_yemek_cekileri():
+    """Get all meal tickets."""
+    try:
+        skip = request.args.get("skip", 0, type=int)
+        limit = min(request.args.get("limit", 100, type=int), 1000)
+        sube_id = request.args.get("sube_id", None, type=int)
+        donem = request.args.get("donem", None, type=int)
+        
+        db = get_db_session()
+        cekiler = queries.get_yemek_cekileri(db, skip, limit, sube_id, donem)
+        db.close()
+        
+        result = []
+        for c in cekiler:
+            item = {
+                "ID": c.ID,
+                "Kategori_ID": c.Kategori_ID,
+                "Tarih": c.Tarih.isoformat() if c.Tarih else None,
+                "Tutar": float(c.Tutar) if c.Tutar else 0.0,
+                "Odeme_Tarih": c.Odeme_Tarih.isoformat() if c.Odeme_Tarih else None,
+                "Ilk_Tarih": c.Ilk_Tarih.isoformat() if c.Ilk_Tarih else None,
+                "Son_Tarih": c.Son_Tarih.isoformat() if c.Son_Tarih else None,
+                "Sube_ID": c.Sube_ID,
+                "Imaj_Adi": c.Imaj_Adi,
+                "has_imaj": bool(c.Imaj)
+            }
+            if c.Imaj:
+                item["Imaj_Base64"] = base64.b64encode(c.Imaj).decode('utf-8')
+            result.append(item)
+            
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@invoicing_bp.route("/yemek-cekileri", methods=["POST"])
+@auth_required
+def create_yemek_ceki():
+    """Create a new meal ticket."""
+    try:
+        # data from form (multipart/form-data)
+        data = {
+            'Kategori_ID': request.form.get('Kategori_ID', type=int),
+            'Tutar': request.form.get('Tutar', type=float),
+            'Sube_ID': request.form.get('Sube_ID', type=int),
+            'Tarih': datetime.strptime(request.form.get('Tarih'), '%Y-%m-%d').date() if request.form.get('Tarih') else None,
+            'Odeme_Tarih': datetime.strptime(request.form.get('Odeme_Tarih'), '%Y-%m-%d').date() if request.form.get('Odeme_Tarih') else None,
+            'Ilk_Tarih': datetime.strptime(request.form.get('Ilk_Tarih'), '%Y-%m-%d').date() if request.form.get('Ilk_Tarih') else None,
+            'Son_Tarih': datetime.strptime(request.form.get('Son_Tarih'), '%Y-%m-%d').date() if request.form.get('Son_Tarih') else None,
+        }
+        
+        imaj = None
+        imaj_adi = None
+        if 'image' in request.files:
+            file = request.files['image']
+            if file and file.filename:
+                imaj = file.read()
+                imaj_adi = file.filename
+
+        db = get_db_session()
+        new_ceki = queries.create_yemek_ceki(db, data, imaj, imaj_adi)
+        db.close()
+        
+        return jsonify({"message": "Kayıt oluşturuldu", "id": new_ceki.ID}), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@invoicing_bp.route("/yemek-cekileri/<int:ceki_id>", methods=["DELETE"])
+@auth_required
+def delete_yemek_ceki(ceki_id):
+    """Delete a meal ticket."""
+    try:
+        db = get_db_session()
+        deleted = queries.delete_yemek_ceki(db, ceki_id)
+        db.close()
+        if not deleted:
+            return jsonify({"error": "Kayıt bulunamadı"}), 404
+        return jsonify({"message": "Kayıt silindi"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@invoicing_bp.route("/yemek-cekileri/<int:ceki_id>", methods=["PUT"])
+@auth_required
+def update_yemek_ceki_api(ceki_id):
+    """Update an existing meal ticket."""
+    try:
+        db = get_db_session()
+        
+        data = {}
+        if request.form.get('Kategori_ID'): data['Kategori_ID'] = request.form.get('Kategori_ID', type=int)
+        if request.form.get('Tutar'): data['Tutar'] = request.form.get('Tutar', type=float)
+        if request.form.get('Sube_ID'): data['Sube_ID'] = request.form.get('Sube_ID', type=int)
+        if request.form.get('Tarih'): data['Tarih'] = datetime.strptime(request.form.get('Tarih'), '%Y-%m-%d').date()
+        if request.form.get('Odeme_Tarih'): data['Odeme_Tarih'] = datetime.strptime(request.form.get('Odeme_Tarih'), '%Y-%m-%d').date()
+        if request.form.get('Ilk_Tarih'): data['Ilk_Tarih'] = datetime.strptime(request.form.get('Ilk_Tarih'), '%Y-%m-%d').date()
+        if request.form.get('Son_Tarih'): data['Son_Tarih'] = datetime.strptime(request.form.get('Son_Tarih'), '%Y-%m-%d').date()
+        
+        imaj = None
+        imaj_adi = None
+        clear_imaj = request.form.get('clear_imaj', 'false').lower() == 'true'
+        
+        if 'image' in request.files and not clear_imaj:
+            file = request.files['image']
+            if file and file.filename:
+                imaj = file.read()
+                imaj_adi = file.filename
+
+        updated_ceki = queries.update_yemek_ceki(db, ceki_id, data, imaj, imaj_adi, clear_imaj)
+        db.close()
+        
+        if not updated_ceki:
+            return jsonify({"error": "Kayıt bulunamadı"}), 404
+            
+        return jsonify({"message": "Kayıt güncellendi"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ==========================================
+# NAKIT ROUTES
+# ==========================================
+
+@invoicing_bp.route("/nakitler", methods=["POST"])
+@auth_required
+def create_nakit_api():
+    """Create a new cash entry."""
+    try:
+        db = get_db_session()
+        data = {
+            'Tarih': datetime.strptime(request.form.get('Tarih'), '%Y-%m-%d').date() if request.form.get('Tarih') else None,
+            'Tutar': request.form.get('Tutar', type=float),
+            'Tip': request.form.get('Tip', 'Bankaya Yatan'),
+            'Donem': request.form.get('Donem', type=int),
+            'Sube_ID': request.form.get('Sube_ID', type=int)
+        }
+        
+        imaj = None
+        imaj_adi = None
+        if 'image' in request.files:
+            file = request.files['image']
+            if file and file.filename:
+                imaj = file.read()
+                imaj_adi = file.filename
+
+        new_nakit = queries.create_nakit(db, data, imaj, imaj_adi)
+        db.close()
+        
+        return jsonify({
+            "message": "Nakit giriş başarıyla eklendi",
+            "id": new_nakit.Nakit_ID
+        }), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@invoicing_bp.route("/nakitler/<int:nakit_id>", methods=["PUT"])
+@auth_required
+def update_nakit_api(nakit_id):
+    """Update an existing cash entry."""
+    try:
+        db = get_db_session()
+        data = {}
+        
+        if request.form.get('Tarih'): data['Tarih'] = datetime.strptime(request.form.get('Tarih'), '%Y-%m-%d').date()
+        if request.form.get('Tutar'): data['Tutar'] = request.form.get('Tutar', type=float)
+        if request.form.get('Tip'): data['Tip'] = request.form.get('Tip')
+        if request.form.get('Donem'): data['Donem'] = request.form.get('Donem', type=int)
+        if request.form.get('Sube_ID'): data['Sube_ID'] = request.form.get('Sube_ID', type=int)
+        
+        imaj = None
+        imaj_adi = None
+        clear_imaj = request.form.get('clear_imaj', 'false').lower() == 'true'
+        
+        if 'image' in request.files and not clear_imaj:
+            file = request.files['image']
+            if file and file.filename:
+                imaj = file.read()
+                imaj_adi = file.filename
+
+        updated_nakit = queries.update_nakit(db, nakit_id, data, imaj, imaj_adi, clear_imaj)
+        db.close()
+        
+        if not updated_nakit:
+            return jsonify({"error": "Kayıt bulunamadı"}), 404
+            
+        return jsonify({"message": "Nakit giriş başarıyla güncellendi"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@invoicing_bp.route("/nakitler/<int:nakit_id>", methods=["DELETE"])
+@auth_required
+def delete_nakit_api(nakit_id):
+    """Delete a cash entry."""
+    try:
+        db = get_db_session()
+        deleted = queries.delete_nakit(db, nakit_id)
+        db.close()
+        if not deleted:
+            return jsonify({"error": "Kayıt bulunamadı"}), 404
+        return jsonify({"message": "Nakit giriş silindi"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ==========================================
+# GELİR ROUTES (Matrix / Pivot Tablo İçin)
+# ==========================================
+
+@invoicing_bp.route("/gelirler/bulk", methods=["POST"])
+@auth_required
+def save_bulk_gelirler_api():
+    """Bulk save endpoint for Gelir Matrix."""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "Gelen veri bulunamadı"}), 400
+            
+        sube_id = data.get('sube_id')
+        year = data.get('year')
+        month = data.get('month')
+        payload = data.get('payload', {})
+        
+        if not sube_id or not year or not month:
+            return jsonify({"error": "Eksik zorunlu parametreler (sube_id, year, month)"}), 400
+            
+        db = get_db_session()
+        success = queries.save_bulk_gelirler(db, int(sube_id), int(year), int(month), payload)
+        db.close()
+        
+        if not success:
+            return jsonify({"error": "Kayıt işlemi sırasında hata oluştu. Logları kontrol edin."}), 500
+            
+        return jsonify({"message": "Tüm matris hücreleri başarıyla kaydedildi."}), 200
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# ============================================================================
+# MUTABAKAT (RECONCILIATION) ENDPOINTS
+# ============================================================================
+
+@invoicing_bp.route("/mutabakatlar", methods=["GET"])
+@auth_required
+def list_mutabakatlar():
+    """Get all reconciliation records."""
+    db = get_db_session()
+    try:
+        # Permission check for API
+        from app.modules.auth import queries as auth_queries
+        user_id = getattr(request.user, 'Kullanici_ID', None)
+        if not user_id or not auth_queries.has_permission(db, user_id, "Mutabakat Yönetimi Ekranı Görüntüleme"):
+            return jsonify({"error": "Permission denied"}), 403
+            
+        cari_id = request.args.get("cari_id", type=int)
+        sube_id = request.args.get("sube_id", type=int)
+        search = request.args.get("search", type=str)
+        limit = request.args.get("limit", 100, type=int)
+        skip = request.args.get("skip", 0, type=int)
+
+        mutabakatlar = queries.get_mutabakatlar(
+            db, 
+            skip=skip, 
+            limit=limit, 
+            cari_id=cari_id, 
+            sube_id=sube_id, 
+            search=search
+        )
+        
+        result = [
+            {
+                "Mutabakat_ID": m.Mutabakat_ID,
+                "Cari_ID": m.Cari_ID,
+                "Sube_ID": m.Sube_ID,
+                "Alici_Unvani": m.cari.Alici_Unvani if m.cari else "Unknown",
+                "Mutabakat_Tarihi": m.Mutabakat_Tarihi.isoformat() if m.Mutabakat_Tarihi else None,
+                "Tutar": float(m.Tutar)
+            }
+            for m in mutabakatlar
+        ]
+        return jsonify(result), 200
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
+
+@invoicing_bp.route("/mutabakatlar", methods=["POST"])
+@auth_required
+def create_mutabakat_route():
+    """Create a new reconciliation record."""
+    db = get_db_session()
+    try:
+        # Permission check for API
+        from app.modules.auth import queries as auth_queries
+        user_id = getattr(request.user, 'Kullanici_ID', None)
+        if not user_id or not auth_queries.has_permission(db, user_id, "Mutabakat Yönetimi Ekranı Görüntüleme"):
+            return jsonify({"error": "Permission denied"}), 403
+            
+        data = request.get_json()
+        if not data or "Cari_ID" not in data or "Mutabakat_Tarihi" not in data or "Tutar" not in data or "Sube_ID" not in data:
+            return jsonify({"error": "Cari_ID, Mutabakat_Tarihi, Tutar, and Sube_ID required"}), 400
+            
+        new_m = queries.create_mutabakat(
+            db, 
+            cari_id=data["Cari_ID"],
+            sube_id=data["Sube_ID"],
+            tarih=date.fromisoformat(data["Mutabakat_Tarihi"]),
+            tutar=float(data["Tutar"])
+        )
+        
+        return jsonify({
+            "message": "Mutabakat created",
+            "Mutabakat_ID": new_m.Mutabakat_ID
+        }), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
+
+@invoicing_bp.route("/mutabakatlar/<int:mut_id>", methods=["PUT"])
+@auth_required
+def update_mutabakat_route(mut_id):
+    """Update reconciliation record."""
+    db = get_db_session()
+    try:
+        # Permission check for API
+        from app.modules.auth import queries as auth_queries
+        user_id = getattr(request.user, 'Kullanici_ID', None)
+        if not user_id or not auth_queries.has_permission(db, user_id, "Mutabakat Yönetimi Ekranı Görüntüleme"):
+            return jsonify({"error": "Permission denied"}), 403
+            
+        data = request.get_json()
+        updated = queries.update_mutabakat(
+            db, 
+            mut_id, 
+            tarih=data.get("Mutabakat_Tarihi"),
+            tutar=float(data["Tutar"]) if "Tutar" in data else None
+        )
+        
+        if not updated:
+            return jsonify({"error": "Mutabakat not found"}), 404
+            
+        return jsonify({"message": "Mutabakat updated"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
+
+@invoicing_bp.route("/mutabakatlar/<int:mut_id>", methods=["DELETE"])
+@auth_required
+def delete_mutabakat_route(mut_id):
+    """Delete reconciliation record."""
+    db = get_db_session()
+    try:
+        # Permission check for API
+        from app.modules.auth import queries as auth_queries
+        user_id = getattr(request.user, 'Kullanici_ID', None)
+        if not user_id or not auth_queries.has_permission(db, user_id, "Mutabakat Yönetimi Ekranı Görüntüleme"):
+            return jsonify({"error": "Permission denied"}), 403
+            
+        success = queries.delete_mutabakat(db, mut_id)
+        
+        if not success:
+            return jsonify({"error": "Mutabakat not found"}), 404
+            
+        return jsonify({"message": "Mutabakat deleted"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()

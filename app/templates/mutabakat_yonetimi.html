@@ -1,0 +1,489 @@
+{% extends "base.html" %}
+
+{% block title %}Mutabakat Yönetimi - SilverCloud{% endblock %}
+{% block nav_mutabakat %}active{% endblock %}
+{% block acc_fatura_harcama %}active{% endblock %}
+{% block acc_fatura_harcama_content %}open{% endblock %}
+
+{% block extra_style %}
+<style>
+    .ref-page-container {
+        padding: 20px;
+    }
+
+    .card-glass {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        margin-bottom: 20px;
+    }
+
+    .header-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .header-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .header-title i {
+        color: #3b82f6;
+    }
+
+    .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .action-btn {
+        padding: 8px 14px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        background: white;
+        font-size: 13px;
+        font-weight: 500;
+        color: #475569;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+        color: #334155;
+    }
+
+    .action-btn.primary {
+        background: #3b82f6;
+        color: white;
+        border-color: #3b82f6;
+        font-weight: 600;
+    }
+
+    .toolbar-input {
+        padding: 8px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 13px;
+        outline: none;
+        background: white;
+        color: #475569;
+        min-width: 180px;
+    }
+
+    /* Table styling */
+    .ref-table-wrapper {
+        padding: 0;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .ref-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .ref-table th {
+        background: #fdfdfd;
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 12px 20px;
+        text-align: left;
+        border-bottom: 1px solid #e2e8f0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .ref-table td {
+        padding: 10px 20px;
+        color: #475569;
+        font-size: 13px;
+        border-bottom: 1px solid #e2e8f0;
+        vertical-align: middle;
+    }
+
+    .ref-table tr:hover {
+        background-color: #f8fafc;
+    }
+
+    .cell-bold {
+        color: #334155;
+        font-weight: 600;
+    }
+
+    .text-right {
+        text-align: right !important;
+    }
+
+    .amount-cell {
+        font-family: inherit;
+        font-weight: 700;
+    }
+
+    .amount-positive { color: #059669; }
+    .amount-negative { color: #dc2626; }
+
+    .action-icons {
+        display: flex;
+        gap: 6px;
+        justify-content: flex-end;
+    }
+
+    .icon-btn {
+        width: 28px;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: #64748b;
+    }
+
+    .icon-btn.edit:hover {
+        background: #eff6ff;
+        border-color: #bfdbfe;
+        color: #3b82f6;
+    }
+
+    .icon-btn.delete {
+        color: #ef4444;
+        border-color: #fca5a5;
+    }
+
+    .icon-btn.delete:hover {
+        background: #fef2f2;
+    }
+
+    .loading-overlay {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(255,255,255,0.7);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 10;
+    }
+
+    #noDataMessage {
+        padding: 60px;
+        text-align: center;
+        color: #94a3b8;
+    }
+
+    /* Modal form styling */
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        margin-bottom: 15px;
+    }
+
+    .form-group label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #475569;
+    }
+
+    .input-glass {
+        padding: 9px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 14px;
+        outline: none;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .input-glass:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ref-page-container">
+
+    <!-- Header Bar -->
+    <div class="card-glass header-bar">
+        <h1 class="header-title">
+            <i class="fas fa-handshake"></i>
+            Mutabakat Yönetimi
+        </h1>
+
+        <div class="header-actions">
+            <input type="text" id="filterSearch" class="toolbar-input" placeholder="Firma adı ile ara...">
+            
+            <select id="filterCari" class="toolbar-input">
+                <option value="">Tüm Firmalar</option>
+                {% for c in cariler %}
+                <option value="{{ c.Cari_ID }}">{{ c.Alici_Unvani }}</option>
+                {% endfor %}
+            </select>
+
+            <button class="action-btn primary" onclick="openCreateModal()">
+                <i class="fas fa-plus"></i> Yeni Kayıt
+            </button>
+        </div>
+    </div>
+
+    <!-- Table Section -->
+    <div class="card-glass ref-table-wrapper">
+        <div class="loading-overlay" id="tableLoading">
+            <i class="fas fa-circle-notch fa-spin fa-2x" style="color: #3b82f6"></i>
+        </div>
+
+        <table class="ref-table">
+            <thead>
+                <tr>
+                    <th style="width: 40%">CARİ ÜNVANI</th>
+                    <th style="width: 25%">MUTABAKAT TARİHİ</th>
+                    <th style="width: 20%" class="text-right">BAKİYE (TUTAR)</th>
+                    <th style="width: 15%" class="text-right">İŞLEMLER</th>
+                </tr>
+            </thead>
+            <tbody id="mutabakatTableBody">
+                <!-- JS handles this -->
+            </tbody>
+        </table>
+
+        <div id="noDataMessage" style="display: none;">
+            <i class="fas fa-search fa-2x" style="margin-bottom: 10px; display: block;"></i>
+            <p>Kayıt bulunamadı.</p>
+        </div>
+    </div>
+
+</div>
+
+<!-- Create/Edit Modal Content Template -->
+<template id="mutabakatModalTpl">
+    <form id="mutabakatForm">
+        <div class="form-group">
+            <label>Firma (Cari)</label>
+            <select name="Cari_ID" id="modalCariSelect" class="input-glass" required>
+                <option value="">Firma Seçiniz...</option>
+                {% for c in cariler %}
+                <option value="{{ c.Cari_ID }}">{{ c.Alici_Unvani }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label>Mutabakat Tarihi</label>
+            <input type="date" name="Mutabakat_Tarihi" id="modalDateInput" class="input-glass" required>
+        </div>
+        
+        <div class="form-group">
+            <label>Tutar (Bakiye)</label>
+            <div style="position: relative;">
+                <input type="number" step="0.01" name="Tutar" id="modalTutarInput" class="input-glass" style="padding-right: 40px;" required>
+                <span style="position: absolute; right: 12px; top: 10px; color: #94a3b8; font-weight: 600;">₺</span>
+            </div>
+            <p style="font-size: 11px; color: #64748b; margin-top: 4px; margin-bottom: 0;">Anlaşılan net cari bakiyeyi giriniz.</p>
+        </div>
+        
+        <div style="margin-top: 25px; text-align: right; display: flex; gap: 10px; justify-content: flex-end;">
+            <button type="button" class="action-btn" onclick="hideModal()">İptal</button>
+            <button type="submit" class="action-btn primary">Kaydet</button>
+        </div>
+    </form>
+</template>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const branchSelect = document.getElementById('branch-select');
+    let allMutabakatlar = [];
+    let searchTimeout = null;
+    let currentEditId = null;
+
+    function getSelectedSubeId() {
+        return branchSelect ? branchSelect.value : "{{ secili_sube_id }}";
+    }
+
+    async function loadMutabakatlar() {
+        const cariId = document.getElementById('filterCari').value;
+        const search = document.getElementById('filterSearch').value.trim();
+        const loading = document.getElementById('tableLoading');
+        
+        loading.style.display = 'flex';
+        
+        const subeId = getSelectedSubeId();
+        let url = `/api/v1/mutabakatlar?limit=1000&sube_id=${subeId}`;
+        if (cariId) url += `&cari_id=${cariId}`;
+        if (search) url += `&search=${encodeURIComponent(search)}`;
+
+        try {
+            const resp = await fetch(url);
+            if (!resp.ok) throw new Error('Yükleme hatası');
+            allMutabakatlar = await resp.json();
+            renderTable(allMutabakatlar);
+        } catch (err) {
+            console.error(err);
+            if (typeof showToast === 'function') {
+                showToast('Veriler yüklenirken hata oluştu', 'error');
+            } else {
+                alert('Veriler yüklenirken hata oluştu');
+            }
+        } finally {
+            loading.style.display = 'none';
+        }
+    }
+
+    function renderTable(data) {
+        const tbody = document.getElementById('mutabakatTableBody');
+        const noData = document.getElementById('noDataMessage');
+
+        if (data.length === 0) {
+            tbody.innerHTML = '';
+            noData.style.display = 'block';
+            return;
+        }
+
+        noData.style.display = 'none';
+        tbody.innerHTML = data.map(m => `
+            <tr>
+                <td class="cell-bold">${m.Alici_Unvani}</td>
+                <td style="color: #64748b;">${formatDate(m.Mutabakat_Tarihi)}</td>
+                <td class="text-right cell-bold amount-cell ${m.Tutar >= 0 ? 'amount-positive' : 'amount-negative'}">
+                    ${formatCurrency(m.Tutar)}
+                </td>
+                <td class="text-right">
+                    <div class="action-icons">
+                        <button class="icon-btn edit" title="Düzenle" onclick="openEditModal(${m.Mutabakat_ID})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="icon-btn delete" title="Sil" onclick="deleteMutabakat(${m.Mutabakat_ID})">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function openCreateModal() {
+        currentEditId = null;
+        const tpl = document.getElementById('mutabakatModalTpl').innerHTML;
+        showModal('Yeni Mutabakat Kaydı', tpl);
+        
+        // Auto-set today date
+        const dateInput = document.getElementById('modalDateInput');
+        if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+        
+        setupFormHandler();
+    }
+
+    function openEditModal(id) {
+        currentEditId = id;
+        const m = allMutabakatlar.find(x => x.Mutabakat_ID === id);
+        if (!m) return;
+
+        const tpl = document.getElementById('mutabakatModalTpl').innerHTML;
+        showModal('Mutabakat Kaydı Düzenle', tpl);
+        
+        document.getElementById('modalCariSelect').value = m.Cari_ID;
+        document.getElementById('modalDateInput').value = m.Mutabakat_Tarihi;
+        document.getElementById('modalTutarInput').value = m.Tutar;
+        
+        setupFormHandler();
+    }
+
+    function setupFormHandler() {
+        const form = document.getElementById('mutabakatForm');
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData(form);
+            const payload = Object.fromEntries(formData.entries());
+            
+            // Add Sube_ID automatically
+            payload.Sube_ID = getSelectedSubeId();
+
+            const isEdit = !!currentEditId;
+            const url = isEdit ? `/api/v1/mutabakatlar/${currentEditId}` : '/api/v1/mutabakatlar';
+            const method = isEdit ? 'PUT' : 'POST';
+
+            try {
+                const resp = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (resp.ok) {
+                    if (typeof showToast === 'function') showToast(currentEditId ? 'Kayıt güncellendi' : 'Kayıt oluşturuldu');
+                    hideModal();
+                    loadMutabakatlar();
+                } else {
+                    const err = await resp.json();
+                    alert(err.error || 'Hata oluştu');
+                }
+            } catch (err) {
+                alert('Bağlantı hatası');
+            }
+        };
+    }
+
+    async function deleteMutabakat(id) {
+        if (!confirm('Bu mutabakat kaydını silmek istediğinize emin misiniz?')) return;
+
+        try {
+            const resp = await fetch(`/api/v1/mutabakatlar/${id}`, { method: 'DELETE' });
+            if (resp.ok) {
+                if (typeof showToast === 'function') showToast('Kayıt silindi');
+                loadMutabakatlar();
+            } else {
+                alert('Silme işlemi başarısız');
+            }
+        } catch (err) {
+            alert('Bağlantı hatası');
+        }
+    }
+
+    function formatCurrency(val) {
+        return new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format(val) + ' ₺';
+    }
+
+    function formatDate(str) {
+        if (!str) return '';
+        const d = new Date(str);
+        return d.toLocaleDateString('tr-TR');
+    }
+
+    // Debounce search
+    document.getElementById('filterSearch').addEventListener('input', () => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(loadMutabakatlar, 400);
+    });
+    
+    document.getElementById('filterCari').addEventListener('change', loadMutabakatlar);
+
+    if (branchSelect) {
+        branchSelect.addEventListener('change', loadMutabakatlar);
+    }
+
+    window.addEventListener('load', loadMutabakatlar);
+</script>
+{% endblock %}

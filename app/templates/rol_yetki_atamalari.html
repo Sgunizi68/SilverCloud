@@ -1,0 +1,568 @@
+{% extends "base.html" %}
+
+{% block title %}Rol Yetki Atama - SilverCloud{% endblock %}
+
+/* Nav active block */
+{% block acc_sistem_tablolari %}active{% endblock %}
+{% block acc_sistem_tablolari_content %}open{% endblock %}
+
+{% block extra_style %}
+<style>
+    .ry-page-container {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        height: calc(100vh - 80px);
+    }
+
+    .card-glass {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Dual pane layout */
+    .split-layout {
+        display: flex;
+        gap: 20px;
+        flex: 1;
+        min-height: 0;
+    }
+
+    /* Left Pane: Roles List */
+    .roles-pane {
+        flex: 0 0 300px;
+        display: flex;
+        flex-direction: column;
+        padding: 15px;
+        overflow: hidden;
+    }
+
+    /* Right Pane */
+    .details-pane {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+        overflow: hidden;
+        /* internally handle scrolling */
+    }
+
+    /* Dual Column inside Right Pane */
+    .permissions-container {
+        display: flex;
+        gap: 20px;
+        flex: 1;
+        min-height: 0;
+        margin-top: 15px;
+    }
+
+    .perm-column {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: #fafafa;
+        overflow: hidden;
+    }
+
+    .perm-column-header {
+        padding: 15px;
+        background: white;
+        border-bottom: 1px solid #e2e8f0;
+        font-weight: 600;
+        color: #334155;
+        font-size: 15px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .perm-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .perm-list::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .perm-list::-webkit-scrollbar-thumb {
+        background-color: #cbd5e1;
+        border-radius: 6px;
+    }
+
+    .search-input {
+        padding: 10px 15px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        width: 100%;
+        font-size: 13px;
+        outline: none;
+        background: white;
+    }
+
+    .search-input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+    }
+
+    /* Role Item Styling */
+    .role-list {
+        flex: 1;
+        overflow-y: auto;
+        padding-right: 5px;
+    }
+
+    .role-list::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .role-list::-webkit-scrollbar-thumb {
+        background-color: #cbd5e1;
+        border-radius: 6px;
+    }
+
+    .role-item {
+        padding: 12px 15px;
+        margin-bottom: 8px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 14px;
+        color: #475569;
+        display: flex;
+        align-items: center;
+        border: 1px solid transparent;
+    }
+
+    .role-item:hover {
+        background-color: #f8fafc;
+        border-color: #e2e8f0;
+    }
+
+    .role-item.active {
+        background-color: #3b82f6;
+        color: white;
+        border-color: #3b82f6;
+        font-weight: 500;
+    }
+
+    /* Permission Item Styling */
+    .perm-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        transition: all 0.2s;
+    }
+
+    .perm-item:hover {
+        border-color: #cbd5e1;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+    }
+
+    .perm-info {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .perm-name {
+        font-size: 13px;
+        color: #334155;
+        font-weight: 500;
+    }
+
+    .perm-type {
+        font-size: 11px;
+        color: #94a3b8;
+    }
+
+    /* Buttons */
+    .action-btn-sm {
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: white;
+    }
+
+    .action-btn-sm.add {
+        border: 1px solid #86efac;
+        color: #10b981;
+    }
+
+    .action-btn-sm.add:hover {
+        background: #dcfce7;
+    }
+
+    .action-btn-sm.remove {
+        border: 1px solid #fecaca;
+        color: #ef4444;
+    }
+
+    .action-btn-sm.remove:hover {
+        background: #fef2f2;
+    }
+
+    /* Header text sizes */
+    .selected-role-header {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1e293b;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .selected-role-name {
+        color: #3b82f6;
+    }
+
+    .no-selection {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: #94a3b8;
+        font-size: 16px;
+    }
+
+    .no-selection i {
+        font-size: 48px;
+        margin-bottom: 20px;
+        color: #cbd5e1;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        justify-content: center;
+        font-size: 12px;
+        margin-right: 8px;
+    }
+
+    .status-badge.active {
+        color: #10b981;
+        border: 1px solid #10b981;
+        background: #ecfdf5;
+    }
+
+    .status-badge.inactive {
+        color: #ef4444;
+        border: 1px solid #ef4444;
+        background: #fef2f2;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ry-page-container">
+
+    <!-- Top Header -->
+    <div class="card-glass" style="padding: 15px 25px; display: flex; align-items: center; gap: 12px; flex-shrink: 0;">
+        <div
+            style="width: 40px; height: 40px; border-radius: 10px; background: #6366f1; display: flex; align-items: center; justify-content: center; color: white;">
+            <i class="fas fa-user-shield"></i>
+        </div>
+        <div>
+            <h1 style="margin: 0; font-size: 18px; font-weight: 800; color: #111827;">Rol Yetki Atama</h1>
+            <p style="margin: 0; font-size: 12px; color: #6b21a8; font-weight: 500;">Roller İçin Erişim İzinleri Seçim
+                Ekranı</p>
+        </div>
+    </div>
+
+    <!-- Split Layout -->
+    <div class="split-layout">
+
+        <!-- Left Pane: Roles -->
+        <div class="card-glass roles-pane">
+            <input type="text" id="role-search" class="search-input" placeholder="Rol Ara...">
+            <div class="role-list" id="roles-container">
+                <!-- Roles will be populated here via JS -->
+            </div>
+        </div>
+
+        <!-- Right Pane: Details -->
+        <div class="card-glass details-pane" id="details-container">
+            <!-- Default Empty State -->
+            <div class="no-selection" id="no-selection-state">
+                <i class="fas fa-hand-pointer"></i>
+                <p>Yetkileri yönetmek için soldan bir rol seçin.</p>
+            </div>
+
+            <!-- Active Role State (Hidden initially) -->
+            <div id="active-role-state" style="display: none; height: 100%; flex-direction: column;">
+                <div class="selected-role-header">
+                    Yetkiler: <span class="selected-role-name" id="display-role-name">Rol Adı</span>
+                </div>
+
+                <div class="permissions-container">
+
+                    <!-- Available Permissions Column -->
+                    <div class="perm-column">
+                        <div class="perm-column-header">
+                            Kullanılabilir Yetkiler (<span id="available-count">0</span>)
+                            <input type="text" id="available-search" class="search-input" placeholder="Yetki Ara..."
+                                style="margin-bottom:0; font-weight:400;">
+                        </div>
+                        <div class="perm-list" id="available-list">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Assigned Permissions Column -->
+                    <div class="perm-column">
+                        <div class="perm-column-header">
+                            Atanmış Yetkiler (<span id="assigned-count">0</span>)
+                            <input type="text" id="assigned-search" class="search-input" placeholder="Yetki Ara..."
+                                style="margin-bottom:0; font-weight:400;">
+                        </div>
+                        <div class="perm-list" id="assigned-list">
+                            <!-- Populated via JS -->
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // Data from Backend
+    const ROLLER = {{ roller | tojson | safe }};
+    const YETKILER = {{ yetkiler | tojson | safe }};
+    const ATAMALAR = {{ atamalar | tojson | safe }};
+
+    // State
+    let selectedRoleId = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        renderRoles(ROLLER);
+
+        const savedRoleId = sessionStorage.getItem('ry_selected_role_id');
+        if (savedRoleId) {
+            const role = ROLLER.find(r => r.Rol_ID == savedRoleId);
+            if (role) {
+                selectRole(role.Rol_ID, role.Rol_Adi);
+            }
+        }
+
+        // Setup Search Listeners
+        document.getElementById('role-search').addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = ROLLER.filter(r => r.Rol_Adi.toLowerCase().includes(term));
+            renderRoles(filtered);
+        });
+
+        document.getElementById('available-search').addEventListener('input', () => {
+            if (selectedRoleId) renderPermissions();
+        });
+
+        document.getElementById('assigned-search').addEventListener('input', () => {
+            if (selectedRoleId) renderPermissions();
+        });
+    });
+
+    function renderRoles(roles) {
+        const container = document.getElementById('roles-container');
+        container.innerHTML = '';
+
+        roles.forEach(r => {
+            const div = document.createElement('div');
+            div.className = `role-item ${selectedRoleId === r.Rol_ID ? 'active' : ''}`;
+            div.textContent = r.Rol_Adi;
+            div.onclick = () => selectRole(r.Rol_ID, r.Rol_Adi);
+            container.appendChild(div);
+        });
+    }
+
+    function selectRole(roleId, roleName) {
+        selectedRoleId = roleId;
+        sessionStorage.setItem('ry_selected_role_id', roleId);
+
+        // Update UI
+        document.getElementById('no-selection-state').style.display = 'none';
+
+        const activeState = document.getElementById('active-role-state');
+        activeState.style.display = 'flex';
+
+        document.getElementById('display-role-name').textContent = roleName;
+
+        // Refresh roles list to highlight active
+        renderRoles(ROLLER);
+
+        // Clear searches
+        document.getElementById('available-search').value = '';
+        document.getElementById('assigned-search').value = '';
+
+        // Render permissions
+        renderPermissions();
+    }
+
+    function renderPermissions() {
+        if (!selectedRoleId) return;
+
+        const availSearch = document.getElementById('available-search').value.toLowerCase();
+        const assignSearch = document.getElementById('assigned-search').value.toLowerCase();
+
+        const roleAtamalar = ATAMALAR.filter(a => a.Rol_ID === selectedRoleId);
+        const assignedYetkiIds = roleAtamalar.map(a => a.Yetki_ID);
+
+        // Filter Data
+        let available = YETKILER.filter(y => !assignedYetkiIds.includes(y.Yetki_ID));
+        let assigned = roleAtamalar;
+
+        // Apply Search Text
+        if (availSearch) {
+            available = available.filter(y => y.Yetki_Adi.toLowerCase().includes(availSearch) || (y.Tip && y.Tip.toLowerCase().includes(availSearch)));
+        }
+        if (assignSearch) {
+            assigned = assigned.filter(a => a.Yetki_Adi.toLowerCase().includes(assignSearch) || (a.Tip && a.Tip.toLowerCase().includes(assignSearch)));
+        }
+
+        // Update Counts
+        document.getElementById('available-count').textContent = available.length;
+        document.getElementById('assigned-count').textContent = assigned.length;
+
+        // Render Available
+        const availContainer = document.getElementById('available-list');
+        availContainer.innerHTML = '';
+        if (available.length === 0) {
+            availContainer.innerHTML = '<div style="text-align:center; padding: 20px; color:#94a3b8; font-size:13px;">Kayıt bulunamadı.</div>';
+        } else {
+            available.forEach(y => {
+                const div = document.createElement('div');
+                div.className = 'perm-item';
+                div.innerHTML = `
+                    <div class="perm-info">
+                        <span class="perm-name">${y.Yetki_Adi}</span>
+                        <span class="perm-type">(${y.Tip || 'Genel'})</span>
+                    </div>
+                    <button class="action-btn-sm add" onclick="assignPermission(${y.Yetki_ID})" title="Ekle">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                `;
+                availContainer.appendChild(div);
+            });
+        }
+
+        // Render Assigned
+        const assignedContainer = document.getElementById('assigned-list');
+        assignedContainer.innerHTML = '';
+        if (assigned.length === 0) {
+            assignedContainer.innerHTML = '<div style="text-align:center; padding: 20px; color:#94a3b8; font-size:13px;">Atanmış yetki bulunamadı.</div>';
+        } else {
+            assigned.forEach(a => {
+                const div = document.createElement('div');
+                div.className = 'perm-item';
+
+                const statusIcon = a.Aktif_Pasif ?
+                    '<div class="status-badge active" title="Aktif"><i class="fas fa-check"></i></div>' :
+                    '<div class="status-badge inactive" title="Pasif"><i class="fas fa-times"></i></div>';
+
+                div.innerHTML = `
+                    <div style="display:flex; align-items:center;">
+                        <span style="cursor:pointer;" onclick="togglePermissionStatus(${a.Rol_ID}, ${a.Yetki_ID}, ${!a.Aktif_Pasif})">
+                            ${statusIcon}
+                        </span>
+                        <div class="perm-info">
+                            <span class="perm-name">${a.Yetki_Adi}</span>
+                            <span class="perm-type">(${a.Tip || 'Genel'})</span>
+                        </div>
+                    </div>
+                    <button class="action-btn-sm remove" onclick="removePermission(${a.Yetki_ID})" title="Kaldır">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                `;
+                assignedContainer.appendChild(div);
+            });
+        }
+    }
+
+    async function assignPermission(yetkiId) {
+        if (!selectedRoleId) return;
+
+        try {
+            const res = await fetch('/api/v1/rol-yetki-atamalari', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    Rol_ID: selectedRoleId,
+                    Yetki_ID: yetkiId,
+                    Aktif_Pasif: true
+                })
+            });
+
+            if (res.ok) {
+                location.reload();
+            } else {
+                const err = await res.json();
+                showToast(err.error || 'Eklenirken hata oluştu.', 'error');
+            }
+        } catch {
+            showToast('Bağlantı hatası.', 'error');
+        }
+    }
+
+    async function removePermission(yetkiId) {
+        if (!selectedRoleId) return;
+
+        try {
+            const res = await fetch(`/api/v1/rol-yetki-atamalari/${selectedRoleId}/${yetkiId}`, {
+                method: 'DELETE'
+            });
+
+            if (res.ok || res.status === 204) {
+                location.reload();
+            } else {
+                const err = await res.json();
+                showToast(err.error || 'Silinirken hata oluştu.', 'error');
+            }
+        } catch {
+            showToast('Bağlantı hatası.', 'error');
+        }
+    }
+
+    async function togglePermissionStatus(rolId, yetkiId, newStatus) {
+        try {
+            const res = await fetch(`/api/v1/rol-yetki-atamalari/${rolId}/${yetkiId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ Aktif_Pasif: newStatus })
+            });
+
+            if (res.ok) {
+                location.reload();
+            } else {
+                const err = await res.json();
+                showToast(err.error || 'Güncellenirken hata oluştu.', 'error');
+            }
+        } catch {
+            showToast('Bağlantı hatası.', 'error');
+        }
+    }
+</script>
+{% endblock %}

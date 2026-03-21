@@ -1,0 +1,396 @@
+{% extends "base.html" %}
+
+{% block title %}B2B Ekstre Yükleme - SilverCloud{% endblock %}
+
+{% block acc_fatura_harcama %}active{% endblock %}
+{% block acc_fatura_harcama_content %}open{% endblock %}
+
+{% block extra_style %}
+<style>
+    .upload-container {
+        padding: 30px;
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .card-glass {
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        border-radius: 16px;
+        padding: 25px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    .page-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 25px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 8px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.2s;
+        background: white;
+    }
+
+    .form-control:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        outline: none;
+    }
+
+    .upload-row {
+        display: flex;
+        gap: 15px;
+        align-items: flex-end;
+        margin-bottom: 20px;
+    }
+
+    .upload-row .form-group {
+        flex: 1;
+    }
+
+    .btn-upload {
+        background: #3b82f6;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+        white-space: nowrap;
+        height: 44px;
+    }
+
+    .btn-upload:hover {
+        background: #2563eb;
+        transform: translateY(-1px);
+    }
+
+    .btn-upload:disabled {
+        background: #94a3b8;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .btn-template {
+        background: white;
+        color: #334155;
+        border: 1px solid #cbd5e1;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+    }
+
+    .btn-template:hover {
+        border-color: #3b82f6;
+        color: #3b82f6;
+    }
+
+    .info-text {
+        font-size: 12px;
+        color: #64748b;
+        margin-top: 8px;
+    }
+
+    .info-text strong {
+        color: #334155;
+    }
+
+    .result-card {
+        margin-top: 25px;
+        padding: 20px;
+        border-radius: 12px;
+        display: none;
+        border: 1px solid #e2e8f0;
+    }
+
+    .result-success {
+        background: #f0fdf4;
+        border-color: #bbf7d0;
+        color: #166534;
+    }
+
+    .result-stats {
+        display: flex;
+        gap: 30px;
+        margin-top: 15px;
+    }
+
+    .stat-item {
+        text-align: center;
+        flex: 1;
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .stat-value {
+        font-size: 24px;
+        font-weight: 700;
+        display: block;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: #64748b;
+        text-transform: uppercase;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="upload-container">
+    <div class="card-glass">
+        <h1 class="page-title">
+            <i class="fas fa-file-import" style="color: #3b82f6;"></i>
+            B2B Ekstre Yükleme
+        </h1>
+
+        <form id="uploadForm">
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Şube Seçimi *</label>
+                <select id="Sube_ID" class="form-control" required>
+                    {% for s in subeler %}
+                    <option value="{{ s.Sube_ID }}">{{ s.Sube_Adi }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Excel Dosyası (.xlsx, .xls) *</label>
+                <div class="upload-row">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <input type="file" id="excelFile" class="form-control" accept=".xlsx,.xls" required>
+                    </div>
+                    <button type="submit" class="btn-upload" id="submitBtn">
+                        <i class="fas fa-upload"></i> Yükle
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <div style="margin-top: 10px;">
+            <button class="btn-template" id="downloadTemplateBtn">
+                <i class="fas fa-download"></i> Örnek Şablon İndir
+            </button>
+        </div>
+
+        <div id="resultCard" class="result-card result-success">
+            <h3 style="margin-top: 0; font-size: 16px;">Yükleme Tamamlandı</h3>
+            <div class="result-stats">
+                <div class="stat-item">
+                    <span class="stat-value" id="countAdded" style="color: #16a34a;">0</span>
+                    <span class="stat-label">Eklenen</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="countSkipped" style="color: #ca8a04;">0</span>
+                    <span class="stat-label">Atlanan (Mevcut)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Date parsing helpers (shared with fatura_yukleme)
+    const parseDMYDateString = (dateStr) => {
+        if (!dateStr) return '';
+        if (typeof dateStr === 'number') {
+            const excelEpoch = new Date(1899, 11, 30);
+            const excelDate = new Date(excelEpoch.getTime() + dateStr * 24 * 60 * 60 * 1000);
+            if (!isNaN(excelDate.getTime())) {
+                const year = excelDate.getFullYear();
+                const month = (excelDate.getMonth() + 1).toString().padStart(2, '0');
+                const day = excelDate.getDate().toString().padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+        }
+        const parts = String(dateStr).split(/[-./]/);
+        if (parts.length === 3) {
+            let [day, month, year] = parts;
+            if (day && month && year) {
+                if (year.length === 2) {
+                    const currentYear = new Date().getFullYear();
+                    const currentCentury = Math.floor(currentYear / 100) * 100;
+                    let fullYear = currentCentury + parseInt(year, 10);
+                    if (fullYear > currentYear + 20) fullYear -= 100;
+                    year = String(fullYear);
+                }
+                if (year.length === 4) {
+                    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                }
+            }
+        }
+        return dateStr;
+    };
+
+    const parseCurrencyValue = (value) => {
+        if (typeof value === 'number') return isNaN(value) ? 0 : value;
+        if (typeof value === 'string') {
+            const sanitized = value.replace(/\./g, '').replace(',', '.');
+            const num = parseFloat(sanitized);
+            return isNaN(num) ? 0 : num;
+        }
+        return 0;
+    };
+
+    // Download sample template
+    document.getElementById('downloadTemplateBtn').addEventListener('click', () => {
+        const sampleData = [
+            { "Tarih": "01.02.2026", "Fiş No": "B2B001", "Fiş Türü": "Satış", "Açıklama": "Malzeme Alımı", "Borç": 0, "Alacak": 1200.00, "Toplam Bakiye": 1200.00, "Fatura No": "INV2026001", "Fatura Metni": "" },
+            { "Tarih": "05.02.2026", "Fiş No": "B2B002", "Fiş Türü": "İade", "Açıklama": "Ürün İadesi", "Borç": 150.00, "Alacak": 0, "Toplam Bakiye": 1050.00, "Fatura No": "", "Fatura Metni": "" },
+        ];
+        const ws = XLSX.utils.json_to_sheet(sampleData);
+        ws['!cols'] = [
+            { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 30 },
+            { wch: 12 }, { wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 25 }
+        ];
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "B2B Ekstre");
+        XLSX.writeFile(wb, "B2B_Ekstre_Sablon.xlsx");
+    });
+
+    // Upload handler
+    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fileInput = document.getElementById('excelFile');
+        const submitBtn = document.getElementById('submitBtn');
+        const subeId = document.getElementById('Sube_ID').value;
+
+        if (!fileInput.files[0]) return;
+        if (!subeId) {
+            showToast('Şube seçili değil.', 'error');
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> İşleniyor...';
+        document.getElementById('resultCard').style.display = 'none';
+
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            try {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+                if (jsonData.length === 0) {
+                    showToast('Dosya boş görünüyor.', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
+                    return;
+                }
+
+                const headers = Object.keys(jsonData[0]);
+                const tarihKey = headers.find(k => k.toLowerCase().includes("tarih") || k.toLowerCase().includes("date"));
+                const fisNoKey = headers.find(k => k.toLowerCase().includes("fiş no") || k.toLowerCase().includes("fis no") || k.toLowerCase().includes("fisno") || k.toLowerCase().includes("receipt"));
+                const fisTuruKey = headers.find(k => k.toLowerCase().includes("fiş tür") || k.toLowerCase().includes("fis tür") || k.toLowerCase().includes("type"));
+                const aciklamaKey = headers.find(k => k.toLowerCase().includes("açıklama") || k.toLowerCase().includes("aciklama") || k.toLowerCase().includes("description"));
+                const borcKey = headers.find(k => k.toLowerCase().includes("borç") || k.toLowerCase().includes("borc") || k.toLowerCase().includes("debit"));
+                const alacakKey = headers.find(k => k.toLowerCase().includes("alacak") || k.toLowerCase().includes("credit"));
+                const bakiyeKey = headers.find(k => k.toLowerCase().includes("bakiye") || k.toLowerCase().includes("balance"));
+                const faturaNoKey = headers.find(k => k.toLowerCase().includes("fatura no") || k.toLowerCase().includes("invoice"));
+                const faturaMetniKey = headers.find(k => k.toLowerCase().includes("fatura metni") || k.toLowerCase().includes("invoice text"));
+
+                if (!tarihKey || !fisNoKey) {
+                    showToast("'Tarih' ve 'Fiş No' sütunları bulunamadı. Lütfen sütun adlarını kontrol edin.", 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
+                    return;
+                }
+
+                const ekstreler = jsonData.map((row, index) => {
+                    try {
+                        const fisNo = String(row[fisNoKey] || "").trim();
+                        if (!fisNo) return null;
+
+                        const dateStr = parseDMYDateString(row[tarihKey]);
+
+                        return {
+                            Sube_ID: parseInt(subeId),
+                            Tarih: dateStr,
+                            Fis_No: fisNo,
+                            Fis_Turu: fisTuruKey ? String(row[fisTuruKey] || "").trim() : null,
+                            Aciklama: aciklamaKey ? String(row[aciklamaKey] || "").trim() : null,
+                            Borc: borcKey ? parseCurrencyValue(row[borcKey]) : 0,
+                            Alacak: alacakKey ? parseCurrencyValue(row[alacakKey]) : 0,
+                            Toplam_Bakiye: bakiyeKey ? parseCurrencyValue(row[bakiyeKey]) : 0,
+                            Fatura_No: faturaNoKey ? String(row[faturaNoKey] || "").trim() || null : null,
+                            Fatura_Metni: faturaMetniKey ? String(row[faturaMetniKey] || "").trim() || null : null,
+                        };
+                    } catch (err) {
+                        console.error(`Error at row ${index}:`, err);
+                        return null;
+                    }
+                }).filter(x => x !== null);
+
+                if (ekstreler.length === 0) {
+                    showToast('Geçerli veri bulunamadı. Sütun adlarını kontrol edin.', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
+                    return;
+                }
+
+                const response = await fetch('/api/v1/b2b-ekstreler/bulk', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ ekstreler })
+                });
+
+                if (response.ok) {
+                    const resData = await response.json();
+                    document.getElementById('countAdded').innerText = resData.added;
+                    document.getElementById('countSkipped').innerText = resData.skipped;
+                    document.getElementById('resultCard').style.display = 'block';
+                    showToast(`İşlem tamamlandı. Eklenen: ${resData.added}, Atlanan: ${resData.skipped}`);
+                } else {
+                    const err = await response.json();
+                    showToast(err.error || 'Yükleme sırasında hata oluştu.', 'error');
+                }
+
+            } catch (err) {
+                console.error(err);
+                showToast('Dosya okuma hatası: ' + err.message, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
+            }
+        };
+        reader.readAsArrayBuffer(fileInput.files[0]);
+    });
+</script>
+{% endblock %}

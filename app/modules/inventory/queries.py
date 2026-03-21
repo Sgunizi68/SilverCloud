@@ -5,9 +5,9 @@ CRUD operations for Stock, Stock Price, and Stock Count entities.
 
 from datetime import datetime, date
 from decimal import Decimal
-from typing import List, Optional
+from typing import List, Optional, Union
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import select, desc
 
 from app.models import Stok, StokFiyat, StokSayim
 
@@ -157,7 +157,7 @@ def get_stok_fiyatlar(
         List of StokFiyat records
     """
     limit = min(limit, 1000)
-    stmt = select(StokFiyat)
+    stmt = select(StokFiyat).order_by(desc(StokFiyat.Gecerlilik_Baslangic_Tarih))
     
     if malzeme_kodu is not None:
         stmt = stmt.where(StokFiyat.Malzeme_Kodu == malzeme_kodu)
@@ -207,7 +207,8 @@ def update_stok_fiyat(
     db: Session,
     fiyat_id: int,
     fiyat: Optional[float] = None,
-    aktif_pasif: Optional[bool] = None
+    aktif_pasif: Optional[bool] = None,
+    gecerlilik_baslangic_tarih: Optional[Union[date, str]] = None
 ) -> Optional[StokFiyat]:
     """Update stock price."""
     stok_fiyat = get_stok_fiyat_by_id(db, fiyat_id)
@@ -218,6 +219,8 @@ def update_stok_fiyat(
         stok_fiyat.Fiyat = Decimal(str(fiyat))
     if aktif_pasif is not None:
         stok_fiyat.Aktif_Pasif = aktif_pasif
+    if gecerlilik_baslangic_tarih is not None:
+        stok_fiyat.Gecerlilik_Baslangic_Tarih = gecerlilik_baslangic_tarih
     
     db.commit()
     db.refresh(stok_fiyat)
@@ -311,6 +314,37 @@ def create_stok_sayim(
     db.refresh(new_sayim)
     return new_sayim
 
+def upsert_stok_sayim(
+    db: Session,
+    malzeme_kodu: str,
+    donem: int,
+    miktar: float,
+    sube_id: int
+) -> StokSayim:
+    """Create or update a stock count based on Malzeme_Kodu + Donem + Sube_ID."""
+    existing_sayim = db.query(StokSayim).filter(
+        StokSayim.Malzeme_Kodu == malzeme_kodu,
+        StokSayim.Donem == donem,
+        StokSayim.Sube_ID == sube_id
+    ).first()
+
+    if existing_sayim:
+        existing_sayim.Miktar = Decimal(str(miktar))
+        db.commit()
+        db.refresh(existing_sayim)
+        return existing_sayim
+    else:
+        new_sayim = StokSayim(
+            Malzeme_Kodu=malzeme_kodu,
+            Donem=donem,
+            Miktar=Decimal(str(miktar)),
+            Sube_ID=sube_id,
+            Kayit_Tarihi=datetime.now()
+        )
+        db.add(new_sayim)
+        db.commit()
+        db.refresh(new_sayim)
+        return new_sayim
 
 def update_stok_sayim(
     db: Session,

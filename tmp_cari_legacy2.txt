@@ -1,0 +1,12 @@
+﻿
+Pepsi Total Fatura: 496007.18
+Pepsi Total Odeme:  -459029.93
+Pepsi Balance:      955037.11
+
+Fasdat Total Fatura: 439332.86
+Fasdat Total Odeme:  -366989.08
+Fasdat Balance:      806321.94
+
+G2meksper Total Fatura: 303086.18
+G2meksper Total Odeme:  -251098.16
+G2meksper Balance:      554184.34

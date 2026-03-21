@@ -1,0 +1,421 @@
+{% extends "base.html" %}
+{% block title %}Yemek Çeki Kontrol Dashboard{% endblock %}
+{% block nav_yemek_ceki_kontrol_dashboard %}active{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <style>
+        :root {
+            --primary-dark: #1a2340;
+            --accent-blue: #3498db;
+            --accent-green: #2ecc71;
+            --accent-red: #e74c3c;
+            --accent-purple: #9b59b6;
+            --glass-bg: rgba(255, 255, 255, 0.95);
+        }
+
+        .report-header-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .report-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--primary-dark);
+            letter-spacing: -0.02em;
+        }
+
+        .control-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .donem-select,
+        .sube-select {
+            border: 1px solid #dcdfe6;
+            border-radius: 8px;
+            padding: 0.4rem 0.8rem;
+            font-size: 0.85rem;
+            background: #fff;
+            color: #333;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        }
+
+        /* Stat Cards */
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--glass-bg);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+            min-height: 100px;
+            justify-content: center;
+        }
+
+        .card-gelir {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .card-donem {
+            background: linear-gradient(135deg, #13f1fc 0%, #0470dc 100%);
+            color: white;
+        }
+
+        .card-fark {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .card-kayit {
+            background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+            color: white;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            opacity: 0.9;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+        }
+
+        /* Main Table Card */
+        .table-card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            border: 1px solid #ebeef5;
+        }
+
+        .table-card-header {
+            background: #fff;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid #ebeef5;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        .ceki-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+
+        .ceki-table thead th {
+            background: #455a64;
+            color: #fff;
+            padding: 0.7rem 0.5rem;
+            text-align: center;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .ceki-table td {
+            padding: 0.6rem 0.5rem;
+            border-bottom: 1px solid #f0f2f5;
+            vertical-align: middle;
+            text-align: center;
+            color: #2c3e50;
+        }
+
+        .ceki-table .num-cell {
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            text-align: right;
+        }
+
+        /* BLUE HEADER ROW FOR PLATFORM */
+        .platform-header-row {
+            background: #6c5ce7 !important;
+            /* Premium Purple blue */
+            background: linear-gradient(90deg, #74b9ff 0%, #6c5ce7 100%) !important;
+            color: #fff !important;
+            font-weight: 700 !important;
+        }
+
+        .platform-header-row td {
+            color: #fff !important;
+            padding: 0.8rem 1rem !important;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .label-text {
+            font-size: 0.7rem;
+            opacity: 0.8;
+            font-weight: 400;
+            margin-right: 4px;
+        }
+
+        .val-text {
+            font-weight: 700;
+        }
+
+        .badge-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-kesildi {
+            background: #2ecc71;
+            color: #fff;
+        }
+
+        .badge-beklemede {
+            background: #f39c12;
+            color: #fff;
+        }
+
+        .btn-check {
+            border: 1px solid #dcdfe6;
+            background: #fff;
+            border-radius: 4px;
+            width: 18px;
+            height: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: transparent;
+            cursor: pointer;
+        }
+
+        .btn-check.active {
+            background: #2ecc71;
+            border-color: #27ae60;
+            color: #fff;
+        }
+
+        tr:nth-child(even):not(.platform-header-row) {
+            background-color: #fcfcfc;
+        }
+
+        tr:hover:not(.platform-header-row) {
+            background-color: #f5f7fa;
+        }
+
+        @media print {
+
+            .control-bar,
+            .no-print {
+                display: none !important;
+            }
+
+            .container-fluid {
+                padding: 0 !important;
+            }
+        }
+    </style>
+
+    <!-- Header -->
+    <div class="report-header-bar">
+        <div class="report-title">
+            Yemek Çeki Kontrol Dashboard
+        </div>
+        <div class="control-bar">
+            <select class="donem-select"
+                onchange="window.location.href='/yemek-ceki-kontrol-dashboard?sube_id={{ secili_sube_id }}&donem=' + this.value">
+                {% for d in donem_listesi %}
+                <option value="{{ d }}" {% if d==secili_donem %}selected{% endif %}>
+                    {{ d // 100 + 2000 }} / {{ "%02d" % (d % 100) }}
+                </option>
+                {% endfor %}
+            </select>
+            <select class="sube-select"
+                onchange="window.location.href='/yemek-ceki-kontrol-dashboard?sube_id=' + this.value + '&donem={{ secili_donem }}'">
+                {% for s in auth_suber %}
+                <option value="{{ s.Sube_ID }}" {% if s.Sube_ID==secili_sube_id %}selected{% endif %}>{{ s.Sube_Adi }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stat-grid">
+        <div class="stat-card card-gelir">
+            <div class="stat-label">📊 Aylık Toplam Gelir</div>
+            <div class="stat-value">{{ "{:,.2f}".format(dashboard_data.stats.total_gelir).replace(',', 'X').replace('.',
+                ',').replace('X', '.') }}</div>
+        </div>
+        <div class="stat-card card-donem">
+            <div class="stat-label">💰 Dönem Tutar Toplamı</div>
+            <div class="stat-value">{{ "{:,.2f}".format(dashboard_data.stats.total_donem_tutar).replace(',',
+                'X').replace('.', ',').replace('X', '.') }}</div>
+        </div>
+        <div class="stat-card card-fark">
+            <div class="stat-label">⚖️ Fark</div>
+            <div class="stat-value">
+                {{ "{:,.2f}".format(dashboard_data.stats.total_fark).replace(',', 'X').replace('.', ',').replace('X',
+                '.') }}
+            </div>
+        </div>
+        <div class="stat-card card-kayit">
+            <div class="stat-label">📝 Kontrol Edilen Kayıt</div>
+            <div class="stat-value">{{ dashboard_data.stats.kontrol_edilen_kayit }}</div>
+        </div>
+    </div>
+
+    <!-- Table Card -->
+    <div class="table-card">
+        <div class="table-card-header">
+            <div class="header-title">
+                📋 Yemek Çeki Kategorileri Detay Raporu - {{ secili_donem // 100 + 2000 }} / {{ "%02u" % (secili_donem %
+                100) }}
+            </div>
+            <div class="no-print d-flex gap-2">
+                <button class="donem-select" onclick="window.print()">🖨️ Yazdır</button>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="ceki-table">
+                <thead>
+                    <tr>
+                        <th style="text-align: left; padding-left: 1rem;">Gelir Tutar</th>
+                        <th>İlk Tarih</th>
+                        <th>Son Tarih</th>
+                        <th>Tutar</th>
+                        <th>Önceki Dönem</th>
+                        <th>Sonraki Dönem</th>
+                        <th>Dönem Tutar</th>
+                        <th>Fatura</th>
+                        <th>Fatura Tarihi</th>
+                        <th>Ödeme Tarihi</th>
+                        <th>Ödeme Tutarı</th>
+                        <th>✓</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for group in dashboard_data.platforms %}
+                    {% for row in group %}
+                    {% if row.is_total_row %}
+                    <tr class="platform-header-row">
+                        <td style="text-align: left; padding-left: 1rem; width: 140px;">{{ row.label }}</td>
+                        <td colspan="2" style="text-align: left;">
+                            <span class="label-text">Aylık Gelir:</span>
+                            <span class="val-text">{{ "{:,.2f}".format(row.tutar).replace(',', 'X').replace('.',
+                                ',').replace('X', '.') }}</span>
+                        </td>
+                        <td colspan="2" style="text-align: left;">
+                            <span class="label-text">Toplam Dönem:</span>
+                            <span class="val-text">{{ "{:,.2f}".format(row.donem_tutar).replace(',', 'X').replace('.',
+                                ',').replace('X', '.') }}</span>
+                        </td>
+                        <td colspan="2" style="text-align: left;">
+                            <span class="label-text">Fark:</span>
+                            <span class="val-text">{{ "{:,.2f}".format(row.fark).replace(',', 'X').replace('.',
+                                ',').replace('X', '.') }}</span>
+                        </td>
+                        <td colspan="5"></td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td style="text-align: left; padding-left: 1.5rem; color: #3498db; font-weight: 600;">
+                            {{ "{:,.2f}".format(row.gelir_tutar).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                        </td>
+                        <td>{{ row.ilk_tarih.strftime('%d.%m.%Y') if row.ilk_tarih else '-' }}</td>
+                        <td>{{ row.son_tarih.strftime('%d.%m.%Y') if row.son_tarih else '-' }}</td>
+                        <td class="num-cell">{{ "{:,.2f}".format(row.tutar).replace(',', 'X').replace('.',
+                            ',').replace('X', '.') }}</td>
+                        <td class="num-cell" style="color: {{ 'red' if row.onceki_donem > 0 else 'inherit' }}">
+                            {{ "{:,.2f}".format(row.onceki_donem).replace(',', 'X').replace('.', ',').replace('X', '.')
+                            }}
+                        </td>
+                        <td class="num-cell" style="color: {{ 'red' if row.sonraki_donem > 0 else 'inherit' }}">
+                            {{ "{:,.2f}".format(row.sonraki_donem).replace(',', 'X').replace('.', ',').replace('X', '.')
+                            }}
+                        </td>
+                        <td class="num-cell" style="color: #27ae60;">{{ "{:,.2f}".format(row.donem_tutar).replace(',',
+                            'X').replace('.', ',').replace('X', '.') }}</td>
+                        <td>
+                            <span
+                                class="badge-status {{ 'badge-kesildi' if row.fatura_durumu == 'KESİLDİ' else 'badge-beklemede' }}">
+                                {{ row.fatura_durumu }}
+                            </span>
+                        </td>
+                        <td>{{ row.fatura_tarihi.strftime('%d.%m.%Y') if row.fatura_tarihi else '-' }}</td>
+                        <td>{{ row.odeme_tarihi.strftime('%d.%m.%Y') if row.odeme_tarihi else '-' }}</td>
+                        <td class="num-cell">{{ "{:,.2f}".format(row.odeme_tutari).replace(',', 'X').replace('.',
+                            ',').replace('X', '.') }}</td>
+                        <td>
+                            <div class="btn-check {{ 'active' if row.odeme_tutari > 0 else '' }}">
+                                <i class="fas fa-check"></i>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                    {% endfor %}
+
+                    <!-- GENEL TOPLAM ROW -->
+                    <tr class="platform-header-row" style="background: #2c3e50 !important; font-size: 0.85rem;">
+                        <td style="text-align: left; padding-left: 1rem;">📊 GENEL TOPLAM</td>
+                        <td colspan="2" style="text-align: left;">
+                            <span class="label-text">Aylık Gelir:</span>
+                            <span class="val-text">{{ "{:,.2f}".format(dashboard_data.stats.total_gelir).replace(',',
+                                'X').replace('.', ',').replace('X', '.') }}</span>
+                        </td>
+                        <td colspan="2" style="text-align: left;">
+                            <span class="label-text">Toplam Dönem:</span>
+                            <span class="val-text">{{
+                                "{:,.2f}".format(dashboard_data.stats.total_donem_tutar).replace(',', 'X').replace('.',
+                                ',').replace('X', '.') }}</span>
+                        </td>
+                        <td colspan="2" style="text-align: left;">
+                            <span class="label-text">Fark:</span>
+                            <span class="val-text">{{ "{:,.2f}".format(dashboard_data.stats.total_fark).replace(',',
+                                'X').replace('.', ',').replace('X', '.') }}</span>
+                        </td>
+                        <td colspan="5"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

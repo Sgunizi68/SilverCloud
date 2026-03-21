@@ -1,0 +1,446 @@
+{% extends "base.html" %}
+{% block title %}Nakit Girişleri - SilverCloud{% endblock %}
+{% block nav_nakit_girisi %}active{% endblock %}
+
+{% block content %}
+<style>
+    .glass-panel {
+        background: rgba(255, 255, 255, 0.75);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .filter-group {
+        display: flex;
+        gap: 16px;
+        align-items: flex-end;
+        flex-wrap: wrap;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .form-group label {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #64748b;
+    }
+
+    .form-control {
+        padding: 8px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+        background: white;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .btn {
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-primary {
+        background: #3b82f6;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #2563eb;
+    }
+
+    .btn-secondary {
+        background: #f1f5f9;
+        color: #475569;
+    }
+
+    .btn-secondary:hover {
+        background: #e2e8f0;
+    }
+
+    .table-container {
+        overflow-x: auto;
+        background: white;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        white-space: nowrap;
+    }
+
+    th {
+        background: #f8fafc;
+        padding: 12px 16px;
+        text-align: left;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #475569;
+        border-bottom: 2px solid #e2e8f0;
+    }
+
+    td {
+        padding: 12px 16px;
+        font-size: 0.9rem;
+        color: #1e293b;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    tbody tr:hover {
+        background: #f8fafc;
+    }
+
+    .action-icons {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+    }
+
+    .icon-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 4px;
+        color: #64748b;
+        transition: color 0.2s;
+        border-radius: 4px;
+    }
+
+    .icon-btn:hover {
+        background: #f1f5f9;
+    }
+
+    .icon-btn.edit:hover {
+        color: #ca8a04;
+    }
+
+    .icon-btn.delete:hover {
+        color: #ef4444;
+    }
+
+    .cell-muted {
+        color: #64748b;
+    }
+
+    .text-right {
+        text-align: right;
+    }
+
+    .text-center {
+        text-align: center;
+    }
+
+    .image-link {
+        color: #3b82f6;
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .image-link:hover {
+        text-decoration: underline;
+    }
+
+    .row {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+
+    .col-6 {
+        flex: 1;
+    }
+</style>
+
+<div class="glass-panel">
+    <div class="page-header">
+        <h1 class="page-title">
+            Nakit Girişleri
+            {% for s in subeler %}
+            {% if s.Sube_ID == secili_sube_id %}
+            <span style="color:#64748b; font-size:1.1rem; font-weight:normal;">(Şube: {{ s.Sube_Adi }})</span>
+            {% endif %}
+            {% endfor %}
+        </h1>
+
+        <div class="filter-group">
+            <div class="form-group">
+                <label>Dönem</label>
+                <select id="filterDonem" class="form-control" onchange="onDonemChange(this.value)">
+                    {% for d in donem_listesi %}
+                    <option value="{{ d }}" {% if d==secili_donem %}selected{% endif %}>{{ d }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <input type="text" id="searchInput" class="form-control" placeholder="Tutar veya Tip ara..."
+                    style="margin-bottom: 1px; min-width: 250px;">
+            </div>
+            <button class="btn btn-primary" onclick="openAddModal()">
+                <i class="fas fa-plus"></i> Yeni Nakit Girişi
+            </button>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>TARİH</th>
+                    <th class="text-right">TUTAR</th>
+                    <th>TİP</th>
+                    <th>DÖNEM</th>
+                    <th class="text-center">RESİM</th>
+                    <th>KAYIT TARİHİ</th>
+                    <th class="text-right">İŞLEMLER</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                {% if nakitler %}
+                {% for item in nakitler %}
+                <tr data-tip="{{ item.Tip|lower }}" data-tutar="{{ item.Tutar }}">
+                    <td class="cell-muted">{{ item.Nakit_ID }}</td>
+                    <td>{{ item.Tarih_Formatli }}</td>
+                    <td class="text-right" style="font-weight: 500;">{{ "{:,.2f}".format(item.Tutar) }}</td>
+                    <td>{{ item.Tip }}</td>
+                    <td class="cell-muted">{{ item.Donem }}</td>
+                    <td class="text-center">
+                        {% if item.has_imaj %}
+                        <a href="#" class="image-link" onclick="viewImage('{{ item.Imaj_Base64 }}'); return false;">
+                            Görüntüle
+                        </a>
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    <td class="cell-muted">{{ item.Kayit_Tarih }}</td>
+                    <td class="text-right">
+                        <div class="action-icons">
+                            <button class="icon-btn edit" data-id="{{ item.Nakit_ID }}" data-tarih="{{ item.Tarih }}"
+                                data-tutar="{{ item.Tutar }}" data-tip="{{ item.Tip }}" data-donem="{{ item.Donem }}"
+                                onclick="openEditModal(this)" title="Düzenle">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="icon-btn delete" data-id="{{ item.Nakit_ID }}"
+                                onclick="deleteRecord(this.dataset.id)" title="Sil">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="8" class="text-center cell-muted" style="padding: 40px;">Kayıt bulunamadı.</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Image Viewer Overlay -->
+<div id="imageOverlay"
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
+    <div style="background:white; padding:10px; border-radius:8px; max-width:90%; max-height:80vh;">
+        <img id="viewerImage" src="" style="max-width:100%;">
+        <div style="text-align:right; margin-top:10px;">
+            <button onclick="document.getElementById('imageOverlay').style.display='none'"
+                class="btn btn-secondary">Kapat</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('searchInput').addEventListener('input', function () {
+        const val = this.value.toLowerCase();
+        document.querySelectorAll('#tableBody tr').forEach(row => {
+            const tip = row.dataset.tip || '';
+            const tutar = row.dataset.tutar || '';
+            row.style.display = (tip.includes(val) || tutar.includes(val)) ? '' : 'none';
+        });
+    });
+
+    const branchSelect = document.getElementById('branch-select');
+    if (branchSelect) {
+        branchSelect.addEventListener('change', function () {
+            const donemVal = document.getElementById('filterDonem').value;
+            window.location.href = `/nakit-girisi?sube_id=${this.value}&donem=${donemVal}`;
+        });
+    }
+
+    function onDonemChange(val) {
+        const subeId = branchSelect ? branchSelect.value : '{{ secili_sube_id }}';
+        window.location.href = `/nakit-girisi?sube_id=${subeId}&donem=${val}`;
+    }
+
+    function viewImage(base64) {
+        document.getElementById('viewerImage').src = 'data:image/jpeg;base64,' + base64;
+        document.getElementById('imageOverlay').style.display = 'flex';
+    }
+
+    function openAddModal() {
+        const tipler = {{ tipler | tojson | safe
+    }};
+    let tipOpts = tipler.map(t => `<option value="${t}">${t}</option>`).join('');
+
+    const html = `
+            <form id="saveForm" onsubmit="saveData(event)">
+                <div class="row">
+                    <div class="col-6 form-group">
+                        <label>Tarih</label>
+                        <input type="date" class="form-control" name="Tarih" required value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                    <div class="col-6 form-group">
+                        <label>Tutar</label>
+                        <input type="number" step="0.01" class="form-control" name="Tutar" required>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-6 form-group">
+                        <label>Tip</label>
+                        <select class="form-control" name="Tip" required>
+                            ${tipOpts}
+                        </select>
+                    </div>
+                    <div class="col-6 form-group">
+                        <label>Dönem</label>
+                        <input type="number" class="form-control" name="Donem" required value="{{ secili_donem }}">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Resim</label>
+                    <input type="file" class="form-control" name="image" accept="image/*">
+                </div>
+                <div style="margin-top:20px; text-align:right;">
+                    <button type="button" class="btn btn-secondary" onclick="hideModal()">İptal</button>
+                    <button type="submit" class="btn btn-primary">Kaydet</button>
+                </div>
+            </form>
+        `;
+    showModal('Yeni Nakit Girişi', html);
+    }
+
+    function openEditModal(btn) {
+        const ds = btn.dataset;
+        const tipler = {{ tipler | tojson | safe
+    }};
+    let editTipOpts = tipler.map(t => `<option value="${t}" ${t == ds.tip ? 'selected' : ''}>${t}</option>`).join('');
+
+    // Ensure tip from data is included even if it's not in default tips
+    if (!tipler.includes(ds.tip)) {
+        editTipOpts += `<option value="${ds.tip}" selected>${ds.tip}</option>`;
+    }
+
+    const editHtml = `
+            <form id="saveForm" onsubmit="saveData(event, ${ds.id})">
+                <div class="row">
+                    <div class="col-6 form-group">
+                        <label>Tarih</label>
+                        <input type="date" class="form-control" name="Tarih" required value="${ds.tarih}">
+                    </div>
+                    <div class="col-6 form-group">
+                        <label>Tutar</label>
+                        <input type="number" step="0.01" class="form-control" name="Tutar" required value="${ds.tutar}">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-6 form-group">
+                        <label>Tip</label>
+                        <select class="form-control" name="Tip" required>
+                            ${editTipOpts}
+                        </select>
+                    </div>
+                    <div class="col-6 form-group">
+                        <label>Dönem</label>
+                        <input type="number" class="form-control" name="Donem" required value="${ds.donem}">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Resim Değiştir (Boş bırakılırsa mevcut kalır)</label>
+                    <input type="file" class="form-control" name="image" accept="image/*">
+                </div>
+                <div class="form-group" style="flex-direction:row; align-items:center; gap:8px;">
+                    <input type="checkbox" name="clear_imaj" id="clearImaj" value="true">
+                    <label for="clearImaj" style="margin:0;">Mevcut Resmi Sil</label>
+                </div>
+                <div style="margin-top:20px; text-align:right;">
+                    <button type="button" class="btn btn-secondary" onclick="hideModal()">İptal</button>
+                    <button type="submit" class="btn btn-primary">Güncelle</button>
+                </div>
+            </form>
+        `;
+    showModal('Nakit Girişi Düzenle', editHtml);
+    }
+
+    async function saveData(e, id = null) {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        formData.append('Sube_ID', branchSelect ? branchSelect.value : '{{ secili_sube_id }}');
+
+        const method = id ? 'PUT' : 'POST';
+        const url = id ? `/api/v1/nakitler/${id}` : '/api/v1/nakitler';
+
+        try {
+            const res = await fetch(url, { method: method, body: formData });
+            if (!res.ok) throw new Error("İşlem başarısız.");
+            location.reload();
+        } catch (err) {
+            alert(err.message);
+        }
+    }
+
+    async function deleteRecord(id) {
+        if (!confirm("Silmek istediğinize emin misiniz?")) return;
+        try {
+            const res = await fetch(`/api/v1/nakitler/${id}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error("Silme işlemi başarısız.");
+            location.reload();
+        } catch (err) {
+            alert(err.message);
+        }
+    }
+</script>
+{% endblock %}

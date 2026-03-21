@@ -1,0 +1,30 @@
+--- FASDAT GIDA DAĞITIM SANAYİ VE TİCARET ANONİM ŞİRKETİ ---
+  Mutabakat: 55536.21 (Expected: 55536.21)
+  Fatura:    148002.55 (Expected: 148002.60)
+  Odeme:     155511.40 (Expected: 155511.40)
+  Bakiye:    48027.36 (Expected: 48027.36)
+--- G2MEKSPER SATIŞ VE DAĞITIM HİZMETLERİ ANONİM ŞİRKETİ ---
+  Mutabakat: 28596.53 (Expected: 28596.53)
+  Fatura:    97332.49 (Expected: 97332.49)
+  Odeme:     121393.47 (Expected: 121393.50)
+  Bakiye:    4535.55 (Expected: 4535.55)
+--- Seher Gıda Pazarlama Sanayi Ve Ticaret Anonim Şirketi ---
+  Mutabakat: 7721.25 (Expected: 7721.25)
+  Fatura:    27293.04 (Expected: 27293.04)
+  Odeme:     35014.29 (Expected: 35014.29)
+  Bakiye:    0.00 (Expected: 0.00)
+--- COCA COLA SATIŞ VE DAĞITIM A.Ş. ---
+  Mutabakat: 1788.06 (Expected: 1788.06)
+  Fatura:    18654.52 (Expected: 18654.52)
+  Odeme:     18837.06 (Expected: 18837.06)
+  Bakiye:    1605.52 (Expected: 1605.52)
+--- Pepsi Cola Servis ve Dağıtım Ltd. Şti. ---
+  Mutabakat: 28453.07 (Expected: 28453.07)
+  Fatura:    119887.54 (Expected: 119887.50)
+  Odeme:     139186.53 (Expected: 139186.50)
+  Bakiye:    9154.08 (Expected: 9154.08)
+--- VOLKAN ŞERBETÇİ ---
+  Mutabakat: 1747.44 (Expected: 1747.44)
+  Fatura:    86136.43 (Expected: 86136.43)
+  Odeme:     85823.97 (Expected: 85823.97)
+  Bakiye:    2059.90 (Expected: 2059.90)

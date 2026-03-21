@@ -1,0 +1,444 @@
+{% extends "base.html" %}
+{% block title %}Ödeme Raporu - SilverCloud{% endblock %}
+{% block nav_odeme_raporu %}active{% endblock %}
+
+{% block content %}
+<style>
+    .glass-panel {
+        background: rgba(255, 255, 255, 0.75);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+
+    .report-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .report-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .filter-section {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        background: #f8fafc;
+        padding: 20px;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+        margin-bottom: 24px;
+        align-items: flex-end;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .form-group label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #475569;
+    }
+
+    .form-control {
+        padding: 8px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        background: white;
+    }
+
+    .btn {
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 38px;
+        justify-content: center;
+    }
+
+    .btn-primary {
+        background: #2563eb;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #1d4ed8;
+    }
+
+    .btn-outline {
+        background: white;
+        border: 1px solid #cbd5e1;
+        color: #475569;
+    }
+
+    .btn-outline:hover {
+        background: #f1f5f9;
+    }
+
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .summary-card {
+        background: #1e293b;
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+    }
+
+    .summary-label {
+        font-size: 0.8rem;
+        opacity: 0.8;
+        margin-bottom: 4px;
+    }
+
+    .summary-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+
+    .report-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+    }
+
+    .report-table th {
+        background: #f8fafc;
+        padding: 12px 16px;
+        text-align: left;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .row-donem {
+        background: #2563eb;
+        color: white;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .row-donem td {
+        padding: 12px 16px;
+    }
+
+    .row-kategori {
+        background: #f1f5f9;
+        font-weight: 600;
+        cursor: pointer;
+        border-left: 4px solid #2563eb;
+    }
+
+    .row-kategori td {
+        padding: 10px 16px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .row-hesap {
+        background: #ffffff;
+        font-weight: 500;
+        cursor: pointer;
+        border-left: 4px solid #94a3b8;
+    }
+
+    .row-hesap td {
+        padding: 8px 16px 8px 32px;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .hidden-row {
+        display: none;
+    }
+
+    .row-detay {
+        font-size: 0.85rem;
+        color: #475569;
+    }
+
+    .row-detay td {
+        padding: 6px 16px 6px 48px;
+        border-bottom: 1px solid #f8fafc;
+    }
+
+    .text-right {
+        text-align: right;
+    }
+
+    .text-center {
+        text-align: center;
+    }
+
+    .badge {
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .badge-blue {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .badge-white {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+
+    .chevron {
+        transition: transform 0.2s;
+        display: inline-block;
+        margin-right: 8px;
+        width: 12px;
+    }
+
+    .collapsed .chevron {
+        transform: rotate(-90deg);
+    }
+</style>
+
+<div class="glass-panel">
+    <div class="report-header">
+        <h1 class="report-title">
+            Ödeme Rapor <span style="font-weight: 400; color: #64748b;">(Şube: {{ sube_adi }})</span>
+        </h1>
+        <div style="display: flex; gap: 8px;">
+            <button class="btn btn-outline" title="Yazdır" onclick="window.print()">
+                <i class="fas fa-print"></i>
+            </button>
+            <button class="btn btn-outline" title="Excel'e Aktar" onclick="exportToCSV()">
+                <i class="fas fa-file-excel"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <form id="filterForm" method="GET" action="/odeme-rapor">
+        <input type="hidden" name="sube_id" value="{{ secili_sube_id }}">
+        <div class="filter-section">
+            <div class="form-group">
+                <label>Dönem</label>
+                <select name="donem" class="form-control" multiple style="min-height: 38px;">
+                    {% for d in donem_listesi %}
+                    <option value="{{ d }}" {% if d in secili_donemler %}selected{% endif %}>{{ d }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Kategori</label>
+                <select name="kategori" class="form-control" multiple style="min-height: 38px;">
+                    {% for k in kategoriler %}
+                    <option value="{{ k.id }}" {% if k.id in secili_kategoriler %}selected{% endif %}>{{ k.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <button type="submit" class="btn btn-primary w-full">Filtrele</button>
+            </div>
+            <div>
+                <button type="button" class="btn btn-outline w-full"
+                    onclick="location.href='/odeme-rapor?sube_id={{ secili_sube_id }}'">Temizle</button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Summary -->
+    <div class="summary-grid">
+        <div class="summary-card">
+            <div class="summary-label">Toplam Kayıt</div>
+            <div class="summary-value">{{ report_data.total_records }}</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-label">Dönem Sayısı</div>
+            <div class="summary-value">{{ report_data.data|length }}</div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-label">Genel Toplam</div>
+            <div class="summary-value">₺{{ "{:,.2f}".format(report_data.totals.grand_total) }}</div>
+        </div>
+    </div>
+
+    <!-- Rapor Tablosu -->
+    <table class="report-table">
+        <thead>
+            <tr>
+                <th>KATEGORİ / BANKA HESABI / DETAY</th>
+                <th class="text-center">KAYIT SAYISI</th>
+                <th class="text-right">TUTAR</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for dg in report_data.data %}
+            <tr class="row-donem" onclick="toggleDonem({{ dg.donem }}, this)">
+                <td>
+                    <span class="chevron"><i class="fas fa-chevron-down"></i></span>
+                    Dönem: {{ dg.donem }}
+                </td>
+                <td class="text-center">
+                    <span class="badge badge-white">{{ dg.record_count }} kayıt</span>
+                </td>
+                <td class="text-right">₺{{ "{:,.2f}".format(dg.donem_total) }}</td>
+            </tr>
+
+            {% for kg in dg.kategoriler %}
+            {% set kat_key = dg.donem ~ '-' ~ kg.kategori_id %}
+            <tr class="row-kategori donem-{{ dg.donem }}" onclick="toggleKategori('{{ kat_key }}', this)">
+                <td>
+                    <span class="chevron"><i class="fas fa-chevron-down"></i></span>
+                    {{ kg.kategori_adi }}
+                </td>
+                <td class="text-center">
+                    <span class="badge badge-blue">{{ kg.record_count }} kayıt</span>
+                </td>
+                <td class="text-right">₺{{ "{:,.2f}".format(kg.kategori_total) }}</td>
+            </tr>
+
+            {% for hg in kg.banka_hesaplari %}
+            {% set hesap_key = kat_key ~ '-' ~ loop.index %}
+            <tr class="row-hesap kat-{{ kat_key }} hidden-row" onclick="toggleHesap('{{ hesap_key }}', this)">
+                <td>
+                    <span class="chevron"><i class="fas fa-chevron-down"></i></span>
+                    {{ hg.hesap_adi }}
+                </td>
+                <td class="text-center">{{ hg.record_count }} kayıt</td>
+                <td class="text-right">₺{{ "{:,.2f}".format(hg.hesap_total) }}</td>
+            </tr>
+
+            {% for det in hg.details %}
+            <tr class="row-detay hesap-{{ hesap_key }} hidden-row">
+                <td>
+                    <div style="display:flex; flex-direction:column; padding-left:24px;">
+                        <span style="font-weight:600; color:#1e293b;">{{ det.Aciklama }}</span>
+                        <span style="font-size:0.75rem; opacity:0.7;">{{ det.Tarih }} | {{ det.Tip }}</span>
+                    </div>
+                </td>
+                <td class="text-center">-</td>
+                <td class="text-right">₺{{ "{:,.2f}".format(det.Tutar) }}</td>
+            </tr>
+            {% endfor %}
+            {% endfor %}
+            {% endfor %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    function toggleDonem(donem, el) {
+        el.classList.toggle('collapsed');
+        const rows = document.querySelectorAll('.donem-' + donem);
+        const isCollapsed = el.classList.contains('collapsed');
+
+        rows.forEach(row => {
+            if (isCollapsed) {
+                row.style.display = 'none';
+                // Also hide children categories and their details
+                // This is a bit complex for simple class toggling, so we'll just hide all descendants
+                const katMatch = row.getAttribute('onclick')?.match(/'([^']+)'/);
+                if (katMatch) {
+                    const kRows = document.querySelectorAll('.kat-' + katMatch[1]);
+                    kRows.forEach(kr => {
+                        kr.style.display = 'none';
+                        const hMatch = kr.getAttribute('onclick')?.match(/'([^']+)'/);
+                        if (hMatch) {
+                            document.querySelectorAll('.hesap-' + hMatch[1]).forEach(hr => hr.style.display = 'none');
+                        }
+                    });
+                }
+            } else {
+                row.style.display = 'table-row';
+            }
+        });
+    }
+
+    function toggleKategori(key, el) {
+        el.classList.toggle('collapsed');
+        const rows = document.querySelectorAll('.kat-' + key);
+        const isCollapsed = el.classList.contains('collapsed');
+
+        rows.forEach(row => {
+            if (isCollapsed) {
+                row.style.display = 'none';
+                const hMatch = row.getAttribute('onclick')?.match(/'([^']+)'/);
+                if (hMatch) {
+                    document.querySelectorAll('.hesap-' + hMatch[1]).forEach(hr => hr.style.display = 'none');
+                }
+            } else {
+                row.style.display = 'table-row';
+            }
+        });
+    }
+
+    function toggleHesap(key, el) {
+        el.classList.toggle('collapsed');
+        const rows = document.querySelectorAll('.hesap-' + key);
+        const isCollapsed = el.classList.contains('collapsed');
+
+        rows.forEach(row => {
+            row.style.display = isCollapsed ? 'none' : 'table-row';
+        });
+    }
+
+    // Initialize: collapse everything but Donem rows initially for better overview
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.row-kategori, .row-hesap, .row-detay').forEach(r => r.style.display = 'none');
+        document.querySelectorAll('.row-donem, .row-kategori, .row-hesap').forEach(r => r.classList.add('collapsed'));
+
+        // Actually, reference image shows Period expanded. Let's expand first period.
+        const firstDonem = document.querySelector('.row-donem');
+        if (firstDonem) firstDonem.onclick();
+    });
+
+    function exportToCSV() {
+        let csv = "KATEGORI / BANKA HESABI / DETAY;KAYIT SAYISI;TUTAR\n";
+        document.querySelectorAll('.report-table tr').forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (cells.length === 3) {
+                const desc = cells[0].innerText.replace(/\n/g, ' ').trim();
+                const count = cells[1].innerText.trim();
+                const amount = cells[2].innerText.trim();
+                csv += `"${desc}";"${count}";"${amount}"\n`;
+            }
+        });
+        const blob = new Blob(["\ufeff" + csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'odeme_raporu.csv';
+        a.click();
+    }
+</script>
+{% endblock %}
