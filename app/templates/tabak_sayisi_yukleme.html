@@ -270,21 +270,36 @@
         reader.onload = async (event) => {
             try {
                 const data = new Uint8Array(event.target.result);
-                const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                const workbook = XLSX.read(data, { type: 'array' }); // removed cellDates: true to prevent timezone shifts
 
                 let finalProcessedData = [];
                 let successSheet = "";
                 let debugInfo = [];
+                let headerFound = false;
 
                 // Iterate sheets until we find valid data
                 for (let name of workbook.SheetNames) {
                     const ws = workbook.Sheets[name];
+
+                    // Recalculate true sheet boundaries (fixes broken Excel generator !ref limiting to row 1)
+                    let maxR = 0, maxC = 0;
+                    for (let key in ws) {
+                        if (key[0] === '!') continue;
+                        const cellRef = XLSX.utils.decode_cell(key);
+                        if (cellRef.r > maxR) maxR = cellRef.r;
+                        if (cellRef.c > maxC) maxC = cellRef.c;
+                    }
+                    if (maxR > 0 || maxC > 0) {
+                        ws['!ref'] = XLSX.utils.encode_range({s:{r:0,c:0}, e:{r:maxR, c:maxC}});
+                    }
+
                     const rawRows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
 
                     if (rawRows.length === 0) continue;
 
                     const headerInfo = findHeaderRow(rawRows);
                     if (headerInfo) {
+                        headerFound = true;
                         const processed = processRawRows(rawRows, headerInfo);
                         if (processed.length > 0) {
                             finalProcessedData = processed;
@@ -301,11 +316,15 @@
                 }
 
                 if (finalProcessedData.length === 0) {
-                    let err = 'Geçerli veri bulunamadı. Lütfen "Tarih" ve "Toplam Tabak Sayısı" sütunlarını kontrol edin.';
-                    if (debugInfo.length > 0) {
-                        err += `<br><br><small><strong>Tespit Edilen Sütunlar (İlk 10 satır):</strong><br>${debugInfo.slice(0, 5).join('<br>')}</small>`;
+                    if (headerFound) {
+                        showResult('<strong>İşlem Tamamlandı.</strong> 0 kayıt güncellendi (Dosyada güncellenecek veri kalemi bulunamadı).', 'success');
+                    } else {
+                        let err = 'Geçerli veri bulunamadı. Lütfen "Tarih" ve "Toplam Tabak Sayısı" sütunlarını kontrol edin.';
+                        if (debugInfo.length > 0) {
+                            err += `<br><br><small><strong>Tespit Edilen Sütunlar (İlk 10 satır):</strong><br>${debugInfo.slice(0, 5).join('<br>')}</small>`;
+                        }
+                        showResult(err, 'danger');
                     }
-                    showResult(err, 'danger');
                     return;
                 }
 
@@ -424,10 +443,11 @@
 
         // Handle numeric (Excel serial date)
         if (typeof val === 'number' && val > 30000) {
+            // Excel leap year bug means 1900 is treated as a leap year, 25569 is Jan 1 1970
             const d = new Date((val - 25569) * 86400 * 1000);
-            const y = d.getFullYear();
-            const m = (d.getMonth() + 1).toString().padStart(2, '0');
-            const day = d.getDate().toString().padStart(2, '0');
+            const y = d.getUTCFullYear();
+            const m = (d.getUTCMonth() + 1).toString().padStart(2, '0');
+            const day = d.getUTCDate().toString().padStart(2, '0');
             return `${y}-${m}-${day}`;
         }
 

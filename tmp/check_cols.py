@@ -1,11 +1,10 @@
-from app.app import create_app
-from app.common.database import db
-from sqlalchemy import text
+import pandas as pd
 
-app = create_app()
-with app.app_context():
-    try:
-        result = db.session.execute(text("SELECT TOP 1 * FROM e_Fatura"))
-        print(result.keys())
-    except Exception as e:
-        print(f"Error: {e}")
+file_path = r"C:\Users\sg.msa\OneDrive - ÇELEBİ AVIATION\Personel\Programming\Yüklemeler\Archieve\Şube Bazlı Toplam Tabak Sayısı - 1.03.2026 06_00_00 - 23.03.2026 06_00_00.xlsx"
+df = pd.read_excel(file_path)
+
+print("Columns:")
+print(df.columns.tolist())
+
+print("\nFirst row:")
+print(df.iloc[0].to_dict())
