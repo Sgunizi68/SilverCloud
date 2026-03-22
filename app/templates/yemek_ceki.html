@@ -266,8 +266,8 @@
                     <td class="cell-muted">{{ item.Son_Tarih }}</td>
                     <td class="text-center">
                         {% if item.has_imaj %}
-                        <a href="#" class="image-link" onclick="viewImage('{{ item.Imaj_Base64 }}'); return false;">
-                            Görüntüle
+                        <a href="#" class="image-link" onclick="viewImage('{{ item.Imaj_Base64 }}', 'gorsel.jpeg'); return false;">
+                            <i class="fas fa-envelope-open-text"></i> Görüntüle
                         </a>
                         {% endif %}
                     </td>
@@ -299,13 +299,16 @@
 
 <!-- Image Viewer Overlay -->
 <div id="imageOverlay"
-    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
-    <div style="background:white; padding:10px; border-radius:8px; max-width:90%; max-height:80vh;">
-        <img id="viewerImage" src="" style="max-width:100%;">
-        <div style="text-align:right; margin-top:10px;">
-            <button onclick="document.getElementById('imageOverlay').style.display='none'"
-                class="btn btn-secondary">Kapat</button>
-        </div>
+    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center; flex-direction:column;">
+    <div style="width:100%; max-width:800px; text-align:right; padding:10px;">
+        <button onclick="document.getElementById('imageOverlay').style.display='none'"
+            style="background:transparent; border:none; color:white; font-size:24px; cursor:pointer;"><i
+                class="fas fa-times"></i></button>
+    </div>
+    <div style="background:white; padding:10px; border-radius:8px; max-width:90%; max-height:80vh; overflow:auto;">
+        <img id="viewerImage" src="" style="max-width:100%; display:none;">
+        <iframe id="viewerPdf" src=""
+            style="width:800px; height:600px; max-width:100%; display:none; border:none;"></iframe>
     </div>
 </div>
 {% endblock %}
@@ -333,8 +336,21 @@
         window.location.href = `/yemek-ceki?sube_id=${subeId}&donem=${val}`;
     }
 
-    function viewImage(base64) {
-        document.getElementById('viewerImage').src = 'data:image/jpeg;base64,' + base64;
+    function viewImage(base64, filename) {
+        if (!base64) return;
+        let mime = 'image/jpeg';
+        if (filename.toLowerCase().endsWith('.pdf')) mime = 'application/pdf';
+        else if (filename.toLowerCase().endsWith('.png')) mime = 'image/png';
+        const dataUrl = 'data:' + mime + ';base64,' + base64;
+        if (mime === 'application/pdf') {
+            document.getElementById('viewerImage').style.display = 'none';
+            document.getElementById('viewerPdf').src = dataUrl;
+            document.getElementById('viewerPdf').style.display = 'block';
+        } else {
+            document.getElementById('viewerPdf').style.display = 'none';
+            document.getElementById('viewerImage').src = dataUrl;
+            document.getElementById('viewerImage').style.display = 'block';
+        }
         document.getElementById('imageOverlay').style.display = 'flex';
     }
 
