@@ -274,8 +274,11 @@ def diger_harcamalar():
         s for s in all_suber if s.Sube_ID in auth_queries.get_user_branches(db_session, user.Kullanici_ID)
     ]
     
+    # Check for "Gizli Kategori Veri Erişimi" permission
+    can_view_gizli = is_admin or auth_queries.has_permission(db_session, user.Kullanici_ID, "Gizli Kategori Veri Erişimi")
+    
     # Fetch categories for the add/edit modal
-    kategoriler_raw = ref_queries.get_kategoriler(db_session, limit=1000)
+    kategoriler_raw = ref_queries.get_kategoriler(db_session, limit=1000, can_view_gizli=can_view_gizli)
     
     # Serialize kategoriler to plain dicts so tojson filter works in template
     kategoriler = [
@@ -330,7 +333,8 @@ def diger_harcamalar():
         sube_id=sube_id,
         donem=donem,
         harcama_tipi=harcama_tipi,
-        limit=1000
+        limit=1000,
+        can_view_gizli=can_view_gizli
     )
     
     # Serialize for template

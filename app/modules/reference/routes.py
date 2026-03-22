@@ -169,8 +169,16 @@ def list_kategoriler():
         aktif_only = request.args.get("aktif_only", True, type=bool)
         
         db = get_db_session()
+        from app.modules.auth import queries as auth_queries
+        user = request.user
+        is_admin = (user.Kullanici_Adi and user.Kullanici_Adi.lower() == 'admin')
+        if not is_admin:
+            roles = auth_queries.get_user_roles(db, user.Kullanici_ID)
+            is_admin = 'admin' in [r.lower() for r in roles]
+        can_view_gizli = is_admin or auth_queries.has_permission(db, user.Kullanici_ID, "Gizli Kategori Veri Erişimi")
+
         kategoriler = queries.get_kategoriler(
-            db, skip, limit, ust_kategori_id, tip, aktif_only
+            db, skip, limit, ust_kategori_id, tip, aktif_only, can_view_gizli=can_view_gizli
         )
         db.close()
         

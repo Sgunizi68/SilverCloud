@@ -427,7 +427,8 @@ def efatura_referans_yonetimi():
     ]
     
     # Needs categorization list for referans creation
-    kategoriler = queries.get_kategoriler(db_session, limit=1000)
+    can_view_gizli = is_admin or auth_queries.has_permission(db_session, user.Kullanici_ID, "Gizli Kategori Veri Erişimi")
+    kategoriler = queries.get_kategoriler(db_session, limit=1000, can_view_gizli=can_view_gizli)
     kategoriler_list = [{"Kategori_ID": k.Kategori_ID, "Kategori_Adi": k.Kategori_Adi} for k in kategoriler]
     
     referanslar = queries.get_efatura_referanslar(db_session, limit=5000)
@@ -477,7 +478,8 @@ def odeme_referans_yonetimi():
     ]
     
     # Categories needed for adding/editing references
-    kategoriler = queries.get_kategoriler(db_session, limit=1000)
+    can_view_gizli = is_admin or auth_queries.has_permission(db_session, user.Kullanici_ID, "Gizli Kategori Veri Erişimi")
+    kategoriler = queries.get_kategoriler(db_session, limit=1000, can_view_gizli=can_view_gizli)
     kategoriler_list = [{"Kategori_ID": k.Kategori_ID, "Kategori_Adi": k.Kategori_Adi} for k in kategoriler]
     
     referanslar = queries.get_odeme_referanslar(db_session, limit=5000)
@@ -524,7 +526,8 @@ def cari_borc_yonetimi():
     ]
     
     # Categories needed for adding/editing cariler
-    kategoriler = queries.get_kategoriler(db_session, limit=1000)
+    can_view_gizli = is_admin or auth_queries.has_permission(db_session, user.Kullanici_ID, "Gizli Kategori Veri Erişimi")
+    kategoriler = queries.get_kategoriler(db_session, limit=1000, can_view_gizli=can_view_gizli)
     kategoriler_list = [{"Kategori_ID": k.Kategori_ID, "Kategori_Adi": k.Kategori_Adi} for k in kategoriler]
     
     # Odeme Referanslar needed for dropdown
@@ -633,7 +636,8 @@ def kategori_yonetimi():
     ]
     
     # Categories with joined UstKategori for the table
-    kategoriler = queries.get_kategoriler(db_session, limit=1000, aktif_only=False)
+    can_view_gizli = is_admin or auth_queries.has_permission(db_session, user.Kullanici_ID, "Gizli Kategori Veri Erişimi")
+    kategoriler = queries.get_kategoriler(db_session, limit=1000, aktif_only=False, can_view_gizli=can_view_gizli)
     kategoriler_list = [
         {
             "Kategori_ID": k.Kategori_ID,

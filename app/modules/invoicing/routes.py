@@ -752,7 +752,15 @@ def list_diger_harcamalar():
         harcama_tipi = request.args.get("harcama_tipi", None, type=str)
         
         db = get_db_session()
-        harcamalar = queries.get_diger_harcamalar(db, skip, limit, sube_id, donem, kategori_id, harcama_tipi)
+        from app.modules.auth import queries as auth_queries
+        user = request.user
+        is_admin = (user.Kullanici_Adi and user.Kullanici_Adi.lower() == 'admin')
+        if not is_admin:
+            roles = auth_queries.get_user_roles(db, user.Kullanici_ID)
+            is_admin = 'admin' in [r.lower() for r in roles]
+        can_view_gizli = is_admin or auth_queries.has_permission(db, user.Kullanici_ID, "Gizli Kategori Veri Erişimi")
+        
+        harcamalar = queries.get_diger_harcamalar(db, skip, limit, sube_id, donem, kategori_id, harcama_tipi, can_view_gizli=can_view_gizli)
         db.close()
         
         result = []
@@ -790,7 +798,15 @@ def get_diger_harcama(harcama_id):
     """Get other expense by ID."""
     try:
         db = get_db_session()
-        h = queries.get_diger_harcama_by_id(db, harcama_id)
+        from app.modules.auth import queries as auth_queries
+        user = request.user
+        is_admin = (user.Kullanici_Adi and user.Kullanici_Adi.lower() == 'admin')
+        if not is_admin:
+            roles = auth_queries.get_user_roles(db, user.Kullanici_ID)
+            is_admin = 'admin' in [r.lower() for r in roles]
+        can_view_gizli = is_admin or auth_queries.has_permission(db, user.Kullanici_ID, "Gizli Kategori Veri Erişimi")
+        
+        h = queries.get_diger_harcama_by_id(db, harcama_id, can_view_gizli=can_view_gizli)
         db.close()
         
         if not h:

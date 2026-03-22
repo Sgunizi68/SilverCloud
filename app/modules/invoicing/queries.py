@@ -1108,10 +1108,14 @@ def get_diger_harcamalar(
     sube_id: Optional[int] = None,
     donem: Optional[int] = None,
     kategori_id: Optional[int] = None,
-    harcama_tipi: Optional[str] = None
+    harcama_tipi: Optional[str] = None,
+    can_view_gizli: bool = False
 ) -> List[DigerHarcama]:
     """Get Diger Harcamalar with optional filtering."""
     stmt = select(DigerHarcama)
+    
+    if not can_view_gizli:
+        stmt = stmt.join(Kategori).where(Kategori.Gizli == False)
     
     if sube_id is not None:
         stmt = stmt.where(DigerHarcama.Sube_ID == sube_id)
@@ -1121,13 +1125,18 @@ def get_diger_harcamalar(
         stmt = stmt.where(DigerHarcama.Kategori_ID == kategori_id)
     if harcama_tipi:
         stmt = stmt.where(DigerHarcama.Harcama_Tipi == harcama_tipi)
-        
+    
     stmt = stmt.offset(skip).limit(limit)
     return db.scalars(stmt).all()
 
-def get_diger_harcama_by_id(db: Session, harcama_id: int) -> Optional[DigerHarcama]:
-    """Get a single Diger Harcama by ID."""
-    return db.get(DigerHarcama, harcama_id)
+def get_diger_harcama_by_id(db: Session, harcama_id: int, can_view_gizli: bool = False) -> Optional[DigerHarcama]:
+    """Get a single Diger Harcama by ID with visibility check."""
+    stmt = select(DigerHarcama).where(DigerHarcama.Harcama_ID == harcama_id)
+    if not can_view_gizli:
+        # Join with Kategori to check Gizli status
+        stmt = stmt.join(Kategori).where(Kategori.Gizli == False)
+    
+    return db.scalars(stmt).first()
 
 def create_diger_harcama(
     db: Session,

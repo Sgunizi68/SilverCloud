@@ -81,11 +81,6 @@ def dashboard():
     
     # Get statistics
     try:
-        kategoriler = ref_queries.get_kategoriler(db_session, limit=1000, aktif_only=False)
-        all_suber = ref_queries.get_suber(db_session, limit=1000)
-        kullanicilar = ref_queries.get_kullanicilar(db_session, limit=1000, aktif_only=False)
-        degerler = ref_queries.get_degerler(db_session, limit=1000)
-        
         # Branch authorization logic
         is_admin = False
         if user.Kullanici_Adi and user.Kullanici_Adi.lower() == 'admin':
@@ -94,7 +89,21 @@ def dashboard():
             roles = queries.get_user_roles(db_session, user.Kullanici_ID)
             if 'admin' in [r.lower() for r in roles]:
                 is_admin = True
-                
+
+        # Determine if user can view Gizli (hidden) categories
+        has_gizli_permission = is_admin  # Admins always see everything
+        if not is_admin:
+            has_gizli_permission = queries.has_permission(
+                db_session, user.Kullanici_ID, "Gizli Kategori Veri Erişimi"
+            )
+
+        kategoriler = ref_queries.get_kategoriler(
+            db_session, limit=1000, aktif_only=False, can_view_gizli=has_gizli_permission
+        )
+        all_suber = ref_queries.get_suber(db_session, limit=1000)
+        kullanicilar = ref_queries.get_kullanicilar(db_session, limit=1000, aktif_only=False)
+        degerler = ref_queries.get_degerler(db_session, limit=1000)
+        
         if is_admin:
             subeler = all_suber
         else:

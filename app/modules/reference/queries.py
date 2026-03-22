@@ -157,7 +157,8 @@ def get_kategoriler(
     limit: int = 100,
     ust_kategori_id: Optional[int] = None,
     tip: Optional[str] = None,
-    aktif_only: bool = True
+    aktif_only: bool = True,
+    can_view_gizli: bool = False
 ) -> List[Kategori]:
     """
     Get categories with optional filtering.
@@ -169,6 +170,7 @@ def get_kategoriler(
         ust_kategori_id: Filter by parent category
         tip: Filter by type (Gelir, Gider, Bilgi, Ödeme, Giden Fatura)
         aktif_only: Only return active categories
+        can_view_gizli: If False, hide categories where Gizli=1
     
     Returns:
         List of Kategori objects
@@ -178,6 +180,9 @@ def get_kategoriler(
     if aktif_only:
         stmt = stmt.where(Kategori.Aktif_Pasif == True)
     
+    if not can_view_gizli:
+        stmt = stmt.where(Kategori.Gizli == False)
+        
     if ust_kategori_id is not None:
         stmt = stmt.where(Kategori.Ust_Kategori_ID == ust_kategori_id)
     
