@@ -30,7 +30,8 @@ def get_efaturalar(
     giden_fatura: Optional[bool] = None,
     search: Optional[str] = None,
     start_date: Optional[date] = None,
-    end_date: Optional[date] = None
+    end_date: Optional[date] = None,
+    can_view_gizli: bool = False
 ) -> List[EFatura]:
     """Get e-invoices with optional filtering."""
     stmt = select(EFatura)
@@ -57,11 +58,23 @@ def get_efaturalar(
             (EFatura.Aciklama.ilike(search_filter))
         )
 
-    if start_date is not None:
-        stmt = stmt.where(EFatura.Kayit_Tarihi >= start_date)
-    
     if end_date is not None:
         stmt = stmt.where(EFatura.Kayit_Tarihi <= end_date)
+    
+    # Category and Invoice privacy filtering
+    if not can_view_gizli:
+        from sqlalchemy import or_
+        from sqlalchemy.sql.functions import coalesce
+        
+        # Join with Kategori to check Kategori.Gizli
+        # We use an outer join to keep invoices without categories (if any)
+        stmt = stmt.outerjoin(Kategori, EFatura.Kategori_ID == Kategori.Kategori_ID)
+        
+        # Rule: (Kategori.Gizli == 0 OR Kategori.Gizli IS NULL) AND (EFatura.Ozel == 0)
+        stmt = stmt.where(
+            coalesce(Kategori.Gizli, False) == False,
+            EFatura.Ozel == False
+        )
     
     stmt = stmt.order_by(EFatura.Donem.desc(), EFatura.Fatura_ID.desc())
     stmt = stmt.offset(skip).limit(limit)

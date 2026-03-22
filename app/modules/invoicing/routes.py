@@ -42,8 +42,21 @@ def list_efaturalar():
         search = request.args.get("search", None, type=str)
         
         db = get_db_session()
+        
+        # Determine permission to view Gizli/Ozel records
+        from flask import session
+        user_id = session.get("user_id")
+        can_view_gizli = False
+        if user_id:
+            from app.modules.auth.queries import get_user_roles, has_permission
+            roles = get_user_roles(db, user_id)
+            is_admin = 'admin' in [r.lower() for r in roles]
+            has_gizli_permission = has_permission(db, user_id, "Gizli Kategori Veri Erişimi")
+            can_view_gizli = is_admin or has_gizli_permission
+
         efaturalar = queries.get_efaturalar(
-            db, skip, limit, sube_id, kategori_id, status, donem, giden_fatura, search
+            db, skip, limit, sube_id, kategori_id, status, donem, giden_fatura, search,
+            can_view_gizli=can_view_gizli
         )
         db.close()
         

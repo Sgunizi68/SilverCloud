@@ -271,12 +271,14 @@
                         <th style="width:260px;">Açıklama</th>
                         <th style="width:80px;">Dönem</th>
                         <th style="width:55px; text-align:center;">Günlük</th>
+                        {% if has_gizli_permission %}
                         <th style="width:45px; text-align:center;">Özel</th>
+                        {% endif %}
                     </tr>
                 </thead>
                 <tbody id="faturaTableBody">
                     <tr class="loading-row">
-                        <td colspan="10">
+                        <td colspan="{% if has_gizli_permission %}10{% else %}9{% endif %}">
                             <i class="fas fa-spinner fa-spin"></i> Yükleniyor...
                         </td>
                     </tr>
@@ -314,7 +316,7 @@
         if (sube_id) url += `&sube_id=${sube_id}`;
 
         document.getElementById('faturaTableBody').innerHTML =
-            '<tr class="loading-row"><td colspan="10"><i class="fas fa-spinner fa-spin"></i> Y\u00fckleniyor...</td></tr>';
+            '<tr class="loading-row"><td colspan="{% if has_gizli_permission %}10{% else %}9{% endif %}"><i class="fas fa-spinner fa-spin"></i> Y\u00fckleniyor...</td></tr>';
 
         try {
             const resp = await fetch(url, { credentials: 'include' });
@@ -329,7 +331,7 @@
             console.error('Load error:', err);
             showToast('Veriler y\u00fcklenemedi: ' + err.message, 'error');
             document.getElementById('faturaTableBody').innerHTML =
-                `<tr class="loading-row"><td colspan="10">\u274c Hata: ${err.message}</td></tr>`;
+                `<tr class="loading-row"><td colspan="{% if has_gizli_permission %}10{% else %}9{% endif %}">\u274c Hata: ${err.message}</td></tr>`;
         }
     }
 
@@ -443,10 +445,12 @@
                     <input type="checkbox" ${f.Gunluk_Harcama ? 'checked' : ''}
                            onchange="updateField(${f.Fatura_ID}, 'Gunluk_Harcama', this.checked)">
                 </td>
+                {% if has_gizli_permission %}
                 <td style="text-align:center;">
                     <input type="checkbox" ${f.Ozel ? 'checked' : ''}
                            onchange="updateField(${f.Fatura_ID}, 'Ozel', this.checked)">
                 </td>
+                {% endif %}
             </tr>
         `).join('');
     }
@@ -513,7 +517,9 @@
             'Dönem': f.Donem,
             'Kategori ID': f.Kategori_ID || '',
             'Açıklama': f.Aciklama || '',
+            {% if has_gizli_permission %}
             'Özel': f.Ozel ? 'Evet' : 'Hayır',
+            {% endif %}
             'Günlük': f.Gunluk_Harcama ? 'Evet' : 'Hayır'
         })));
         const wb = XLSX.utils.book_new();

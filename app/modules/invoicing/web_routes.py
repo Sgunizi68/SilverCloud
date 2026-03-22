@@ -104,8 +104,12 @@ def fatura_kategori_atama():
         s for s in all_suber if s.Sube_ID in auth_queries.get_user_branches(db_session, user.Kullanici_ID)
     ]
     
+    # Check Gizli permission
+    has_gizli_permission = auth_queries.has_permission(db_session, user.Kullanici_ID, "Gizli Kategori Veri Erişimi")
+    can_view_gizli = is_admin or has_gizli_permission
+    
     # Fetch categories for filtering and assignment
-    raw_kategoriler = ref_queries.get_kategoriler(db_session, tip='Gider', limit=1000)
+    raw_kategoriler = ref_queries.get_kategoriler(db_session, tip='Gider', limit=1000, can_view_gizli=can_view_gizli)
     kategoriler = sorted(raw_kategoriler, key=lambda k: turkish_sort_key(k.Kategori_Adi))
     
     import json
@@ -121,7 +125,8 @@ def fatura_kategori_atama():
         user=user,
         subeler=auth_suber,
         kategoriler=kategoriler,
-        kategoriler_json=kategoriler_json
+        kategoriler_json=kategoriler_json,
+        has_gizli_permission=can_view_gizli
     )
 
 @web_invoicing_bp.route("/b2b-ekstre-yukleme", methods=["GET"])
