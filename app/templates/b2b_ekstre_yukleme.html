@@ -305,57 +305,87 @@
                 const workbook = XLSX.read(data, { type: 'array' });
                 const firstSheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[firstSheetName];
-                const jsonData = XLSX.utils.sheet_to_json(worksheet);
-
-                if (jsonData.length === 0) {
+                const sheetData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                if (sheetData.length === 0) {
                     showToast('Dosya boş görünüyor.', 'error');
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
                     return;
                 }
 
-                const headers = Object.keys(jsonData[0]);
-                const tarihKey = headers.find(k => k.toLowerCase().includes("tarih") || k.toLowerCase().includes("date"));
-                const fisNoKey = headers.find(k => k.toLowerCase().includes("fiş no") || k.toLowerCase().includes("fis no") || k.toLowerCase().includes("fisno") || k.toLowerCase().includes("receipt"));
-                const fisTuruKey = headers.find(k => k.toLowerCase().includes("fiş tür") || k.toLowerCase().includes("fis tür") || k.toLowerCase().includes("type"));
-                const aciklamaKey = headers.find(k => k.toLowerCase().includes("açıklama") || k.toLowerCase().includes("aciklama") || k.toLowerCase().includes("description"));
-                const borcKey = headers.find(k => k.toLowerCase().includes("borç") || k.toLowerCase().includes("borc") || k.toLowerCase().includes("debit"));
-                const alacakKey = headers.find(k => k.toLowerCase().includes("alacak") || k.toLowerCase().includes("credit"));
-                const bakiyeKey = headers.find(k => k.toLowerCase().includes("bakiye") || k.toLowerCase().includes("balance"));
-                const faturaNoKey = headers.find(k => k.toLowerCase().includes("fatura no") || k.toLowerCase().includes("invoice"));
-                const faturaMetniKey = headers.find(k => k.toLowerCase().includes("fatura metni") || k.toLowerCase().includes("invoice text"));
+                const normalizeHeader = (h) => {
+                    if (!h) return '';
+                    return String(h).trim().toLowerCase()
+                        .replace(/[çÇ]/g, 'c')
+                        .replace(/[ğĞ]/g, 'g')
+                        .replace(/[ıİ]/g, 'i')
+                        .replace(/[öÖ]/g, 'o')
+                        .replace(/[şŞ]/g, 's')
+                        .replace(/[üÜ]/g, 'u')
+                        .replace(/\s+/g, '');
+                };
 
-                if (!tarihKey || !fisNoKey) {
+                // Find header row (search first 10 rows)
+                let headerRowIndex = -1;
+                let foundHeaders = {};
+
+                for (let i = 0; i < Math.min(sheetData.length, 10); i++) {
+                    const row = sheetData[i];
+                    if (!row || row.length === 0) continue;
+
+                    const normalizedRow = row.map(normalizeHeader);
+                    const tarihIdx = normalizedRow.findIndex(h => h && (h.includes("tarih") || h.includes("date")));
+                    const fisNoIdx = normalizedRow.findIndex(h => h && (h.includes("fisno") || h.includes("fişno") || h.includes("receipt")));
+
+                    if (tarihIdx !== -1 && fisNoIdx !== -1) {
+                        headerRowIndex = i;
+                        foundHeaders = {
+                            tarih: tarihIdx,
+                            fisNo: fisNoIdx,
+                            fisTuru: normalizedRow.findIndex(h => h && (h.includes("fistur") || h.includes("fiştür") || h.includes("type"))),
+                            aciklama: normalizedRow.findIndex(h => h && (h.includes("aciklama") || h.includes("açıklama") || h.includes("description"))),
+                            borc: normalizedRow.findIndex(h => h && (h.includes("borc") || h.includes("borç") || h.includes("debit"))),
+                            alacak: normalizedRow.findIndex(h => h && (h.includes("alacak") || h.includes("credit"))),
+                            bakiye: normalizedRow.findIndex(h => h && (h.includes("bakiye") || h.includes("balance"))),
+                            faturaNo: normalizedRow.findIndex(h => h && (h.includes("faturano") || h.includes("invoice"))),
+                            faturaMetni: normalizedRow.findIndex(h => h && (h.includes("faturametni") || h.includes("invoicetext")))
+                        };
+                        break;
+                    }
+                }
+
+                if (headerRowIndex === -1) {
                     showToast("'Tarih' ve 'Fiş No' sütunları bulunamadı. Lütfen sütun adlarını kontrol edin.", 'error');
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
                     return;
                 }
 
-                const ekstreler = jsonData.map((row, index) => {
-                    try {
-                        const fisNo = String(row[fisNoKey] || "").trim();
-                        if (!fisNo) return null;
+                console.log("Header detected at row:", headerRowIndex, foundHeaders);
 
-                        const dateStr = parseDMYDateString(row[tarihKey]);
+                const ekstreler = [];
+                for (let i = headerRowIndex + 1; i < sheetData.length; i++) {
+                    const row = sheetData[i];
+                    if (!row || row.length === 0) continue;
 
-                        return {
-                            Sube_ID: parseInt(subeId),
-                            Tarih: dateStr,
-                            Fis_No: fisNo,
-                            Fis_Turu: fisTuruKey ? String(row[fisTuruKey] || "").trim() : null,
-                            Aciklama: aciklamaKey ? String(row[aciklamaKey] || "").trim() : null,
-                            Borc: borcKey ? parseCurrencyValue(row[borcKey]) : 0,
-                            Alacak: alacakKey ? parseCurrencyValue(row[alacakKey]) : 0,
-                            Toplam_Bakiye: bakiyeKey ? parseCurrencyValue(row[bakiyeKey]) : 0,
-                            Fatura_No: faturaNoKey ? String(row[faturaNoKey] || "").trim() || null : null,
-                            Fatura_Metni: faturaMetniKey ? String(row[faturaMetniKey] || "").trim() || null : null,
-                        };
-                    } catch (err) {
-                        console.error(`Error at row ${index}:`, err);
-                        return null;
-                    }
-                }).filter(x => x !== null);
+                    let fisNo = String(row[foundHeaders.fisNo] || "").trim();
+
+                    const dateStr = parseDMYDateString(row[foundHeaders.tarih]);
+                    if (!dateStr) continue;
+
+                    ekstreler.push({
+                        Sube_ID: parseInt(subeId),
+                        Tarih: dateStr,
+                        Fis_No: fisNo,
+                        Fis_Turu: foundHeaders.fisTuru !== -1 ? String(row[foundHeaders.fisTuru] || "").trim() : null,
+                        Aciklama: foundHeaders.aciklama !== -1 ? String(row[foundHeaders.aciklama] || "").trim() : null,
+                        Borc: foundHeaders.borc !== -1 ? parseCurrencyValue(row[foundHeaders.borc]) : 0,
+                        Alacak: foundHeaders.alacak !== -1 ? parseCurrencyValue(row[foundHeaders.alacak]) : 0,
+                        Toplam_Bakiye: foundHeaders.bakiye !== -1 ? parseCurrencyValue(row[foundHeaders.bakiye]) : 0,
+                        Fatura_No: foundHeaders.faturaNo !== -1 ? String(row[foundHeaders.faturaNo] || "").trim() || null : null,
+                        Fatura_Metni: foundHeaders.faturaMetni !== -1 ? String(row[foundHeaders.faturaMetni] || "").trim() || null : null,
+                    });
+                }
 
                 if (ekstreler.length === 0) {
                     showToast('Geçerli veri bulunamadı. Sütun adlarını kontrol edin.', 'error');

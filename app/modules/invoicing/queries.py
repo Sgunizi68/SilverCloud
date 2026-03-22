@@ -187,12 +187,12 @@ def create_efatura_bulk(
                 skipped += 1
                 continue
                 
-            existing = db.execute(
+            existing = db.scalars(
                 select(EFatura).where(
                     EFatura.Fatura_Numarasi == fatura_no,
                     EFatura.Sube_ID == data["Sube_ID"]
                 )
-            ).scalar_one_or_none()
+            ).first()
             if existing:
                 skipped += 1
                 continue
@@ -215,11 +215,11 @@ def create_efatura_bulk(
                 # Gelen fatura (Incoming) -> Look up Kategori_ID from EFaturaReferans
                 alici_unvani = data.get("Alici_Unvani", "").strip()
                 if alici_unvani:
-                    ref = db.execute(
+                    ref = db.scalars(
                         select(EFaturaReferans).where(
                             EFaturaReferans.Alici_Unvani == alici_unvani
                         )
-                    ).scalar_one_or_none()
+                    ).first()
                     if ref:
                         kategori_id = ref.Kategori_ID
             else:
@@ -325,10 +325,7 @@ def create_b2b_ekstre_bulk(
 
     for data in ekstre_list:
         try:
-            fis_no = data.get("Fis_No", "").strip()
-            if not fis_no:
-                skipped += 1
-                continue
+            fis_no = (data.get("Fis_No") or "").strip()
 
             # Parse date
             tarih = data.get("Tarih")
@@ -349,26 +346,28 @@ def create_b2b_ekstre_bulk(
             
             if match_invoice_no and aciklama_from_b2b:
                 # Look for matching EFatura in the same branch
-                efatura_record = db.execute(
+                efatura_record = db.scalars(
                     select(EFatura).where(
                         EFatura.Fatura_Numarasi == match_invoice_no,
                         EFatura.Sube_ID == sube_id
                     )
-                ).scalar_one_or_none()
+                ).first()
                 
                 if efatura_record:
                     # Update description if it is currently empty (as seen in GumusBulut)
                     if not efatura_record.Aciklama:
                         efatura_record.Aciklama = aciklama_from_b2b
 
-            # Duplicate check: same Fis_No + Tarih + Sube_ID
-            existing = db.execute(
+            # Duplicate check: same Fis_No + Tarih + Sube_ID + Borc + Alacak (Legacy Parity)
+            existing = db.scalars(
                 select(B2BEkstre).where(
                     B2BEkstre.Fis_No == fis_no,
                     B2BEkstre.Tarih == tarih,
-                    B2BEkstre.Sube_ID == sube_id
+                    B2BEkstre.Sube_ID == sube_id,
+                    B2BEkstre.Borc == data.get("Borc", 0.0),
+                    B2BEkstre.Alacak == data.get("Alacak", 0.0)
                 )
-            ).scalar_one_or_none()
+            ).first()
             if existing:
                 skipped += 1
                 continue
@@ -534,7 +533,7 @@ def create_odeme_bulk(
             # Allow duplicates? GumusBulut Odeme typically allows multiple identical records but maybe we check exact matches to prevent accidental double-submit
             aciklama = data.get("Aciklama", "")
             
-            existing = db.execute(
+            existing = db.scalars(
                 select(Odeme).where(
                     Odeme.Sube_ID == data["Sube_ID"],
                     Odeme.Tarih == tarih,
@@ -543,7 +542,7 @@ def create_odeme_bulk(
                     Odeme.Tutar == data.get("Odeme_Tutari", 0.0),
                     Odeme.Aciklama == aciklama
                 )
-            ).scalar_one_or_none()
+            ).first()
             
             if existing:
                 skipped += 1
@@ -1056,13 +1055,13 @@ def create_pos_hareketi_bulk(
                 skipped += 1
                 continue
 
-            existing = db.execute(
+            existing = db.scalars(
                 select(POSHareketleri).where(
                     POSHareketleri.Islem_Tarihi == islem_tarihi,
                     POSHareketleri.Islem_Tutari == data["Islem_Tutari"],
                     POSHareketleri.Sube_ID == data["Sube_ID"]
                 )
-            ).scalar_one_or_none()
+            ).first()
             
             if existing:
                 skipped += 1
@@ -1225,7 +1224,7 @@ def update_tabak_sayisi_bulk(db: Session, sube_id: int, data_list: List[dict]) -
                 GelirEkstra.Sube_ID == sube_id,
                 GelirEkstra.Tarih == islem_tarihi
             )
-            record = db.execute(stmt).scalar_one_or_none()
+            record = db.scalars(stmt).first()
 
             if record:
                 record.Tabak_Sayisi = int(tabak_sayisi)
