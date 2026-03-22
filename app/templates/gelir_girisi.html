@@ -662,6 +662,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         // İlk yüklemede mevcut değerleri formatla
@@ -866,23 +867,17 @@
             colFark.innerText = formatMoney(fark);
             colFark.className = "text-right " + (fark > 0 ? "pozitif" : (fark < 0 ? "negatif" : ""));
         }
-        // RobotPos Uyarı: Toplam Satış < RobotPos Tutar ise sütun başlığı ve hücreye uyarı ver
+        // RobotPos Uyarı: Toplam Satış < RobotPos Tutar ise sadece sütun başlığına uyarı ver
         const robotInput = document.querySelector(`.extra-input[data-type="RobotPos"][data-gun="${g}"]`);
         const robotVal = robotInput ? (parseFloat(unformatMoney(robotInput.value)) || 0) : 0;
 
         const thEl = document.getElementById(`th-gun-${g}`);
-        const robotTd = robotInput ? robotInput.closest('td') : null;
 
         // Clear previous warning
         if (thEl) {
             const oldIcon = thEl.querySelector('.warn-icon');
             if (oldIcon) oldIcon.remove();
             thEl.classList.remove('col-warn-header');
-        }
-        if (robotTd) {
-            const oldIcon = robotTd.querySelector('.warn-icon');
-            if (oldIcon) oldIcon.remove();
-            robotTd.classList.remove('cell-warn');
         }
 
         if (robotVal > 0 && gunlukSatis < robotVal) {
@@ -892,13 +887,6 @@
                 icon.className = 'warn-icon';
                 icon.innerHTML = ' ⚠️';
                 thEl.appendChild(icon);
-            }
-            if (robotTd) {
-                robotTd.classList.add('cell-warn');
-                const icon2 = document.createElement('span');
-                icon2.className = 'warn-icon';
-                icon2.innerHTML = ' ⚠️';
-                robotTd.appendChild(icon2);
             }
         }
     }
@@ -990,28 +978,33 @@
     }
 
     function exportToExcel() {
-        let csv = [];
-        const rows = document.querySelectorAll("table tr");
+        const table = document.getElementById('gelirTable');
+        if (!table) return;
 
-        for (let i = 0; i < rows.length; i++) {
-            let row = [], cols = rows[i].querySelectorAll("td, th");
-            for (let j = 0; j < cols.length; j++) {
-                const input = cols[j].querySelector('input');
-                let data = input ? input.value : cols[j].innerText;
-                data = data.replace(/"/g, '""');
-                row.push('"' + data + '"');
+        // SheetJS table_to_book ile çevir (input değerlerini de doğru okur)
+        // Önce input değerlerini td'lere yazıp sonra oku
+        const clone = table.cloneNode(true);
+        clone.querySelectorAll('input.cell-input').forEach(inp => {
+            const td = inp.closest('td');
+            if (td) {
+                const cloneTd = clone.querySelector(`td:has(input[data-gun="${inp.dataset.gun}"][data-katid="${inp.dataset.katid}"])`);
             }
-            csv.push(row.join(";"));
-        }
+            inp.setAttribute('value', inp.value);
+        });
 
-        let csvFile = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csv.join("\n")], { type: "text/csv;charset=utf-8;" });
-        let downloadLink = document.createElement("a");
-        downloadLink.download = "Gelir_Girisi_{{ secili_donem }}.csv";
-        downloadLink.href = window.URL.createObjectURL(csvFile);
-        downloadLink.style.display = "none";
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        document.body.removeChild(downloadLink);
+        // Uyarı ikonlarını temizle
+        clone.querySelectorAll('.warn-icon').forEach(el => el.remove());
+
+        // Input değerlerini sade metin yap
+        clone.querySelectorAll('input').forEach(inp => {
+            const td = inp.parentElement;
+            if (td) {
+                td.textContent = inp.value;
+            }
+        });
+
+        const wb = XLSX.utils.table_to_book(clone, { sheet: 'Gelir Girişi', raw: false });
+        XLSX.writeFile(wb, `Gelir_Girisi_{{ secili_donem }}.xlsx`);
     }
 </script>
 {% endblock %}
