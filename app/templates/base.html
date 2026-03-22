@@ -1172,26 +1172,58 @@
                 branchSelect.addEventListener('change', fetchPermissionsBase);
             }
 
-            // Accordion Interaction Logic
+            // Accordion Interaction Logic - Independent & Persistent
             const accHeaders = document.querySelectorAll('.accordion-header');
+            
+            // Function to save state
+            const saveSidebarState = () => {
+                const state = {};
+                accHeaders.forEach(h => {
+                    const content = h.nextElementSibling;
+                    if (content) {
+                        state[h.id] = content.classList.contains('open');
+                    }
+                });
+                localStorage.setItem('sidebar_accordion_state', JSON.stringify(state));
+            };
+
+            // Function to restore state
+            const restoreSidebarState = () => {
+                const savedState = localStorage.getItem('sidebar_accordion_state');
+                if (savedState) {
+                    const state = JSON.parse(savedState);
+                    accHeaders.forEach(h => {
+                        const content = h.nextElementSibling;
+                        if (content && state[h.id]) {
+                            content.classList.add('open');
+                            h.classList.add('active');
+                        } else if (content && state[h.id] === false) {
+                            // Specifically closed by user
+                            content.classList.remove('open', 'show');
+                            h.classList.remove('active');
+                        }
+                    });
+                }
+            };
+
             accHeaders.forEach(header => {
                 header.addEventListener('click', () => {
                     const content = header.nextElementSibling;
-                    const isCurrentlyOpen = content.classList.contains('open');
-
-                    document.querySelectorAll('.accordion-content').forEach(c => {
-                        c.classList.remove('open');
-                    });
-                    document.querySelectorAll('.accordion-header').forEach(h => {
-                        h.classList.remove('active');
-                    });
-
-                    if (!isCurrentlyOpen) {
+                    const isOpen = content.classList.contains('open');
+                    
+                    if (isOpen) {
+                        content.classList.remove('open', 'show');
+                        header.classList.remove('active');
+                    } else {
                         content.classList.add('open');
                         header.classList.add('active');
                     }
+                    saveSidebarState();
                 });
             });
+
+            // Initial restore
+            restoreSidebarState();
 
             // Auto-expand logic: Sync headers with content state on load
             document.querySelectorAll('.accordion-content').forEach(content => {

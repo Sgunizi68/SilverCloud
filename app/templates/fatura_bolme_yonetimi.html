@@ -213,7 +213,7 @@ async function loadData() {
     });
 
     // Fetch parent invoice for correct toplamTutar if needed
-    allGroups = Object.values(grouped).sort((a,b) => b.orijinalFaturaNo.localeCompare(a.orijinalFaturaNo));
+    allGroups = Object.values(grouped).sort((a,b) => (b.faturaTarihi || "").localeCompare(a.faturaTarihi || ""));
 
     // Populate donem dropdown
     donemler = [...new Set(allGroups.map(g => g.donem))].filter(Boolean).sort();
