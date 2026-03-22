@@ -7,6 +7,7 @@ from flask import Blueprint, request, render_template, redirect, url_for, sessio
 from app.common.database import get_db_session
 from app.modules.auth import security, queries
 from app.modules.reference import queries as ref_queries
+from app.common.decorators import permission_required
 
 web_auth_bp = Blueprint("web_auth", __name__)
 
@@ -65,6 +66,7 @@ def login():
 
 @web_auth_bp.route("/dashboard")
 @login_required
+@permission_required("Dashboard Ekranı Görüntüleme")
 def dashboard():
     """
     Dashboard/menu page.

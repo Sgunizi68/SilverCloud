@@ -6,18 +6,13 @@ from app.modules.reference import queries as ref_queries
 from app.modules.inventory import queries as inventory_queries
 from app.common.database import get_db_session
 
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
-            return redirect(url_for('web_auth.login', next=request.url))
-        return f(*args, **kwargs)
-    return decorated_function
+from app.common.decorators import login_required, permission_required
 
 web_inventory_bp = Blueprint("web_inventory", __name__)
 
 @web_inventory_bp.route("/stok-tanimlama", methods=["GET"])
 @login_required
+@permission_required("Stok Tanımlama Ekranı Görüntüleme")
 def stok_tanimlama():
     """
     Stok Tanımlama (Stock Definition) page.
@@ -63,6 +58,7 @@ def stok_tanimlama():
 
 @web_inventory_bp.route("/stok-fiyat-tanimlama", methods=["GET"])
 @login_required
+@permission_required("Stok Fiyat Tanımlama Ekranı Görüntüleme")
 def stok_fiyat_tanimlama():
     """
     Stok Fiyat Tanımlama (Stock Price Definition) page.
@@ -123,6 +119,7 @@ def stok_fiyat_tanimlama():
 
 @web_inventory_bp.route("/stok-sayimi", methods=["GET"])
 @login_required
+@permission_required("Stok Sayım Ekranı Görüntüleme")
 def stok_sayimi():
     """
     Stok Sayımı (Stock Count) page - grouped by Urun_Grubu.
@@ -258,6 +255,7 @@ def stok_sayimi():
 
 @web_inventory_bp.route("/stok-sayimi/kaydet", methods=["POST"])
 @login_required
+@permission_required("Stok Sayım Ekranı Görüntüleme")
 def stok_sayimi_kaydet():
     """Bulk save all stock counts from the form."""
     try:

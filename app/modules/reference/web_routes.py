@@ -5,7 +5,7 @@ Pages for Reference domain such as Sube Yonetimi.
 
 from flask import Blueprint, render_template, session, redirect, url_for
 from app.common.database import get_db_session
-from app.modules.auth.web_routes import login_required
+from app.common.decorators import login_required, permission_required
 from app.modules.reference import queries
 from app.modules.auth import queries as auth_queries
 
@@ -13,6 +13,7 @@ web_reference_bp = Blueprint("web_reference", __name__)
 
 @web_reference_bp.route("/subeler", methods=["GET"])
 @login_required
+@permission_required("Şube Yönetimi Ekranı Görüntüleme")
 def subeler():
     """
     Sube Yonetimi page.
@@ -75,6 +76,7 @@ def subeler():
 
 @web_reference_bp.route("/degerler", methods=["GET"])
 @login_required
+@permission_required("Değer Yönetimi Ekranı Görüntüleme")
 def degerler():
     """
     Deger Yonetimi page.
@@ -128,6 +130,7 @@ def degerler():
 
 @web_reference_bp.route("/kullanicilar", methods=["GET"])
 @login_required
+@permission_required("Kullanıcı Yönetimi Ekranı Görüntüleme")
 def kullanicilar():
     """
     Kullanici Yonetimi page.
@@ -180,6 +183,7 @@ def kullanicilar():
 
 @web_reference_bp.route("/roller", methods=["GET"])
 @login_required
+@permission_required("Rol Yönetimi Ekranı Görüntüleme")
 def roller():
     """
     Rol Yonetimi page.
@@ -231,6 +235,7 @@ def roller():
 
 @web_reference_bp.route("/yetkiler", methods=["GET"])
 @login_required
+@permission_required("Yetki Yönetimi Ekranı Görüntüleme")
 def yetkiler():
     """
     Yetki Yonetimi page.
@@ -283,6 +288,7 @@ def yetkiler():
 
 @web_reference_bp.route("/kullanici-rol-atamalari", methods=["GET"])
 @login_required
+@permission_required("Kullanıcı Rol Atama Ekranı Görüntüleme")
 def kullanici_rol_atamalari():
     """
     Kullanici Rol Atamalari page.
@@ -345,6 +351,7 @@ def kullanici_rol_atamalari():
 
 @web_reference_bp.route("/rol-yetki-atamalari", methods=["GET"])
 @login_required
+@permission_required("Rol Yetki Atama Ekranı Görüntüleme")
 def rol_yetki_atamalari():
     """
     Rol Yetki Atamalari page.
@@ -405,6 +412,7 @@ def rol_yetki_atamalari():
 
 @web_reference_bp.route("/efatura-referans-yonetimi", methods=["GET"])
 @login_required
+@permission_required("e-Fatura Referans Yönetimi Ekranı Görüntüleme")
 def efatura_referans_yonetimi():
     """
     e-Fatura Referans Yönetimi page.
@@ -456,6 +464,7 @@ def efatura_referans_yonetimi():
 
 @web_reference_bp.route("/odeme-referans-yonetimi", methods=["GET"])
 @login_required
+@permission_required("Ödeme Referans Yönetimi Ekran Görüntüleme")
 def odeme_referans_yonetimi():
     """
     Ödeme Referans Yönetimi page.
@@ -504,6 +513,7 @@ def odeme_referans_yonetimi():
     )
 @web_reference_bp.route("/cari-borc-yonetimi", methods=["GET"])
 @login_required
+@permission_required("Cari Borç Yönetimi Ekranı Görüntüleme")
 def cari_borc_yonetimi():
     """
     Cari Borç Yönetimi page.
@@ -572,6 +582,7 @@ def cari_borc_yonetimi():
 
 @web_reference_bp.route("/ust-kategori-yonetimi", methods=["GET"])
 @login_required
+@permission_required("Üst Kategori Yönetimi Ekranı Görüntüleme")
 def ust_kategori_yonetimi():
     """
     Üst Kategori Yönetimi page.
@@ -614,6 +625,7 @@ def ust_kategori_yonetimi():
 
 @web_reference_bp.route("/kategori-yonetimi", methods=["GET"])
 @login_required
+@permission_required("Kategori Yönetimi Ekranı Görüntüleme")
 def kategori_yonetimi():
     """
     Kategori Yönetimi page.

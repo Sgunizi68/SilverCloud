@@ -6,7 +6,7 @@ Pages for HR domain such as Calisan Yonetimi.
 import json
 from flask import Blueprint, render_template, session, redirect, url_for, request
 from app.common.database import get_db_session
-from app.modules.auth.web_routes import login_required
+from app.common.decorators import login_required, permission_required
 from app.modules.hr import queries
 from app.modules.auth import queries as auth_queries
 from app.modules.reference import queries as ref_queries
@@ -15,6 +15,7 @@ web_hr_bp = Blueprint("web_hr", __name__)
 
 @web_hr_bp.route("/calisanlar", methods=["GET"])
 @login_required
+@permission_required("Çalışan Yönetimi Ekranı Görüntüleme")
 def calisanlar():
     """
     Calisan Yonetimi page.
@@ -86,6 +87,7 @@ def calisanlar():
 
 @web_hr_bp.route("/puantaj-secim-yonetimi", methods=["GET"])
 @login_required
+@permission_required("Puantaj Seçim Yönetimi Ekranı Görüntüleme")
 def puantaj_secim_yonetimi():
     """
     Puantaj Secim Yonetimi page.
@@ -135,6 +137,7 @@ def puantaj_secim_yonetimi():
 
 @web_hr_bp.route("/puantaj-girisi", methods=["GET"])
 @login_required
+@permission_required("Puantaj Girişi Ekranı Görüntüleme")
 def puantaj_girisi():
     """
     Puantaj Girisi page.
@@ -348,6 +351,7 @@ def puantaj_girisi():
 
 @web_hr_bp.route("/avans-talepleri", methods=["GET"])
 @login_required
+@permission_required("Avans Talebi Ekranı Görüntüleme")
 def avans_talepleri():
     """
     Avans Talepleri page.
@@ -449,6 +453,7 @@ def avans_talepleri():
 
 @web_hr_bp.route("/calisan-talep-yonetimi")
 @login_required
+@permission_required("Çalışan Talep Ekranı Görüntüleme")
 def calisan_talep_yonetimi():
     """Çalışan Talep Yönetimi screen."""
     db_session = get_db_session()

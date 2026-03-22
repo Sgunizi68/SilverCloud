@@ -1,13 +1,5 @@
 from flask import Blueprint, render_template, session, redirect, url_for, request
-from functools import wraps
-
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
-            return redirect(url_for('web_auth.login', next=request.url))
-        return f(*args, **kwargs)
-    return decorated_function
+from app.common.decorators import login_required, permission_required
 
 from app.modules.auth import queries as auth_queries
 from app.modules.reference import queries as ref_queries
@@ -19,6 +11,7 @@ web_invoicing_bp = Blueprint("web_invoicing", __name__)
 
 @web_invoicing_bp.route("/fatura-yukleme", methods=["GET"])
 @login_required
+@permission_required("Fatura Yükleme Ekranı Görüntüleme")
 def fatura_yukleme():
     """
     Fatura Yükleme (Invoice Upload) page.
@@ -81,6 +74,7 @@ def turkish_sort_key(s):
 
 @web_invoicing_bp.route("/fatura-kategori-atama", methods=["GET"])
 @login_required
+@permission_required("Fatura Kategori Atama Ekranı Görüntüleme")
 def fatura_kategori_atama():
     """
     Fatura Kategori Atama (Invoice Category Assignment) page.
@@ -131,6 +125,7 @@ def fatura_kategori_atama():
 
 @web_invoicing_bp.route("/b2b-ekstre-yukleme", methods=["GET"])
 @login_required
+@permission_required("B2B Ekstre Yükleme Ekranı Görüntüleme")
 def b2b_ekstre_yukleme():
     """
     B2B Ekstre Yükleme (B2B Statement Upload) page.
@@ -163,6 +158,7 @@ def b2b_ekstre_yukleme():
 
 @web_invoicing_bp.route("/odeme-yukleme", methods=["GET"])
 @login_required
+@permission_required("Ödeme Yükleme Ekranı Görüntüleme")
 def odeme_yukleme():
     """
     Ödeme Yükleme (Payment Upload) page.
@@ -195,6 +191,7 @@ def odeme_yukleme():
 
 @web_invoicing_bp.route("/odeme-kategori-atama", methods=["GET"])
 @login_required
+@permission_required("Ödeme Kategori Atama Ekranı Görüntüleme")
 def odeme_kategori_atama():
     """
     Ödeme Kategori Atama (Payment Category Assignment) page.
@@ -257,6 +254,7 @@ def odeme_kategori_atama():
 
 @web_invoicing_bp.route("/diger-harcamalar", methods=["GET"])
 @login_required
+@permission_required("Diğer Harcamalar Ekranı Görüntüleme")
 def diger_harcamalar():
     """
     Diğer Harcamalar (Other Expenses) page.
@@ -383,6 +381,7 @@ def diger_harcamalar():
     )
 @web_invoicing_bp.route("/pos-hareketleri-yukleme", methods=["GET"])
 @login_required
+@permission_required("POS Hareketleri Yükleme Ekranı Görüntüleme")
 def pos_hareketleri_yukleme():
     """
     POS Hareketleri Yükleme (POS Transactions Upload) page.
@@ -414,6 +413,7 @@ def pos_hareketleri_yukleme():
     )
 @web_invoicing_bp.route("/tabak-sayisi-yukleme", methods=["GET"])
 @login_required
+@permission_required("Tabak Sayısı Yükleme Ekranı Görüntüleme")
 def tabak_sayisi_yukleme():
     """
     Tabak Sayısı Yükleme (Plate Count Upload) page.
@@ -445,6 +445,7 @@ def tabak_sayisi_yukleme():
     )
 @web_invoicing_bp.route("/yemek-ceki", methods=["GET"])
 @login_required
+@permission_required("Yemek Çeki Ekranı Görüntüleme")
 def yemek_ceki():
     """
     Yemek Çeki (Meal Tickets) page.
@@ -548,6 +549,7 @@ def yemek_ceki():
 
 @web_invoicing_bp.route("/nakit-girisi")
 @login_required
+@permission_required("Nakit Girişi Ekranı Görüntüleme")
 def nakit_girisi():
     db_session = get_db_session()
     user = auth_queries.get_kullanici_by_id(db_session, session['user_id'])
@@ -650,6 +652,7 @@ import calendar
 
 @web_invoicing_bp.route("/gelir-girisi")
 @login_required
+@permission_required("Gelir Girişi Ekranı Görüntüleme")
 def gelir_girisi():
     db_session = get_db_session()
     user = auth_queries.get_kullanici_by_id(db_session, session['user_id'])
@@ -657,12 +660,6 @@ def gelir_girisi():
     if not user:
         db_session.close()
         return redirect(url_for('web_auth.login'))
-        
-    if not auth_queries.has_permission(db_session, user.Kullanici_ID, "Gelir Girişi Ekranı Görüntüleme"):
-        db_session.close()
-        flash("Bu sayfayı görüntüleme yetkiniz yok.", "danger")
-        return redirect(url_for("main.dashboard"))
-
         
     all_suber = ref_queries.get_suber(db_session, limit=1000)
     
@@ -797,6 +794,7 @@ def gelir_girisi():
 
 @web_invoicing_bp.route("/nakit-yatirma-kontrol-raporu")
 @login_required
+@permission_required("Nakit Yatırma Kontrol Raporu Görüntüleme")
 def nakit_yatirma_kontrol_raporu():
     db_session = get_db_session()
     user = auth_queries.get_kullanici_by_id(db_session, session['user_id'])
@@ -951,6 +949,7 @@ def nakit_yatirma_kontrol_raporu():
 
 @web_invoicing_bp.route("/odeme-rapor")
 @login_required
+@permission_required("Ödeme Rapor Görüntüleme")
 def odeme_raporu():
     db_session = get_db_session()
     user = auth_queries.get_kullanici_by_id(db_session, session['user_id'])
@@ -1046,6 +1045,7 @@ def odeme_raporu():
 
 @web_invoicing_bp.route("/fatura-diger-harcama-rapor")
 @login_required
+@permission_required("Fatura & Diğer Harcama Rapor Görüntüleme")
 def fatura_diger_harcama_raporu():
     """
     Combined report for EFatura and DigerHarcama.
@@ -1132,6 +1132,7 @@ def fatura_diger_harcama_raporu():
 
 @web_invoicing_bp.route("/pos-kontrol-dashboard")
 @login_required
+@permission_required("POS Kontrol Dashboard Görüntüleme")
 def pos_kontrol_dashboard():
     """
     POS Reconciliation Dashboard.
@@ -1203,6 +1204,7 @@ def pos_kontrol_dashboard():
 
 @web_invoicing_bp.route("/online-kontrol-dashboard")
 @login_required
+@permission_required("Online Kontrol Dashboard Görüntüleme")
 def online_kontrol_dashboard():
     """
     Online Platforms Reconciliation Dashboard.
@@ -1274,6 +1276,7 @@ def online_kontrol_dashboard():
 
 @web_invoicing_bp.route("/yemek-ceki-kontrol-dashboard")
 @login_required
+@permission_required("Yemek Çeki Kontrol Dashboard Görüntüleme")
 def yemek_ceki_kontrol_dashboard():
     """
     Yemek Çeki (Meal Voucher) Reconciliation Dashboard.
@@ -1345,6 +1348,7 @@ def yemek_ceki_kontrol_dashboard():
 
 @web_invoicing_bp.route("/fatura-rapor")
 @login_required
+@permission_required("Fatura Rapor Görüntüleme")
 def fatura_raporu():
     db_session = get_db_session()
     user = auth_queries.get_kullanici_by_id(db_session, session['user_id'])
@@ -1441,6 +1445,7 @@ def fatura_raporu():
 
 @web_invoicing_bp.route("/vps-dashboard", methods=["GET"])
 @login_required
+@permission_required("VPS Dashboard Görüntüleme")
 def vps_dashboard():
     """
     VPS Dashboard page.
@@ -1508,6 +1513,7 @@ def vps_dashboard():
     )
 @web_invoicing_bp.route("/fatura-bolme-yonetimi", methods=["GET"])
 @login_required
+@permission_required("Fatura Bölme Yönetimi Ekranı Görüntüleme")
 def fatura_bolme_yonetimi():
     """
     Fatura Bölme Yönetimi (Invoice Split Management) page.
@@ -1541,16 +1547,11 @@ def fatura_bolme_yonetimi():
 
 @web_invoicing_bp.route("/mutabakat-yonetimi")
 @login_required
+@permission_required("Mutabakat Yönetimi Ekranı Görüntüleme")
 def mutabakat_yonetimi():
     """Render Mutabakat Yönetimi screen."""
     db_session = get_db_session()
     user = db_session.get(Kullanici, session["user_id"])
-    
-    # Permission check
-    user_permissions = auth_queries.get_user_permissions(db_session, user.Kullanici_ID)
-    if "Mutabakat Yönetimi Ekranı Görüntüleme" not in user_permissions:
-        db_session.close()
-        return render_template("403.html"), 403
         
     # Determine default authorized branch
     all_suber = ref_queries.get_suber(db_session, limit=1000)

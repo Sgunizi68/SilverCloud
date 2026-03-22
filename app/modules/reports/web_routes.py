@@ -4,19 +4,12 @@ from app.modules.auth import queries as auth_queries
 from app.modules.reference import queries as ref_queries
 from . import queries as report_queries
 from app.common.database import get_db_session
-from functools import wraps
+from app.common.decorators import login_required, permission_required
 from datetime import date
-
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
-            return redirect(url_for('web_auth.login', next=request.url))
-        return f(*args, **kwargs)
-    return decorated_function
 
 @reports_bp.route("/bayi-karlilik-raporu", methods=["GET"])
 @login_required
+@permission_required("Bayi Karlılık Raporu Görüntüleme")
 def bayi_karlilik_raporu():
     """
     Bayi Karlılık Raporu page.
@@ -68,6 +61,7 @@ def bayi_karlilik_raporu():
 
 @reports_bp.route("/ozet-kontrol-raporu", methods=["GET"])
 @login_required
+@permission_required("Özet Kontrol Raporu Görüntüleme")
 def ozet_kontrol_raporu():
     """
     Özet Kontrol Raporu page.
@@ -148,6 +142,7 @@ def ozet_kontrol_raporu():
 
 @reports_bp.route("/nakit-akis-gelir-raporu", methods=["GET"])
 @login_required
+@permission_required("Nakit Akış - Gelir Raporu Görüntüleme")
 def nakit_akis_gelir_raporu():
     """
     Nakit Akış - Gelir Raporu page.
@@ -204,6 +199,7 @@ def nakit_akis_gelir_raporu():
 
 @reports_bp.route("/cari-borc-takip-sistemi", methods=["GET"])
 @login_required
+@permission_required("Cari Borç Takip Sistemi Görüntüleme")
 def cari_borc_takip_sistemi():
     db_session = get_db_session()
     user = auth_queries.get_kullanici_by_id(db_session, session['user_id'])
