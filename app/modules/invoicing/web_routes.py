@@ -50,6 +50,35 @@ def fatura_yukleme():
         subeler=auth_suber
     )
 
+def turkish_sort_key(s):
+    """
+    Custom sort key for Turkish alphabetical order (A-Z, case-insensitive).
+    """
+    if not s:
+        return []
+    
+    s = str(s).strip()
+    # Manual Turkish replacement to handle i/İ and ı/I correctly before lowercasing
+    map_chars = {'İ': 'i', 'I': 'ı', 'Ç': 'ç', 'Ğ': 'ğ', 'Ö': 'ö', 'Ş': 'ş', 'Ü': 'ü'}
+    s_lower = ""
+    for char in s:
+        if char in map_chars:
+            s_lower += map_chars[char]
+        else:
+            s_lower += char.lower()
+    
+    alphabet = "abcçdefgğhıijklmnoöprsştuüvyz"
+    order = {char: i for i, char in enumerate(alphabet)}
+    
+    key = []
+    for char in s_lower:
+        if char in order:
+            key.append(order[char])
+        else:
+            # Punctuation/Spaces come before alphabet letters (0-28)
+            key.append(ord(char) - 1000)
+    return key
+
 @web_invoicing_bp.route("/fatura-kategori-atama", methods=["GET"])
 @login_required
 def fatura_kategori_atama():
@@ -76,13 +105,14 @@ def fatura_kategori_atama():
     ]
     
     # Fetch categories for filtering and assignment
-    kategoriler = ref_queries.get_kategoriler(db_session, limit=1000)
+    raw_kategoriler = ref_queries.get_kategoriler(db_session, tip='Gider', limit=1000)
+    kategoriler = sorted(raw_kategoriler, key=lambda k: turkish_sort_key(k.Kategori_Adi))
     
     import json
-    kategoriler_json = json.dumps(sorted([
+    kategoriler_json = json.dumps([
         {"id": k.Kategori_ID, "name": k.Kategori_Adi}
         for k in kategoriler
-    ], key=lambda x: x["name"]), ensure_ascii=False)
+    ], ensure_ascii=False)
     
     db_session.close()
     

@@ -239,18 +239,21 @@
                 <label>Kategori Filtresi</label>
                 <select id="filterKategori" class="form-control">
                     <option value="">Tüm Kategoriler</option>
-                    {% for k in kategoriler|sort(attribute='Kategori_Adi') %}
+                    {% for k in kategoriler %}
                     <option value="{{ k.Kategori_ID }}">{{ k.Kategori_Adi }}</option>
                     {% endfor %}
                 </select>
             </div>
         </div>
 
-        <!-- Filters Row 2 -->
-        <div style="margin-bottom: 15px;">
+        <div style="margin-bottom: 15px; display: flex; gap: 20px;">
             <label class="checkbox-filter">
                 <input type="checkbox" id="filterUncategorized" checked>
                 Sadece Kategorisizleri Göster
+            </label>
+            <label class="checkbox-filter">
+                <input type="checkbox" id="filterDescriptionNotEmpty">
+                Sadece Açıklama Alanı Dolu Olanları Göster
             </label>
         </div>
 
@@ -357,6 +360,7 @@
         const donem = document.getElementById('filterDonem').value;
         const kategoriId = document.getElementById('filterKategori').value;
         const onlyUncategorized = document.getElementById('filterUncategorized').checked;
+        const descriptionNotEmpty = document.getElementById('filterDescriptionNotEmpty').checked;
         const tipi = document.getElementById('filterTipi').value; // '' | 'false' | 'true'
 
         let data = [...allFaturas];
@@ -378,6 +382,10 @@
 
         if (onlyUncategorized) {
             data = data.filter(f => !f.Kategori_ID);
+        }
+
+        if (descriptionNotEmpty) {
+            data = data.filter(f => f.Aciklama && f.Aciklama.trim() !== '');
         }
 
         if (search) {
@@ -518,6 +526,7 @@
     document.getElementById('filterDonem').addEventListener('change', applyFiltersAndRender);
     document.getElementById('filterKategori').addEventListener('change', applyFiltersAndRender);
     document.getElementById('filterUncategorized').addEventListener('change', applyFiltersAndRender);
+    document.getElementById('filterDescriptionNotEmpty').addEventListener('change', applyFiltersAndRender);
     document.getElementById('filterTipi').addEventListener('change', applyFiltersAndRender);
 
     // Also reload when branch changes

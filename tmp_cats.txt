@@ -1,0 +1,47 @@
+Aylık Dukkan Tip
+Ayran/Süt (Seher)
+Bakım Onarım
+Banka Komisyonu
+Ciro Kira
+Cola
+ÇTV, İşgaliye, İlan Reklam Vergi Bedelleri
+Depo Kira
+Diğer Hizmetler – Cari
+Diğer yerli firmalar
+Doğalgaz Gideri
+Donuk Ekmek(G2M)
+Donuk Urun (Fasdat patates)
+Elektrik
+e-Fatura Gideri
+Gunluk Eksik Gıda
+Gunluk Harcama
+Hal
+Hijyen / Gizli Müşteri Denetimi
+İlaçlama
+İnternet ve Telefon
+İşyeri Sigorta Gideri
+Kargo
+Kdv / Vergi
+Kırtasiye
+Konsantre İçecek
+Muhtasar (G.Stopaj)
+Müşavirlik Ücreti
+Ortak Gider
+Part-Time Günlük Personel Maaşları
+Personel Avans
+Personel Maaslar
+Personel Tazminat (Kıdem, İhbar vb.)
+Personel Yemek Giderleri
+Plan Dışı Giderler
+Sabit Kira
+Sgk
+Su
+Tavuk Dünyası
+Tavuk Dünyası Ciro Primi
+Tavuk Dünyası Lojistik
+Tavuk Dünyası Reklam Primi
+Temizlik Giderleri
+Yemek Çekleri Komisyonu
+Yemek Sepeti (Online) Komisyonu
+Yonetim Gideri
+Zuccaciye

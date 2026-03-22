@@ -7,4 +7,6 @@ silvercloud.db
 Gumusbulut/
 Scr*.png
 Scr1.png
-GumusBulut
+GumusBulut/
+flask_session/
+.gitignore
