@@ -417,6 +417,25 @@ def update_odeme_endpoint(odeme_id):
         return jsonify({"error": str(e)}), 500
 
 
+
+@invoicing_bp.route("/odemeler/bulk", methods=["POST"])
+@auth_required
+def create_odeme_bulk_api():
+    """Bulk create payments from uploaded data."""
+    try:
+        data = request.get_json()
+        if not data or "odemeler" not in data:
+            return jsonify({"error": "odemeler list required"}), 400
+            
+        db = get_db_session()
+        result = queries.create_odeme_bulk(db, data["odemeler"])
+        db.close()
+        
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 # ============================================================================
 # NAKIT (CASH) ENDPOINTS
 # ============================================================================
