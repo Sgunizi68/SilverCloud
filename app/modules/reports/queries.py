@@ -752,9 +752,9 @@ def get_ozet_kontrol_raporu(db, sube_id: int, donem: int, show_gizli: bool = Fal
     """)
     gh_efatura = db.execute(ef_sql, {"sube_id": sube_id, "donem": donem}).scalar() or 0.0
 
-    # 6. Nakit Girisi Toplam (Total of all cash entries recorded)
+    # 6. Nakit Girisi Toplam (Fix: Sourced from all Nakit records to match Nakit Yatirma Kontrol Raporu)
     nakit_girisi = db.execute(
-        text("SELECT IFNULL(SUM(Tutar), 0) FROM Nakit WHERE Sube_ID = :sube_id AND Donem = :donem AND Tip = 'Nakit Girişi'"),
+        text("SELECT IFNULL(SUM(Tutar), 0) FROM Nakit WHERE Sube_ID = :sube_id AND Donem = :donem"),
         {"sube_id": sube_id, "donem": donem}
     ).scalar() or 0.0
 
@@ -782,28 +782,12 @@ def get_ozet_kontrol_raporu(db, sube_id: int, donem: int, show_gizli: bool = Fal
         {"sube_id": sube_id, "year": year, "month": month}
     ).scalar() or 0.0
 
-    # 10. Online Gelir Toplam (Gelir side)
-    online_gelir = db.execute(
-        text(f"""
-        SELECT IFNULL(SUM(g.Tutar), 0) FROM Gelir g
-        JOIN Kategori k ON g.Kategori_ID = k.Kategori_ID
-        WHERE g.Sube_ID = :sube_id AND YEAR(g.Tarih) = :year AND MONTH(g.Tarih) = :month 
-          AND (k.Kategori_Adi LIKE '%Yemeksepeti%' OR k.Kategori_Adi LIKE '%Trendyol%' OR k.Kategori_Adi LIKE '%Getir%' OR k.Kategori_Adi LIKE '%Migros%')
-          {gizli_filter}
-        """),
-        {"sube_id": sube_id, "year": year, "month": month}
-    ).scalar() or 0.0
-
-    # 11. Online Virman (From B2B_Ekstre - actually it is filtered by description containing 'Virman')
-    online_virman = db.execute(
-        text(f"""
-        SELECT IFNULL(SUM(ABS(b.Alacak)), 0) FROM B2B_Ekstre b
-        JOIN Kategori k ON b.Kategori_ID = k.Kategori_ID
-        WHERE b.Sube_ID = :sube_id AND b.Donem = :donem AND b.Alacak < 0 AND b.Aciklama LIKE '%Virman%'
-        {gizli_filter}
-        """),
-        {"sube_id": sube_id, "donem": donem}
-    ).scalar() or 0.0
+    # 10. Online Metrics (Sourced from Online Kontrol Dashboard logic)
+    from app.modules.invoicing.queries import get_online_kontrol_dashboard_data
+    online_res = get_online_kontrol_dashboard_data(db, sube_id, donem)
+    online_summary = online_res.get('summary', {})
+    online_gelir = float(online_summary.get('gelir_toplam', 0))
+    online_virman = float(online_summary.get('toplam_virman', 0))
 
     # 12. Yemek Çeki Aylık Gelir (Gelir side)
     yemek_ceki_aylik = db.execute(

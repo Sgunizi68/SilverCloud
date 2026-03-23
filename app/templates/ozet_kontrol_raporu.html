@@ -263,13 +263,10 @@
 
     .val-pos { color: #10b981; }
     .val-neg { color: #ef4444; }
-    .val-neutral { color: #64748b; }
-
-    /* Topbar hide */
-    .topbar { display: none !important; }
     .content.dashboard-content { padding: 1.5rem !important; }
 </style>
 {% endblock %}
+
 
 {% block content %}
 <div class="container-fluid">
@@ -308,13 +305,12 @@
     {%- endmacro %}
 
     {% macro status_badge(val) -%}
-    {% if val|abs > 200 %} <span class="status-badge status-err">Hatalı</span>
-    {% elif val|abs > 10 %} <span class="status-badge status-warn">Uyumsuz</span>
+    {% if val|abs > 10 %} <span class="status-badge status-warn">Uyumsuz</span>
     {% else %} <span class="status-badge status-ok">Uyumlu</span>
     {% endif %}
     {%- endmacro %}
 
-    <!-- Header -->
+    <!-- Main Report Header Area -->
     <div class="report-header-bar">
         <div class="report-title">
             <i class="fas fa-chart-pie" style="color: #2563eb;"></i>
@@ -338,31 +334,6 @@
     </div>
 
     {% if report_data %}
-    <!-- Summary Cards -->
-    <div class="stats-row">
-        <div class="stat-card blue">
-            <div class="stat-label">TOPLAM GELİR</div>
-            <div class="stat-value">{{ money(f.total_revenue) }}</div>
-            <div class="stat-sub">Dönem Satışları</div>
-        </div>
-        <div class="stat-card red">
-            <div class="stat-label">TOPLAM GİDER</div>
-            <div class="stat-value">{{ money(f.total_expense) }}</div>
-            <div class="stat-sub">Fatura + Harcama + Borç</div>
-        </div>
-        {% if show_gizli %}
-        <div class="stat-card green">
-            <div class="stat-label">CİRODAN KALAN</div>
-            <div class="stat-value">{{ money(f.cirodan_kalan) }}</div>
-            <div class="stat-sub">Gelir - Gider</div>
-        </div>
-        <div class="stat-card purple">
-            <div class="stat-label">DÖNEM KARI</div>
-            <div class="stat-value">{{ money(f.donem_kar_zarar) }}</div>
-            <div class="stat-sub">Cirodan Kalan + Stok Farkı</div>
-        </div>
-        {% endif %}
-    </div>
 
     <div class="report-grid">
         <!-- Legacy Table Structure -->
