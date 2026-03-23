@@ -2310,7 +2310,7 @@ def get_yemek_ceki_kontrol_dashboard_data(db: Session, sube_id: int, donem: int)
     """
     from datetime import date
     from decimal import Decimal
-    from sqlalchemy import and_, or_, func, select
+    from sqlalchemy import and_, or_, func, select, text
     import calendar
     from app.models import Kategori, Gelir, EFatura, Odeme, Cari, YemekCeki
 
@@ -2431,13 +2431,14 @@ def get_yemek_ceki_kontrol_dashboard_data(db: Session, sube_id: int, donem: int)
                 donem_tutar = cek.Tutar - onceki_donem_tutar - sonraki_donem_tutar
 
             # Fatura Status Check
-            # Match EFatura (Giden=True) with matching Tutar, Son_Tarih and Unvan
+            # Match EFatura (Giden=True) with exact Tutar and date condition:
+            # (Fatura_Tarihi - 5 days) <= (Son_Tarih + 90 days)
             stmt_fatura = select(EFatura).where(
                 and_(
                     EFatura.Sube_ID == sube_id,
                     EFatura.Giden_Fatura == True,
-                    EFatura.Fatura_Tarihi == cek.Son_Tarih,
-                    func.abs(EFatura.Tutar - cek.Tutar) < (cek.Tutar * Decimal('0.01'))
+                    EFatura.Tutar == cek.Tutar,
+                    func.date_sub(EFatura.Fatura_Tarihi, text("INTERVAL 5 DAY")) <= func.date_add(cek.Son_Tarih, text("INTERVAL 90 DAY"))
                 )
             )
             fat_match = db.scalars(stmt_fatura).first()
