@@ -758,9 +758,9 @@ def get_ozet_kontrol_raporu(db, sube_id: int, donem: int, show_gizli: bool = Fal
         {"sube_id": sube_id, "donem": donem}
     ).scalar() or 0.0
 
-    # 7. Bankaya Yatan
+    # 7. Bankaya Yatan (Fix: Sourced from Odeme table Kategori_ID 60 to match Nakit Yatirma Kontrol Raporu)
     bankaya_yatan = db.execute(
-        text("SELECT IFNULL(SUM(Tutar), 0) FROM Nakit WHERE Sube_ID = :sube_id AND Donem = :donem AND Tip = 'Bankaya Yatan'"),
+        text("SELECT IFNULL(SUM(Tutar), 0) FROM Odeme WHERE Sube_ID = :sube_id AND Donem = :donem AND Kategori_ID = 60"),
         {"sube_id": sube_id, "donem": donem}
     ).scalar() or 0.0
 
@@ -782,93 +782,18 @@ def get_ozet_kontrol_raporu(db, sube_id: int, donem: int, show_gizli: bool = Fal
         {"sube_id": sube_id, "year": year, "month": month}
     ).scalar() or 0.0
 
-    # 10. Online Metrics (Sourced from Online Kontrol Dashboard logic)
-    from app.modules.invoicing.queries import get_online_kontrol_dashboard_data
+    # 10. Online & Yemek Çeki Metrics (Sourced from Dashboard logic)
+    from app.modules.invoicing.queries import get_online_kontrol_dashboard_data, get_yemek_ceki_kontrol_dashboard_data
     online_res = get_online_kontrol_dashboard_data(db, sube_id, donem)
     online_summary = online_res.get('summary', {})
     online_gelir = float(online_summary.get('gelir_toplam', 0))
     online_virman = float(online_summary.get('toplam_virman', 0))
 
-    # 12. Yemek Çeki Aylık Gelir (Gelir side)
-    yemek_ceki_aylik = db.execute(
-        text(f"""
-        SELECT IFNULL(SUM(g.Tutar), 0) FROM Gelir g
-        JOIN Kategori k ON g.Kategori_ID = k.Kategori_ID
-        WHERE g.Sube_ID = :sube_id AND YEAR(g.Tarih) = :year AND MONTH(g.Tarih) = :month 
-          AND k.Ust_Kategori_ID = 3
-          {gizli_filter}
-        """),
-        {"sube_id": sube_id, "year": year, "month": month}
-    ).scalar() or 0.0
-
-    # 13. Yemek Çeki Dönem Toplam (From Yemek_Ceki with proportional distribution)
-    from calendar import monthrange
-    days_in_month = monthrange(year, month)[1]
-    period_start = date(year, month, 1)
-    period_end = date(year, month, days_in_month)
-
-    # Fetch all relevant meal vouchers that overlap with this period
-    cek_sql = text(f"""
-        SELECT yc.Kategori_ID, yc.Tutar, yc.Ilk_Tarih, yc.Son_Tarih
-        FROM Yemek_Ceki yc
-        JOIN Kategori k ON yc.Kategori_ID = k.Kategori_ID
-        WHERE yc.Sube_ID = :sube_id 
-          AND yc.Ilk_Tarih <= :period_end 
-          AND yc.Son_Tarih >= :period_start
-          {gizli_filter}
-    """)
-    cek_records = db.execute(cek_sql, {"sube_id": sube_id, "period_start": period_start, "period_end": period_end}).fetchall()
-
-    yemek_ceki_toplam = Decimal('0')
-    for rec in cek_records:
-        kat_id, cek_tutar, ilk, son = rec
-        cek_tutar = Decimal(str(cek_tutar))
-
-        onceki_gelir = db.execute(
-            text("""
-            SELECT IFNULL(SUM(Tutar), 0) FROM Gelir 
-            WHERE Sube_ID = :sube_id AND Kategori_ID = :kat_id AND Tarih < :period_start AND Tarih >= :ilk
-            """),
-            {"sube_id": sube_id, "kat_id": kat_id, "ilk": ilk, "period_start": period_start}
-        ).scalar() or 0
-        onceki_gelir = Decimal(str(onceki_gelir))
-
-        mevcut_gelir = db.execute(
-            text("""
-            SELECT IFNULL(SUM(Tutar), 0) FROM Gelir 
-            WHERE Sube_ID = :sube_id AND Kategori_ID = :kat_id AND Tarih >= :period_start AND Tarih <= :period_end
-            """),
-            {"sube_id": sube_id, "kat_id": kat_id, "period_start": period_start, "period_end": period_end}
-        ).scalar() or 0
-        mevcut_gelir = Decimal(str(mevcut_gelir))
-
-        sonraki_gelir = db.execute(
-            text("""
-            SELECT IFNULL(SUM(Tutar), 0) FROM Gelir 
-            WHERE Sube_ID = :sube_id AND Kategori_ID = :kat_id AND Tarih > :period_end AND Tarih <= :son
-            """),
-            {"sube_id": sube_id, "kat_id": kat_id, "son": son, "period_end": period_end}
-        ).scalar() or 0
-        sonraki_gelir = Decimal(str(sonraki_gelir))
-
-        toplam_gelir = onceki_gelir + mevcut_gelir + sonraki_gelir
-
-        if toplam_gelir > 0:
-            onceki_dagitilan = (onceki_gelir / toplam_gelir) * cek_tutar
-            sonraki_dagitilan = (sonraki_gelir / toplam_gelir) * cek_tutar
-            onceki_dagitilan = onceki_dagitilan.quantize(Decimal('0.01'))
-            sonraki_dagitilan = sonraki_dagitilan.quantize(Decimal('0.01'))
-            donem_tutar = cek_tutar - onceki_dagitilan - sonraki_dagitilan
-        else:
-            has_onceki = (ilk < period_start)
-            has_sonraki = (son > period_end)
-            num_periods = (1 if has_onceki else 0) + 1 + (1 if has_sonraki else 0)
-            base_val = (cek_tutar / num_periods).quantize(Decimal('0.01'))
-            onceki_dagitilan = base_val if has_onceki else Decimal('0')
-            sonraki_dagitilan = base_val if has_sonraki else Decimal('0')
-            donem_tutar = cek_tutar - onceki_dagitilan - sonraki_dagitilan
-        
-        yemek_ceki_toplam += donem_tutar
+    # 12 & 13. Yemek Çeki Metrics (Sourced from Yemek Çeki Kontrol Dashboard logic)
+    yemek_res = get_yemek_ceki_kontrol_dashboard_data(db, sube_id, donem)
+    yemek_stats = yemek_res.get('stats', {})
+    yemek_ceki_aylik = float(yemek_stats.get('total_gelir', 0))
+    yemek_ceki_toplam = float(yemek_stats.get('total_donem_tutar', 0))
 
     # 14. TOTAL REVENUE & EXPENSE for Summary Cards (aligned with Dashboard logic)
     # Total Revenue (already fetched as toplam_satis but let's be explicit)
