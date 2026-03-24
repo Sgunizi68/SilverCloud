@@ -2240,25 +2240,23 @@ def get_online_kontrol_dashboard_data(db: Session, sube_id: int, donem: int):
     results = []
 
     for p in platforms:
-        # 1. Gelir Toplam
-        # Search for categories including platform keywords
+        # 1. Gelir Toplam (Whole Month)
         p_keywords = p["keywords"]
         kat_filters = or_(*[Kategori.Kategori_Adi.ilike(f"%{k}%") for k in p_keywords])
         
-        stmt_gelir = select(func.sum(Gelir.Tutar)).join(Kategori).where(
+        # All Gelir records for this platform in this period (to avoid repeated queries)
+        stmt_all_gelir = select(Gelir).join(Kategori).where(
             and_(
                 Gelir.Sube_ID == sube_id,
                 Gelir.Tarih >= start_date,
                 Gelir.Tarih <= end_date,
                 kat_filters
             )
-        )
-        gelir_toplam = db.execute(stmt_gelir).scalar() or Decimal('0')
+        ).order_by(Gelir.Tarih)
+        all_gelir = db.scalars(stmt_all_gelir).all()
+        gelir_toplam = sum((g.Tutar for g in all_gelir), Decimal('0'))
 
-        # 2. Virman (B2BEkstre.Alacak < 0)
-        # Search for negative Alacak entries where description contains platform keywords
-        # Using platform keywords to match records like "Yemek Sepeti Online Alacak Virmanları"
-        # We search specifically for "Virman" and the keyword.
+        # 2. Virman Records (B2BEkstre.Alacak < 0)
         ekstre_filters = or_(*[B2BEkstre.Aciklama.ilike(f"%{k}%") for k in p_keywords])
         stmt_virman = select(B2BEkstre).where(
             and_(
@@ -2269,19 +2267,56 @@ def get_online_kontrol_dashboard_data(db: Session, sube_id: int, donem: int):
                 ekstre_filters,
                 B2BEkstre.Aciklama.ilike('%Virman%')
             )
-        )
+        ).order_by(B2BEkstre.Tarih)
         virman_records = db.scalars(stmt_virman).all()
-        # Sum absolute value of negative Alacak
         toplam_virman = sum((abs(r.Alacak) for r in virman_records), Decimal('0'))
-        # Get the day of the last transfer record
-        virman_son_gun = max((r.Tarih.day for r in virman_records), default=None)
+        
+        # Calculate Detail Rows
+        details = []
+        prev_day = 0 # Track last processed day for range fallback
+        for v in virman_records:
+            v_tutar = abs(v.Alacak)
+            v_day = v.Tarih.day
+            
+            # Determine Day Range
+            # 1. Try to parse from description (e.g., "01.03-07.03" or "01-14")
+            start_d, end_d = None, None
+            import re
+            # Improved regex to handle DD.MM-DD.MM or DD-DD formats
+            # We look for two numbers separated by a dash, potentially skipping months/years
+            match = re.search(r'(\d{1,2})\.?\d{0,2}\s*[\-]\s*(\d{1,2})\.\d{2}', v.Aciklama or "")
+            if not match:
+                # Try simpler DD-DD
+                match = re.search(r'(\d{1,2})\s*[\-]\s*(\d{1,2})', v.Aciklama or "")
+            
+            if match:
+                start_d = int(match.group(1))
+                end_d = int(match.group(2))
+            else:
+                # Fallback: Range from previous virman date + 1 until current virman date
+                start_d = prev_day + 1
+                end_d = v_day
+            
+            # Calculate matching Gelir for this range
+            v_gelir_tutar = sum(
+                (g.Tutar for g in all_gelir if start_d <= g.Tarih.day <= end_d), 
+                Decimal('0')
+            )
+            
+            details.append({
+                'virman_tutar': v_tutar,
+                'gelir_tutar': v_gelir_tutar,
+                'fark': v_tutar - v_gelir_tutar,
+                'virman_son_gun': v_day,
+                'aciklama': v.Aciklama
+            })
+            prev_day = v_day
 
-        # 3. Kısmi Gelir
-        # Based on legacy screenshot, Kısmi Gelir often matches Gelir Toplam
+        # Summary calculations
+        virman_son_gun = max((r.Tarih.day for r in virman_records), default=None)
         kismi_gelir = gelir_toplam 
 
-        # 4. Komisyon (Check B2BEkstre Borc first, then EFatura)
-        # B2BEkstre Borc often contains "Komisyon Yansıtma"
+        # 4. Komisyon
         stmt_borc_komisyon = select(func.sum(B2BEkstre.Borc)).where(
             and_(
                 B2BEkstre.Sube_ID == sube_id,
@@ -2293,12 +2328,9 @@ def get_online_kontrol_dashboard_data(db: Session, sube_id: int, donem: int):
         )
         komisyon_b2b = db.execute(stmt_borc_komisyon).scalar() or Decimal('0')
 
-        # Add EFatura if not redundant (usually they are processed into B2B but let's check)
-        # If we already have B2B commissions, we trust them as the final yansıtma
         if komisyon_b2b > 0:
             komisyon_toplam = komisyon_b2b
         else:
-            # Fallback to EFatura
             stmt_komisyon_ef = select(func.sum(EFatura.Tutar)).where(
                 and_(
                     EFatura.Sube_ID == sube_id,
@@ -2310,7 +2342,6 @@ def get_online_kontrol_dashboard_data(db: Session, sube_id: int, donem: int):
             )
             komisyon_toplam = db.execute(stmt_komisyon_ef).scalar() or Decimal('0')
 
-        # Calculations
         fark = toplam_virman - kismi_gelir
         komisyon_yuzde = (komisyon_toplam / gelir_toplam * 100) if gelir_toplam > 0 else Decimal('0')
 
@@ -2323,7 +2354,8 @@ def get_online_kontrol_dashboard_data(db: Session, sube_id: int, donem: int):
             'fark': fark,
             'komisyon_toplam': komisyon_toplam,
             'komisyon_yuzde': komisyon_yuzde,
-            'yuzde': (toplam_virman / gelir_toplam * 100) if gelir_toplam > 0 else Decimal('0')
+            'yuzde': (toplam_virman / gelir_toplam * 100) if gelir_toplam > 0 else Decimal('0'),
+            'details': details
         })
 
     # Summary Row (Genel Toplam)

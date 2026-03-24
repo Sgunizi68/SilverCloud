@@ -172,6 +172,28 @@
             color: #fff;
         }
 
+        /* Detail Rows */
+        .row-detail {
+            background-color: #fcfdfe !important;
+        }
+
+        .row-detail td {
+            color: #666;
+            font-size: 0.8rem;
+            border-bottom: 1px dashed #eee !important;
+        }
+
+        .detail-label {
+            padding-left: 1.5rem !important;
+            font-style: italic;
+            color: #888 !important;
+        }
+
+        .row-detail .num-cell {
+            font-weight: 500;
+            color: #777;
+        }
+
         @media print {
             .control-bar {
                 display: none !important;
@@ -245,6 +267,25 @@
                         <td class="num-cell">{{ "{:,.2f}".format(row.yuzde).replace(',', 'X').replace('.',
                             ',').replace('X', '.') }}%</td>
                     </tr>
+                    
+                    {# Detail Rows #}
+                    {% for detail in row.details %}
+                    <tr class="row-detail">
+                        <td class="detail-label">→ {{ detail.aciklama }}</td>
+                        <td class="num-cell">{{ "{:,.2f}".format(detail.gelir_tutar).replace(',', 'X').replace('.',
+                            ',').replace('X', '.') }}</td>
+                        <td style="text-align:center;">{{ detail.virman_son_gun }}</td>
+                        <td class="num-cell">{{ "{:,.2f}".format(detail.virman_tutar).replace(',', 'X').replace('.',
+                            ',').replace('X', '.') }}</td>
+                        <td class="num-cell" style="color:#999;">-</td>
+                        <td class="num-cell" style="{{ 'color:red;' if detail.fark | abs > 0.01 else '' }}">
+                            {{ "{:,.2f}".format(detail.fark).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                        </td>
+                        <td class="num-cell" style="color:#999;">-</td>
+                        <td class="num-cell" style="color:#999;">-</td>
+                        <td class="num-cell" style="color:#999;">-</td>
+                    </tr>
+                    {% endfor %}
                     {% endfor %}
                 </tbody>
                 <tfoot>
