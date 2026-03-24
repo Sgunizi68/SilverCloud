@@ -1,11 +1,12 @@
 from flask import Blueprint, render_template, session, redirect, url_for, request
+from sqlalchemy import func
 from app.common.decorators import login_required, permission_required
 
 from app.modules.auth import queries as auth_queries
 from app.modules.reference import queries as ref_queries
 from app.modules.invoicing import queries as invoicing_queries
 from app.common.database import get_db_session
-from app.models import Kullanici, Cari
+from app.models import Kullanici, Cari, Gelir
 
 web_invoicing_bp = Blueprint("web_invoicing", __name__)
 
@@ -916,6 +917,15 @@ def nakit_yatirma_kontrol_raporu():
     nakit_giris_toplam = sum(r['Tutar'] for r in nakit_giris_list)
     fark = bankaya_yatan_toplam - nakit_giris_toplam
 
+    # Fetch Gelir for Nakit category (ID=11)
+    gelir_nakit = db_session.query(func.sum(Gelir.Tutar)).filter(
+        Gelir.Sube_ID == sube_id,
+        Gelir.Tarih >= start_date,
+        Gelir.Tarih <= end_date,
+        Gelir.Kategori_ID == 11
+    ).scalar() or 0.0
+    gelir_nakit_toplam = float(gelir_nakit)
+
     sube_adi = next((s.Sube_Adi for s in auth_suber if s.Sube_ID == sube_id), '')
     
     from flask import make_response
@@ -938,7 +948,8 @@ def nakit_yatirma_kontrol_raporu():
         esleme_orani=esleme_orani,
         bankaya_yatan_toplam=bankaya_yatan_toplam,
         nakit_giris_toplam=nakit_giris_toplam,
-        fark=fark
+        fark=fark,
+        gelir_nakit_toplam=gelir_nakit_toplam
     ))
     
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"

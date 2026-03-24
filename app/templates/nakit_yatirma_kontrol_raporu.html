@@ -251,7 +251,7 @@
 
         .summary-cards {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 0.8rem;
         }
 
@@ -457,6 +457,10 @@
     <div class="summary-bar">
         <div class="summary-title">📊 Özet Bilgiler</div>
         <div class="summary-cards">
+            <div class="summary-card">
+                <div class="sc-label">Gelir (Nakit)</div>
+                <div class="sc-value">₺{{ '{:,.0f}'.format(gelir_nakit_toplam).replace(',', '.') }}</div>
+            </div>
             <div class="summary-card">
                 <div class="sc-label">Bankaya Yatan Toplam</div>
                 <div class="sc-value">₺{{ '{:,.0f}'.format(bankaya_yatan_toplam).replace(',', '.') }}</div>
