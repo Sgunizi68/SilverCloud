@@ -261,10 +261,12 @@
             </select>
 
             <!-- New Advance Button -->
+            {% if is_current_donem %}
             <button class="btn-new" onclick="openNewAvansModal()">
                 <i class="fas fa-plus"></i>
                 Yeni Avans
             </button>
+            {% endif %}
         </div>
     </div>
 
@@ -295,6 +297,7 @@
                     <td>{{ a.Aciklama }}</td>
                     <td>{{ a.Kayit_Tarihi }}</td>
                     <td>
+                        {% if is_current_donem %}
                         <div class="actions-cell">
                             <button class="btn-row-action btn-edit" title="Düzenle"
                                 onclick='openEditAvansModal({{ a | tojson }})'>
@@ -305,6 +308,11 @@
                                 <i class="fas fa-trash-alt"></i>
                             </button>
                         </div>
+                        {% else %}
+                        <div style="text-align: right; color: var(--text-gray); font-style: italic; font-size: 0.8rem;">
+                            Sadece mevcut ayda işlem yapılabilir
+                        </div>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}

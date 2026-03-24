@@ -447,6 +447,7 @@ def avans_talepleri():
         donem=donem_int,
         donem_options=donem_options,
         employees=employees_list,
+        is_current_donem=(donem_int == current_donem),
         sube_adi=next((s["Sube_Adi"] for s in subeler_list if s["Sube_ID"] == sube_id), "")
     )
 

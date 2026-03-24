@@ -556,7 +556,21 @@ def create_avans_istek():
         if not data or "TC_No" not in data or "Sube_ID" not in data or "Donem" not in data or "Tutar" not in data:
             return jsonify({"error": "TC_No, Sube_ID, Donem, and Tutar required"}), 400
         
+        # Period-based restriction
+        from datetime import datetime
+        today = datetime.now()
+        current_donem = int(f"{str(today.year)[2:]}{today.month:02d}")
+        if int(data["Donem"]) != current_donem:
+            return jsonify({"error": "Talep girişi yalnızca bulunan ayda yapılabilir."}), 403
+        
         db = get_db_session()
+        
+        # Duplicate check: check if person already has a request for this month
+        existing_requests = queries.get_avans_istekler(db, tc_no=data["TC_No"], donem=int(data["Donem"]))
+        if existing_requests:
+            db.close()
+            return jsonify({"error": "Bu çalışan için bu dönemde zaten bir avans talebi bulunmaktadır."}), 400
+            
         new_istek = queries.create_avans_istek(
             db,
             tc_no=data["TC_No"],
@@ -591,6 +605,20 @@ def update_avans_istek(avans_id):
         data = request.get_json()
         
         db = get_db_session()
+        
+        # Period-based restriction
+        istek = queries.get_avans_istek_by_id(db, avans_id)
+        if not istek:
+            db.close()
+            return jsonify({"error": "AvansIstek not found"}), 404
+            
+        from datetime import datetime
+        today = datetime.now()
+        current_donem = int(f"{str(today.year)[2:]}{today.month:02d}")
+        if istek.Donem != current_donem:
+            db.close()
+            return jsonify({"error": "Talep değişikliği yalnızca bulunan ayda yapılabilir."}), 403
+
         updated_istek = queries.update_avans_istek(
             db,
             avans_id,
@@ -623,6 +651,20 @@ def delete_avans_istek(avans_id):
     """Delete advance request."""
     try:
         db = get_db_session()
+        
+        # Period-based restriction
+        istek = queries.get_avans_istek_by_id(db, avans_id)
+        if not istek:
+            db.close()
+            return jsonify({"error": "AvansIstek not found"}), 404
+            
+        from datetime import datetime
+        today = datetime.now()
+        current_donem = int(f"{str(today.year)[2:]}{today.month:02d}")
+        if istek.Donem != current_donem:
+            db.close()
+            return jsonify({"error": "Talep silme işlemi yalnızca bulunan ayda yapılabilir."}), 403
+
         deleted = queries.delete_avans_istek(db, avans_id)
         db.close()
         
