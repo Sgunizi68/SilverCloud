@@ -327,87 +327,135 @@ def create_b2b_ekstre_bulk(
     ekstre_list: List[dict]
 ) -> dict:
     """
-    Bulk create B2B ekstre records.
-    Each dict should contain: Tarih, Fis_No, Fis_Turu, Aciklama, Borc, Alacak,
-    Toplam_Bakiye, Fatura_No, Fatura_Metni, Sube_ID.
-    Duplicate check: Fis_No + Tarih + Sube_ID.
-    Returns counts of added and skipped records.
+    Bulk create B2B ekstre records with optimized batch processing.
     """
     added = 0
     skipped = 0
+    
+    if not ekstre_list:
+        return {"added": 0, "skipped": 0}
+
+    # Preparation: Collect keys for batch lookups
+    all_sube_ids = set()
+    all_fis_nos = set()
+    all_fatura_nos = set()
+    processed_rows = []
 
     for data in ekstre_list:
-        try:
-            fis_no = (data.get("Fis_No") or "").strip()
+        sube_id = data.get("Sube_ID")
+        if not sube_id: continue
+        all_sube_ids.add(sube_id)
 
-            # Parse date
-            tarih = data.get("Tarih")
-            if isinstance(tarih, str):
-                try:
-                    tarih = datetime.strptime(tarih, "%Y-%m-%d").date()
-                except ValueError:
-                    tarih = datetime.now().date()
-            elif not tarih:
+        # Parse and normalize Date
+        tarih_val = data.get("Tarih")
+        if isinstance(tarih_val, str):
+            try:
+                tarih = datetime.strptime(tarih_val, "%Y-%m-%d").date()
+            except ValueError:
                 tarih = datetime.now().date()
+        elif isinstance(tarih_val, (date, datetime)):
+            tarih = tarih_val if isinstance(tarih_val, date) else tarih_val.date()
+        else:
+            tarih = datetime.now().date()
 
-            sube_id = data["Sube_ID"]
+        fis_no = (data.get("Fis_No") or "").strip()
+        fatura_no = (data.get("Fatura_No") or "").strip()
+        
+        all_fis_nos.add(fis_no)
+        if fatura_no: all_fatura_nos.add(fatura_no)
+        
+        # Store for second pass
+        processed_rows.append({
+            "data": data,
+            "tarih": tarih,
+            "fis_no": fis_no,
+            "fatura_no": fatura_no,
+            "sube_id": sube_id,
+            "borc": float(data.get("Borc", 0.0)),
+            "alacak": float(data.get("Alacak", 0.0))
+        })
 
-            # EFatura description update logic (Runs for every row, even duplicates)
-            # Priority: Fatura_No then Fis_No
-            match_invoice_no = data.get("Fatura_No") or fis_no
-            aciklama_from_b2b = data.get("Aciklama")
-            
-            if match_invoice_no and aciklama_from_b2b:
-                # Look for matching EFatura in the same branch
-                efatura_record = db.scalars(
-                    select(EFatura).where(
-                        EFatura.Fatura_Numarasi == match_invoice_no,
-                        EFatura.Sube_ID == sube_id
-                    )
-                ).first()
-                
-                if efatura_record:
-                    # Update description if it is currently empty (as seen in GumusBulut)
-                    if not efatura_record.Aciklama:
-                        efatura_record.Aciklama = aciklama_from_b2b
+    if not processed_rows:
+        return {"added": 0, "skipped": 0}
 
-            # Duplicate check: same Fis_No + Tarih + Sube_ID + Borc + Alacak (Legacy Parity)
-            existing = db.scalars(
-                select(B2BEkstre).where(
-                    B2BEkstre.Fis_No == fis_no,
-                    B2BEkstre.Tarih == tarih,
-                    B2BEkstre.Sube_ID == sube_id,
-                    B2BEkstre.Borc == data.get("Borc", 0.0),
-                    B2BEkstre.Alacak == data.get("Alacak", 0.0)
-                )
-            ).first()
-            if existing:
-                skipped += 1
-                continue
+    # Batch Fetch 1: Existing B2BEkstre for duplicate check
+    # We fetch all matching Fis_No for the involved branches
+    existing_stmt = select(B2BEkstre).where(
+        B2BEkstre.Sube_ID.in_(list(all_sube_ids)),
+        B2BEkstre.Fis_No.in_(list(all_fis_nos))
+    )
+    existing_ekstreler = db.scalars(existing_stmt).all()
+    # Lookup map: (Fis_No, Tarih, Sube_ID, Borc, Alacak) -> Record
+    ekstre_map = {
+        (e.Fis_No, e.Tarih, e.Sube_ID, float(e.Borc), float(e.Alacak)): e 
+        for e in existing_ekstreler
+    }
 
-            # Calculate period (YYMM) from date
-            donem = int(str(tarih.year)[-2:] + str(tarih.month).zfill(2))
+    # Batch Fetch 2: Relevant EFaturalar for description updates
+    # Combine Fatura_No and Fis_No as they are both used for matching
+    invoice_match_candidates = all_fatura_nos.union(all_fis_nos)
+    efatura_stmt = select(EFatura).where(
+        EFatura.Sube_ID.in_(list(all_sube_ids)),
+        EFatura.Fatura_Numarasi.in_(list(invoice_match_candidates))
+    )
+    existing_efaturalar = db.scalars(efatura_stmt).all()
+    # Lookup map: (Fatura_Numarasi, Sube_ID) -> Record
+    efatura_map = {
+        (f.Fatura_Numarasi, f.Sube_ID): f 
+        for f in existing_efaturalar
+    }
 
-            new_ekstre = B2BEkstre(
-                Tarih=tarih,
-                Fis_No=fis_no,
-                Fis_Turu=data.get("Fis_Turu"),
-                Aciklama=data.get("Aciklama"),
-                Borc=data.get("Borc", 0.0),
-                Alacak=data.get("Alacak", 0.0),
-                Toplam_Bakiye=data.get("Toplam_Bakiye", 0.0),
-                Fatura_No=data.get("Fatura_No"),
-                Fatura_Metni=data.get("Fatura_Metni"),
-                Donem=donem,
-                Sube_ID=sube_id,
-            )
-            db.add(new_ekstre)
-            added += 1
-        except Exception as e:
-            db.rollback()
-            raise e
+    # Processing Loop
+    for item in processed_rows:
+        data = item["data"]
+        tarih = item["tarih"]
+        fis_no = item["fis_no"]
+        fatura_no = item["fatura_no"]
+        sube_id = item["sube_id"]
+        borc = item["borc"]
+        alacak = item["alacak"]
 
-    db.commit()
+        # 1. EFatura description update logic
+        match_invoice_no = fatura_no or fis_no
+        aciklama_from_b2b = data.get("Aciklama")
+        
+        if match_invoice_no and aciklama_from_b2b:
+            ef = efatura_map.get((match_invoice_no, sube_id))
+            if ef and not ef.Aciklama:
+                ef.Aciklama = aciklama_from_b2b
+
+        # 2. Duplicate Check
+        if (fis_no, tarih, sube_id, borc, alacak) in ekstre_map:
+            skipped += 1
+            continue
+
+        # 3. Create new record
+        donem = int(str(tarih.year)[-2:] + str(tarih.month).zfill(2))
+        
+        new_ekstre = B2BEkstre(
+            Tarih=tarih,
+            Fis_No=fis_no,
+            Fis_Turu=data.get("Fis_Turu"),
+            Aciklama=data.get("Aciklama"),
+            Borc=borc,
+            Alacak=alacak,
+            Toplam_Bakiye=data.get("Toplam_Bakiye", 0.0),
+            Fatura_No=fatura_no,
+            Fatura_Metni=data.get("Fatura_Metni"),
+            Donem=donem,
+            Sube_ID=sube_id,
+        )
+        db.add(new_ekstre)
+        # Update map to prevent duplicates within the same file too
+        ekstre_map[(fis_no, tarih, sube_id, borc, alacak)] = new_ekstre
+        added += 1
+
+    try:
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise e
+
     return {"added": added, "skipped": skipped}
 
 
