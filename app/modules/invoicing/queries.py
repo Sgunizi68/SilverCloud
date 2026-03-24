@@ -921,7 +921,7 @@ def update_diger_harcama(
     aciklama: Optional[str] = None
 ) -> Optional[DigerHarcama]:
     """Update other expense."""
-    harcama = get_diger_harcama_by_id(db, harcama_id)
+    harcama = get_diger_harcama_by_id(db, harcama_id, can_view_gizli=True)
     if not harcama:
         return None
     
@@ -939,7 +939,7 @@ def update_diger_harcama(
 
 def delete_diger_harcama(db: Session, harcama_id: int) -> bool:
     """Delete other expense."""
-    harcama = get_diger_harcama_by_id(db, harcama_id)
+    harcama = get_diger_harcama_by_id(db, harcama_id, can_view_gizli=True)
     if not harcama:
         return False
     
@@ -1186,7 +1186,7 @@ def update_diger_harcama(
     clear_image: bool = False
 ) -> Optional[DigerHarcama]:
     """Update a Diger Harcama record."""
-    harcama = get_diger_harcama_by_id(db, harcama_id)
+    harcama = get_diger_harcama_by_id(db, harcama_id, can_view_gizli=True)
     if not harcama:
         return None
         
@@ -1207,7 +1207,7 @@ def update_diger_harcama(
 
 def delete_diger_harcama(db: Session, harcama_id: int) -> bool:
     """Delete a Diger Harcama record."""
-    harcama = get_diger_harcama_by_id(db, harcama_id)
+    harcama = get_diger_harcama_by_id(db, harcama_id, can_view_gizli=True)
     if not harcama:
         return False
         
