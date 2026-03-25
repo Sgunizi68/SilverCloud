@@ -6,7 +6,7 @@ from app.modules.auth import queries as auth_queries
 from app.modules.reference import queries as ref_queries
 from app.modules.invoicing import queries as invoicing_queries
 from app.common.database import get_db_session
-from app.models import Kullanici, Cari, Gelir
+from app.models import Kullanici, Cari, Gelir, EFatura, DigerHarcama
 
 web_invoicing_bp = Blueprint("web_invoicing", __name__)
 
@@ -915,14 +915,51 @@ def nakit_yatirma_kontrol_raporu():
     nakit_giris_toplam = sum(r['Tutar'] for r in nakit_giris_list)
     fark = bankaya_yatan_toplam - nakit_giris_toplam
 
-    # Fetch Gelir for Nakit category (ID=11)
-    gelir_nakit = db_session.query(func.sum(Gelir.Tutar)).filter(
+    # Determine if user can see Gizli (hidden) categories (same as Ozet Kontrol Raporu logic)
+    show_gizli = (user.Kullanici_Adi and user.Kullanici_Adi.lower() == 'admin')
+    if not show_gizli:
+        roles = auth_queries.get_user_roles(db_session, user.Kullanici_ID)
+        show_gizli = 'admin' in [r.lower() for r in roles]
+    if not show_gizli:
+        show_gizli = auth_queries.has_permission(db_session, user.Kullanici_ID, "Gizli Kategori Veri Erişimi")
+
+    # Fetch Gelir for Nakit category (matches Ozet Kontrol Raporu which uses k.Kategori_Adi LIKE '%Nakit%')
+    # Use Kategori join to support Gizli filter
+    gelir_nakit_query = db_session.query(func.sum(Gelir.Tutar)).join(Kategori, Gelir.Kategori_ID == Kategori.Kategori_ID).filter(
         Gelir.Sube_ID == sube_id,
         Gelir.Tarih >= start_date,
         Gelir.Tarih <= end_date,
-        Gelir.Kategori_ID == 11
-    ).scalar() or 0.0
-    gelir_nakit_toplam = float(gelir_nakit)
+        Kategori.Kategori_Adi.like('%Nakit%')
+    )
+    if not show_gizli:
+        gelir_nakit_query = gelir_nakit_query.filter(Kategori.Gizli == 0)
+    
+    gelir_nakit_toplam = float(gelir_nakit_query.scalar() or 0.0)
+
+    # Calculate Daily Expenses for "Kalan Nakit Bakiye" (matches Ozet Kontrol Raporu logic)
+    ef_query = db_session.query(func.sum(EFatura.Tutar)).join(Kategori, EFatura.Kategori_ID == Kategori.Kategori_ID).filter(
+        EFatura.Sube_ID == sube_id,
+        EFatura.Donem == donem,
+        EFatura.Gunluk_Harcama == 1,
+        (EFatura.Giden_Fatura == 0) | (EFatura.Giden_Fatura == None)
+    )
+    if not show_gizli:
+        ef_query = ef_query.filter(Kategori.Gizli == 0)
+    gh_efatura = ef_query.scalar() or 0.0
+    
+    dh_query = db_session.query(func.sum(DigerHarcama.Tutar)).join(Kategori, DigerHarcama.Kategori_ID == Kategori.Kategori_ID).filter(
+        DigerHarcama.Sube_ID == sube_id,
+        DigerHarcama.Donem == donem,
+        DigerHarcama.Gunluk_Harcama == 1
+    )
+    if not show_gizli:
+        dh_query = dh_query.filter(Kategori.Gizli == 0)
+    gh_diger = dh_query.scalar() or 0.0
+    
+    kalan_nakit_bakiye = gelir_nakit_toplam - (float(gh_efatura) + float(gh_diger))
+    
+    # Recalculate 'fark' based on Kalan Nakit Bakiye (matches Ozet Kontrol Raporu: Bankaya Yatan - Kalan Nakit)
+    fark_bakiye = bankaya_yatan_toplam - kalan_nakit_bakiye
 
     sube_adi = next((s.Sube_Adi for s in auth_suber if s.Sube_ID == sube_id), '')
     
@@ -946,8 +983,9 @@ def nakit_yatirma_kontrol_raporu():
         esleme_orani=esleme_orani,
         bankaya_yatan_toplam=bankaya_yatan_toplam,
         nakit_giris_toplam=nakit_giris_toplam,
-        fark=fark,
-        gelir_nakit_toplam=gelir_nakit_toplam
+        fark=fark_bakiye,
+        gelir_nakit_toplam=gelir_nakit_toplam,
+        kalan_nakit_bakiye=kalan_nakit_bakiye
     ))
     
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"

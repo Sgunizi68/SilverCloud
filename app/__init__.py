@@ -80,4 +80,9 @@ def create_app(config_name: str = "development") -> Flask:
             return (date(y, m, d).weekday() + 1) % 7
         return 0
 
+    @app.context_processor
+    def inject_version():
+        from app.config import get_app_version
+        return dict(app_version=get_app_version())
+
     return app

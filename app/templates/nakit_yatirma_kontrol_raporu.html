@@ -458,8 +458,9 @@
         <div class="summary-title">📊 Özet Bilgiler</div>
         <div class="summary-cards">
             <div class="summary-card">
-                <div class="sc-label">Gelir (Nakit)</div>
-                <div class="sc-value">₺{{ '{:,.0f}'.format(gelir_nakit_toplam).replace(',', '.') }}</div>
+                <div class="sc-label">Kalan Nakit Bakiye</div>
+                <div class="sc-value">₺{{ '{:,.0f}'.format(kalan_nakit_bakiye).replace(',', '.') }}</div>
+                <div style="font-size: 0.7rem; color: rgba(255,255,255,0.5); margin-top: 4px;">(Nakit Geliri - G.Harcama)</div>
             </div>
             <div class="summary-card">
                 <div class="sc-label">Bankaya Yatan Toplam</div>
@@ -470,7 +471,7 @@
                 <div class="sc-value">₺{{ '{:,.0f}'.format(nakit_giris_toplam).replace(',', '.') }}</div>
             </div>
             <div class="summary-card">
-                <div class="sc-label">Fark</div>
+                <div class="sc-label">Fark (Bakiye)</div>
                 <div class="sc-value {{ 'danger' if fark != 0 else '' }}">
                     {% if fark > 0 %}+{% endif %}₺{{ '{:,.0f}'.format(fark).replace(',', '.') }}
                 </div>

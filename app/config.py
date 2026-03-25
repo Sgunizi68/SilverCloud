@@ -4,11 +4,48 @@ Loads settings from environment variables via .env
 """
 
 import os
-from datetime import timedelta
+import subprocess
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
 # Load .env file
 load_dotenv()
+
+# ---------------------------------------------------------------------------
+# Application Version
+# ---------------------------------------------------------------------------
+# The base semantic version. Increment this on each meaningful release.
+APP_VERSION = "2.0"
+
+
+def get_app_version() -> str:
+    """
+    Return the application version string.
+
+    Tries to enrich the base APP_VERSION with the short git commit hash and
+    commit date so each deployment is uniquely identifiable.
+    Falls back gracefully to APP_VERSION + today's date when git is not
+    available (e.g. production servers without git installed).
+
+    Example output:  "v2.0 (a1b2c3d · 2026-03-25)"
+    """
+    try:
+        short_hash = subprocess.check_output(
+            ["git", "rev-parse", "--short", "HEAD"],
+            stderr=subprocess.DEVNULL,
+            timeout=2,
+        ).decode().strip()
+
+        commit_date = subprocess.check_output(
+            ["git", "log", "-1", "--format=%cd", "--date=short"],
+            stderr=subprocess.DEVNULL,
+            timeout=2,
+        ).decode().strip()
+
+        return f"v{APP_VERSION} ({short_hash} · {commit_date})"
+    except Exception:
+        today = datetime.now().strftime("%Y-%m-%d")
+        return f"v{APP_VERSION} ({today})"
 
 
 class Config:
