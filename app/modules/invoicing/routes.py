@@ -1289,15 +1289,7 @@ def create_nakit_api():
             'Sube_ID': request.form.get('Sube_ID', type=int)
         }
         
-        imaj = None
-        imaj_adi = None
-        if 'image' in request.files:
-            file = request.files['image']
-            if file and file.filename:
-                imaj = file.read()
-                imaj_adi = file.filename
-
-        new_nakit = queries.create_nakit(db, data, imaj, imaj_adi)
+        new_nakit = queries.create_nakit(db, data)
         db.close()
         
         return jsonify({
@@ -1322,17 +1314,7 @@ def update_nakit_api(nakit_id):
         if request.form.get('Donem'): data['Donem'] = request.form.get('Donem', type=int)
         if request.form.get('Sube_ID'): data['Sube_ID'] = request.form.get('Sube_ID', type=int)
         
-        imaj = None
-        imaj_adi = None
-        clear_imaj = request.form.get('clear_imaj', 'false').lower() == 'true'
-        
-        if 'image' in request.files and not clear_imaj:
-            file = request.files['image']
-            if file and file.filename:
-                imaj = file.read()
-                imaj_adi = file.filename
-
-        updated_nakit = queries.update_nakit(db, nakit_id, data, imaj, imaj_adi, clear_imaj)
+        updated_nakit = queries.update_nakit(db, nakit_id, data)
         db.close()
         
         if not updated_nakit:

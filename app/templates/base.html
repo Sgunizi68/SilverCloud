@@ -91,13 +91,16 @@
         .sidebar-menu::-webkit-scrollbar {
             width: 4px;
         }
+
         .sidebar-menu::-webkit-scrollbar-track {
             background: rgba(255, 255, 255, 0.05);
         }
+
         .sidebar-menu::-webkit-scrollbar-thumb {
             background: #444;
             border-radius: 4px;
         }
+
         .sidebar-menu::-webkit-scrollbar-thumb:hover {
             background: #667eea;
         }
@@ -289,7 +292,8 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            min-width: 0; /* Important: prevents content from pushing sidebar */
+            min-width: 0;
+            /* Important: prevents content from pushing sidebar */
         }
 
         .topbar {
@@ -343,7 +347,8 @@
             flex: 1;
             padding: 30px;
             overflow-y: auto;
-            overflow-x: hidden; /* Page-level horizontal scroll disabled */
+            overflow-x: hidden;
+            /* Page-level horizontal scroll disabled */
             min-width: 0;
         }
 
@@ -827,7 +832,8 @@
 
                 <!-- Kategori Sistemi -->
                 <li>
-                    <div class="accordion-header {% block acc_kategori_sistemi %}{% endblock %}" id="acc-kategori-sistemi">
+                    <div class="accordion-header {% block acc_kategori_sistemi %}{% endblock %}"
+                        id="acc-kategori-sistemi">
                         <span>KATEGORİ SİSTEMİ</span>
                         <span class="accordion-icon">▼</span>
                     </div>
@@ -861,7 +867,7 @@
                         <li><a href="/odeme-yukleme" class="{% block nav_odeme_yukleme %}{% endblock %}"
                                 data-permission="Ödeme Yükleme Ekranı Görüntüleme" title="Ödeme Yükleme">💳 Ödeme
                                 Yükleme</a></li>
-                        <li><a href="/odeme-kategori-atama" class="{% block nav_odeme_kategori %}{% endblock %}" 
+                        <li><a href="/odeme-kategori-atama" class="{% block nav_odeme_kategori %}{% endblock %}"
                                 data-permission="Ödeme Kategori Atama Ekranı Görüntüleme"
                                 title="Ödeme Kategori Atama">🏷️ Ödeme Kategori Atama</a></li>
                         <li><a href="/diger-harcamalar" class="{% block nav_diger_harcamalar %}{% endblock %}"
@@ -1004,7 +1010,8 @@
                     <div class="topbar-item">
                         <select id="branch-select" style="min-width: 150px; font-weight: 500;">
                             {% for s in subeler %}
-                            <option value="{{ s.Sube_ID }}" {% if s.Sube_ID == secili_sube_id %}selected{% endif %}>{{ s.Sube_Adi }}</option>
+                            <option value="{{ s.Sube_ID }}" {% if s.Sube_ID==secili_sube_id %}selected{% endif %}>{{
+                                s.Sube_Adi }}</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -1185,7 +1192,7 @@
 
             // Accordion Interaction Logic - Independent & Persistent
             const accHeaders = document.querySelectorAll('.accordion-header');
-            
+
             // Function to save state
             const saveSidebarState = () => {
                 const state = {};
@@ -1221,7 +1228,7 @@
                 header.addEventListener('click', () => {
                     const content = header.nextElementSibling;
                     const isOpen = content.classList.contains('open');
-                    
+
                     if (isOpen) {
                         content.classList.remove('open', 'show');
                         header.classList.remove('active');

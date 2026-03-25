@@ -170,12 +170,6 @@
         text-align: center;
     }
 
-    .image-link {
-        color: #3b82f6;
-        text-decoration: none;
-        font-weight: 500;
-    }
-
     .image-link:hover {
         text-decoration: underline;
     }
@@ -230,7 +224,6 @@
                     <th class="text-right">TUTAR</th>
                     <th>TİP</th>
                     <th>DÖNEM</th>
-                    <th class="text-center">RESİM</th>
                     <th>KAYIT TARİHİ</th>
                     <th class="text-right">İŞLEMLER</th>
                 </tr>
@@ -244,15 +237,6 @@
                     <td class="text-right" style="font-weight: 500;">{{ "{:,.2f}".format(item.Tutar) }}</td>
                     <td>{{ item.Tip }}</td>
                     <td class="cell-muted">{{ item.Donem }}</td>
-                    <td class="text-center">
-                        {% if item.has_imaj %}
-                        <a href="#" class="image-link" onclick="viewImage('{{ item.Imaj_Base64 }}'); return false;">
-                            Görüntüle
-                        </a>
-                        {% else %}
-                        -
-                        {% endif %}
-                    </td>
                     <td class="cell-muted">{{ item.Kayit_Tarih }}</td>
                     <td class="text-right">
                         <div class="action-icons">
@@ -271,7 +255,7 @@
                 {% endfor %}
                 {% else %}
                 <tr>
-                    <td colspan="8" class="text-center cell-muted" style="padding: 40px;">Kayıt bulunamadı.</td>
+                    <td colspan="7" class="text-center cell-muted" style="padding: 40px;">Kayıt bulunamadı.</td>
                 </tr>
                 {% endif %}
             </tbody>
@@ -279,17 +263,6 @@
     </div>
 </div>
 
-<!-- Image Viewer Overlay -->
-<div id="imageOverlay"
-    style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
-    <div style="background:white; padding:10px; border-radius:8px; max-width:90%; max-height:80vh;">
-        <img id="viewerImage" src="" style="max-width:100%;">
-        <div style="text-align:right; margin-top:10px;">
-            <button onclick="document.getElementById('imageOverlay').style.display='none'"
-                class="btn btn-secondary">Kapat</button>
-        </div>
-    </div>
-</div>
 {% endblock %}
 
 {% block scripts %}
@@ -314,11 +287,6 @@
     function onDonemChange(val) {
         const subeId = branchSelect ? branchSelect.value : '{{ secili_sube_id }}';
         window.location.href = `/nakit-girisi?sube_id=${subeId}&donem=${val}`;
-    }
-
-    function viewImage(base64) {
-        document.getElementById('viewerImage').src = 'data:image/jpeg;base64,' + base64;
-        document.getElementById('imageOverlay').style.display = 'flex';
     }
 
     function openAddModal() {
@@ -349,10 +317,6 @@
                         <label>Dönem</label>
                         <input type="number" class="form-control" name="Donem" required value="{{ secili_donem }}">
                     </div>
-                </div>
-                <div class="form-group">
-                    <label>Resim</label>
-                    <input type="file" class="form-control" name="image" accept="image/*">
                 </div>
                 <div style="margin-top:20px; text-align:right;">
                     <button type="button" class="btn btn-secondary" onclick="hideModal()">İptal</button>
@@ -397,14 +361,6 @@
                         <label>Dönem</label>
                         <input type="number" class="form-control" name="Donem" required value="${ds.donem}">
                     </div>
-                </div>
-                <div class="form-group">
-                    <label>Resim Değiştir (Boş bırakılırsa mevcut kalır)</label>
-                    <input type="file" class="form-control" name="image" accept="image/*">
-                </div>
-                <div class="form-group" style="flex-direction:row; align-items:center; gap:8px;">
-                    <input type="checkbox" name="clear_imaj" id="clearImaj" value="true">
-                    <label for="clearImaj" style="margin:0;">Mevcut Resmi Sil</label>
                 </div>
                 <div style="margin-top:20px; text-align:right;">
                     <button type="button" class="btn btn-secondary" onclick="hideModal()">İptal</button>

@@ -603,9 +603,7 @@ def nakit_girisi():
             'Tip': n.Tip,
             'Donem': n.Donem,
             'Sube_ID': n.Sube_ID,
-            'Kayit_Tarih': n.Kayit_Tarih.strftime('%d.%m.%Y') if n.Kayit_Tarih else '',
-            'Imaj_Base64': b64.b64encode(n.Imaj).decode('utf-8') if n.Imaj else '',
-            'has_imaj': bool(n.Imaj)
+            'Kayit_Tarih': n.Kayit_Tarih.strftime('%d.%m.%Y') if n.Kayit_Tarih else ''
         }
         nakitler_list.append(item)
 
