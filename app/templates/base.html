@@ -11,6 +11,7 @@
     <!-- Font Awesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
     {% block extra_style %}{% endblock %}
 
     <style>
@@ -60,6 +61,16 @@
         .sidebar-header h1 {
             font-size: 18px;
             margin-bottom: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .sidebar-header img {
+            width: 32px;
+            height: 32px;
+            object-fit: contain;
         }
 
         .sidebar-header p {
@@ -764,7 +775,10 @@
         <!-- Sidebar -->
         <div class="sidebar">
             <div class="sidebar-header">
-                <h1>🌐 SilverCloud</h1>
+                <h1>
+                    <img src="{{ url_for('static', filename='img/logo.jpg') }}" alt="SilverCloud Logo">
+                    SilverCloud
+                </h1>
                 <p>v2.0.0</p>
             </div>
 
