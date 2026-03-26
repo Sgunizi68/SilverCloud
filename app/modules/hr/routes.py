@@ -409,6 +409,28 @@ def create_puantaj():
             return jsonify({"error": "TC_No, Secim_ID, and Sube_ID required"}), 400
         
         db = get_db_session()
+        
+        # Validation: Date cannot be before Sigorta_Giris (Non-admin)
+        from app.modules.auth import queries as auth_queries
+        from flask import session
+        user = auth_queries.get_kullanici_by_id(db, session['user_id'])
+        is_admin = (user.Kullanici_Adi and user.Kullanici_Adi.lower() == 'admin')
+        if not is_admin:
+            roles = auth_queries.get_user_roles(db, user.Kullanici_ID)
+            if 'admin' in [r.lower() for r in roles]:
+                is_admin = True
+        
+        if not is_admin:
+            from datetime import date as date_type
+            target_date = data.get("Tarih")
+            if isinstance(target_date, str):
+                target_date = date_type.fromisoformat(target_date)
+            
+            calisan = queries.get_calisan_by_tc_no(db, data["TC_No"])
+            if calisan and calisan.Sigorta_Giris and target_date < calisan.Sigorta_Giris:
+                db.close()
+                return jsonify({"error": f"Sigorta giriş tarihinden ({calisan.Sigorta_Giris.strftime('%d.%m.%Y')}) öncesine veri girişi yapılamaz."}), 403
+
         new_puantaj = queries.create_puantaj(
             db,
             tc_no=data["TC_No"],
@@ -441,6 +463,31 @@ def update_puantaj(puantaj_id):
         data = request.get_json()
         
         db = get_db_session()
+        
+        # Validation: Date cannot be before Sigorta_Giris (Non-admin)
+        from app.modules.auth import queries as auth_queries
+        from flask import session
+        user = auth_queries.get_kullanici_by_id(db, session['user_id'])
+        is_admin = (user.Kullanici_Adi and user.Kullanici_Adi.lower() == 'admin')
+        if not is_admin:
+            roles = auth_queries.get_user_roles(db, user.Kullanici_ID)
+            if 'admin' in [r.lower() for r in roles]:
+                is_admin = True
+        
+        if not is_admin:
+            target_date = data.get("Tarih")
+            if target_date:
+                from datetime import date as date_type
+                if isinstance(target_date, str):
+                    target_date = date_type.fromisoformat(target_date)
+                
+                puantaj = queries.get_puantaj_by_id(db, puantaj_id)
+                if puantaj:
+                    calisan = queries.get_calisan_by_tc_no(db, puantaj.TC_No)
+                    if calisan and calisan.Sigorta_Giris and target_date < calisan.Sigorta_Giris:
+                        db.close()
+                        return jsonify({"error": f"Sigorta giriş tarihinden ({calisan.Sigorta_Giris.strftime('%d.%m.%Y')}) öncesine veri girişi yapılamaz."}), 403
+
         updated_puantaj = queries.update_puantaj(
             db,
             puantaj_id,

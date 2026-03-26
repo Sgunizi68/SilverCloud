@@ -406,6 +406,8 @@
 
     // Per-employee cikis day from server (populated on first Çıkış entry)
     const EMP_CIKIS_DAY = {{ cikis_days_json | safe }};
+    // Per-employee giris date from server (populated from employee records)
+    const EMP_GIRIS_DATE = {{ giris_dates_json | safe }};
 
     // ── State: live puantaj data (keyed by TC → day → record) ────────────────
     const puantajData = {};
@@ -446,12 +448,28 @@
         // Rule: If we can't edit this period at all, all cells locked
         if (!CAN_EDIT) return true;
 
-        // Rule 1: No future date entry for the current period
-        if (IS_CURRENT && day > TODAY_DAY) return true;
+        // Rule: If user is not admin, check specific restrictions
+        const isAdmin = {{ is_admin | tojson }};
+        if (!isAdmin) {
+            // Rule 1: No future date entry for the current period
+            if (IS_CURRENT && day > TODAY_DAY) return true;
 
-        // Rule 2: After Çıkış, subsequent days are locked
-        const cd = cikisDayFor[tc];
-        if (cd !== null && cd !== undefined && day > cd) return true;
+            // Rule 2: After Çıkış, subsequent days are locked
+            const cd = cikisDayFor[tc];
+            if (cd !== null && cd !== undefined && day > cd) return true;
+
+            // Rule: No entry before Sigorta Giriş date
+            const girisStr = EMP_GIRIS_DATE[tc];
+            if (girisStr) {
+                const cellDate = new Date(YEAR, MONTH - 1, day);
+                const girisDate = new Date(girisStr);
+                // Reset hours for accurate date comparison
+                cellDate.setHours(0, 0, 0, 0);
+                girisDate.setHours(0, 0, 0, 0);
+                
+                if (cellDate < girisDate) return true;
+            }
+        }
 
         return false;
     }
