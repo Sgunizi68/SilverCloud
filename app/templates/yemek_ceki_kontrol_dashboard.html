@@ -380,7 +380,16 @@
                             </span>
                         </td>
                         <td>{{ row.fatura_tarihi.strftime('%d.%m.%Y') if row.fatura_tarihi else '-' }}</td>
-                        <td>{{ row.odeme_tarihi.strftime('%d.%m.%Y') if row.odeme_tarihi else '-' }}</td>
+                        <td>
+                            {% if row.odeme_tarihi %}
+                            {{ row.odeme_tarihi.strftime('%d.%m.%Y') }}
+                            <span style="font-size: 0.75rem; color: {{ 'red' if row.gun_farki > 0 else '#2ecc71' }}; font-weight: 600;">
+                                ({{ '%+d' % row.gun_farki }} gün)
+                            </span>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
                         <td class="num-cell">{{ "{:,.2f}".format(row.odeme_tutari).replace(',', 'X').replace('.',
                             ',').replace('X', '.') }}</td>
                         <td>

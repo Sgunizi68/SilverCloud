@@ -2392,7 +2392,7 @@ def get_yemek_ceki_kontrol_dashboard_data(db: Session, sube_id: int, donem: int)
     from decimal import Decimal
     from sqlalchemy import and_, or_, func, select, text
     import calendar
-    from app.models import Kategori, Gelir, EFatura, Odeme, Cari, YemekCeki
+    from app.models import Kategori, Gelir, EFatura, Odeme, Cari, YemekCeki, Deger
 
     # Date range
     year = 2000 + (donem // 100)
@@ -2401,10 +2401,28 @@ def get_yemek_ceki_kontrol_dashboard_data(db: Session, sube_id: int, donem: int)
     period_start = date(year, month, 1)
     period_end = date(year, month, last_day_num)
 
+    # 0. Get Coefficient (Deger)
+    from decimal import Decimal, ROUND_HALF_UP
+    stmt_coeff = select(Deger.Deger).where(
+        and_(
+            Deger.Deger_Adi == "Yemek Çeki Ödeme",
+            Deger.Gecerli_Baslangic_Tarih <= period_end,
+            Deger.Gecerli_Bitis_Tarih >= period_start
+        )
+    ).order_by(Deger.Gecerli_Baslangic_Tarih.desc())
+    coeff = db.execute(stmt_coeff).scalar()
+    if coeff is None:
+        coeff = Decimal('0.9345455')
+    else:
+        coeff = Decimal(str(coeff))
+
     # 1. Target Categories (UstKategori ID 3: Yemek Çeki)
     # Fetch all categories under UK 3
     stmt_kats = select(Kategori).where(Kategori.Ust_Kategori_ID == 3)
     kategoriler = db.scalars(stmt_kats).all()
+
+    # Dynamic mapping cache: platform_kat_id -> payment_kat_id
+    payment_kat_mapping = {}
 
     # Generic Summary Stats
     total_gelir = Decimal('0')
@@ -2414,6 +2432,25 @@ def get_yemek_ceki_kontrol_dashboard_data(db: Session, sube_id: int, donem: int)
     results = []
 
     for kat in kategoriler:
+        # Dynamic Payment Category Mapping
+        if kat.Kategori_ID not in payment_kat_mapping:
+            # Standardize name for matching (handle Metropal variant)
+            platform_name = kat.Kategori_Adi.strip()
+            search_name = platform_name
+            if "Metropal" in platform_name:
+                search_name = "Metropol"
+            
+            # Search for category containing platform name and "Ödeme"
+            stmt_pay_kat = select(Kategori.Kategori_ID).where(
+                and_(
+                    Kategori.Kategori_Adi.ilike(f"%{search_name}%"),
+                    Kategori.Kategori_Adi.ilike("%Ödem%")
+                )
+            )
+            payment_kat_mapping[kat.Kategori_ID] = db.execute(stmt_pay_kat).scalar()
+
+        pay_kat_id = payment_kat_mapping[kat.Kategori_ID]
+
         # 1a. Aylık Gelir for this category
         stmt_gelir = select(func.sum(Gelir.Tutar)).where(
             and_(
@@ -2447,7 +2484,7 @@ def get_yemek_ceki_kontrol_dashboard_data(db: Session, sube_id: int, donem: int)
         grup_donem_tutar_total = Decimal('0')
 
         for cek in cekler:
-            # Proportional Distribution Logic (User requested fix)
+            # Proportional Distribution Logic
             
             # 1. Önceki Dönem Gelir
             stmt_onceki = select(func.sum(Gelir.Tutar)).where(
@@ -2500,7 +2537,7 @@ def get_yemek_ceki_kontrol_dashboard_data(db: Session, sube_id: int, donem: int)
                 # Remainder goes to current period
                 donem_tutar = cek.Tutar - onceki_donem_tutar - sonraki_donem_tutar
             else:
-                # Fallback: Equal distribution among active periods
+                # Fallback
                 has_onceki = (cek.Ilk_Tarih < period_start)
                 has_sonraki = (cek.Son_Tarih > period_end)
                 num_periods = (1 if has_onceki else 0) + 1 + (1 if has_sonraki else 0)
@@ -2511,8 +2548,6 @@ def get_yemek_ceki_kontrol_dashboard_data(db: Session, sube_id: int, donem: int)
                 donem_tutar = cek.Tutar - onceki_donem_tutar - sonraki_donem_tutar
 
             # Fatura Status Check
-            # Match EFatura (Giden=True) with exact Tutar and date condition:
-            # (Fatura_Tarihi - 5 days) <= (Son_Tarih + 90 days)
             stmt_fatura = select(EFatura).where(
                 and_(
                     EFatura.Sube_ID == sube_id,
@@ -2520,32 +2555,37 @@ def get_yemek_ceki_kontrol_dashboard_data(db: Session, sube_id: int, donem: int)
                     EFatura.Tutar == cek.Tutar,
                     func.date_sub(EFatura.Fatura_Tarihi, text("INTERVAL 5 DAY")) <= func.date_add(cek.Son_Tarih, text("INTERVAL 90 DAY"))
                 )
-            )
+            ).order_by(EFatura.Fatura_Tarihi.desc())
             fat_match = db.scalars(stmt_fatura).first()
 
-            # Odeme Check
-            # Search for Odeme with "Ödemesi" category matching platform name
-            stmt_odeme_kat = select(Kategori.Kategori_ID).where(
-                and_(
-                    Kategori.Kategori_Adi.ilike(f"%{kat.Kategori_Adi}%"),
-                    Kategori.Kategori_Adi.ilike("%Ödemesi%")
-                )
-            )
-            odeme_kat_id = db.execute(stmt_odeme_kat).scalar()
+            # Search range for Payment starts from voucher Son_Tarih (end of service)
+            # regardless of invoice date, to accommodate payments before invoicing.
+            base_date = cek.Son_Tarih
+
+            # Odeme Matching Logic
+            odeme_info = None
+            expected_odeme_tutar = cek.Tutar * coeff
             
-            odeme_tutari = Decimal('0')
-            if odeme_kat_id:
-                stmt_odeme = select(Odeme.Tutar).where(
+            if pay_kat_id:
+                # Search for payments within 120 days of period end with 1 TL tolerance
+                stmt_match_odeme = select(Odeme).where(
                     and_(
                         Odeme.Sube_ID == sube_id,
-                        Odeme.Kategori_ID == odeme_kat_id,
-                        Odeme.Tarih == cek.Odeme_Tarih
+                        Odeme.Kategori_ID == pay_kat_id,
+                        Odeme.Tarih >= base_date,
+                        Odeme.Tarih <= func.date_add(base_date, text("INTERVAL 120 DAY")),
+                        func.abs(Odeme.Tutar - expected_odeme_tutar) <= 1.0
                     )
-                )
-                odeme_tutari = db.execute(stmt_odeme).scalar() or Decimal('0')
+                ).order_by(func.abs(Odeme.Tutar - expected_odeme_tutar)) # Pick closest amount
+                
+                matched_odeme = db.scalars(stmt_match_odeme).first()
+                if matched_odeme:
+                    odeme_info = {
+                        'tarih': matched_odeme.Tarih,
+                        'tutar': matched_odeme.Tutar
+                    }
 
-            # Gelir Tutar Check (User requested new column)
-            # Sum of all income for this category within the voucher's date range
+            # Gelir Tutar Check
             stmt_gelir_range = select(func.sum(Gelir.Tutar)).where(
                 and_(
                     Gelir.Sube_ID == sube_id,
@@ -2555,6 +2595,11 @@ def get_yemek_ceki_kontrol_dashboard_data(db: Session, sube_id: int, donem: int)
                 )
             )
             gelir_tutar = db.execute(stmt_gelir_range).scalar() or Decimal('0')
+
+            # Calculate Day Difference (actual - expected)
+            delta_days = 0
+            if odeme_info and cek.Odeme_Tarih:
+                delta_days = (odeme_info['tarih'] - cek.Odeme_Tarih).days
 
             cek_rows.append({
                 'id': cek.ID,
@@ -2569,8 +2614,10 @@ def get_yemek_ceki_kontrol_dashboard_data(db: Session, sube_id: int, donem: int)
                 'fark': Decimal('0'),
                 'fatura_durumu': 'KESİLDİ' if fat_match else 'BEKLEMEDE',
                 'fatura_tarihi': fat_match.Fatura_Tarihi if fat_match else None,
-                'odeme_tarihi': cek.Odeme_Tarih,
-                'odeme_tutari': odeme_tutari,
+                'exp_odeme_tarihi': cek.Odeme_Tarih, # Expected/Target payment date from record
+                'odeme_tarihi': odeme_info['tarih'] if odeme_info else None,
+                'odeme_tutari': odeme_info['tutar'] if odeme_info else Decimal('0'),
+                'gun_farki': delta_days,
                 'is_total_row': False
             })
             grup_donem_tutar_total += donem_tutar
