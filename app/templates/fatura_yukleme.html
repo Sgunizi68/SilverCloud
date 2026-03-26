@@ -359,21 +359,46 @@
                     return;
                 }
 
-                const response = await fetch('/api/v1/efaturalar/bulk', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ efaturalar })
-                });
+                const chunkSize = 50;
+                let totalAdded = 0;
+                let totalSkipped = 0;
+                let hasError = false;
+                const totalChunks = Math.ceil(efaturalar.length / chunkSize);
 
-                if (response.ok) {
-                    const resData = await response.json();
-                    document.getElementById('countAdded').innerText = resData.added;
-                    document.getElementById('countSkipped').innerText = resData.skipped;
+                for (let i = 0; i < totalChunks; i++) {
+                    const chunk = efaturalar.slice(i * chunkSize, (i + 1) * chunkSize);
+                    submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> İşleniyor... (${i + 1}/${totalChunks})`;
+                    
+                    const response = await fetch('/api/v1/efaturalar/bulk', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ efaturalar: chunk })
+                    });
+
+                    if (response.ok) {
+                        const resData = await response.json();
+                        totalAdded += resData.added || 0;
+                        totalSkipped += resData.skipped || 0;
+                    } else {
+                        let errMessage = 'Bilinmeyen Hata';
+                        try {
+                            const err = await response.json();
+                            errMessage = err.error || errMessage;
+                        } catch (parseErr) {
+                            errMessage = `Sunucu hatası veya zaman aşımı (Status: ${response.status})`;
+                        }
+                        showToast(`Hata (${i + 1}. paket): ${errMessage}`, 'error');
+                        hasError = true;
+                        break;
+                    }
+                }
+
+                if (!hasError) {
+                    document.getElementById('countAdded').innerText = totalAdded;
+                    document.getElementById('countSkipped').innerText = totalSkipped;
                     document.getElementById('resultCard').style.display = 'block';
-                    showToast('Veriler başarıyla işlendi.');
-                } else {
-                    const err = await response.json();
-                    showToast(err.error || 'Yükleme sırasında hata oluştu.', 'error');
+                    showToast(`İşlem tamamlandı. Eklenen: ${totalAdded}, Atlanan: ${totalSkipped}`);
                 }
 
             } catch (err) {
