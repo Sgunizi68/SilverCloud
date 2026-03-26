@@ -310,6 +310,7 @@
             </div>
             <div class="no-print d-flex gap-2">
                 <button class="donem-select" onclick="window.print()">🖨️ Yazdır</button>
+                <button class="donem-select" onclick="exportToExcel()">📊 Excel İndir</button>
             </div>
         </div>
         <div class="table-responsive">
@@ -418,4 +419,17 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function exportToExcel() {
+        const table = document.querySelector('.ceki-table');
+        const wb = XLSX.utils.table_to_book(table, {
+            sheet: "Yemek Ceki Raporu",
+            raw: true
+        });
+        XLSX.writeFile(wb, `Yemek_Ceki_Dashboard_{{ secili_donem }}.xlsx`);
+    }
+</script>
 {% endblock %}
