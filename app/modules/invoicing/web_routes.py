@@ -157,6 +157,41 @@ def b2b_ekstre_yukleme():
         subeler=auth_suber
     )
 
+
+@web_invoicing_bp.route("/robotpos-gelir-yukleme", methods=["GET"])
+@login_required
+@permission_required("Robotpos Gelir Yükleme Ekranı Görüntüleme")
+def robotpos_gelir_yukleme():
+    """
+    Robotpos Gelir Yükleme page.
+    Permission ID: 65
+    """
+    db_session = get_db_session()
+    user = auth_queries.get_kullanici_by_id(db_session, session['user_id'])
+    
+    if not user:
+        db_session.close()
+        return redirect(url_for('web_auth.login'))
+        
+    all_suber = ref_queries.get_suber(db_session, limit=1000)
+    
+    is_admin = (user.Kullanici_Adi and user.Kullanici_Adi.lower() == 'admin')
+    if not is_admin:
+        roles = auth_queries.get_user_roles(db_session, user.Kullanici_ID)
+        is_admin = 'admin' in [r.lower() for r in roles]
+
+    auth_suber = all_suber if is_admin else [
+        s for s in all_suber if s.Sube_ID in auth_queries.get_user_branches(db_session, user.Kullanici_ID)
+    ]
+    
+    db_session.close()
+    
+    return render_template(
+        "robotpos_gelir_yukleme.html",
+        user=user,
+        subeler=auth_suber
+    )
+
 @web_invoicing_bp.route("/odeme-yukleme", methods=["GET"])
 @login_required
 @permission_required("Ödeme Yükleme Ekranı Görüntüleme")

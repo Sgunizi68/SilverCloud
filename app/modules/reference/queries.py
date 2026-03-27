@@ -9,7 +9,8 @@ from datetime import date
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from app.models import (
-    Kategori, UstKategori, Deger, Sube, Kullanici, KullaniciRol, Rol, Yetki, EFaturaReferans, OdemeReferans, Cari
+    Kategori, UstKategori, Deger, Sube, Kullanici, KullaniciRol, Rol, Yetki, EFaturaReferans, OdemeReferans, Cari,
+    RobotposGelir, RobotposGelirReferans
 )
 
 
@@ -896,3 +897,74 @@ def delete_cari(db: Session, db_cari: Cari) -> bool:
     db.delete(db_cari)
     db.commit()
     return True
+
+
+# ============================================================================
+# ROBOTPOS GELIR QUERIES
+# ============================================================================
+
+def get_robotpos_gelir_by_unique_fields(
+    db: Session, 
+    tarih: date, 
+    tutar: float, 
+    odeme_tipi: str, 
+    sube_id: int,
+    cek_no: Optional[str] = None
+) -> Optional[RobotposGelir]:
+    """Find a RobotposGelir record by unique combination to prevent duplicates."""
+    query_conditions = [
+        RobotposGelir.Tarih == tarih,
+        RobotposGelir.Tutar == tutar,
+        RobotposGelir.Odeme_Tipi == odeme_tipi,
+        RobotposGelir.Sube_ID == sube_id
+    ]
+    if cek_no:
+        query_conditions.append(RobotposGelir.Cek_No == cek_no)
+        
+    stmt = select(RobotposGelir).where(*query_conditions)
+    return db.scalars(stmt).first()
+
+
+def get_gelir_referanslar_for_mapping(db: Session) -> List[RobotposGelirReferans]:
+    """Get all Gelir references for mapping during upload."""
+    stmt = select(RobotposGelirReferans).where(RobotposGelirReferans.Aktif_Pasif == True)
+    return db.scalars(stmt).all()
+
+
+def bulk_upsert_robotpos_gelir(db: Session, records: List[dict]) -> tuple:
+    """
+    Insert RobotPOS income records with duplicate control.
+    Returns (added_count, skipped_count)
+    """
+    added = 0
+    skipped = 0
+    
+    for rec in records:
+        # Check for existing
+        existing = get_robotpos_gelir_by_unique_fields(
+            db, 
+            rec['Tarih'], 
+            rec['Tutar'], 
+            rec['Odeme_Tipi'], 
+            rec['Sube_ID'],
+            rec.get('Cek_No')
+        )
+        
+        if existing:
+            skipped += 1
+            continue
+            
+        new_rec = RobotposGelir(
+            Tarih=rec['Tarih'],
+            Tutar=rec['Tutar'],
+            Odeme_Tipi=rec['Odeme_Tipi'],
+            Kategori_ID=rec['Kategori_ID'],
+            Sube_ID=rec['Sube_ID'],
+            Cek_No=rec.get('Cek_No'),
+            Satis_Kanali=rec.get('Satis_Kanali')
+        )
+        db.add(new_rec)
+        added += 1
+        
+    db.commit()
+    return added, skipped

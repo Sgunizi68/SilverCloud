@@ -9,6 +9,7 @@ from datetime import date, datetime
 from flask import Blueprint, request, jsonify
 from app.common.database import get_db_session
 from app.modules.invoicing import queries
+from app.modules.reference import queries as ref_queries
 
 invoicing_bp = Blueprint("invoicing", __name__, url_prefix="/api/v1")
 
@@ -1505,6 +1506,89 @@ def delete_mutabakat_route(mut_id):
             return jsonify({"error": "Mutabakat not found"}), 404
             
         return jsonify({"message": "Mutabakat deleted"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
+
+@invoicing_bp.route("/robotpos-gelir/bulk", methods=["POST"])
+@auth_required
+def bulk_robotpos_gelir_route():
+    """
+    Bulk insert RobotPOS income records with mapping and duplicate control.
+    Supports chunked uploads.
+    """
+    db = get_db_session()
+    try:
+        # Permission check
+        from app.modules.auth import queries as auth_queries
+        user_id = getattr(request.user, 'Kullanici_ID', None)
+        if not user_id or not auth_queries.has_permission(db, user_id, "Robotpos Gelir Yükleme Ekranı Görüntüleme"):
+            return jsonify({"error": "Permission denied"}), 403
+
+        data = request.get_json()
+        if not data or 'records' not in data:
+            return jsonify({"error": "No records provided"}), 400
+
+        records = data['records']
+        
+        # 1. Fetch all references for mapping (caching in memory for this request)
+        references = ref_queries.get_gelir_referanslar_for_mapping(db)
+        # Create a mapping dictionary: lower(trim(odeme_tipi)) -> kategori_id
+        ref_map = {ref.Odeme_Tipi.strip().lower(): ref.Kategori_ID for ref in references}
+        
+        processed_records = []
+        errors = []
+        
+        for idx, rec in enumerate(records):
+            try:
+                # Basic validation
+                if not rec.get('Tarih') or not rec.get('Tutar') or not rec.get('Odeme_Tipi') or not rec.get('Sube_ID'):
+                    errors.append(f"Satır {idx+1}: Eksik veri.")
+                    continue
+                
+                odeme_tipi_raw = str(rec['Odeme_Tipi']).strip()
+                odeme_tipi_lower = odeme_tipi_raw.lower()
+                
+                # 2. Case-insensitive Mapping
+                kategori_id = ref_map.get(odeme_tipi_lower)
+                if not kategori_id:
+                    errors.append(f"Satır {idx+1}: '{odeme_tipi_raw}' için eşleşen kategori bulunamadı.")
+                    continue
+                
+                # Parse date
+                tarih_str = rec['Tarih']
+                if 'T' in tarih_str: # ISO format check
+                    tarih = datetime.fromisoformat(tarih_str.replace('Z', '+00:00')).date()
+                else:
+                    tarih = datetime.strptime(tarih_str, '%Y-%m-%d').date()
+                    
+                tutar = float(rec['Tutar'])
+                
+                processed_records.append({
+                    'Tarih': tarih,
+                    'Tutar': tutar,
+                    'Odeme_Tipi': odeme_tipi_raw,
+                    'Kategori_ID': kategori_id,
+                    'Sube_ID': int(rec['Sube_ID']),
+                    'Cek_No': rec.get('Cek_No'),
+                    'Satis_Kanali': rec.get('Satis_Kanali')
+                })
+            except Exception as e:
+                errors.append(f"Satır {idx+1}: Hata - {str(e)}")
+        
+        # 3. Bulk Insert with Duplicate Control
+        added, skipped = ref_queries.bulk_upsert_robotpos_gelir(db, processed_records)
+        
+        return jsonify({
+            "status": "success",
+            "added": added,
+            "skipped": skipped,
+            "error_count": len(errors),
+            "errors": errors[:50] # Limit error feedback
+        }), 200
+        
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:

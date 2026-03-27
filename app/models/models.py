@@ -746,11 +746,34 @@ class Mutabakat(db.Model):
         return f"<Mutabakat {self.Mutabakat_ID}>"
 
 
+class RobotposGelir(db.Model):
+    """Uploaded and mapped RobotPOS income data"""
+    __tablename__ = "robotpos_gelir"
+    __table_args__ = {"extend_existing": True}
+
+    RobotposGelir_ID = Column(Integer, primary_key=True, index=True)
+    Tarih = Column(Date, nullable=False, index=True)
+    Tutar = Column(DECIMAL(15, 2), nullable=False)
+    Cek_No = Column(String(50), nullable=True)
+    Satis_Kanali = Column(String(100), nullable=True)
+    Odeme_Tipi = Column(String(100), nullable=False, index=True)
+    Kategori_ID = Column(Integer, ForeignKey("Kategori.Kategori_ID"), nullable=False, index=True)
+    Sube_ID = Column(Integer, ForeignKey("Sube.Sube_ID"), nullable=False, index=True)
+    Kayit_Tarihi = Column(DateTime, default=func.now())
+
+    # Relationships
+    kategori = relationship("Kategori")
+    sube = relationship("Sube")
+
+    def __repr__(self):
+        return f"<RobotposGelir {self.Odeme_Tipi} - {self.Tutar}>"
+
+
 # Export all models for easy importing
 __all__ = [
     "Sube", "Kullanici", "Rol", "Yetki", "KullaniciRol", "RolYetki",
     "Deger", "UstKategori", "Kategori",
-    "EFatura", "B2BEkstre", "DigerHarcama", "Odeme", "OdemeReferans", "RobotposGelirReferans",
+    "EFatura", "B2BEkstre", "DigerHarcama", "Odeme", "OdemeReferans", "RobotposGelirReferans", "RobotposGelir",
     "Nakit", "EFaturaReferans", "POSHareketleri",
     "Gelir", "GelirEkstra",
     "Stok", "StokFiyat", "StokSayim",

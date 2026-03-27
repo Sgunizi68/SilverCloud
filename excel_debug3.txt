@@ -1,0 +1,2 @@
+Rows found after fix: 11431
+Sample: {"Tarih":"01/01/2026","Şube":"BRANDIUM AVYM","Çek No":"342614","Satış Kanalı":"Masa Satış","Ödeme Tipi":"MOBİL","Ödenen Toplam Tutar":310}
