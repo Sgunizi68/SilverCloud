@@ -187,7 +187,10 @@ def get_kategoriler(
         stmt = stmt.where(Kategori.Ust_Kategori_ID == ust_kategori_id)
     
     if tip is not None:
-        stmt = stmt.where(Kategori.Tip == tip)
+        if isinstance(tip, list):
+            stmt = stmt.where(Kategori.Tip.in_(tip))
+        else:
+            stmt = stmt.where(Kategori.Tip == tip)
     
     stmt = stmt.offset(skip).limit(limit)
     return db.scalars(stmt).all()

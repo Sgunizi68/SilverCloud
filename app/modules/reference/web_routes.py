@@ -540,7 +540,7 @@ def gelir_referans_yonetimi():
     
     # Categories needed for adding/editing references
     can_view_gizli = is_admin or auth_queries.has_permission(db_session, user.Kullanici_ID, "Gizli Kategori Veri Erişimi")
-    kategoriler = queries.get_kategoriler(db_session, limit=1000, can_view_gizli=can_view_gizli)
+    kategoriler = queries.get_kategoriler(db_session, limit=1000, can_view_gizli=can_view_gizli, tip=["Gelir", "Bilgi"])
     kategoriler_list = [{"Kategori_ID": k.Kategori_ID, "Kategori_Adi": k.Kategori_Adi} for k in kategoriler]
     
     referanslar = queries.get_gelir_referanslar(db_session, limit=5000)
