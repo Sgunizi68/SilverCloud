@@ -1511,6 +1511,128 @@ def delete_odeme_referans(referans_id):
         return "", 204
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# ============================================================================
+# GELİR REFERANS (RobotposGelirReferans) ENDPOINTS
+# ============================================================================
+
+@reference_bp.route("/gelir-referans-yonetimi", methods=["GET"])
+@auth_required
+def list_gelir_referanslar():
+    try:
+        skip = request.args.get("skip", 0, type=int)
+        limit = min(request.args.get("limit", 1000, type=int), 5000)
+        search = request.args.get("search", None, type=str)
+        
+        db = get_db_session()
+        referanslar = queries.get_gelir_referanslar(db, skip, limit, search)
+        db.close()
+        
+        result = [
+            {
+                "Referans_ID": r.Robotpos_Gelir_Referans_ID,
+                "Odeme_Tipi": r.Odeme_Tipi,
+                "Kategori_ID": r.Kategori_ID,
+                "Kategori_Adi": r.kategori.Kategori_Adi if r.kategori else "Belirsiz",
+                "Aktif_Pasif": r.Aktif_Pasif,
+            }
+            for r in referanslar
+        ]
+        
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@reference_bp.route("/gelir-referans-yonetimi", methods=["POST"])
+@auth_required
+def create_gelir_referans():
+    try:
+        data = request.get_json()
+        if not data or "Odeme_Tipi" not in data or "Kategori_ID" not in data:
+            return jsonify({"error": "Odeme_Tipi and Kategori_ID required"}), 400
+            
+        db = get_db_session()
+        
+        # Check if already exists
+        existing = queries.get_gelir_referans_by_tip(db, data["Odeme_Tipi"])
+        if existing:
+            db.close()
+            return jsonify({"error": "Bu ödeme tipi zaten tanımlanmış."}), 400
+            
+        new_ref = queries.create_gelir_referans(
+            db,
+            odeme_tipi=data["Odeme_Tipi"],
+            kategori_id=data["Kategori_ID"],
+            aktif_pasif=data.get("Aktif_Pasif", True)
+        )
+        
+        result = {
+            "Referans_ID": new_ref.Robotpos_Gelir_Referans_ID,
+            "Odeme_Tipi": new_ref.Odeme_Tipi,
+            "Kategori_ID": new_ref.Kategori_ID
+        }
+        db.close()
+        return jsonify(result), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@reference_bp.route("/gelir-referans-yonetimi/<int:referans_id>", methods=["PUT"])
+@auth_required
+def update_gelir_referans(referans_id):
+    try:
+        data = request.get_json()
+        db = get_db_session()
+        
+        db_ref = queries.get_gelir_referans_by_id(db, referans_id)
+        if not db_ref:
+            db.close()
+            return jsonify({"error": "Referans bulunamadı"}), 404
+            
+        # Check uniqueness if Odeme_Tipi is changed
+        if "Odeme_Tipi" in data and data["Odeme_Tipi"] != db_ref.Odeme_Tipi:
+            existing = queries.get_gelir_referans_by_tip(db, data["Odeme_Tipi"])
+            if existing:
+                db.close()
+                return jsonify({"error": "Bu ödeme tipi zaten tanımlanmış."}), 400
+        
+        updated_ref = queries.update_gelir_referans(
+            db,
+            db_ref,
+            odeme_tipi=data.get("Odeme_Tipi"),
+            kategori_id=data.get("Kategori_ID"),
+            aktif_pasif=data.get("Aktif_Pasif")
+        )
+        
+        result = {
+            "Referans_ID": updated_ref.Robotpos_Gelir_Referans_ID,
+            "Odeme_Tipi": updated_ref.Odeme_Tipi,
+            "Kategori_ID": updated_ref.Kategori_ID,
+            "Aktif_Pasif": updated_ref.Aktif_Pasif
+        }
+        db.close()
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@reference_bp.route("/gelir-referans-yonetimi/<int:referans_id>", methods=["DELETE"])
+@auth_required
+def delete_gelir_referans(referans_id):
+    try:
+        db = get_db_session()
+        db_ref = queries.get_gelir_referans_by_id(db, referans_id)
+        if not db_ref:
+            db.close()
+            return jsonify({"error": "Referans bulunamadı"}), 404
+            
+        queries.delete_gelir_referans(db, db_ref)
+        db.close()
+        return "", 204
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 # ============================================================================
 # CARI (CLIENTS) ENDPOINTS
 # ============================================================================

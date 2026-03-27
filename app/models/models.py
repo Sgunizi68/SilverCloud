@@ -348,6 +348,24 @@ class OdemeReferans(db.Model):
         return f"<OdemeReferans {self.Referans_Metin}>"
 
 
+class RobotposGelirReferans(db.Model):
+    """Gelir reference mapping (RobotPOS)"""
+    __tablename__ = "robotpos_gelir_referans"
+    __table_args__ = {"extend_existing": True}
+
+    Robotpos_Gelir_Referans_ID = Column(Integer, primary_key=True, index=True)
+    Odeme_Tipi = Column(String(50), nullable=False, unique=True, index=True)
+    Kategori_ID = Column(Integer, ForeignKey("Kategori.Kategori_ID"), nullable=False, index=True)
+    Aktif_Pasif = Column(Boolean, default=True, index=True)
+    Kayit_Tarihi = Column(DateTime, default=func.now())
+
+    # Relationships
+    kategori = relationship("Kategori")
+
+    def __repr__(self):
+        return f"<RobotposGelirReferans {self.Odeme_Tipi}>"
+
+
 class Nakit(db.Model):
     """Cash/Cash register"""
     __tablename__ = "Nakit"
@@ -732,7 +750,7 @@ class Mutabakat(db.Model):
 __all__ = [
     "Sube", "Kullanici", "Rol", "Yetki", "KullaniciRol", "RolYetki",
     "Deger", "UstKategori", "Kategori",
-    "EFatura", "B2BEkstre", "DigerHarcama", "Odeme", "OdemeReferans",
+    "EFatura", "B2BEkstre", "DigerHarcama", "Odeme", "OdemeReferans", "RobotposGelirReferans",
     "Nakit", "EFaturaReferans", "POSHareketleri",
     "Gelir", "GelirEkstra",
     "Stok", "StokFiyat", "StokSayim",

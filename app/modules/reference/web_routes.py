@@ -511,6 +511,58 @@ def odeme_referans_yonetimi():
         kategoriler=kategoriler_list,
         referanslar=referanslar_list
     )
+
+
+@web_reference_bp.route("/gelir-referans-yonetimi", methods=["GET"])
+@login_required
+@permission_required("Gelir Referans Yönetimi Görüntüleme")
+def gelir_referans_yonetimi():
+    """
+    Gelir Referans Yönetimi page.
+    Permission ID: 64
+    """
+    db_session = get_db_session()
+    user = auth_queries.get_kullanici_by_id(db_session, session['user_id'])
+    
+    if not user:
+        db_session.close()
+        return redirect(url_for('web_auth.login'))
+        
+    all_suber = queries.get_suber(db_session, limit=1000)
+    is_admin = (user.Kullanici_Adi and user.Kullanici_Adi.lower() == 'admin')
+    if not is_admin:
+        roles = auth_queries.get_user_roles(db_session, user.Kullanici_ID)
+        is_admin = 'admin' in [r.lower() for r in roles]
+
+    auth_suber = all_suber if is_admin else [
+        s for s in all_suber if s.Sube_ID in auth_queries.get_user_branches(db_session, user.Kullanici_ID)
+    ]
+    
+    # Categories needed for adding/editing references
+    can_view_gizli = is_admin or auth_queries.has_permission(db_session, user.Kullanici_ID, "Gizli Kategori Veri Erişimi")
+    kategoriler = queries.get_kategoriler(db_session, limit=1000, can_view_gizli=can_view_gizli)
+    kategoriler_list = [{"Kategori_ID": k.Kategori_ID, "Kategori_Adi": k.Kategori_Adi} for k in kategoriler]
+    
+    referanslar = queries.get_gelir_referanslar(db_session, limit=5000)
+    referanslar_list = [
+        {
+            "Referans_ID": r.Robotpos_Gelir_Referans_ID,
+            "Odeme_Tipi": r.Odeme_Tipi,
+            "Kategori_ID": r.Kategori_ID,
+            "Kategori_Adi": r.kategori.Kategori_Adi if r.kategori else "Belirsiz",
+            "Aktif_Pasif": r.Aktif_Pasif
+        } for r in referanslar
+    ]
+    
+    db_session.close()
+    
+    return render_template(
+        "gelir_referans_yonetimi.html",
+        user=user,
+        subeler=auth_suber,
+        kategoriler=kategoriler_list,
+        referanslar=referanslar_list
+    )
 @web_reference_bp.route("/cari-borc-yonetimi", methods=["GET"])
 @login_required
 @permission_required("Cari Borç Yönetimi Ekranı Görüntüleme")

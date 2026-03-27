@@ -689,6 +689,54 @@ def delete_odeme_referans(db: Session, db_ref: OdemeReferans) -> bool:
     db.commit()
     return True
 
+# ============================================================================
+# GELİR REFERANS QUERIES (RobotposGelirReferans)
+# ============================================================================
+
+from app.models import RobotposGelirReferans
+
+def get_gelir_referanslar(db: Session, skip: int = 0, limit: int = 100, search: Optional[str] = None) -> List[RobotposGelirReferans]:
+    query = select(RobotposGelirReferans).options(joinedload(RobotposGelirReferans.kategori))
+    if search:
+        query = query.filter(RobotposGelirReferans.Odeme_Tipi.ilike(f"%{search}%"))
+    query = query.offset(skip).limit(limit)
+    return db.scalars(query).all()
+
+def get_gelir_referans_by_id(db: Session, referans_id: int) -> Optional[RobotposGelirReferans]:
+    return db.get(RobotposGelirReferans, referans_id)
+
+def get_gelir_referans_by_tip(db: Session, odeme_tipi: str) -> Optional[RobotposGelirReferans]:
+    stmt = select(RobotposGelirReferans).where(RobotposGelirReferans.Odeme_Tipi == odeme_tipi)
+    return db.scalars(stmt).first()
+
+def create_gelir_referans(db: Session, odeme_tipi: str, kategori_id: int, aktif_pasif: bool = True) -> RobotposGelirReferans:
+    db_ref = RobotposGelirReferans(
+        Odeme_Tipi=odeme_tipi,
+        Kategori_ID=kategori_id,
+        Aktif_Pasif=aktif_pasif
+    )
+    db.add(db_ref)
+    db.commit()
+    db.refresh(db_ref)
+    return db_ref
+
+def update_gelir_referans(db: Session, db_ref: RobotposGelirReferans, odeme_tipi: Optional[str] = None, kategori_id: Optional[int] = None, aktif_pasif: Optional[bool] = None) -> RobotposGelirReferans:
+    if odeme_tipi is not None:
+        db_ref.Odeme_Tipi = odeme_tipi
+    if kategori_id is not None:
+        db_ref.Kategori_ID = kategori_id
+    if aktif_pasif is not None:
+        db_ref.Aktif_Pasif = aktif_pasif
+        
+    db.commit()
+    db.refresh(db_ref)
+    return db_ref
+
+def delete_gelir_referans(db: Session, db_ref: RobotposGelirReferans) -> bool:
+    db.delete(db_ref)
+    db.commit()
+    return True
+
 def get_kullanici_rol(db: Session, kullanici_id: int, rol_id: int, sube_id: int) -> Optional[KullaniciRol]:
     return db.get(KullaniciRol, (kullanici_id, rol_id, sube_id))
 

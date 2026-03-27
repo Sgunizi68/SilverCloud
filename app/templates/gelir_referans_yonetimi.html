@@ -1,0 +1,475 @@
+{% extends "base.html" %}
+
+{% block title %}Gelir Referans Yönetimi - SilverCloud{% endblock %}
+
+/* Nav active block */
+{% block acc_sistem_tablolari %}active{% endblock %}
+{% block acc_sistem_tablolari_content %}open{% endblock %}
+
+{% block extra_style %}
+<style>
+    .ref-page-container {
+        padding: 20px;
+    }
+
+    .card-glass {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        margin-bottom: 20px;
+    }
+
+    .header-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 20px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .header-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+    }
+
+    .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .action-btn {
+        padding: 8px 14px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        background: white;
+        font-size: 13px;
+        font-weight: 500;
+        color: #475569;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+        color: #334155;
+    }
+
+    .action-btn.primary {
+        background: #3b82f6;
+        color: white;
+        border-color: #3b82f6;
+        font-weight: 600;
+    }
+
+    .action-btn.primary:hover {
+        background: #2563eb;
+    }
+
+    .search-input {
+        padding: 8px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        width: 250px;
+        font-size: 13px;
+        outline: none;
+        background: white;
+    }
+
+    .search-input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+    }
+
+    .ref-table-wrapper {
+        padding: 0;
+        overflow-x: auto;
+    }
+
+    .ref-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .ref-table th {
+        background: #fdfdfd;
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 12px 20px;
+        text-align: left;
+        border-bottom: 1px solid #e2e8f0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .ref-table td {
+        padding: 10px 20px;
+        color: #475569;
+        font-size: 13px;
+        border-bottom: 1px solid #e2e8f0;
+        vertical-align: middle;
+    }
+
+    .ref-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .ref-table tr:hover {
+        background-color: #f8fafc;
+    }
+
+    .metin-name {
+        color: #334155;
+        font-weight: 500;
+    }
+
+    .kategori-name {
+        color: #64748b;
+    }
+
+    .action-icons {
+        display: flex;
+        gap: 6px;
+        justify-content: center;
+    }
+
+    .icon-btn {
+        width: 28px;
+        height: 28px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: #64748b;
+    }
+
+    .icon-btn.edit:hover {
+        background: #eff6ff;
+        border-color: #bfdbfe;
+        color: #3b82f6;
+    }
+
+    .icon-btn.delete {
+        color: #ef4444;
+        border-color: #fca5a5;
+    }
+
+    .icon-btn.delete:hover {
+        background: #fef2f2;
+        border-color: #f87171;
+    }
+
+    .status-icon {
+        font-size: 18px;
+    }
+    
+    .status-icon.active {
+        color: #10b981;
+    }
+
+    .status-icon.inactive {
+        color: #ef4444;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ref-page-container">
+
+    <!-- Header -->
+    <div class="card-glass header-bar">
+        <h1 class="header-title">Gelir Referans Yönetimi</h1>
+
+        <div class="header-actions">
+            <!-- Print -->
+            <button class="action-btn" onclick="printReferanslar()" title="Yazdır">
+                <i class="fas fa-print"></i>
+            </button>
+            <!-- Export -->
+            <button class="action-btn" onclick="exportReferanslarToExcel()" title="Excel'e Aktar">
+                <i class="fas fa-download"></i>
+            </button>
+            <!-- Search -->
+            <input type="text" class="search-input" placeholder="Ödeme tipini ara..." id="ref-search">
+            <!-- New -->
+            <button class="action-btn primary" onclick="openAddModal()">
+                <i class="fas fa-plus"></i> Yeni Referans
+            </button>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="card-glass ref-table-wrapper">
+        <table class="ref-table" id="referanslar-table">
+            <thead>
+                <tr>
+                    <th style="width: 45%;">ÖDEME TİPİ (ROBOTPOS)</th>
+                    <th style="width: 30%;">KATEGORİ</th>
+                    <th style="width: 80px; text-align: center;">DURUM</th>
+                    <th style="width: 100px; text-align: center;" class="hide-on-print">İŞLEMLER</th>
+                </tr>
+            </thead>
+            <tbody id="referanslar-tbody">
+                {% for r in referanslar %}
+                <tr data-id="{{ r.Referans_ID }}">
+                    <td class="metin-name">{{ r.Odeme_Tipi }}</td>
+                    <td class="kategori-name">{{ r.Kategori_Adi }}</td>
+                    <td style="text-align: center;">
+                        <span style="cursor: pointer;" title="{{ 'Pasif Yap' if r.Aktif_Pasif else 'Aktif Yap' }}"
+                            onclick="toggleStatus({{ r.Referans_ID }}, {{ 'false' if r.Aktif_Pasif else 'true' }})">
+                            {% if r.Aktif_Pasif %}
+                            <i class="fas fa-check-circle status-icon active"></i>
+                            {% else %}
+                            <i class="fas fa-times-circle status-icon inactive"></i>
+                            {% endif %}
+                        </span>
+                    </td>
+                    <td class="hide-on-print">
+                        <div class="action-icons">
+                            <button class="icon-btn edit" title="Düzenle"
+                                onclick="openEditModal({{ r.Referans_ID }}, '{{ r.Odeme_Tipi | escape }}', {{ r.Kategori_ID }}, {{ 'true' if r.Aktif_Pasif else 'false' }})">
+                                <i class="fas fa-pen"></i>
+                            </button>
+                            <button class="icon-btn delete" title="Sil"
+                                onclick="deleteReferans({{ r.Referans_ID }}, '{{ r.Odeme_Tipi | escape }}')">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 40px; color: #94a3b8;">
+                        Henüz gelir referansı tanımlanmamış.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<!-- Data for Dropdown -->
+<script>
+    const KATEGORILER = {{ kategoriler | tojson | safe }};
+</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+    // --- Search Logic ---
+    document.addEventListener('DOMContentLoaded', () => {
+        const searchInput = document.getElementById('ref-search');
+        if (searchInput) {
+            searchInput.addEventListener('input', function () {
+                const term = this.value.toLowerCase();
+                document.querySelectorAll('#referanslar-tbody tr').forEach(row => {
+                    if (row.cells.length === 1) return; // Empty state row
+                    const metin = row.cells[0].textContent.toLowerCase();
+                    const kategori = row.cells[1].textContent.toLowerCase();
+                    if (metin.includes(term) || kategori.includes(term)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        }
+    });
+
+    // --- Modal Forms ---
+    function referansFormHtml(isEdit = false, currentId = null, currentMetin = '', currentKatId = '', currentAktif = true) {
+        let katOpts = '<option value="">Seçiniz...</option>';
+        KATEGORILER.forEach(k => {
+            const sel = (k.Kategori_ID == currentKatId) ? 'selected' : '';
+            katOpts += `<option value="${k.Kategori_ID}" ${sel}>${k.Kategori_Adi}</option>`;
+        });
+
+        const idField = isEdit ? `<input type="hidden" id="Referans_ID" value="${currentId}">` : '';
+
+        return `
+            <form id="refForm" data-mode="${isEdit ? 'edit' : 'add'}">
+                ${idField}
+                <style>
+                    .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 15px; }
+                    .form-group label { font-size: 13px; font-weight: 600; color: #475569; }
+                    .form-control { padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; outline: none; }
+                    .form-control:focus { border-color: #3b82f6; }
+                    .checkbox-group { flex-direction: row; align-items: center; gap: 10px; cursor: pointer;}
+                    .checkbox-group input { width: 16px; height: 16px; cursor: pointer; }
+                    .checkbox-group label { margin: 0; cursor: pointer; }
+                </style>
+                <div class="form-group">
+                    <label for="Odeme_Tipi">Ödeme Tipi (RobotPOS) *</label>
+                    <input type="text" id="Odeme_Tipi" class="form-control" placeholder="Örn: Nakit, Multinet, Visa" value="${currentMetin}" required>
+                </div>
+                <div class="form-group">
+                    <label for="Kategori_ID">Kategori *</label>
+                    <select id="Kategori_ID" class="form-control" required>
+                        ${katOpts}
+                    </select>
+                </div>
+                <div class="form-group checkbox-group" style="margin-top: 20px;">
+                    <input type="checkbox" id="Aktif_Pasif" ${currentAktif ? 'checked' : ''}>
+                    <label for="Aktif_Pasif">Aktif</label>
+                </div>
+                <div class="modal-footer" style="margin-top: 25px;">
+                    <button type="button" class="btn btn-secondary" onclick="hideModal()">İptal</button>
+                    <button type="submit" class="btn btn-primary" style="background:#3b82f6; color:white; border:none;">Kaydet</button>
+                </div>
+            </form>
+        `;
+    }
+
+    function openAddModal() {
+        showModal('Yeni Gelir Referansı', referansFormHtml(false));
+        document.getElementById('refForm').addEventListener('submit', handleFormSubmit);
+    }
+
+    function openEditModal(refId, metin, katId, isAktif) {
+        showModal('Referans Düzenle', referansFormHtml(true, refId, metin, katId, isAktif));
+        document.getElementById('refForm').addEventListener('submit', handleFormSubmit);
+    }
+
+    async function handleFormSubmit(e) {
+        e.preventDefault();
+        const form = e.target;
+        const mode = form.getAttribute('data-mode');
+
+        const metin = document.getElementById('Odeme_Tipi').value.trim();
+        const katId = parseInt(document.getElementById('Kategori_ID').value);
+        const aktifPasif = document.getElementById('Aktif_Pasif').checked;
+
+        if (mode === 'add') {
+            try {
+                const data = {
+                    Odeme_Tipi: metin,
+                    Kategori_ID: katId,
+                    Aktif_Pasif: aktifPasif
+                };
+                const res = await fetch('/api/v1/gelir-referans-yonetimi', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    showToast('Referans başarıyla eklendi.');
+                    hideModal();
+                    setTimeout(() => location.reload(), 900);
+                } else {
+                    const err = await res.json();
+                    showToast(err.error || 'Eklenirken hata oluştu.', 'error');
+                }
+            } catch { showToast('Bağlantı hatası.', 'error'); }
+        } else {
+            // Edit
+            const refId = document.getElementById('Referans_ID').value;
+            try {
+                const data = {
+                    Odeme_Tipi: metin,
+                    Kategori_ID: katId,
+                    Aktif_Pasif: aktifPasif
+                };
+                const res = await fetch(`/api/v1/gelir-referans-yonetimi/${refId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    showToast('Referans güncellendi.');
+                    hideModal();
+                    setTimeout(() => location.reload(), 900);
+                } else {
+                    const err = await res.json();
+                    showToast(err.error || 'Güncellenirken hata oluştu.', 'error');
+                }
+            } catch { showToast('Bağlantı hatası.', 'error'); }
+        }
+    }
+
+    async function toggleStatus(refId, newStatus) {
+        try {
+            const res = await fetch(`/api/v1/gelir-referans-yonetimi/${refId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ Aktif_Pasif: newStatus })
+            });
+            if (res.ok) {
+                location.reload();
+            } else {
+                const err = await res.json();
+                showToast(err.error || 'Güncellenirken hata oluştu.', 'error');
+            }
+        } catch { showToast('Bağlantı hatası.', 'error'); }
+    }
+
+    async function deleteReferans(refId, metin) {
+        if (!confirm(`'${metin}' kaydını tamamen silmek istediğinize emin misiniz?`)) return;
+        try {
+            const res = await fetch(`/api/v1/gelir-referans-yonetimi/${refId}`, { method: 'DELETE' });
+            if (res.ok || res.status === 204) {
+                showToast('Referans silindi.');
+                setTimeout(() => location.reload(), 900);
+            } else {
+                const err = await res.json();
+                showToast(err.error || 'Silinirken hata oluştu.', 'error');
+            }
+        } catch { showToast('Bağlantı hatası.', 'error'); }
+    }
+
+    // --- Export & Print ---
+    function exportReferanslarToExcel() {
+        const table = document.getElementById('referanslar-table');
+        const wb = XLSX.utils.table_to_book(table, { sheet: "Gelir Referansları" });
+        XLSX.writeFile(wb, "Gelir_Referanslari.xlsx");
+    }
+
+    function printReferanslar() {
+        const table = document.getElementById('referanslar-table');
+        if (!table) return;
+        const clone = table.cloneNode(true);
+        // Remove 'İŞLEMLER'
+        clone.querySelectorAll('th:last-child, td:last-child').forEach(el => el.remove());
+
+        const now = new Date().toLocaleString('tr-TR');
+        const html = `<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">
+            <title>Gelir Referans Listesi</title>
+            <style>
+            body{font-family:Arial,sans-serif;padding:20mm;color:#111}
+            h1{font-size:20px;margin:0 0 4px}
+            p{font-size:12px;color:#666;border-bottom:1px solid #ccc;padding-bottom:10px;margin-bottom:16px}
+            table{width:100%;border-collapse:collapse}
+            th{background:#f3f4f6;font-size:11px;text-transform:uppercase;padding:10px 12px;text-align:left;border:1px solid #ddd}
+            td{padding:10px 12px;font-size:13px;border:1px solid #eee}
+            tr:nth-child(even){background:#fafafa}
+            </style>
+            </head><body>
+            <h1>SilverCloud - Gelir Referans Listesi</h1>
+            <p>Rapor Tarihi: ${now}</p>
+            ${clone.outerHTML}
+            </body></html>`;
+        const win = window.open('', '_blank', 'width=900,height=700');
+        win.document.write(html);
+        win.document.close();
+        win.focus();
+        win.print();
+        win.onafterprint = () => win.close();
+    }
+</script>
+{% endblock %}
