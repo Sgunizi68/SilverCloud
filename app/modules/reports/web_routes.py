@@ -245,3 +245,64 @@ def cari_borc_takip_sistemi():
         secili_sube_id=sube_id,
         start_date=start_date
     )
+
+
+@reports_bp.route("/gelir-girisi-kontrol", methods=["GET"])
+@login_required
+@permission_required("Gelir Girişi Kontrol Raporu Görüntüleme")
+def gelir_girisi_kontrol():
+    """Gelir Girişi Kontrol Raporu – compares Robotpos_Gelir vs Gelir."""
+    db_session = get_db_session()
+    user = auth_queries.get_kullanici_by_id(db_session, session['user_id'])
+
+    if not user:
+        db_session.close()
+        return redirect(url_for('web_auth.login'))
+
+    all_suber = ref_queries.get_suber(db_session, limit=1000)
+
+    is_admin = (user.Kullanici_Adi and user.Kullanici_Adi.lower() == 'admin')
+    if not is_admin:
+        roles = auth_queries.get_user_roles(db_session, user.Kullanici_ID)
+        is_admin = 'admin' in [r.lower() for r in roles]
+
+    auth_suber = all_suber if is_admin else [
+        s for s in all_suber if s.Sube_ID in auth_queries.get_user_branches(db_session, user.Kullanici_ID)
+    ]
+
+    sube_id = request.args.get('sube_id', None, type=int)
+    if sube_id is None and auth_suber:
+        sube_id = auth_suber[0].Sube_ID
+
+    today = date.today()
+    donem = request.args.get('donem', None, type=int)
+    if donem is None:
+        donem = int(f"{today.year % 100:02d}{today.month:02d}")
+
+    month_names = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
+                   "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
+    donem_list = []
+    y, m = today.year % 100, today.month
+    for _ in range(24):
+        donem_val = int(f"{y:02d}{m:02d}")
+        donem_list.append({"value": donem_val, "display": f"{month_names[m]} 20{y:02d}"})
+        m -= 1
+        if m == 0:
+            m = 12
+            y -= 1
+
+    report_data = None
+    if sube_id and donem:
+        report_data = report_queries.get_gelir_kontrol_raporu(db_session, sube_id=sube_id, donem=donem)
+
+    db_session.close()
+
+    return render_template(
+        "gelir_girisi_kontrol.html",
+        user=user,
+        subeler=auth_suber,
+        report_data=report_data,
+        secili_sube_id=sube_id,
+        secili_donem=donem,
+        donem_list=donem_list
+    )

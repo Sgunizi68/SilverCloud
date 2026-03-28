@@ -1274,3 +1274,82 @@ def get_cari_borc_takip_raporu(start_date: str, sube_id: int):
         traceback.print_exc()
         return _empty_cari_result()
 
+
+def get_gelir_kontrol_raporu(db, sube_id: int, donem: int) -> Dict:
+    """
+    Calculates Gelir Girişi Kontrol Raporu comparing Robotpos_Gelir and Gelir.
+    Returns:
+    {
+        "items": [
+           {"Tarih": ..., "Kategori_Adi": ..., "Robotpos_Tutar": ..., "Gelir_Tutar": ..., "Fark": ...}
+        ],
+        "summary": {
+           "toplam_robotpos": ..., "toplam_gelir": ..., "toplam_fark": ...
+        }
+    }
+    """
+    try:
+        year = 2000 + (donem // 100)
+        month = donem % 100
+        
+        # Combine Robotpos_Gelir and Gelir using UNION ALL
+        sql = text("""
+            SELECT 
+                combined.Tarih, 
+                k.Kategori_Adi, 
+                SUM(combined.robotpos_tutar) as robotpos_tutar, 
+                SUM(combined.gelir_tutar) as gelir_tutar
+            FROM (
+                SELECT Tarih, Kategori_ID, Tutar as robotpos_tutar, 0 as gelir_tutar 
+                FROM Robotpos_Gelir 
+                WHERE Sube_ID = :sube_id AND YEAR(Tarih) = :year AND MONTH(Tarih) = :month
+                
+                UNION ALL
+                
+                SELECT Tarih, Kategori_ID, 0 as robotpos_tutar, Tutar as gelir_tutar 
+                FROM Gelir 
+                WHERE Sube_ID = :sube_id AND YEAR(Tarih) = :year AND MONTH(Tarih) = :month
+            ) as combined
+            LEFT JOIN Kategori k ON combined.Kategori_ID = k.Kategori_ID
+            GROUP BY combined.Tarih, combined.Kategori_ID, k.Kategori_Adi
+            ORDER BY combined.Tarih ASC, k.Kategori_Adi ASC
+        """)
+        
+        rows = db.execute(sql, {"sube_id": sube_id, "year": year, "month": month}).fetchall()
+        
+        items = []
+        toplam_robotpos = 0.0
+        toplam_gelir = 0.0
+        toplam_fark = 0.0
+        
+        for r in rows:
+            tarih_str = r.Tarih.strftime('%d.%m.%Y') if r.Tarih else ""
+            kategori_adi = r.Kategori_Adi or "Bilinmeyen Kategori"
+            r_tutar = float(r.robotpos_tutar or 0)
+            g_tutar = float(r.gelir_tutar or 0)
+            fark = r_tutar - g_tutar
+            
+            items.append({
+                "Tarih": tarih_str,
+                "Kategori_Adi": kategori_adi,
+                "Robotpos_Tutar": r_tutar,
+                "Gelir_Tutar": g_tutar,
+                "Fark": fark
+            })
+            
+            toplam_robotpos += r_tutar
+            toplam_gelir += g_tutar
+            toplam_fark += fark
+            
+        return {
+            "rows": items,
+            "summary": {
+                "toplam_robotpos": float(toplam_robotpos),
+                "toplam_gelir": float(toplam_gelir),
+                "toplam_fark": float(toplam_fark)
+            }
+        }
+    except Exception:
+        import traceback
+        traceback.print_exc()
+        return {"rows": [], "summary": {"toplam_robotpos": 0.0, "toplam_gelir": 0.0, "toplam_fark": 0.0}}
