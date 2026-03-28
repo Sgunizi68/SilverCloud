@@ -1,0 +1,3 @@
+e_fatura_referans
+odeme_referans
+robotpos_gelir_referans

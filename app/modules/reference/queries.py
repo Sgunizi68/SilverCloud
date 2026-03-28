@@ -927,7 +927,7 @@ def get_robotpos_gelir_by_unique_fields(
 
 def get_gelir_referanslar_for_mapping(db: Session) -> List[RobotposGelirReferans]:
     """Get all Gelir references for mapping during upload."""
-    stmt = select(RobotposGelirReferans).where(RobotposGelirReferans.Aktif_Pasif == True)
+    stmt = select(RobotposGelirReferans)
     return db.scalars(stmt).all()
 
 
