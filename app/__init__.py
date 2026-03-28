@@ -47,7 +47,7 @@ def create_app(config_name: str = "development") -> Flask:
     with app.app_context():
         db.create_all()
     
-    # Register blueprints (modules)
+    # Register blueprints (modules)   
     from app.modules.auth import auth_bp, web_auth_bp
     from app.modules.reference import reference_bp
     from app.modules.reference.web_routes import web_reference_bp
