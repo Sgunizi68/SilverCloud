@@ -251,7 +251,7 @@ def cari_borc_takip_sistemi():
 @login_required
 @permission_required("Gelir Girişi Kontrol Raporu Görüntüleme")
 def gelir_girisi_kontrol():
-    """Gelir Girişi Kontrol Raporu – compares Robotpos_Gelir vs Gelir."""
+    """Gelir Girişi Kontrol Raporu – compares Robotpos_Gelir vs Gelir (pivot: kategori x day)."""
     db_session = get_db_session()
     user = auth_queries.get_kullanici_by_id(db_session, session['user_id'])
 
@@ -291,9 +291,66 @@ def gelir_girisi_kontrol():
             m = 12
             y -= 1
 
-    report_data = None
+    # Build pivot data
+    pivot = None
+    summary = None
     if sube_id and donem:
-        report_data = report_queries.get_gelir_kontrol_raporu(db_session, sube_id=sube_id, donem=donem)
+        raw = report_queries.get_gelir_kontrol_raporu(db_session, sube_id=sube_id, donem=donem)
+
+        # Collect unique days and categories
+        days_set = set()
+        cats_set = []  # ordered, no dup
+        cats_seen = set()
+        for row in raw["rows"]:
+            # row["Tarih"] is like "01.03.2026" -> extract day
+            try:
+                day_num = int(row["Tarih"].split(".")[0])
+            except Exception:
+                day_num = 0
+            days_set.add(day_num)
+            if row["Kategori_Adi"] not in cats_seen:
+                cats_seen.add(row["Kategori_Adi"])
+                cats_set.append(row["Kategori_Adi"])
+
+        days = sorted(days_set)
+
+        # pivot[kategori][day] = {r, g, f}
+        pivot_data = {cat: {d: {"r": 0.0, "g": 0.0, "f": 0.0} for d in days} for cat in cats_set}
+        day_totals = {d: {"r": 0.0, "g": 0.0, "f": 0.0} for d in days}
+        row_totals = {cat: {"r": 0.0, "g": 0.0, "f": 0.0} for cat in cats_set}
+        grand = {"r": 0.0, "g": 0.0, "f": 0.0}
+
+        for row in raw["rows"]:
+            try:
+                day_num = int(row["Tarih"].split(".")[0])
+            except Exception:
+                continue
+            cat = row["Kategori_Adi"]
+            r = row["Robotpos_Tutar"]
+            g = row["Gelir_Tutar"]
+            f = row["Fark"]
+            pivot_data[cat][day_num]["r"] += r
+            pivot_data[cat][day_num]["g"] += g
+            pivot_data[cat][day_num]["f"] += f
+            day_totals[day_num]["r"] += r
+            day_totals[day_num]["g"] += g
+            day_totals[day_num]["f"] += f
+            row_totals[cat]["r"] += r
+            row_totals[cat]["g"] += g
+            row_totals[cat]["f"] += f
+            grand["r"] += r
+            grand["g"] += g
+            grand["f"] += f
+
+        pivot = {
+            "days": days,
+            "categories": cats_set,
+            "data": pivot_data,
+            "day_totals": day_totals,
+            "row_totals": row_totals,
+            "grand": grand,
+        }
+        summary = raw["summary"]
 
     db_session.close()
 
@@ -301,7 +358,8 @@ def gelir_girisi_kontrol():
         "gelir_girisi_kontrol.html",
         user=user,
         subeler=auth_suber,
-        report_data=report_data,
+        pivot=pivot,
+        summary=summary,
         secili_sube_id=sube_id,
         secili_donem=donem,
         donem_list=donem_list

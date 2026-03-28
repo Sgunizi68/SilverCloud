@@ -1,203 +1,226 @@
 {% extends "base.html" %}
 
 {% block title %}Gelir Girişi Kontrol Raporu - SilverCloud{% endblock %}
-
 {% block acc_rapor %}active{% endblock %}
 {% block acc_rapor_content %}open{% endblock %}
 {% block nav_gelir_girisi_kontrol %}active{% endblock %}
 
 {% block extra_style %}
 <style>
-  .report-container { padding: 24px; max-width: 1300px; margin: 0 auto; }
+/* ─── Layout ─────────────────────────────────────────── */
+.rp-page   { display: flex; flex-direction: column; height: calc(100vh - 64px); padding: 18px 20px; gap: 14px; overflow: hidden; }
+.rp-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.rp-title  { font-size: 18px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px; }
 
-  .page-title {
-    font-size: 20px; font-weight: 700; color: #1e293b;
-    margin-bottom: 22px; display: flex; align-items: center; gap: 10px;
-  }
+/* ─── Filter bar ──────────────────────────────────────── */
+.filter-bar { display: flex; flex-wrap: wrap; gap: 10px; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 16px; align-items: flex-end; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+.fg { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 140px; }
+.fg label { font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .4px; }
+.fg select { padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 7px; font-size: 13px; background: #f8fafc; }
+.fg select:focus { border-color: #3b82f6; outline: none; }
 
-  /* Filter bar */
-  .filter-bar {
-    display: flex; flex-wrap: wrap; gap: 14px;
-    background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
-    padding: 16px 20px; margin-bottom: 24px; align-items: flex-end;
-    box-shadow: 0 2px 8px rgba(0,0,0,.06);
-  }
-  .filter-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 160px; }
-  .filter-group label { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .4px; }
-  .filter-group select, .filter-group input {
-    padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 7px; font-size: 14px;
-    background: #f8fafc; transition: border-color .2s;
-  }
-  .filter-group select:focus, .filter-group input:focus { border-color: #3b82f6; outline: none; }
-  .btn-filter {
-    padding: 9px 22px; background: #3b82f6; color: #fff; border: none;
-    border-radius: 7px; font-weight: 600; font-size: 14px; cursor: pointer;
-    align-self: flex-end; transition: background .2s;
-  }
-  .btn-filter:hover { background: #2563eb; }
+/* ─── Action buttons ──────────────────────────────────── */
+.action-btns { display: flex; gap: 8px; align-items: center; }
+.btn-act { display: flex; align-items: center; gap: 5px; padding: 8px 14px; border: none; border-radius: 7px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s; }
+.btn-excel { background: #16a34a; color: #fff; }
+.btn-excel:hover { background: #15803d; }
+.btn-print { background: #0ea5e9; color: #fff; }
+.btn-print:hover { background: #0284c7; }
 
-  /* Summary cards */
-  .summary-cards {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;
-  }
-  .summary-card {
-    background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
-    padding: 18px 20px; text-align: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,.05);
-  }
-  .summary-card .card-label { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 8px; }
-  .summary-card .card-value { font-size: 22px; font-weight: 700; }
-  .card-robotpos .card-value { color: #0ea5e9; }
-  .card-gelir .card-value { color: #10b981; }
-  .card-fark .card-value { color: #f59e0b; }
-  .card-fark .card-value.negative { color: #ef4444; }
-  .card-fark .card-value.positive { color: #16a34a; }
+/* ─── Summary cards ───────────────────────────────────── */
+.sum-cards { display: flex; gap: 12px; flex-shrink: 0; }
+.sum-card  { flex: 1; background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px 16px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+.sum-card .sc-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: #64748b; margin-bottom: 5px; }
+.sum-card .sc-val   { font-size: 18px; font-weight: 700; }
+.sc-r .sc-val { color: #0ea5e9; }
+.sc-g .sc-val { color: #10b981; }
+.sc-f-neg    { color: #dc2626 !important; }
+.sc-f-pos    { color: #16a34a !important; }
+.sc-f-zero   { color: #94a3b8 !important; }
 
-  /* Table */
-  .table-card {
-    background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
-    overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.05);
-  }
-  .table-card table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .table-card thead th {
-    background: #f1f5f9; color: #475569; font-size: 11px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: .5px; padding: 10px 14px; border-bottom: 1px solid #e2e8f0;
-    text-align: right;
-  }
-  .table-card thead th:first-child, .table-card thead th:nth-child(2) { text-align: left; }
-  .table-card tbody tr:hover { background: #f8fafc; }
-  .table-card tbody td { padding: 9px 14px; border-bottom: 1px solid #f1f5f9; text-align: right; color: #334155; }
-  .table-card tbody td:first-child, .table-card tbody td:nth-child(2) { text-align: left; }
+/* ─── Table wrapper – scrollable ─────────────────────── */
+.table-wrap { flex: 1; overflow: auto; border: 1px solid #e2e8f0; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.05); background: #fff; }
+table.pivot { border-collapse: collapse; font-size: 12px; min-width: max-content; }
 
-  /* fark column highlight */
-  .fark-zero { color: #94a3b8; }
-  .fark-negative { color: #dc2626; font-weight: 600; }
-  .fark-positive { color: #16a34a; font-weight: 600; }
+/* sticky first column + header */
+table.pivot thead th      { position: sticky; top: 0; background: #f1f5f9; z-index: 2; white-space: nowrap; }
+table.pivot thead th:first-child { left: 0; z-index: 3; }
+table.pivot tbody td:first-child { position: sticky; left: 0; background: #fff; z-index: 1; font-weight: 600; }
+table.pivot tfoot td      { position: sticky; bottom: 0; background: #1e293b; color: #f8fafc; font-weight: 700; z-index: 2; }
+table.pivot tfoot td:first-child { left: 0; z-index: 3; background: #0f172a; }
 
-  /* footer row */
-  .table-footer td {
-    background: #1e293b; color: #f8fafc; font-weight: 700;
-    padding: 11px 14px; border: none;
-  }
-  .table-footer td:first-child { border-radius: 0; }
+table.pivot th, table.pivot td { padding: 7px 9px; border-bottom: 1px solid #f1f5f9; border-right: 1px solid #f1f5f9; text-align: right; }
+table.pivot th:first-child, table.pivot td:first-child { text-align: left; border-right: 2px solid #cbd5e1; min-width: 160px; }
+table.pivot tbody tr:hover td { background: #f8fafc !important; }
 
-  .empty-state {
-    text-align: center; padding: 60px 20px; color: #94a3b8;
-    font-size: 15px;
-  }
+/* day group header */
+.th-day { text-align: center !important; border-bottom: none; font-weight: 700; color: #1e40af; font-size: 12px; background: #eff6ff !important; }
+.th-sub { font-size: 10px; font-weight: 600; color: #64748b; padding: 4px 7px; background: #f8fafc; }
+
+/* Fark cells */
+.fark-neg { color: #dc2626; font-weight: 600; }
+.fark-pos { color: #16a34a; font-weight: 600; }
+.fark-z   { color: #94a3b8; }
+
+/* row-total column */
+.col-tot-r { background: #eff6ff !important; }
+.col-tot-g { background: #f0fdf4 !important; }
+.col-tot-f { background: #fefce8 !important; }
+
+/* print overrides */
+@media print {
+  .rp-header, .filter-bar, .action-btns { display: none !important; }
+  .rp-page { height: auto; overflow: visible; }
+  .table-wrap { overflow: visible; border: none; }
+  table.pivot thead th, table.pivot tfoot td, table.pivot tbody td:first-child { position: static !important; }
+}
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="report-container">
-  <h1 class="page-title">
-    <span style="color:#10b981;">⚖️</span> Gelir Girişi Kontrol Raporu
-  </h1>
+<div class="rp-page">
 
-  <!-- Filters -->
-  <form method="GET" action="/gelir-girisi-kontrol">
+  <!-- Header -->
+  <div class="rp-header">
+    <div class="rp-title">⚖️ Gelir Girişi Kontrol Raporu</div>
+    <div class="action-btns">
+      <button class="btn-act btn-excel" onclick="exportExcel()">📥 Excel</button>
+      <button class="btn-act btn-print" onclick="window.print()">🖨️ Yazdır</button>
+    </div>
+  </div>
+
+  <!-- Filter bar – auto submit on change, no button -->
+  <form id="filterForm" method="GET" action="/gelir-girisi-kontrol">
     <div class="filter-bar">
-      <div class="filter-group">
+      <div class="fg">
         <label>Şube</label>
-        <select name="sube_id">
+        <select name="sube_id" onchange="document.getElementById('filterForm').submit()">
           {% for s in subeler %}
           <option value="{{ s.Sube_ID }}" {% if s.Sube_ID == secili_sube_id %}selected{% endif %}>{{ s.Sube_Adi }}</option>
           {% endfor %}
         </select>
       </div>
-      <div class="filter-group">
+      <div class="fg">
         <label>Dönem</label>
-        <select name="donem">
+        <select name="donem" onchange="document.getElementById('filterForm').submit()">
           {% for d in donem_list %}
           <option value="{{ d.value }}" {% if d.value == secili_donem %}selected{% endif %}>{{ d.display }}</option>
           {% endfor %}
         </select>
       </div>
-      <button type="submit" class="btn-filter">🔍 Filtrele</button>
     </div>
   </form>
 
-  {% if report_data %}
-    {% set s = report_data.summary %}
+  {% if pivot and pivot.categories %}
 
-    <!-- Top Summary Cards -->
-    <div class="summary-cards">
-      <div class="summary-card card-robotpos">
-        <div class="card-label">Toplam Robotpos Tutar</div>
-        <div class="card-value">{{ "%.2f"|format(s.toplam_robotpos) }} ₺</div>
-      </div>
-      <div class="summary-card card-gelir">
-        <div class="card-label">Toplam Gelir Tutar</div>
-        <div class="card-value">{{ "%.2f"|format(s.toplam_gelir) }} ₺</div>
-      </div>
-      <div class="summary-card card-fark">
-        <div class="card-label">Toplam Fark</div>
-        {% if s.toplam_fark < 0 %}
-        <div class="card-value negative">{{ "%.2f"|format(s.toplam_fark) }} ₺</div>
-        {% elif s.toplam_fark > 0 %}
-        <div class="card-value positive">+{{ "%.2f"|format(s.toplam_fark) }} ₺</div>
-        {% else %}
-        <div class="card-value" style="color:#64748b;">0.00 ₺</div>
-        {% endif %}
-      </div>
+  <!-- Summary cards -->
+  <div class="sum-cards">
+    <div class="sum-card sc-r">
+      <div class="sc-label">Toplam Robotpos</div>
+      <div class="sc-val">{{ "%.2f"|format(summary.toplam_robotpos) }} ₺</div>
     </div>
-
-    <!-- Data Table -->
-    {% if report_data.rows %}
-    <div class="table-card">
-      <table>
-        <thead>
-          <tr>
-            <th>Tarih</th>
-            <th>Kategori</th>
-            <th>Robotpos Tutar</th>
-            <th>Gelir Tutar</th>
-            <th>Fark</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in report_data.rows %}
-          <tr>
-            <td>{{ row.Tarih }}</td>
-            <td>{{ row.Kategori_Adi }}</td>
-            <td>{{ "%.2f"|format(row.Robotpos_Tutar) }} ₺</td>
-            <td>{{ "%.2f"|format(row.Gelir_Tutar) }} ₺</td>
-            <td>
-              {% if row.Fark == 0 %}
-              <span class="fark-zero">0.00 ₺</span>
-              {% elif row.Fark < 0 %}
-              <span class="fark-negative">{{ "%.2f"|format(row.Fark) }} ₺</span>
-              {% else %}
-              <span class="fark-positive">+{{ "%.2f"|format(row.Fark) }} ₺</span>
-              {% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-        <tfoot>
-          <tr class="table-footer">
-            <td colspan="2">TOPLAM</td>
-            <td>{{ "%.2f"|format(s.toplam_robotpos) }} ₺</td>
-            <td>{{ "%.2f"|format(s.toplam_gelir) }} ₺</td>
-            <td>
-              {% if s.toplam_fark == 0 %}0.00 ₺
-              {% elif s.toplam_fark < 0 %}{{ "%.2f"|format(s.toplam_fark) }} ₺
-              {% else %}+{{ "%.2f"|format(s.toplam_fark) }} ₺{% endif %}
-            </td>
-          </tr>
-        </tfoot>
-      </table>
+    <div class="sum-card sc-g">
+      <div class="sc-label">Toplam Gelir</div>
+      <div class="sc-val">{{ "%.2f"|format(summary.toplam_gelir) }} ₺</div>
     </div>
-    {% else %}
-    <div class="empty-state">
-      <p>📭 Seçilen dönem ve şube için kayıt bulunamadı.</p>
+    <div class="sum-card">
+      <div class="sc-label">Toplam Fark</div>
+      {% set tf = summary.toplam_fark %}
+      {% if tf < 0 %}
+        <div class="sc-val sc-f-neg">{{ "%.2f"|format(tf) }} ₺</div>
+      {% elif tf > 0 %}
+        <div class="sc-val sc-f-pos">+{{ "%.2f"|format(tf) }} ₺</div>
+      {% else %}
+        <div class="sc-val sc-f-zero">0.00 ₺</div>
+      {% endif %}
     </div>
-    {% endif %}
-
-  {% else %}
-  <div class="empty-state">
-    <p>🔍 Dönem ve şube seçerek raporu görüntüleyin.</p>
   </div>
+
+  <!-- Pivot Table -->
+  <div class="table-wrap" id="tableWrap">
+    <table class="pivot" id="pivotTable">
+      <thead>
+        <!-- Row 1: day numbers (spanning 3 sub-cols each) + Toplam -->
+        <tr>
+          <th rowspan="2" style="min-width:160px;">Kategori</th>
+          {% for d in pivot.days %}
+          <th colspan="3" class="th-day">{{ d }}</th>
+          {% endfor %}
+          <th colspan="3" class="th-day" style="background:#dbeafe !important;">TOPLAM</th>
+        </tr>
+        <!-- Row 2: sub-headers -->
+        <tr>
+          {% for d in pivot.days %}
+          <th class="th-sub" title="Robotpos">Robotpos</th>
+          <th class="th-sub" title="Gelir">Gelir</th>
+          <th class="th-sub" title="Fark">Fark</th>
+          {% endfor %}
+          <th class="th-sub col-tot-r">Robotpos</th>
+          <th class="th-sub col-tot-g">Gelir</th>
+          <th class="th-sub col-tot-f">Fark</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cat in pivot.categories %}
+        {% set rt = pivot.row_totals[cat] %}
+        <tr>
+          <td>{{ cat }}</td>
+          {% for d in pivot.days %}
+            {% set cell = pivot.data[cat][d] %}
+            <td>{% if cell.r != 0 %}{{ "%.2f"|format(cell.r) }}{% else %}-{% endif %}</td>
+            <td>{% if cell.g != 0 %}{{ "%.2f"|format(cell.g) }}{% else %}-{% endif %}</td>
+            <td>{% if cell.f == 0 %}<span class="fark-z">-</span>
+                {% elif cell.f < 0 %}<span class="fark-neg">{{ "%.2f"|format(cell.f) }}</span>
+                {% else %}<span class="fark-pos">+{{ "%.2f"|format(cell.f) }}</span>{% endif %}</td>
+          {% endfor %}
+          <!-- row total -->
+          <td class="col-tot-r">{{ "%.2f"|format(rt.r) }}</td>
+          <td class="col-tot-g">{{ "%.2f"|format(rt.g) }}</td>
+          <td class="col-tot-f">
+            {% if rt.f == 0 %}<span class="fark-z">0.00</span>
+            {% elif rt.f < 0 %}<span class="fark-neg">{{ "%.2f"|format(rt.f) }}</span>
+            {% else %}<span class="fark-pos">+{{ "%.2f"|format(rt.f) }}</span>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td>TOPLAM</td>
+          {% for d in pivot.days %}
+            {% set dt = pivot.day_totals[d] %}
+            <td>{{ "%.2f"|format(dt.r) }}</td>
+            <td>{{ "%.2f"|format(dt.g) }}</td>
+            <td>{% if dt.f == 0 %}-{% elif dt.f < 0 %}{{ "%.2f"|format(dt.f) }}{% else %}+{{ "%.2f"|format(dt.f) }}{% endif %}</td>
+          {% endfor %}
+          {% set g = pivot.grand %}
+          <td>{{ "%.2f"|format(g.r) }}</td>
+          <td>{{ "%.2f"|format(g.g) }}</td>
+          <td>{% if g.f == 0 %}-{% elif g.f < 0 %}{{ "%.2f"|format(g.f) }}{% else %}+{{ "%.2f"|format(g.f) }}{% endif %}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  {% elif pivot is not none %}
+  <div style="text-align:center;padding:60px;color:#94a3b8;font-size:15px;">📭 Seçilen dönem ve şube için kayıt bulunamadı.</div>
+  {% else %}
+  <div style="text-align:center;padding:60px;color:#94a3b8;font-size:15px;">🔍 Dönem ve şube seçerek raporu görüntüleyin.</div>
   {% endif %}
+
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+function exportExcel() {
+  const tbl = document.getElementById('pivotTable');
+  if (!tbl) { alert('Tablo yok'); return; }
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.table_to_sheet(tbl);
+  XLSX.utils.book_append_sheet(wb, ws, 'Gelir Kontrol');
+  XLSX.writeFile(wb, 'gelir_girisi_kontrol.xlsx');
+}
+</script>
 {% endblock %}
