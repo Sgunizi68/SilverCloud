@@ -5,7 +5,7 @@
 {% block extra_css %}
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 <style>
-    /* Standard Report Container styling matching fatura_raporu.html */
+    /* Report container — yalnızca tablo alanını sarar */
     .report-container {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         color: #334155;
@@ -24,117 +24,108 @@
         margin-bottom: 24px;
     }
 
-    /* Redesigned Top Bar */
-    .top-bar {
+
+    /* ── HERO HEADER ─────────────────────────────────────────── */
+    /* .content'in her iki tarafındaki 30px padding'ini sıfırlayıp tam genişliğe yayılır */
+    .bayi-hero-header {
+        margin: -30px -30px 24px -30px;
+        background: linear-gradient(135deg, #7c83d6 0%, #6e75c6 60%, #5b62b5 100%);
+        padding: 18px 30px 20px 30px;
+    }
+
+    .hero-top-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        background: white;
-        padding: 16px 24px;
-        border-radius: 8px;
-        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-        margin-bottom: 24px;
+        margin-bottom: 16px;
     }
 
-    .top-bar-left {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-    }
-
-    .icon-box {
-        width: 48px;
-        height: 48px;
-        background-color: #3b82f6; /* blue-500 */
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 1.5rem;
-    }
-
-    .top-bar-title h1 {
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: #0f172a;
-        margin: 0;
-        line-height: 1.2;
-    }
-
-    .top-bar-title p {
-        font-size: 0.875rem;
-        color: #64748b;
-        margin: 4px 0 0 0;
-    }
-
-    .top-bar-right {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-    }
-
-    .btn-action {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 16px;
-        border-radius: 6px;
-        font-weight: 600;
-        font-size: 0.875rem;
-        cursor: pointer;
-        border: none;
-        transition: all 0.2s;
-        color: white;
-    }
-
-    .btn-excel {
-        background-color: #10b981; /* green-500 */
-    }
-    .btn-excel:hover {
-        background-color: #059669;
-    }
-
-    .btn-pdf {
-        background-color: #ef4444; /* red-500 */
-    }
-    .btn-pdf:hover {
-        background-color: #dc2626;
-    }
-
-    .filter-form-inline {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin: 0;
-    }
-
-    .filter-icon {
-        color: #64748b;
+    .hero-title {
+        color: #fff;
         font-size: 1.1rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        letter-spacing: 0.01em;
     }
 
-    .select-inline {
-        height: 38px;
-        padding: 6px 32px 6px 12px;
-        border: 1px solid #cbd5e1;
+    .hero-icon {
+        font-size: 1rem;
+        color: #fbbf24;
+    }
+
+    .hero-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn-hero {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #fff;
+        padding: 7px 16px;
+        border: none;
         border-radius: 6px;
+        cursor: pointer;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        transition: filter 0.15s, transform 0.15s;
+    }
+
+    .btn-hero:hover {
+        filter: brightness(1.12);
+        transform: translateY(-1px);
+    }
+
+    .btn-hero-excel  { background: #10b981; }
+    .btn-hero-print  { background: #38bdf8; }
+
+    /* Filtre kartı: mor alanın içinde beyaz kart */
+    .filter-card {
+        background: #fff;
+        border-radius: 6px;
+        padding: 12px 16px;
+        display: flex;
+        gap: 20px;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        flex: 1;
+    }
+
+    .filter-group label {
+        font-size: 0.6rem;
+        font-weight: 700;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        margin: 0;
+    }
+
+    .filter-select {
+        width: 100%;
+        height: 36px;
+        padding: 0 28px 0 10px;
+        border: 1px solid #e2e8f0;
+        border-radius: 5px;
         font-size: 0.875rem;
-        font-weight: 500;
-        color: #0f172a;
-        background-color: white;
+        color: #1e293b;
+        background: #fff url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg' width%3D'12' height%3D'12'%3E%3Cpath fill%3D'%2364748b' d%3D'M6 8L1 3h10z'%2F%3E%3C%2Fsvg%3E") no-repeat right 10px center;
+        -webkit-appearance: none;
+        appearance: none;
         outline: none;
         cursor: pointer;
-        appearance: none;
-        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-        background-position: right 8px center;
-        background-repeat: no-repeat;
-        background-size: 1.5em 1.5em;
     }
 
-    .select-inline:focus {
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 1px #3b82f6;
+    .filter-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102,126,234,0.15);
     }
 
     /* Table Wrapper */
@@ -308,31 +299,31 @@
 {% set months = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"] %}
 {% set yr_suffix = (secili_year|string)[2:] if secili_year else (years[0]|string)[2:] %}
 
-<div class="report-container">
-    <!-- Redesigned Top Bar -->
-    <div class="top-bar">
-        <div class="top-bar-left">
-            <div class="icon-box">
-                <i class="fas fa-chart-line"></i>
-            </div>
-            <div class="top-bar-title">
-                <h1>Bayi Karlılık Raporu</h1>
-                <p>Detaylı finansal analiz ve performans takibi</p>
-            </div>
+<!-- HERO HEADER — report-container dışında, direkt .content içinde -->
+<div class="bayi-hero-header">
+    <!-- Başlık + Butonlar -->
+    <div class="hero-top-row">
+        <div class="hero-title">
+            <i class="fas fa-chart-line hero-icon"></i>
+            Bayi Karlılık Raporu
         </div>
-        
-        <div class="top-bar-right">
-            <button class="btn-action btn-excel" onclick="exportToExcel()">
-                <i class="fas fa-download"></i> Excel'e Aktar
+        <div class="hero-actions">
+            <button class="btn-hero btn-hero-excel" onclick="exportToExcel()">
+                <i class="fas fa-file-excel"></i> Excel
             </button>
-            <button class="btn-action btn-pdf" onclick="window.print()">
-                <i class="far fa-file-pdf"></i> PDF olarak İndir
+            <button class="btn-hero btn-hero-print" onclick="window.print()">
+                <i class="fas fa-print"></i> Yazdır
             </button>
-            
-            <form id="filterForm" method="GET" action="/bayi-karlilik-raporu" class="filter-form-inline">
+        </div>
+    </div>
+
+    <!-- Filtre Kartı -->
+    <div class="filter-card">
+        <form id="filterForm" method="GET" action="/bayi-karlilik-raporu" style="display:flex; gap:20px; flex:1; margin:0;">
+            <div class="filter-group">
+                <label>Şube</label>
                 {% if subeler|length > 1 %}
-                <i class="fas fa-store filter-icon"></i>
-                <select name="sube_id" class="select-inline" onchange="this.form.submit()">
+                <select name="sube_id" class="filter-select" onchange="this.form.submit()">
                     {% for sube in subeler %}
                     <option value="{{ sube.Sube_ID }}" {% if sube.Sube_ID==secili_sube_id %}selected{% endif %}>
                         {{ sube.Sube_Adi }}
@@ -341,19 +332,25 @@
                 </select>
                 {% else %}
                 <input type="hidden" name="sube_id" value="{{ subeler[0].Sube_ID if subeler else '' }}">
+                <select class="filter-select" disabled><option>{{ sube_adi if sube_adi else 'Tüm Şubeler' }}</option></select>
                 {% endif %}
-
-                <i class="far fa-calendar filter-icon"></i>
-                <select name="year" class="select-inline" style="width: 100px;" onchange="this.form.submit()">
+            </div>
+            <div class="filter-group">
+                <label>Yıl</label>
+                <select name="year" class="filter-select" onchange="this.form.submit()">
                     {% for y in years %}
                     <option value="{{ y }}" {% if y==secili_year %}selected{% endif %}>{{ y }}</option>
                     {% endfor %}
                 </select>
-            </form>
-        </div>
+            </div>
+        </form>
     </div>
+</div><!-- /bayi-hero-header -->
 
+<!-- Tablo Alanı -->
+<div class="report-container">
     <div class="card">
+
 
         <!-- Report Table -->
         <div class="report-table-wrapper">
@@ -460,8 +457,8 @@
                 </tbody>
             </table>
         </div>
-    </div>
-</div>
+    </div><!-- /card -->
+</div><!-- /report-container -->
 {% endblock %}
 
 {% block scripts %}
