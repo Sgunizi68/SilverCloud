@@ -35,7 +35,7 @@ def create_app(config_name: str = "development") -> Flask:
     from app.models import (
         Sube, Kullanici, Rol, Yetki, KullaniciRol, RolYetki,
         Deger, UstKategori, Kategori,
-        EFatura, B2BEkstre, DigerHarcama, Odeme, OdemeReferans,
+        EFatura, B2BEkstre, DigerHarcama, Odeme, OdemeReferans, RobotposGelirReferans, RobotposGelir,
         Nakit, EFaturaReferans, POSHareketleri,
         Gelir, GelirEkstra,
         Stok, StokFiyat, StokSayim,

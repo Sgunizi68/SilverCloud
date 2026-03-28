@@ -350,7 +350,7 @@ class OdemeReferans(db.Model):
 
 class RobotposGelirReferans(db.Model):
     """Gelir reference mapping (RobotPOS)"""
-    __tablename__ = "robotpos_gelir_referans"
+    __tablename__ = "Robotpos_Gelir_Referans"
     __table_args__ = {"extend_existing": True}
 
     Robotpos_Gelir_Referans_ID = Column(Integer, primary_key=True, index=True)
