@@ -130,35 +130,129 @@
         color: #4b5563;
     }
 
-    .edit-btn {
-        padding: 5px 10px;
-        background: transparent;
-        border: 1px solid #e5e7eb;
+    /* Column Redesign CSS */
+    .yetki-columns-container {
+        display: flex;
+        gap: 20px;
+        overflow-x: auto;
+        padding-bottom: 20px;
+        align-items: flex-start;
+    }
+
+    .yetki-column {
+        flex: 1;
+        min-width: 320px;
+        background: rgba(255, 255, 255, 0.5);
+        border-radius: 16px;
+        border: 1px solid rgba(229, 231, 235, 0.5);
+        display: flex;
+        flex-direction: column;
+        max-height: calc(100vh - 250px);
+    }
+
+    .column-header {
+        padding: 15px 20px;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .column-header h2 {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .column-body {
+        padding: 10px;
+        overflow-y: auto;
+        flex: 1;
+    }
+
+    /* Type-specific colors */
+    .column-ekran { border-top: 4px solid #6366f1; }
+    .column-ekran .column-header h2 { color: #4338ca; }
+    .column-ekran .column-header i { color: #6366f1; }
+
+    .column-islem { border-top: 4px solid #10b981; }
+    .column-islem .column-header h2 { color: #065f46; }
+    .column-islem .column-header i { color: #10b981; }
+
+    .column-alan { border-top: 4px solid #8b5cf6; }
+    .column-alan .column-header h2 { color: #5b21b6; }
+    .column-alan .column-header i { color: #8b5cf6; }
+
+    .column-diger { border-top: 4px solid #94a3b8; }
+    .column-diger .column-header h2 { color: #475569; }
+    .column-diger .column-header i { color: #94a3b8; }
+
+    .yetki-card {
+        background: white;
+        border-radius: 12px;
+        padding: 12px 16px;
+        margin-bottom: 10px;
+        border: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        transition: all 0.2s;
+    }
+
+    .yetki-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        border-color: #e2e8f0;
+    }
+
+    .yetki-info {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+        flex: 1;
+    }
+
+    .yetki-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    .yetki-id-tag {
+        font-size: 10px;
+        color: #94a3b8;
+        font-weight: 500;
+    }
+
+    .actions-wrapper {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+    }
+
+    .edit-btn, .delete-btn {
+        padding: 6px;
         border-radius: 6px;
-        cursor: pointer;
-        color: #6b7280;
-        transition: all 0.15s;
-    }
-
-    .edit-btn:hover {
-        background: #f3f4f6;
-        color: #374151;
-        border-color: #d1d5db;
-    }
-
-    .delete-btn {
-        padding: 5px 10px;
+        border: 1px solid #e2e8f0;
         background: transparent;
-        border: 1px solid #fecaca;
-        border-radius: 6px;
         cursor: pointer;
-        color: #ef4444;
-        transition: all 0.15s;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
-    .delete-btn:hover {
-        background: #fef2f2;
-    }
+    .edit-btn:hover { background: #f1f5f9; color: #4338ca; border-color: #c7d2fe; }
+    .delete-btn:hover { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+
+    /* Custom Scrollbar */
+    .column-body::-webkit-scrollbar { width: 5px; }
+    .column-body::-webkit-scrollbar-track { background: transparent; }
+    .column-body::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
 </style>
 {% endblock %}
 
@@ -193,54 +287,54 @@
         </div>
     </div>
 
-    <!-- Table Card -->
-    <div class="card-glass" style="padding: 0; overflow: hidden;">
-        <div class="table-container">
-            <table id="yetkiler-table">
-                <thead>
-                    <tr>
-                        <th style="width: 60px;">ID</th>
-                        <th>YETKİ ADI</th>
-                        <th>AÇIKLAMA</th>
-                        <th style="width: 100px; text-align: center;">TİP</th>
-                        <th style="width: 80px; text-align: center;">AKTİF</th>
-                        <th style="width: 100px; text-align: center;" class="hide-on-print">İŞLEMLER</th>
-                    </tr>
-                </thead>
-                <tbody id="yetkiler-tbody">
-                    {% for y in yetkiler %}
-                    <tr>
-                        <td>{{ y.Yetki_ID }}</td>
-                        <td class="yetki-name">{{ y.Yetki_Adi }}</td>
-                        <td>{{ y.Aciklama }}</td>
-                        <td style="text-align: center;">
-                            <span class="tip-badge">{{ y.Tip or '-' }}</span>
-                        </td>
-                        <td style="text-align: center;">
+    <!-- Column View -->
+    <div class="yetki-columns-container">
+        {% set types = [
+            {'key': 'Ekran', 'label': 'Ekranlar', 'icon': 'fas fa-desktop', 'class': 'column-ekran'},
+            {'key': 'İşlem', 'label': 'İşlemler', 'icon': 'fas fa-mouse-pointer', 'class': 'column-islem'},
+            {'key': 'Alan', 'label': 'Alanlar', 'icon': 'fas fa-edit', 'class': 'column-alan'},
+            {'key': 'Diger', 'label': 'Diğer', 'icon': 'fas fa-shield-alt', 'class': 'column-diger'}
+        ] %}
+
+        {% for t in types %}
+        <div class="yetki-column {{ t.class }}">
+            <div class="column-header">
+                <i class="{{ t.icon }}"></i>
+                <h2>{{ t.label }}</h2>
+            </div>
+            <div class="column-body">
+                {% set found = false %}
+                {% for y in yetkiler %}
+                    {% set current_tip = 'İşlem' if y.Tip in ['İşlem', 'Islem'] else y.Tip %}
+                    {% if (t.key == 'Diger' and current_tip not in ['Ekran', 'İşlem', 'Alan']) or current_tip == t.key %}
+                    {% set found = true %}
+                    <div class="yetki-card">
+                        <div class="yetki-info">
                             {% if y.Aktif_Pasif %}
-                            <div class="status-badge active" title="Aktif"><i class="far fa-check-circle"></i></div>
+                            <i class="fas fa-check-circle" style="color: #10b981; font-size: 14px;" title="Aktif"></i>
                             {% else %}
-                            <div class="status-badge inactive" title="Pasif"><i class="far fa-times-circle"></i></div>
+                            <i class="fas fa-times-circle" style="color: #ef4444; font-size: 14px;" title="Pasif"></i>
                             {% endif %}
-                        </td>
-                        <td style="text-align: center;" class="hide-on-print">
+                            <span class="yetki-id-tag">#{{ y.Yetki_ID }}</span>
+                            <span class="yetki-title">{{ y.Yetki_Adi }}</span>
+                        </div>
+                        <div class="actions-wrapper hide-on-print">
                             <button class="edit-btn" title="Düzenle" data-yetki='{{ y | tojson | safe }}'
                                 onclick='openEditYetkiModal(JSON.parse(this.getAttribute("data-yetki")))'>✏️</button>
                             <button class="delete-btn" title="Sil" onclick="deleteYetki({{ y.Yetki_ID }})">🗑️</button>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">
-                            <i class="fas fa-inbox"
-                                style="font-size: 28px; display: block; margin-bottom: 8px; color: #d1d5db;"></i>
-                            Kayıtlı yetki bulunamadı.
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if not found %}
+                <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 11px;">
+                    Bu tipte yetki bulunmuyor.
+                </div>
+                {% endif %}
+            </div>
         </div>
+        {% endfor %}
     </div>
 </div>
 {% endblock %}
@@ -253,10 +347,10 @@
         if (searchInput) {
             searchInput.addEventListener('keyup', function () {
                 const term = this.value.toLowerCase();
-                document.querySelectorAll('#yetkiler-tbody tr').forEach(row => {
-                    if (row.cells.length === 1) return;
-                    const text = Array.from(row.cells).map(c => c.textContent.toLowerCase()).join(' ');
-                    row.style.display = text.includes(term) ? '' : 'none';
+                document.querySelectorAll('.yetki-card').forEach(card => {
+                    const title = card.querySelector('.yetki-title').textContent.toLowerCase();
+                    const id = card.querySelector('.yetki-id-tag').textContent.toLowerCase();
+                    card.style.display = (title.includes(term) || id.includes(term)) ? 'flex' : 'none';
                 });
             });
         }
@@ -280,8 +374,8 @@
                     <select id="Tip" name="Tip" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px;">
                         <option value="" ${!y.Tip ? 'selected' : ''}>Seçiniz</option>
                         <option value="Ekran" ${y.Tip === 'Ekran' ? 'selected' : ''}>Ekran</option>
-                        <option value="Islem" ${y.Tip === 'Islem' ? 'selected' : ''}>İşlem</option>
-                        <option value="API" ${y.Tip === 'API' ? 'selected' : ''}>API</option>
+                        <option value="İşlem" ${(y.Tip === 'İşlem' || y.Tip === 'Islem') ? 'selected' : ''}>İşlem</option>
+                        <option value="Alan" ${y.Tip === 'Alan' ? 'selected' : ''}>Alan</option>
                     </select>
                 </div>
                 <div class="form-group" style="display: flex; align-items: center; gap: 10px; margin-top: 15px;">
@@ -353,37 +447,63 @@
 
     // --- Excel Export ---
     function exportYetkilerToExcel() {
-        const table = document.getElementById('yetkiler-table');
-        const wb = XLSX.utils.table_to_book(table, { sheet: "Yetki Listesi" });
+        const data = [];
+        // Header
+        data.push(["ID", "Yetki Adı", "Tip", "Durum"]);
+        
+        document.querySelectorAll('.yetki-card').forEach(card => {
+            const id = card.querySelector('.yetki-id-tag').textContent.replace('#', '');
+            const name = card.querySelector('.yetki-title').textContent;
+            const status = card.querySelector('.fa-check-circle') ? 'Aktif' : 'Pasif';
+            // Find parent column for type
+            const type = card.closest('.yetki-column').querySelector('h2').textContent;
+            data.push([id, name, type, status]);
+        });
+
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Yetki Listesi");
         XLSX.writeFile(wb, "Yetki_Listesi.xlsx");
     }
 
     // --- Print ---
     function printYetkiler() {
-        const table = document.getElementById('yetkiler-table');
-        if (!table) return;
-        const clone = table.cloneNode(true);
-        // İŞLEMLER column removal
-        clone.querySelectorAll('th:last-child, td:last-child').forEach(el => el.remove());
+        const cards = document.querySelectorAll('.yetki-card');
+        let tableHtml = `<table style="width:100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #f3f4f6;">
+                    <th style="border: 1px solid #ddd; padding: 10px; text-align: left;">ID</th>
+                    <th style="border: 1px solid #ddd; padding: 10px; text-align: left;">Yetki Adı</th>
+                    <th style="border: 1px solid #ddd; padding: 10px; text-align: left;">Tip</th>
+                    <th style="border: 1px solid #ddd; padding: 10px; text-align: left;">Durum</th>
+                </tr>
+            </thead>
+            <tbody>`;
 
-        // Convert icons to text for printing
-        clone.querySelectorAll('.status-badge').forEach(el => {
-            if (el.classList.contains('active')) {
-                el.textContent = 'Aktif';
-            } else {
-                el.textContent = 'Pasif';
-            }
-            el.className = '';
+        cards.forEach(card => {
+            if (card.style.display === 'none') return;
+            const id = card.querySelector('.yetki-id-tag').textContent;
+            const name = card.querySelector('.yetki-title').textContent;
+            const status = card.querySelector('.fa-check-circle') ? 'Aktif' : 'Pasif';
+            const type = card.closest('.yetki-column').querySelector('h2').textContent;
+            
+            tableHtml += `<tr>
+                <td style="border: 1px solid #ddd; padding: 8px;">${id}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">${name}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">${type}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">${status}</td>
+            </tr>`;
         });
+
+        tableHtml += `</tbody></table>`;
 
         const now = new Date().toLocaleString('tr-TR');
         const html = `<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">
             <title>Yetki Yönetimi Raporu</title>
             <style>body{font-family:Arial,sans-serif;padding:20mm;color:#111}
             h1{font-size:20px;margin:0 0 4px}p{font-size:12px;color:#666;border-bottom:1px solid #ccc;padding-bottom:10px;margin-bottom:16px}
-            table{width:100%;border-collapse:collapse}th{background:#f3f4f6;font-size:11px;text-transform:uppercase;padding:10px 12px;text-align:left;border:1px solid #ddd}
-            td{padding:10px 12px;font-size:13px;border:1px solid #eee}tr:nth-child(even){background:#fafafa}</style>
-            </head><body><h1>SilverCloud - Yetki Yönetimi Raporu</h1><p>Rapor Tarihi: ${now}</p>${clone.outerHTML}</body></html>`;
+            </style>
+            </head><body><h1>SilverCloud - Yetki Yönetimi Raporu</h1><p>Rapor Tarihi: ${now}</p>${tableHtml}</body></html>`;
         const win = window.open('', '_blank', 'width=900,height=700');
         win.document.write(html);
         win.document.close();
