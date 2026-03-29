@@ -146,6 +146,13 @@
     .delete-btn:hover {
         background: #fef2f2;
     }
+
+    .actions-wrapper {
+        display: flex;
+        gap: 6px;
+        justify-content: center;
+        align-items: center;
+    }
 </style>
 {% endblock %}
 
@@ -189,9 +196,9 @@
                         <th>DEĞER ADI</th>
                         <th style="width: 130px;">BAŞLANGIÇ TARİHİ</th>
                         <th style="width: 130px;">BİTİŞ TARİHİ</th>
-                        <th style="width: 80px; text-align: right;">DEĞER</th>
+                        <th style="width: 120px; text-align: right;">DEĞER</th>
                         <th>AÇIKLAMA</th>
-                        <th style="width: 100px; text-align: center;" class="hide-on-print">İŞLEMLER</th>
+                        <th style="width: 120px; text-align: center;" class="hide-on-print">İŞLEMLER</th>
                     </tr>
                 </thead>
                 <tbody id="degerler-tbody">
@@ -201,12 +208,14 @@
                         <td class="deger-name">{{ d.Deger_Adi }}</td>
                         <td>{{ d.Gecerli_Baslangic_Tarih }}</td>
                         <td>{{ d.Gecerli_Bitis_Tarih }}</td>
-                        <td style="text-align: right;" class="deger-value">{{ "%.2f"|format(d.Deger) }}</td>
+                        <td style="text-align: right;" class="deger-value">{{ "%.4f"|format(d.Deger) }}</td>
                         <td class="aciklama-cell">{{ d.Deger_Aciklama }}</td>
                         <td style="text-align: center;" class="hide-on-print">
-                            <button class="edit-btn" title="Düzenle" data-deger='{{ d | tojson | safe }}'
-                                onclick='openEditDegerModal(JSON.parse(this.getAttribute("data-deger")))'>✏️</button>
-                            <button class="delete-btn" title="Sil" onclick="deleteDeger({{ d.Deger_ID }})">🗑️</button>
+                            <div class="actions-wrapper">
+                                <button class="edit-btn" title="Düzenle" data-deger='{{ d | tojson | safe }}'
+                                    onclick='openEditDegerModal(JSON.parse(this.getAttribute("data-deger")))'>✏️</button>
+                                <button class="delete-btn" title="Sil" onclick="deleteDeger({{ d.Deger_ID }})">🗑️</button>
+                            </div>
                         </td>
                     </tr>
                     {% else %}
