@@ -150,6 +150,13 @@
     .delete-btn:hover {
         background: #fef2f2;
     }
+
+    .actions-wrapper {
+        display: flex;
+        gap: 6px;
+        justify-content: center;
+        align-items: center;
+    }
 </style>
 {% endblock %}
 
@@ -193,7 +200,7 @@
                         <th>ROL ADI</th>
                         <th>AÇIKLAMA</th>
                         <th style="width: 80px; text-align: center;">AKTİF</th>
-                        <th style="width: 100px; text-align: center;" class="hide-on-print">İŞLEMLER</th>
+                        <th style="width: 120px; text-align: center;" class="hide-on-print">İŞLEMLER</th>
                     </tr>
                 </thead>
                 <tbody id="roller-tbody">
@@ -210,9 +217,11 @@
                             {% endif %}
                         </td>
                         <td style="text-align: center;" class="hide-on-print">
-                            <button class="edit-btn" title="Düzenle" data-rol='{{ r | tojson | safe }}'
-                                onclick='openEditRolModal(JSON.parse(this.getAttribute("data-rol")))'>✏️</button>
-                            <button class="delete-btn" title="Sil" onclick="deleteRol({{ r.Rol_ID }})">🗑️</button>
+                            <div class="actions-wrapper">
+                                <button class="edit-btn" title="Düzenle" data-rol='{{ r | tojson | safe }}'
+                                    onclick='openEditRolModal(JSON.parse(this.getAttribute("data-rol")))'>✏️</button>
+                                <button class="delete-btn" title="Sil" onclick="deleteRol({{ r.Rol_ID }})">🗑️</button>
+                            </div>
                         </td>
                     </tr>
                     {% else %}
