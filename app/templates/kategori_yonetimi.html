@@ -133,57 +133,143 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        font-size: 10px;
+        font-size: 14px;
+        cursor: help;
     }
 
-    .status-active {
-        color: #16a34a;
-        background: #f0fdf4;
-        border: 1px solid #bbf7d0;
-    }
-
-    .status-passive {
-        color: #dc2626;
-        background: #fef2f2;
-        border: 1px solid #fecaca;
-    }
+    .status-active { color: #10b981; }
+    .status-passive { color: #f43f5e; }
 
     .gizli-badge {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        font-size: 10px;
-        color: #64748b;
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
+        font-size: 14px;
+        color: #f59e0b;
+        cursor: help;
     }
 
-    .gizli-true {
-        color: #f59e0b;
-        background: #fffbeb;
-        border-color: #fef3c7;
+    /* Column Redesign CSS */
+    .kat-columns-container {
+        display: flex;
+        gap: 20px;
+        overflow-x: auto;
+        padding-bottom: 20px;
+        align-items: flex-start;
+    }
+
+    .kat-column {
+        flex: 1;
+        min-width: 320px;
+        background: rgba(255, 255, 255, 0.5);
+        border-radius: 16px;
+        border: 1px solid rgba(229, 231, 235, 0.5);
+        display: flex;
+        flex-direction: column;
+        max-height: calc(100vh - 250px);
+    }
+
+    .column-header {
+        padding: 15px 20px;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .column-header h2 {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .column-body {
+        padding: 10px;
+        overflow-y: auto;
+        flex: 1;
+    }
+
+    /* Type-specific colors */
+    .column-gelir { border-top: 4px solid #10b981; }
+    .column-gelir .column-header h2 { color: #065f46; }
+    .column-gelir .column-header i { color: #10b981; }
+
+    .column-gider { border-top: 4px solid #f43f5e; }
+    .column-gider .column-header h2 { color: #9f1239; }
+    .column-gider .column-header i { color: #f43f5e; }
+
+    .column-odeme { border-top: 4px solid #f59e0b; }
+    .column-odeme .column-header h2 { color: #92400e; }
+    .column-odeme .column-header i { color: #f59e0b; }
+
+    .column-giden-fatura { border-top: 4px solid #6366f1; }
+    .column-giden-fatura .column-header h2 { color: #4338ca; }
+    .column-giden-fatura .column-header i { color: #6366f1; }
+
+    .column-bilgi { border-top: 4px solid #64748b; }
+    .column-bilgi .column-header h2 { color: #334155; }
+    .column-bilgi .column-header i { color: #64748b; }
+
+    .kat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 10px 14px;
+        margin-bottom: 8px;
+        border: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        transition: all 0.2s;
+    }
+
+    .kat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        border-color: #e2e8f0;
+    }
+
+    .kat-info {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+        flex: 1;
+        overflow: hidden;
+    }
+
+    .kat-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #1e293b;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .kat-id-tag {
+        font-size: 10px;
+        color: #94a3b8;
+        font-weight: 500;
+        min-width: 25px;
     }
 
     .action-icons {
         display: flex;
-        gap: 6px;
-        justify-content: flex-end;
+        gap: 4px;
+        align-items: center;
     }
 
     .icon-btn {
-        width: 32px;
-        height: 32px;
+        width: 28px;
+        height: 28px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         background: white;
-        border: 1px solid #e2e8f0;
+        border: 1px solid #e5e7eb;
         border-radius: 6px;
         cursor: pointer;
         transition: all 0.2s;
@@ -191,10 +277,15 @@
     }
 
     .icon-btn:hover {
-        background: #f8fafc;
-        color: #3b82f6;
-        border-color: #3b82f6;
+        background: #f1f5f9;
+        color: #2563eb;
+        border-color: #cbd5e1;
     }
+
+    /* Custom Scrollbar */
+    .column-body::-webkit-scrollbar { width: 5px; }
+    .column-body::-webkit-scrollbar-track { background: transparent; }
+    .column-body::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
 </style>
 {% endblock %}
 
@@ -230,54 +321,56 @@
         </div>
     </div>
 
-    <div class="card-glass ref-table-wrapper">
-        <table class="ref-table" id="kat-table">
-            <thead>
-                <tr>
-                    <th style="width: 60px;">ID</th>
-                    <th>KATEGORİ ADI</th>
-                    <th>ÜST KATEGORİ</th>
-                    <th style="width: 120px;">TİP</th>
-                    <th style="width: 80px; text-align: center;">AKTİF</th>
-                    <th style="width: 80px; text-align: center;">GİZLİ</th>
-                    <th style="width: 100px; text-align: center;">İŞLEMLER</th>
-                </tr>
-            </thead>
-            <tbody id="kat-tbody">
+    <!-- Column View -->
+    <div class="kat-columns-container">
+        {% set types = [
+            {'key': 'Gelir', 'label': 'Gelir', 'icon': 'fas fa-plus-circle', 'class': 'column-gelir'},
+            {'key': 'Gider', 'label': 'Gider', 'icon': 'fas fa-minus-circle', 'class': 'column-gider'},
+            {'key': 'Ödeme', 'label': 'Ödeme', 'icon': 'fas fa-wallet', 'class': 'column-odeme'},
+            {'key': 'Giden Fatura', 'label': 'Giden Fatura', 'icon': 'fas fa-file-invoice-dollar', 'class': 'column-giden-fatura'},
+            {'key': 'Bilgi', 'label': 'Bilgi', 'icon': 'fas fa-info-circle', 'class': 'column-bilgi'}
+        ] %}
+
+        {% for t in types %}
+        <div class="kat-column {{ t.class }}">
+            <div class="column-header">
+                <i class="{{ t.icon }}"></i>
+                <h2>{{ t.label }}</h2>
+            </div>
+            <div class="column-body">
+                {% set found = false %}
                 {% for k in kategoriler %}
-                <tr data-id="{{ k.Kategori_ID }}" data-ust-kat="{{ k.UstKategori_Adi }}" data-tip="{{ k.Tip }}">
-                    <td>{{ k.Kategori_ID }}</td>
-                    <td class="kat-name">{{ k.Kategori_Adi }}</td>
-                    <td>{{ k.UstKategori_Adi }}</td>
-                    <td>{{ k.Tip }}</td>
-                    <td style="text-align: center;">
-                        <span class="status-badge {{ 'status-active' if k.Aktif_Pasif else 'status-passive' }}">
-                            <i class="fas {{ 'fa-check' if k.Aktif_Pasif else 'fa-times' }}"></i>
-                        </span>
-                    </td>
-                    <td style="text-align: center;">
-                        <span class="gizli-badge {{ 'gizli-true' if k.Gizli else '' }}">
-                            <i class="fas {{ 'fa-eye-slash' if k.Gizli else 'fa-eye' }}"></i>
-                        </span>
-                    </td>
-                    <td class="hide-on-print">
-                        <div class="action-icons">
+                    {% if k.Tip == t.key %}
+                    {% set found = true %}
+                    <div class="kat-card" data-id="{{ k.Kategori_ID }}" data-ust-kat="{{ k.UstKategori_Adi }}" data-tip="{{ k.Tip }}">
+                        <div class="kat-info">
+                            <span class="status-badge {{ 'status-active' if k.Aktif_Pasif else 'status-passive' }}" title="{{ 'Aktif' if k.Aktif_Pasif else 'Pasif' }}">
+                                <i class="fas {{ 'fa-check-circle' if k.Aktif_Pasif else 'fa-times-circle' }}"></i>
+                            </span>
+                            <span class="kat-id-tag">#{{ k.Kategori_ID }}</span>
+                            <span class="kat-title" title="{{ k.Kategori_Adi }}">{{ k.Kategori_Adi }}</span>
+                            {% if k.Gizli %}
+                            <span class="gizli-badge" title="Gizli Kategori"><i class="fas fa-eye-slash"></i></span>
+                            {% endif %}
+                        </div>
+                        <div class="action-icons hide-on-print">
                             <button class="icon-btn edit" title="Düzenle"
                                 onclick='openEditModal({{ k | tojson | safe }})'>
                                 <i class="fas fa-pen"></i>
                             </button>
                         </div>
-                    </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="7" style="text-align: center; padding: 40px; color: #94a3b8;">
-                        Henüz kategori bulunmuyor.
-                    </td>
-                </tr>
+                    </div>
+                    {% endif %}
                 {% endfor %}
-            </tbody>
-        </table>
+                
+                {% if not found %}
+                <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 11px;">
+                    Bu tipte kategori bulunmuyor.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
     </div>
 </div>
 {% endblock %}
@@ -295,16 +388,17 @@
             const ustKat = filterUstKat.value;
             const tip = filterTip.value;
 
-            document.querySelectorAll('#kat-tbody tr').forEach(row => {
-                const name = row.querySelector('.kat-name')?.textContent.toLowerCase() || '';
-                const rowUstKat = row.dataset.ustKat;
-                const rowTip = row.dataset.tip;
+            document.querySelectorAll('.kat-card').forEach(card => {
+                const name = card.querySelector('.kat-title')?.textContent.toLowerCase() || '';
+                const id = card.querySelector('.kat-id-tag')?.textContent.toLowerCase() || '';
+                const rowUstKat = card.dataset.ustKat;
+                const rowTip = card.dataset.tip;
 
-                const matchName = name.includes(term);
+                const matchName = name.includes(term) || id.includes(term);
                 const matchUstKat = !ustKat || rowUstKat === ustKat;
                 const matchTip = !tip || rowTip === tip;
 
-                row.style.display = (matchName && matchUstKat && matchTip) ? '' : 'none';
+                card.style.display = (matchName && matchUstKat && matchTip) ? 'flex' : 'none';
             });
         }
 
@@ -412,8 +506,23 @@
     }
 
     function exportToExcel() {
-        const table = document.getElementById('kat-table');
-        const wb = XLSX.utils.table_to_book(table, { sheet: "Kategoriler" });
+        const data = [];
+        data.push(["ID", "Kategori Adı", "Üst Kategori", "Tip", "Durum", "Gizli"]);
+        
+        document.querySelectorAll('.kat-card').forEach(card => {
+            if (card.style.display === 'none') return;
+            const id = card.querySelector('.kat-id-tag').textContent.replace('#', '');
+            const name = card.querySelector('.kat-title').textContent;
+            const status = card.querySelector('.fa-check-circle') ? 'Aktif' : 'Pasif';
+            const gizli = card.querySelector('.fa-eye-slash') ? 'Gizli' : 'Görünür';
+            const ustKat = card.dataset.ustKat || '-';
+            const type = card.dataset.tip;
+            data.push([id, name, ustKat, type, status, gizli]);
+        });
+
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Kategoriler");
         XLSX.writeFile(wb, "SilverCloud_Kategoriler.xlsx");
     }
 </script>
