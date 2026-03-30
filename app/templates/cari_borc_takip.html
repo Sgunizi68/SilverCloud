@@ -33,9 +33,9 @@
         </div>
 
         <div class="cbt-tabs">
-            <button class="cbt-tab active" id="tab-tumu" onclick="filterGroup('tumu',this)">Tümü{% if report_data
+            <button class="cbt-tab" id="tab-tumu" onclick="filterGroup('tumu',this)">Tümü{% if report_data
                 %}<span class="cbt-badge">{{ report_data.summary.tumu_count }}</span>{% endif %}</button>
-            <button class="cbt-tab red" id="tab-cari" onclick="filterGroup('cari',this)">Cari Borçlar{% if report_data
+            <button class="cbt-tab red active" id="tab-cari" onclick="filterGroup('cari',this)">Cari Borçlar{% if report_data
                 %}<span class="cbt-badge">{{ report_data.summary.cari_count }}</span>{% endif %}</button>
             <button class="cbt-tab amber" id="tab-olmayan" onclick="filterGroup('olmayan',this)">Cari Olmayan{% if
                 report_data %}<span class="cbt-badge">{{ report_data.summary.cari_olmayan_count }}</span>{% endif
@@ -662,6 +662,12 @@
                 }
             });
         });
+
+        // Default to "Cari Borçlar" group on load
+        const defaultTab = document.getElementById('tab-cari');
+        if (defaultTab) {
+            filterGroup('cari', defaultTab);
+        }
     });
 
     function applyFilters() {
