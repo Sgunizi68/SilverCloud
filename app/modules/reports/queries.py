@@ -1341,8 +1341,20 @@ def get_gelir_kontrol_raporu(db, sube_id: int, donem: int) -> Dict:
             toplam_gelir += g_tutar
             toplam_fark += fark
             
+        # Also fetch manual RobotPos_Tutar entries from GelirEkstra (entered in Gelir Girişi screen)
+        # for reconciliation (Manual vs System recorded RobotPOS)
+        sql_manual = text("""
+            SELECT Tarih, RobotPos_Tutar 
+            FROM GelirEkstra 
+            WHERE Sube_ID = :sube_id 
+              AND YEAR(Tarih) = :year AND MONTH(Tarih) = :month
+        """)
+        manual_rows = db.execute(sql_manual, {"sube_id": sube_id, "year": year, "month": month}).fetchall()
+        manual_data = {r.Tarih.day: float(r.RobotPos_Tutar or 0) for r in manual_rows if r.Tarih}
+            
         return {
             "rows": items,
+            "manual_robotpos": manual_data,
             "summary": {
                 "toplam_robotpos": float(toplam_robotpos),
                 "toplam_gelir": float(toplam_gelir),

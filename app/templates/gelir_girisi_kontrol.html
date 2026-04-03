@@ -212,6 +212,40 @@ table.pivot tbody tr:hover td { background: #f8fafc !important; }
           <td>{{ "%.2f"|format(g.g) }}</td>
           <td>{% if g.f == 0 %}-{% elif g.f < 0 %}{{ "%.2f"|format(g.f) }}{% else %}+{{ "%.2f"|format(g.f) }}{% endif %}</td>
         </tr>
+        <!-- NEW: Gelir Girişi (Manual RobotPOS entered in Gelir Girişi screen) -->
+        <tr style="background:#f1f5f9; color:#1e293b;">
+          <td>Gelir Girişi</td>
+          {% for d in pivot.days %}
+            {% set mv = pivot.manual_robotpos[d] %}
+            <td>{{ "%.2f"|format(mv) if mv != 0 else "-" }}</td>
+            <td style="background:rgba(255,255,255,0.3)">-</td>
+            <td style="background:rgba(255,255,255,0.3)">-</td>
+          {% endfor %}
+          <td class="col-tot-r">{{ "%.2f"|format(pivot.total_manual) }}</td>
+          <td class="col-tot-g">-</td>
+          <td class="col-tot-f">-</td>
+        </tr>
+        <!-- NEW: Fark (Manual vs System recorded RobotPOS) -->
+        <tr style="background:#f8fafc; font-style: italic;">
+          <td>Fark (Manüel - Sistem)</td>
+          {% for d in pivot.days %}
+            {% set df = pivot.manual_diff[d] %}
+            <td>
+              {% if df == 0 %}-
+              {% elif df < 0 %}<span class="fark-neg">{{ "%.2f"|format(df) }}</span>
+              {% else %}<span class="fark-pos">+{{ "%.2f"|format(df) }}</span>{% endif %}
+            </td>
+            <td style="background:rgba(255,255,255,0.3)">-</td>
+            <td style="background:rgba(255,255,255,0.3)">-</td>
+          {% endfor %}
+          <td class="col-tot-r">
+            {% if pivot.total_manual_diff == 0 %}-
+            {% elif pivot.total_manual_diff < 0 %}<span class="fark-neg">{{ "%.2f"|format(pivot.total_manual_diff) }}</span>
+            {% else %}<span class="fark-pos">+{{ "%.2f"|format(pivot.total_manual_diff) }}</span>{% endif %}
+          </td>
+          <td class="col-tot-g">-</td>
+          <td class="col-tot-f">-</td>
+        </tr>
       </tfoot>
     </table>
   </div>

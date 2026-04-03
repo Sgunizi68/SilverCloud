@@ -342,6 +342,15 @@ def gelir_girisi_kontrol():
             grand["g"] += g
             grand["f"] += f
 
+        # Process manual RobotPos entries from GelirEkstra
+        manual_dp = raw.get("manual_robotpos", {})
+        pivot_manual = {d: manual_dp.get(d, 0.0) for d in days}
+        pivot_manual_diff = {d: pivot_manual[d] - day_totals[d]["r"] for d in days}
+        
+        # Calculate totals for these rows
+        total_manual = sum(pivot_manual.values())
+        total_manual_diff = total_manual - grand["r"]
+
         pivot = {
             "days": days,
             "categories": cats_set,
@@ -349,6 +358,10 @@ def gelir_girisi_kontrol():
             "day_totals": day_totals,
             "row_totals": row_totals,
             "grand": grand,
+            "manual_robotpos": pivot_manual,
+            "manual_diff": pivot_manual_diff,
+            "total_manual": total_manual,
+            "total_manual_diff": total_manual_diff,
         }
         summary = raw["summary"]
 
