@@ -2462,10 +2462,10 @@ def get_yemek_ceki_kontrol_dashboard_data(db: Session, sube_id: int, donem: int)
         )
         grup_aylik_gelir = db.execute(stmt_gelir).scalar() or Decimal('0')
 
-        # 1b. Linked EFatura Candidates (via Cari/OdemeReferans)
-        # Find Cari names associated with this category via OdemeReferans
-        stmt_refs = select(Cari.Alici_Unvani).join(OdemeReferans, Cari.Referans_ID == OdemeReferans.Referans_ID).where(
-            OdemeReferans.Kategori_ID == kat.Kategori_ID
+        # 1b. Linked EFatura Candidates (via Cari.Odeme_Kategori_ID)
+        # Find Cari names associated with this category
+        stmt_refs = select(Cari.Alici_Unvani).where(
+            Cari.Odeme_Kategori_ID == kat.Kategori_ID
         )
         related_unvans = db.scalars(stmt_refs).all()
 
