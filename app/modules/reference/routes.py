@@ -1653,12 +1653,10 @@ def list_cariler():
                 "Cari_ID": c.Cari_ID,
                 "Alici_Unvani": c.Alici_Unvani,
                 "e_Fatura_Kategori_ID": c.e_Fatura_Kategori_ID,
-                "Referans_ID": c.Referans_ID,
-                "Referans_Detay": (
-                    f"#{c.referans.Referans_ID} ({c.referans.Referans_Metin} - {c.referans.kategori.Kategori_Adi})"
-                    if c.referans else None
-                ),
-                "Cari": c.Cari,
+                "e_Fatura_Kategori_Adi": c.e_fatura_kategori.Kategori_Adi if c.e_fatura_kategori else "-",
+                "Odeme_Kategori_ID": c.Odeme_Kategori_ID,
+                "Odeme_Kategori_Adi": c.odeme_kategori.Kategori_Adi if c.odeme_kategori else "-",
+                "Tip": c.Tip,
                 "Aciklama": c.Aciklama,
                 "Aktif_Pasif": c.Aktif_Pasif,
             }
@@ -1683,8 +1681,8 @@ def create_cari():
             db,
             alici_unvani=data["Alici_Unvani"],
             e_fatura_kategori_id=data.get("e_Fatura_Kategori_ID"),
-            referans_id=data.get("Referans_ID"),
-            cari=data.get("Cari", True),
+            odeme_kategori_id=data.get("Odeme_Kategori_ID"),
+            tip=data.get("Tip"),
             aciklama=data.get("Aciklama"),
             aktif_pasif=data.get("Aktif_Pasif", True)
         )
@@ -1716,8 +1714,8 @@ def update_cari(cari_id):
             db_cari,
             alici_unvani=data.get("Alici_Unvani"),
             e_fatura_kategori_id=data.get("e_Fatura_Kategori_ID"),
-            referans_id=data.get("Referans_ID"),
-            cari=data.get("Cari"),
+            odeme_kategori_id=data.get("Odeme_Kategori_ID"),
+            tip=data.get("Tip"),
             aciklama=data.get("Aciklama"),
             aktif_pasif=data.get("Aktif_Pasif")
         )

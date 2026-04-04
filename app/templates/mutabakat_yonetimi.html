@@ -138,8 +138,13 @@
         font-weight: 700;
     }
 
-    .amount-positive { color: #059669; }
-    .amount-negative { color: #dc2626; }
+    .amount-positive {
+        color: #059669;
+    }
+
+    .amount-negative {
+        color: #dc2626;
+    }
 
     .action-icons {
         display: flex;
@@ -178,8 +183,11 @@
 
     .loading-overlay {
         position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(255,255,255,0.7);
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.7);
         display: none;
         justify-content: center;
         align-items: center;
@@ -235,7 +243,7 @@
 
         <div class="header-actions">
             <input type="text" id="filterSearch" class="toolbar-input" placeholder="Firma adı ile ara...">
-            
+
             <select id="filterCari" class="toolbar-input">
                 <option value="">Tüm Firmalar</option>
                 {% for c in cariler %}
@@ -289,21 +297,23 @@
                 {% endfor %}
             </select>
         </div>
-        
+
         <div class="form-group">
             <label>Mutabakat Tarihi</label>
             <input type="date" name="Mutabakat_Tarihi" id="modalDateInput" class="input-glass" required>
         </div>
-        
+
         <div class="form-group">
             <label>Tutar (Bakiye)</label>
             <div style="position: relative;">
-                <input type="number" step="0.01" name="Tutar" id="modalTutarInput" class="input-glass" style="padding-right: 40px;" required>
+                <input type="number" step="0.01" name="Tutar" id="modalTutarInput" class="input-glass"
+                    style="padding-right: 40px;" required>
                 <span style="position: absolute; right: 12px; top: 10px; color: #94a3b8; font-weight: 600;">₺</span>
             </div>
-            <p style="font-size: 11px; color: #64748b; margin-top: 4px; margin-bottom: 0;">Anlaşılan net cari bakiyeyi giriniz.</p>
+            <p style="font-size: 11px; color: #64748b; margin-top: 4px; margin-bottom: 0;">Anlaşılan net cari bakiyeyi
+                giriniz.</p>
         </div>
-        
+
         <div style="margin-top: 25px; text-align: right; display: flex; gap: 10px; justify-content: flex-end;">
             <button type="button" class="action-btn" onclick="hideModal()">İptal</button>
             <button type="submit" class="action-btn primary">Kaydet</button>
@@ -327,9 +337,9 @@
         const cariId = document.getElementById('filterCari').value;
         const search = document.getElementById('filterSearch').value.trim();
         const loading = document.getElementById('tableLoading');
-        
+
         loading.style.display = 'flex';
-        
+
         const subeId = getSelectedSubeId();
         let url = `/api/v1/mutabakatlar?limit=1000&sube_id=${subeId}`;
         if (cariId) url += `&cari_id=${cariId}`;
@@ -388,11 +398,11 @@
         currentEditId = null;
         const tpl = document.getElementById('mutabakatModalTpl').innerHTML;
         showModal('Yeni Mutabakat Kaydı', tpl);
-        
+
         // Auto-set today date
         const dateInput = document.getElementById('modalDateInput');
         if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
-        
+
         setupFormHandler();
     }
 
@@ -403,11 +413,11 @@
 
         const tpl = document.getElementById('mutabakatModalTpl').innerHTML;
         showModal('Mutabakat Kaydı Düzenle', tpl);
-        
+
         document.getElementById('modalCariSelect').value = m.Cari_ID;
         document.getElementById('modalDateInput').value = m.Mutabakat_Tarihi;
         document.getElementById('modalTutarInput').value = m.Tutar;
-        
+
         setupFormHandler();
     }
 
@@ -417,7 +427,7 @@
             e.preventDefault();
             const formData = new FormData(form);
             const payload = Object.fromEntries(formData.entries());
-            
+
             // Add Sube_ID automatically
             payload.Sube_ID = getSelectedSubeId();
 
@@ -477,7 +487,7 @@
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(loadMutabakatlar, 400);
     });
-    
+
     document.getElementById('filterCari').addEventListener('change', loadMutabakatlar);
 
     if (branchSelect) {

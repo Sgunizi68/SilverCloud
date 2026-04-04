@@ -592,16 +592,6 @@ def cari_borc_yonetimi():
     kategoriler = queries.get_kategoriler(db_session, limit=1000, can_view_gizli=can_view_gizli)
     kategoriler_list = [{"Kategori_ID": k.Kategori_ID, "Kategori_Adi": k.Kategori_Adi} for k in kategoriler]
     
-    # Odeme Referanslar needed for dropdown
-    odeme_referanslar = queries.get_odeme_referanslar(db_session, limit=1000)
-    odeme_referanslar_list = [
-        {
-            "Referans_ID": r.Referans_ID, 
-            "Referans_Metin": r.Referans_Metin,
-            "Kategori_Adi": r.kategori.Kategori_Adi if r.kategori else "Belirsiz"
-        } 
-        for r in odeme_referanslar
-    ]
     
     cariler = queries.get_cariler(db_session, limit=5000)
     cariler_list = [
@@ -609,12 +599,10 @@ def cari_borc_yonetimi():
             "Cari_ID": c.Cari_ID,
             "Alici_Unvani": c.Alici_Unvani,
             "e_Fatura_Kategori_ID": c.e_Fatura_Kategori_ID,
-            "Referans_ID": c.Referans_ID,
-            "Referans_Detay": (
-                f"#{c.referans.Referans_ID} ({c.referans.Referans_Metin} - {c.referans.kategori.Kategori_Adi})"
-                if c.referans else "-"
-            ),
-            "Cari": c.Cari,
+            "e_Fatura_Kategori_Adi": c.e_fatura_kategori.Kategori_Adi if c.e_fatura_kategori else "-",
+            "Odeme_Kategori_ID": c.Odeme_Kategori_ID,
+            "Odeme_Kategori_Adi": c.odeme_kategori.Kategori_Adi if c.odeme_kategori else "-",
+            "Tip": c.Tip,
             "Aciklama": c.Aciklama,
             "Aktif_Pasif": c.Aktif_Pasif
         } for c in cariler
@@ -627,7 +615,6 @@ def cari_borc_yonetimi():
         user=user,
         subeler=auth_suber,
         kategoriler=kategoriler_list,
-        odeme_referanslar=odeme_referanslar_list,
         cariler=cariler_list
     )
 

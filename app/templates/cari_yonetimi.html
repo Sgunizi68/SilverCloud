@@ -245,8 +245,8 @@
                     <th>ID</th>
                     <th>E-FATURA ÜNVAN</th>
                     <th>E-FATURA KATEGORİ</th>
-                    <th>ÖDEME E-REFERANS</th>
-                    <th style="text-align: center;">CARİ</th>
+                    <th>ÖDEME KATEGORİ</th>
+                    <th style="text-align: center;">TİP</th>
                     <th style="text-align: center;">DURUM</th>
                     <th style="width: 120px; text-align: center;" class="hide-on-print">İŞLEMLER</th>
                 </tr>
@@ -260,18 +260,14 @@
                         <small style="color: #94a3b8;">{{ c.Aciklama or "" }}</small>
                     </td>
                     <td>
-                        {% set kat_adi = "-" %}
-                        {% for k in kategoriler %}
-                        {% if k.Kategori_ID == c.e_Fatura_Kategori_ID %}
-                        {% set kat_adi = k.Kategori_Adi %}
-                        {% endif %}
-                        {% endfor %}
-                        <span class="kategori-badge">{{ kat_adi }}</span>
+                        <span class="kategori-badge">{{ c.e_Fatura_Kategori_Adi }}</span>
                     </td>
-                    <td><small>{{ c.Referans_Detay }}</small></td>
+                    <td>
+                        <span class="kategori-badge">{{ c.Odeme_Kategori_Adi }}</span>
+                    </td>
                     <td style="text-align: center;">
-                        <span class="status-badge {{ 'status-yes' if c.Cari else 'status-no' }}">
-                            {{ 'Evet' if c.Cari else 'Hayır' }}
+                        <span class="status-badge status-yes">
+                            {{ c.Tip or "-" }}
                         </span>
                     </td>
                     <td style="text-align: center;">
@@ -312,7 +308,6 @@
 <!-- Data for Dropdowns -->
 <script>
     const KATEGORILER = {{ kategoriler | tojson | safe }};
-    const REFERANSLAR = {{ odeme_referanslar | tojson | safe }};
 </script>
 {% endblock %}
 
@@ -369,10 +364,19 @@
             katOpts += `<option value="${k.Kategori_ID}" ${sel}>${k.Kategori_Adi}</option>`;
         });
 
-        let refOpts = '<option value="">Seçiniz...</option>';
-        REFERANSLAR.forEach(r => {
-            const sel = (r.Referans_ID == data.Referans_ID) ? 'selected' : '';
-            refOpts += `<option value="${r.Referans_ID}" ${sel}>#${r.Referans_ID} (${r.Referans_Metin} - ${r.Kategori_Adi})</option>`;
+        let odemeKatOpts = '<option value="">Seçiniz...</option>';
+        KATEGORILER.forEach(k => {
+            const sel = (k.Kategori_ID == data.Odeme_Kategori_ID) ? 'selected' : '';
+            odemeKatOpts += `<option value="${k.Kategori_ID}" ${sel}>${k.Kategori_Adi}</option>`;
+        });
+
+        const tipOptions = [
+            "Açik Hesap", "Cari", "Nakit", "Kredi Karti", "Havale/EFT", "Çek", "Senet", "Diger"
+        ];
+        let tipOpts = '<option value="">Seçiniz...</option>';
+        tipOptions.forEach(t => {
+            const sel = (t == data.Tip) ? 'selected' : '';
+            tipOpts += `<option value="${t}" ${sel}>${t}</option>`;
         });
 
         return `
@@ -390,19 +394,21 @@
                     <input type="text" id="Alici_Unvani" class="form-control" value="${data.Alici_Unvani || ''}" placeholder="Örn: ABC A.Ş." required>
                 </div>
                 <div class="form-group">
-                    <label for="e_Fatura_Kategori_ID">E-Fatura Kategorisi *</label>
-                    <select id="e_Fatura_Kategori_ID" class="form-control" required>
+                    <label for="e_Fatura_Kategori_ID">E-Fatura Kategorisi</label>
+                    <select id="e_Fatura_Kategori_ID" class="form-control">
                         ${katOpts}
                     </select>
                 </div>
-                <div class="form-check">
-                    <input type="checkbox" id="Cari" ${data.Cari !== false ? 'checked' : ''}>
-                    <label for="Cari">Cari Hesap</label>
+                <div class="form-group">
+                    <label for="Odeme_Kategori_ID">Ödeme Kategorisi *</label>
+                    <select id="Odeme_Kategori_ID" class="form-control" required>
+                        ${odemeKatOpts}
+                    </select>
                 </div>
                 <div class="form-group">
-                    <label for="Referans_ID">Ödeme e-Referans ${data.Cari !== false ? '*' : ''}</label>
-                    <select id="Referans_ID" class="form-control" ${data.Cari !== false ? 'required' : ''}>
-                        ${refOpts}
+                    <label for="Tip">Tip *</label>
+                    <select id="Tip" class="form-control" required>
+                        ${tipOpts}
                     </select>
                 </div>
                 <div class="form-group">
@@ -415,26 +421,14 @@
                 </div>
                 <div class="modal-footer" style="margin-top: 25px;">
                     <button type="button" class="btn btn-secondary" onclick="hideModal()">İptal</button>
-                    ${!isView ? `<button type="submit" class="btn btn-primary" style="background:#3b82f6; color:white; border:none;">Kaydet</button>` : ''}
+                    ${!isView ? "<button type='submit' class='btn btn-primary' style='background:#3b82f6; color:white; border:none;'>Kaydet</button>" : ""}
                 </div>
             </form>
         `;
     }
 
     function setupModalLogic() {
-        const cariCheck = document.getElementById('Cari');
-        const refSelect = document.getElementById('Referans_ID');
-        if (cariCheck && refSelect) {
-            cariCheck.addEventListener('change', () => {
-                refSelect.required = cariCheck.checked;
-                const label = refSelect.previousElementSibling;
-                if (cariCheck.checked) {
-                    label.innerHTML = "Ödeme e-Referans *";
-                } else {
-                    label.innerHTML = "Ödeme e-Referans";
-                }
-            });
-        }
+        // Any dynamic modal logic can go here.
     }
 
     async function handleFormSubmit(e) {
@@ -445,9 +439,9 @@
 
         const data = {
             Alici_Unvani: document.getElementById('Alici_Unvani').value.trim(),
-            e_Fatura_Kategori_ID: parseInt(document.getElementById('e_Fatura_Kategori_ID').value),
-            Referans_ID: parseInt(document.getElementById('Referans_ID').value) || null,
-            Cari: document.getElementById('Cari').checked,
+            e_Fatura_Kategori_ID: parseInt(document.getElementById('e_Fatura_Kategori_ID').value) || null,
+            Odeme_Kategori_ID: parseInt(document.getElementById('Odeme_Kategori_ID').value) || null,
+            Tip: document.getElementById('Tip').value,
             Aciklama: document.getElementById('Aciklama').value.trim(),
             Aktif_Pasif: document.getElementById('Aktif_Pasif').checked
         };

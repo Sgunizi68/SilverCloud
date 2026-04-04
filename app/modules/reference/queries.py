@@ -824,7 +824,8 @@ def get_cariler(
 ) -> List[Cari]:
     """Get all cariler with optional search."""
     stmt = select(Cari).options(
-        joinedload(Cari.referans).joinedload(OdemeReferans.kategori)
+        joinedload(Cari.e_fatura_kategori),
+        joinedload(Cari.odeme_kategori)
     )
     
     if search:
@@ -843,8 +844,8 @@ def create_cari(
     db: Session,
     alici_unvani: str,
     e_fatura_kategori_id: Optional[int] = None,
-    referans_id: Optional[int] = None,
-    cari: bool = True,
+    odeme_kategori_id: Optional[int] = None,
+    tip: Optional[str] = None,
     aciklama: Optional[str] = None,
     aktif_pasif: bool = True
 ) -> Cari:
@@ -852,8 +853,8 @@ def create_cari(
     new_cari = Cari(
         Alici_Unvani=alici_unvani,
         e_Fatura_Kategori_ID=e_fatura_kategori_id,
-        Referans_ID=referans_id,
-        Cari=cari,
+        Odeme_Kategori_ID=odeme_kategori_id,
+        Tip=tip,
         Aciklama=aciklama,
         Aktif_Pasif=aktif_pasif
     )
@@ -868,8 +869,8 @@ def update_cari(
     db_cari: Cari,
     alici_unvani: Optional[str] = None,
     e_fatura_kategori_id: Optional[int] = None,
-    referans_id: Optional[int] = None,
-    cari: Optional[bool] = None,
+    odeme_kategori_id: Optional[int] = None,
+    tip: Optional[str] = None,
     aciklama: Optional[str] = None,
     aktif_pasif: Optional[bool] = None
 ) -> Cari:
@@ -878,10 +879,10 @@ def update_cari(
         db_cari.Alici_Unvani = alici_unvani
     if e_fatura_kategori_id is not None:
         db_cari.e_Fatura_Kategori_ID = e_fatura_kategori_id
-    if referans_id is not None:
-        db_cari.Referans_ID = referans_id
-    if cari is not None:
-        db_cari.Cari = cari
+    if odeme_kategori_id is not None:
+        db_cari.Odeme_Kategori_ID = odeme_kategori_id
+    if tip is not None:
+        db_cari.Tip = tip
     if aciklama is not None:
         db_cari.Aciklama = aciklama
     if aktif_pasif is not None:

@@ -342,7 +342,6 @@ class OdemeReferans(db.Model):
 
     # Relationships
     kategori = relationship("Kategori", back_populates="odeme_referanslar")
-    cariler = relationship("Cari", back_populates="referans")
 
     def __repr__(self):
         return f"<OdemeReferans {self.Referans_Metin}>"
@@ -713,15 +712,16 @@ class Cari(db.Model):
 
     Cari_ID = Column(Integer, primary_key=True, index=True)
     Alici_Unvani = Column(String(200), nullable=False, index=True)
-    e_Fatura_Kategori_ID = Column(Integer, nullable=True)
-    Referans_ID = Column(Integer, ForeignKey("Odeme_Referans.Referans_ID"), nullable=True, index=True)
-    Cari = Column(Boolean, default=True)
+    e_Fatura_Kategori_ID = Column(Integer, ForeignKey("Kategori.Kategori_ID"), nullable=True, index=True)
+    Odeme_Kategori_ID = Column(Integer, ForeignKey("Kategori.Kategori_ID"), nullable=True, index=True)
+    Tip = Column(String(50), nullable=True)
     Aciklama = Column(Text, nullable=True)
     Aktif_Pasif = Column(Boolean, default=True, index=True)
     Kayit_Tarihi = Column(DateTime, default=func.now(), onupdate=func.now())
 
     # Relationships
-    referans = relationship("OdemeReferans", back_populates="cariler")
+    e_fatura_kategori = relationship("Kategori", foreign_keys=[e_Fatura_Kategori_ID])
+    odeme_kategori = relationship("Kategori", foreign_keys=[Odeme_Kategori_ID])
 
     def __repr__(self):
         return f"<Cari {self.Alici_Unvani}>"
