@@ -997,21 +997,28 @@ def get_nakit_akis_gelir_raporu(start_date: str, end_date: str, sube_id: int):
     return {"daily": results, "summary": summary}
 
 
-def get_cari_borc_takip_raporu(start_date: str, sube_id: int):
+def _empty_cari_result():
+    return {
+        "summary": {
+            "tumu_count": 0, "tumu_bakiye": 0,
+            "cari_count": 0, "cari_bakiye": 0,
+            "cari_olmayan_count": 0, "cari_olmayan_bakiye": 0,
+            "belirsiz_count": 0, "belirsiz_bakiye": 0
+        },
+        "lists": {"tumu": []}
+    }
+
+def get_cari_borc_takip_raporu(sube_id: int, tip: str = "Açik Hesap"):
     """
-    Exact mirror of GumusBulut CariBorcTakipSistemiPage.tsx logic:
-    1. get_cari_mutabakat  → per firm: SUM(all Mutabakat.Tutar), MAX(Mutabakat_Tarihi)
-    2. Use the EARLIEST mutabakat date (across all firms) as the floor for query
-    3. get_cari_fatura     → invoices WHERE Fatura_Tarihi >= floor  (no upper limit)
-    4. get_cari_odeme      → payments WHERE Tarih >= floor (-1*Tutar in SQL)
-    5. Per firm, the effective start = mutabakat_date (for Cari Borç) OR start_date (others)
-    6. Balance = SUM(mutabakat) + SUM(invoices >= startDate) + SUM(payments >= startDate)
-       (payments are already negative from the SQL)
+    Modernized CariBorcTakip logic:
+    1. Filter `Cari` tablosu based on `Tip` parameter.
+    2. Per firm, starting date is Mutabakat_Tarihi (if exists), else beginning of time.
+    3. Gelen Fatura (+), Giden Fatura (-), Odeme (-).
+    4. Balance = Mutabakat + Gelen - Giden - Odeme
     """
     from sqlalchemy import text
     from app.common.database import get_db_session
     from datetime import datetime
-    from dateutil.parser import parse as date_parse
 
     db = get_db_session()
     try:
@@ -1022,118 +1029,6 @@ def get_cari_borc_takip_raporu(start_date: str, sube_id: int):
                 return d.strftime('%d.%m.%Y')
             return str(d)
 
-        # ── 1. get_cari_mutabakat: SUM(Tutar) all-time, MAX(Mutabakat_Tarihi) ──
-        sql_mutabakat = text("""
-            SELECT
-                C.Cari_ID,
-                C.Alici_Unvani,
-                C.Cari,
-                MAX(M.Mutabakat_Tarihi) AS Son_Mutabakat_Tarihi,
-                SUM(M.Tutar)            AS Toplam_Mutabakat_Tutari
-            FROM Cari AS C
-            LEFT JOIN Mutabakat AS M ON M.Cari_ID = C.Cari_ID
-            WHERE C.Aktif_Pasif = 1
-            GROUP BY C.Cari_ID, C.Alici_Unvani, C.Cari
-            ORDER BY Son_Mutabakat_Tarihi DESC
-        """)
-        mutabakat_rows = db.execute(sql_mutabakat).fetchall()
-        if not mutabakat_rows:
-            return _empty_cari_result()
-
-        # Build mutabakat map indexed by Alici_Unvani
-        mut_map = {}
-        for m in mutabakat_rows:
-            mut_map[m.Alici_Unvani] = m
-
-        # Determine effective start date for fetching invoices/payments:
-        # Use the EARLIEST mutabakat date across all firms as the floor (GumusBulut logic)
-        mut_dates = [
-            m.Son_Mutabakat_Tarihi
-            for m in mutabakat_rows
-            if m.Son_Mutabakat_Tarihi is not None
-        ]
-        if mut_dates:
-            earliest_mut = min(mut_dates)
-            # Compare as dates
-            try:
-                sd = datetime.strptime(start_date, '%Y-%m-%d').date()
-            except Exception:
-                sd = datetime.today().date()
-            # If earliest mutabakat is before the selected date, use it as the floor
-            if hasattr(earliest_mut, 'date'):
-                em_date = earliest_mut.date()
-            else:
-                em_date = earliest_mut
-            effective_floor = em_date if em_date < sd else sd
-        else:
-            effective_floor = start_date
-
-        # ── 2. get_cari_fatura: invoices >= effective_floor (the critical GumusBulut >=) ──
-        sql_fatura = text("""
-            SELECT
-                E.Fatura_ID,
-                E.Alici_Unvani,
-                E.Fatura_Tarihi,
-                E.Fatura_Numarasi,
-                E.Tutar,
-                E.Kategori_ID,
-                C.Cari_ID,
-                CASE
-                    WHEN C.Cari IS NULL THEN 'Belirsiz'
-                    WHEN C.Cari = 0    THEN 'Cari Olmayan Borç'
-                    ELSE 'Cari Borç'
-                END AS Cari_Durumu
-            FROM e_Fatura E
-            LEFT JOIN Cari C
-                ON C.Alici_Unvani = E.Alici_Unvani
-               AND C.e_Fatura_Kategori_ID = E.Kategori_ID
-            WHERE E.Fatura_Tarihi >= :floor
-              AND E.Sube_ID = :sube_id
-              AND (E.Giden_Fatura = 0 OR E.Giden_Fatura IS NULL)
-            ORDER BY E.Alici_Unvani, E.Fatura_Tarihi ASC
-        """)
-        fatura_rows = db.execute(sql_fatura, {
-            "floor": effective_floor, "sube_id": sube_id
-        }).fetchall()
-
-        # ── 3. get_cari_odeme: payments >= effective_floor, Tutar negative (−1 * Tutar) ──
-        sql_odeme = text("""
-            SELECT
-                C.Cari_ID,
-                C.Alici_Unvani,
-                -1 * O.Tutar AS Tutar,
-                O.Tarih
-            FROM Cari C
-            INNER JOIN Odeme_Referans ORF
-                ON C.Referans_ID = ORF.Referans_ID
-            INNER JOIN Odeme O
-                ON O.Kategori_ID = ORF.Kategori_ID
-               AND O.Aciklama LIKE CONCAT('%', ORF.Referans_Metin, '%')
-            WHERE O.Tarih >= :floor
-              AND O.Sube_ID = :sube_id
-            ORDER BY C.Alici_Unvani, O.Tarih DESC
-        """)
-        odeme_rows = db.execute(sql_odeme, {
-            "floor": effective_floor, "sube_id": sube_id
-        }).fetchall()
-
-        # ── 4. Group by Alici_Unvani ──────────────────────────────────────────
-        fatura_by_unvan = {}
-        for f in fatura_rows:
-            key = f.Alici_Unvani or "Bilinmeyen"
-            fatura_by_unvan.setdefault(key, []).append(f)
-
-        odeme_by_unvan = {}
-        for o in odeme_rows:
-            key = o.Alici_Unvani or "Bilinmeyen"
-            odeme_by_unvan.setdefault(key, []).append(o)
-
-        # ── 5. Build result per firm (GumusBulut firmaListesi memo logic) ───────
-        try:
-            sd_date = datetime.strptime(start_date, '%Y-%m-%d').date()
-        except Exception:
-            sd_date = datetime.today().date()
-
         def to_date(v):
             if v is None:
                 return None
@@ -1143,129 +1038,175 @@ def get_cari_borc_takip_raporu(start_date: str, sube_id: int):
                 return v
             return None
 
+        # ── 1. Fetch Relevant Caris ──
+        sql_cari = text("""
+            SELECT Cari_ID, Alici_Unvani, Odeme_Kategori_ID, Tip
+            FROM Cari
+            WHERE Aktif_Pasif = 1 
+              AND (:tip = 'Tümü' OR Tip = :tip)
+        """)
+        caris = db.execute(sql_cari, {"tip": tip}).fetchall()
+        
+        if not caris:
+            return _empty_cari_result()
+
+        cari_unvans = [c.Alici_Unvani for c in caris]
+        cari_map = {c.Alici_Unvani: c for c in caris}
+
+        # ── 2. Fetch Mutabakat ──
+        # Find the latest Mutabakat per Cari
+        sql_mutabakat = text("""
+            SELECT
+                C.Alici_Unvani,
+                MAX(M.Mutabakat_Tarihi) AS Son_Mutabakat_Tarihi,
+                SUM(M.Tutar)            AS Toplam_Mutabakat_Tutari
+            FROM Cari AS C
+            JOIN Mutabakat AS M ON M.Cari_ID = C.Cari_ID
+            WHERE C.Aktif_Pasif = 1 AND (:tip = 'Tümü' OR C.Tip = :tip)
+            GROUP BY C.Alici_Unvani
+        """)
+        mutabakat_rows = db.execute(sql_mutabakat, {"tip": tip}).fetchall()
+        mut_map = {m.Alici_Unvani: m for m in mutabakat_rows}
+
+        # ── 3. Fetch Invoices (Gelen +, Giden -) ──
+        # Only for the active unvans
+        if cari_unvans:
+            placeholders = ', '.join([f":u{i}" for i in range(len(cari_unvans))])
+            params = {f"u{i}": u for i, u in enumerate(cari_unvans)}
+            params["sube_id"] = sube_id
+
+            sql_fatura = text(f"""
+                SELECT
+                    Alici_Unvani,
+                    Fatura_Tarihi,
+                    Fatura_Numarasi,
+                    Tutar,
+                    Giden_Fatura
+                FROM e_Fatura
+                WHERE Sube_ID = :sube_id
+                  AND Alici_Unvani IN ({placeholders})
+                ORDER BY Alici_Unvani, Fatura_Tarihi ASC
+            """)
+            fatura_rows = db.execute(sql_fatura, params).fetchall()
+        else:
+            fatura_rows = []
+
+        fatura_by_unvan = {}
+        for f in fatura_rows:
+            fatura_by_unvan.setdefault(f.Alici_Unvani, []).append(f)
+
+        # ── 4. Fetch Payments (-) ──
+        # Using Odeme.Kategori_ID = Cari.Odeme_Kategori_ID
+        valid_kategori_ids = list(set([c.Odeme_Kategori_ID for c in caris if c.Odeme_Kategori_ID]))
+        odeme_rows = []
+        if valid_kategori_ids:
+            cat_placeholders = ', '.join([f":c{i}" for i in range(len(valid_kategori_ids))])
+            cat_params = {f"c{i}": c for i, c in enumerate(valid_kategori_ids)}
+            cat_params["sube_id"] = sube_id
+            
+            sql_odeme = text(f"""
+                SELECT Kategori_ID, Tarih, Tutar, Aciklama
+                FROM Odeme
+                WHERE Sube_ID = :sube_id AND Kategori_ID IN ({cat_placeholders})
+                ORDER BY Tarih DESC
+            """)
+            odeme_rows = db.execute(sql_odeme, cat_params).fetchall()
+        
+        odeme_by_kategori = {}
+        for o in odeme_rows:
+            odeme_by_kategori.setdefault(o.Kategori_ID, []).append(o)
+
+        # ── 5. Process Each Firm ──
         processed = []
-        handled_unvanlar = set()
+        for c in caris:
+            unvan = c.Alici_Unvani
+            kat_id = c.Odeme_Kategori_ID
+            cat_tip = c.Tip or "Belirsiz"
 
-        for m in mutabakat_rows:
-            unvan = m.Alici_Unvani
-            handled_unvanlar.add(unvan)
+            m = mut_map.get(unvan)
+            mut_tarih = to_date(m.Son_Mutabakat_Tarihi) if m else None
+            mut_tutar = float(m.Toplam_Mutabakat_Tutari or 0) if m else 0.0
 
-            # Determine Cari_Durumu from fatura join results (same as GumusBulut)
-            firm_faturalar_all = fatura_by_unvan.get(unvan, [])
-            cari_durumlari = [f.Cari_Durumu for f in firm_faturalar_all if f.Cari_Durumu]
-            if 'Cari Borç' in cari_durumlari:
-                status = 'Cari Borç'
-            elif 'Cari Olmayan Borç' in cari_durumlari:
-                status = 'Cari Olmayan Borç'
-            else:
-                # Fallback: use Cari column from Cari table (already in mut_map)
-                cari_col = m.Cari
-                if cari_col == 1:
-                    status = 'Cari Borç'
-                elif cari_col == 0:
-                    status = 'Cari Olmayan Borç'
+            firm_start = mut_tarih # if None, includes all records
+
+            # Filter invoices
+            faturalar = fatura_by_unvan.get(unvan, [])
+            filtered_faturalar = []
+            gelen_toplam = 0.0
+            giden_toplam = 0.0
+            
+            for f in faturalar:
+                f_date = to_date(f.Fatura_Tarihi)
+                if not f_date: continue
+                if firm_start and f_date < firm_start: continue
+                
+                filtered_faturalar.append(f)
+                val = float(f.Tutar or 0)
+                if f.Giden_Fatura == 1:
+                    giden_toplam += val
                 else:
-                    status = 'Belirsiz'
+                    gelen_toplam += val
 
-            mut_tarih = to_date(m.Son_Mutabakat_Tarihi)
-            mut_tutar = float(m.Toplam_Mutabakat_Tutari or 0)
+            # Filter payments
+            odemeler = odeme_by_kategori.get(kat_id, []) if kat_id else []
+            filtered_odemeler = []
+            odeme_toplam = 0.0
 
-            # Per-firm effective start: mutabakat date for "Cari Borç", else baslangic_tarih
-            if status == 'Cari Borç' and mut_tarih:
-                firm_start = mut_tarih
-            else:
-                firm_start = sd_date
+            for o in odemeler:
+                o_date = to_date(o.Tarih)
+                if not o_date: continue
+                if firm_start and o_date < firm_start: continue
+                
+                filtered_odemeler.append(o)
+                odeme_toplam += float(o.Tutar or 0)
 
-            # Filter invoices and payments >= firm_start (GumusBulut uses >=)
-            faturalar = [f for f in firm_faturalar_all
-                         if to_date(f.Fatura_Tarihi) and to_date(f.Fatura_Tarihi) >= firm_start]
-            odemeler  = [o for o in odeme_by_unvan.get(unvan, [])
-                         if to_date(o.Tarih) and to_date(o.Tarih) >= firm_start]
-
-            if not faturalar and not odemeler and mut_tutar == 0:
+            # Skip if absolutely no activity and no Mutabakat
+            if not filtered_faturalar and not filtered_odemeler and mut_tutar == 0:
                 continue
 
-            fatura_toplam = sum(float(f.Tutar or 0) for f in faturalar)
-            # o.Tutar from the SQL is positive (-1 * negative db value = positive)
-            odeme_toplam = sum(float(o.Tutar or 0) for o in odemeler)
+            balance = mut_tutar + gelen_toplam - giden_toplam + odeme_toplam
 
-            # Balance = mutabakat + faturalar - odemeler
-            balance = mut_tutar + fatura_toplam - odeme_toplam
-
-            # Build detail lists
+            # Build UI Details
             fatura_details = []
-            for f in faturalar:
+            for f in filtered_faturalar:
+                sign = -1 if f.Giden_Fatura == 1 else 1
                 fatura_details.append({
-                    "no": f.Fatura_Numarasi or "N/A",
+                    "no": f.Fatura_Numarasi or "Belirsiz",
                     "date": fmt_date(f.Fatura_Tarihi),
-                    "amount": float(f.Tutar or 0),
+                    "amount": float(f.Tutar or 0) * sign,
+                    "type": "Giden" if f.Giden_Fatura == 1 else "Gelen"
                 })
 
             odeme_details = []
-            for o in odemeler:
+            for o in filtered_odemeler:
                 odeme_details.append({
                     "date": fmt_date(o.Tarih),
-                    "amount": float(o.Tutar or 0),  # positive value
+                    "amount": float(o.Tutar or 0),
+                    "desc": o.Aciklama
                 })
 
             processed.append({
                 "name": unvan,
-                "status": status,
+                "status": cat_tip, # We use status field to hold Tip for UI display
                 "balance": balance,
                 "mutabakat_tutar": mut_tutar,
                 "mutabakat_tarih": fmt_date(mut_tarih),
-                "fatura_toplam": fatura_toplam,
+                "gelen_toplam": gelen_toplam,
+                "giden_toplam": giden_toplam,
+                "fatura_toplam": gelen_toplam - giden_toplam, # Net fatura
                 "odeme_toplam": odeme_toplam,
                 "fatura_details": fatura_details,
                 "odeme_details": odeme_details,
             })
 
-        # ── 6. Belirsiz: invoices for firms NOT in Cari table ─────────────────
-        for unvan, invoices in fatura_by_unvan.items():
-            if unvan in handled_unvanlar:
-                continue
-            fatura_toplam = sum(float(f.Tutar or 0) for f in invoices)
-            if fatura_toplam == 0:
-                continue
-            fatura_details = [{"no": f.Fatura_Numarasi or "N/A",
-                                "date": fmt_date(f.Fatura_Tarihi),
-                                "amount": float(f.Tutar or 0)} for f in invoices]
-            processed.append({
-                "name": unvan,
-                "status": "Belirsiz",
-                "balance": fatura_toplam,
-                "mutabakat_tutar": 0.0,
-                "mutabakat_tarih": "",
-                "fatura_toplam": fatura_toplam,
-                "odeme_toplam": 0.0,
-                "fatura_details": fatura_details,
-                "odeme_details": [],
-            })
+        tumu = sorted(processed, key=lambda x: x["balance"], reverse=True)
 
-        # ── 7. Categorize & sort ──────────────────────────────────────────────
-        cari_borclar = sorted([x for x in processed if x["status"] == "Cari Borç"],
-                              key=lambda x: x["balance"], reverse=True)
-        cari_olmayan = sorted([x for x in processed if x["status"] == "Cari Olmayan Borç"],
-                              key=lambda x: x["balance"], reverse=True)
-        belirsiz     = sorted([x for x in processed if x["status"] == "Belirsiz"],
-                              key=lambda x: abs(x["balance"]), reverse=True)
-
-        tumu = cari_borclar + cari_olmayan + belirsiz
         return {
             "summary": {
                 "tumu_count": len(tumu),
-                "tumu_bakiye": sum(x["balance"] for x in tumu),
-                "cari_count": len(cari_borclar),
-                "cari_bakiye": sum(x["balance"] for x in cari_borclar),
-                "cari_olmayan_count": len(cari_olmayan),
-                "cari_olmayan_bakiye": sum(x["balance"] for x in cari_olmayan),
-                "belirsiz_count": len(belirsiz),
-                "belirsiz_bakiye": sum(x["balance"] for x in belirsiz),
+                "tumu_bakiye": sum(x["balance"] for x in tumu)
             },
             "lists": {
-                "cari_borclar": cari_borclar,
-                "cari_olmayan": cari_olmayan,
-                "belirsiz": belirsiz,
                 "tumu": tumu,
             }
         }

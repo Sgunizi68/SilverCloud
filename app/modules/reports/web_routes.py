@@ -224,18 +224,21 @@ def cari_borc_takip_sistemi():
     if sube_id is None and auth_suber:
         sube_id = auth_suber[0].Sube_ID
         
-    from datetime import date
-    today = date.today()
-    start_date = request.args.get('start_date', today.strftime('%Y-%m-%d'))
+    tip = request.args.get('tip', 'Açik Hesap')
     
     report_data = None
     if sube_id:
         report_data = report_queries.get_cari_borc_takip_raporu(
-            start_date=start_date, 
-            sube_id=sube_id
+            sube_id=sube_id,
+            tip=tip
         )
         
     db_session.close()
+    
+    tip_list = [
+        "Tümü", "Açik Hesap", "Cari", "Nakit", "Kredi Karti", 
+        "Havale/EFT", "Çek", "Senet", "Diger"
+    ]
     
     return render_template(
         "cari_borc_takip.html",
@@ -243,7 +246,8 @@ def cari_borc_takip_sistemi():
         subeler=auth_suber,
         report_data=report_data,
         secili_sube_id=sube_id,
-        start_date=start_date
+        secili_tip=tip,
+        tip_list=tip_list
     )
 
 

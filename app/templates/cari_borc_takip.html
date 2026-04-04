@@ -18,31 +18,30 @@
 
         <div class="cbt-filters">
             <div class="cbt-filter-group">
-                <label><i class="fas fa-calendar-alt"></i> Başlangıç Tarihi</label>
-                <input type="date" id="startDate" class="cbt-input" value="{{ start_date }}" onchange="applyFilters()">
-            </div>
-            <div class="cbt-filter-group">
                 <label>Şube</label>
                 <select id="subeSelect" class="cbt-input" onchange="applyFilters()">
                     {% for s in subeler %}
-                    <option value="{{ s.Sube_ID }}" {% if s.Sube_ID==secili_sube_id %}selected{% endif %}>{{ s.Sube_Adi
-                        }}</option>
+                    <option value="{{ s.Sube_ID }}" {% if s.Sube_ID==secili_sube_id %}selected{% endif %}>{{ s.Sube_Adi }}</option>
                     {% endfor %}
                 </select>
             </div>
         </div>
 
         <div class="cbt-tabs">
-            <button class="cbt-tab" id="tab-tumu" onclick="filterGroup('tumu',this)">Tümü{% if report_data
-                %}<span class="cbt-badge">{{ report_data.summary.tumu_count }}</span>{% endif %}</button>
-            <button class="cbt-tab red active" id="tab-cari" onclick="filterGroup('cari',this)">Cari Borçlar{% if report_data
-                %}<span class="cbt-badge">{{ report_data.summary.cari_count }}</span>{% endif %}</button>
-            <button class="cbt-tab amber" id="tab-olmayan" onclick="filterGroup('olmayan',this)">Cari Olmayan{% if
-                report_data %}<span class="cbt-badge">{{ report_data.summary.cari_olmayan_count }}</span>{% endif
-                %}</button>
-            <button class="cbt-tab grey" id="tab-belirsiz" onclick="filterGroup('belirsiz',this)">Belirsiz{% if
-                report_data %}<span class="cbt-badge">{{ report_data.summary.belirsiz_count }}</span>{% endif
-                %}</button>
+            {% for t in tip_list %}
+            <button class="cbt-tab {% if t == secili_tip %}active{% endif %}" 
+                    onclick="applyFilters('{{ t }}')">
+                {{ t }}
+            </button>
+            {% endfor %}
+        </div>
+
+        <div class="cbt-summary-box">
+            <span>Seçili Tip: <strong>{{ secili_tip }}</strong></span>
+            {% if report_data %}
+            <span>Bakiye Veren Firma: <strong>{{ report_data.summary.tumu_count }}</strong></span>
+            <span>Toplam Bakiye: <strong class="cbt-red">{{ fmt(report_data.summary.tumu_bakiye) }}</strong></span>
+            {% endif %}
         </div>
     </div>
 
@@ -60,9 +59,8 @@
                 </div>
             </div>
             <div class="cbt-card-right">
-                <div class="cbt-balance {{ 'cbt-positive' if firm.balance > 0 else 'cbt-zero' }}">{{ fmt(firm.balance)
-                    }}</div>
-                <div class="cbt-balance-lbl"><i class="fas fa-trending-up"></i> Bakiye</div>
+                <div class="cbt-balance {{ 'cbt-positive' if firm.balance > 0 else 'cbt-zero' }}">{{ fmt(firm.balance) }}</div>
+                <div class="cbt-balance-lbl">Bakiye</div>
             </div>
         </div>
 
@@ -82,16 +80,16 @@
             {# Faturalar #}
             {% if firm.fatura_details %}
             <div class="cbt-section">
-                <div class="cbt-section-title"><i class="fas fa-file-invoice"></i> Faturalar</div>
+                <div class="cbt-section-title"><i class="fas fa-file-invoice"></i> Faturalar (Gelen/Giden)</div>
                 <div class="cbt-grid">
                     {% for f in firm.fatura_details %}
-                    <div class="cbt-compact-item cbt-inv" title="{{ f.no }}">
+                    <div class="cbt-compact-item {{ 'cbt-inv' if f.type == 'Gelen' else 'cbt-inv-giden' }}" title="{{ f.no }}">
                         <span class="cbt-item-info">{{ f.no }} ({{ f.date }})</span>
                         <span class="cbt-item-amount">{{ fmt(f.amount) }}</span>
                     </div>
                     {% endfor %}
                 </div>
-                <div class="cbt-subtotal">Toplam Fatura: <strong>{{ fmt(firm.fatura_toplam) }}</strong></div>
+                <div class="cbt-subtotal">Gelen: <strong>{{ fmt(firm.gelen_toplam) }}</strong> | Giden: <strong>{{ fmt(firm.giden_toplam) }}</strong></div>
             </div>
             {% endif %}
 
@@ -101,7 +99,7 @@
                 <div class="cbt-section-title"><i class="fas fa-wallet"></i> Ödemeler</div>
                 <div class="cbt-grid">
                     {% for o in firm.odeme_details %}
-                    <div class="cbt-compact-item cbt-pay">
+                    <div class="cbt-compact-item cbt-pay" title="{{ o.desc }}">
                         <span class="cbt-item-info">{{ o.date }}</span>
                         <span class="cbt-item-amount">{{ fmt(o.amount) }}</span>
                     </div>
@@ -113,16 +111,14 @@
 
             {# Hesaplama Özeti #}
             <div class="cbt-calc">
-                {% if firm.mutabakat_tutar > 0 %}
-                <div class="cbt-calc-row"><span>Mutabakat Tutarı:</span><span>{{ fmt(firm.mutabakat_tutar) }}</span>
-                </div>
+                {% if firm.mutabakat_tutar != 0 %}
+                <div class="cbt-calc-row"><span>Mutabakat Tutarı:</span><span>{{ fmt(firm.mutabakat_tutar) }}</span></div>
                 {% endif %}
-                <div class="cbt-calc-row"><span>+ Fatura Tutarı:</span><span class="cbt-red">{{ fmt(firm.fatura_toplam)
-                        }}</span></div>
-                <div class="cbt-calc-row"><span>- Ödeme Tutarı:</span><span class="cbt-green">{{ fmt(firm.odeme_toplam)
-                        }}</span></div>
+                <div class="cbt-calc-row"><span>+ Gelen Fatura:</span><span class="cbt-red">{{ fmt(firm.gelen_toplam) }}</span></div>
+                <div class="cbt-calc-row"><span>- Giden Fatura:</span><span class="cbt-green">{{ fmt(firm.giden_toplam) }}</span></div>
+                <div class="cbt-calc-row"><span>+ Ödeme Tutarı:</span><span class="cbt-red">{{ fmt(firm.odeme_toplam) }}</span></div>
                 <div class="cbt-calc-total">
-                    <span>Bakiye:</span>
+                    <span>Genel Bakiye:</span>
                     <span class="{{ 'cbt-red' if firm.balance > 0 else 'cbt-green' }}">{{ fmt(firm.balance) }}</span>
                 </div>
             </div>
@@ -130,45 +126,11 @@
     </div>
     {% endmacro %}
 
-    {# ── Cari Borçlar ───────────────────────────────────────────────────── #}
-    <div class="cbt-group" data-group="cari">
-        <div class="cbt-group-header cbt-hdr-cari">
-            <div class="cbt-group-title">Cari Borçlar</div>
-            <div class="cbt-group-sub">{{ report_data.summary.cari_count }} Firma &mdash; Toplam Bakiye: <strong>{{
-                    fmt(report_data.summary.cari_bakiye) }}</strong></div>
-        </div>
-        {% for firm in report_data.lists.cari_borclar %}
-        {{ firm_card(firm, 'tag-cari', 'Cari Borç') }}
+    <div class="cbt-group">
+        {% for firm in report_data.lists.tumu %}
+        {{ firm_card(firm, 'tag-cari', firm.status) }}
         {% else %}
-        <div class="cbt-empty">Bu kategoride kayıt bulunamadı.</div>
-        {% endfor %}
-    </div>
-
-    {# ── Cari Olmayan ───────────────────────────────────────────────────── #}
-    <div class="cbt-group" data-group="olmayan">
-        <div class="cbt-group-header cbt-hdr-olmayan">
-            <div class="cbt-group-title">Cari Olmayan Borçlar</div>
-            <div class="cbt-group-sub">{{ report_data.summary.cari_olmayan_count }} Firma &mdash; Toplam Bakiye:
-                <strong>{{ fmt(report_data.summary.cari_olmayan_bakiye) }}</strong>
-            </div>
-        </div>
-        {% for firm in report_data.lists.cari_olmayan %}
-        {{ firm_card(firm, 'tag-olmayan', 'Cari Olmayan Borç') }}
-        {% else %}
-        <div class="cbt-empty">Bu kategoride kayıt bulunamadı.</div>
-        {% endfor %}
-    </div>
-
-    {# ── Belirsiz ───────────────────────────────────────────────────────── #}
-    <div class="cbt-group" data-group="belirsiz">
-        <div class="cbt-group-header cbt-hdr-belirsiz">
-            <div class="cbt-group-title">Belirsiz Durumlar</div>
-            <div class="cbt-group-sub">{{ report_data.summary.belirsiz_count }} Firma</div>
-        </div>
-        {% for firm in report_data.lists.belirsiz %}
-        {{ firm_card(firm, 'tag-belirsiz', 'Belirsiz') }}
-        {% else %}
-        <div class="cbt-empty">Bu kategoride kayıt bulunamadı.</div>
+        <div class="cbt-empty">Seçili tipte bakiye veren kayıt bulunamadı.</div>
         {% endfor %}
     </div>
 
@@ -270,7 +232,8 @@
     .cbt-tabs {
         display: flex;
         gap: .5rem;
-        flex-wrap: wrap
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
     }
 
     .cbt-tab {
@@ -282,45 +245,35 @@
         font-size: 13px;
         font-weight: 500;
         color: #64748b;
-        display: flex;
-        align-items: center;
-        gap: .35rem;
-        transition: .15s
+        transition: .15s;
+        outline: none;
     }
 
-    .cbt-badge {
-        background: #e2e8f0;
-        color: #475569;
-        border-radius: 999px;
-        font-size: 11px;
-        padding: 0 6px;
-        font-weight: 600
+    .cbt-tab:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
     }
 
     .cbt-tab.active {
         background: #6366f1;
         color: #fff;
-        border-color: #6366f1
+        border-color: #6366f1;
     }
 
-    .cbt-tab.active .cbt-badge {
-        background: rgba(255, 255, 255, .3);
-        color: #fff
+    .cbt-summary-box {
+        background: #f1f5f9;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        display: flex;
+        gap: 1.5rem;
+        font-size: 13px;
+        color: #475569;
+        flex-wrap: wrap;
+        border: 1px solid #e2e8f0;
     }
 
-    .cbt-tab.red.active {
-        background: #ef4444;
-        border-color: #ef4444
-    }
-
-    .cbt-tab.amber.active {
-        background: #f59e0b;
-        border-color: #f59e0b
-    }
-
-    .cbt-tab.grey.active {
-        background: #6b7280;
-        border-color: #6b7280
+    .cbt-summary-box strong {
+        color: #1e293b;
     }
 
     /* ── Group ─────────────────────────────────────────────────────────────── */
@@ -337,19 +290,9 @@
         border-left: 4px solid
     }
 
-    .cbt-hdr-cari {
-        border-color: #ef4444;
-        background: #fef2f2
-    }
-
-    .cbt-hdr-olmayan {
-        border-color: #f59e0b;
-        background: #fffbeb
-    }
-
-    .cbt-hdr-belirsiz {
-        border-color: #6b7280;
-        background: #f9fafb
+    .cbt-hdr-tip {
+        border-color: #6366f1;
+        background: #f8fafc
     }
 
     .cbt-group-title {
@@ -531,8 +474,13 @@
     }
 
     .cbt-inv {
-        border-left: 3px solid #f97316;
-        background: #fffaf5;
+        border-left: 3px solid #22c55e; /* Green for incoming */
+        background: #f0fdf4;
+    }
+
+    .cbt-inv-giden {
+        border-left: 3px solid #ef4444; /* Red for outgoing */
+        background: #fef2f2;
     }
 
     .cbt-pay {
@@ -662,26 +610,12 @@
                 }
             });
         });
-
-        // Default to "Cari Borçlar" group on load
-        const defaultTab = document.getElementById('tab-cari');
-        if (defaultTab) {
-            filterGroup('cari', defaultTab);
-        }
     });
 
-    function applyFilters() {
+    function applyFilters(selectedTip) {
         var sube = document.getElementById('subeSelect').value;
-        var dt = document.getElementById('startDate').value;
-        window.location.href = '/cari-borc-takip-sistemi?sube_id=' + sube + '&start_date=' + dt;
-    }
-
-    function filterGroup(group, btn) {
-        document.querySelectorAll('.cbt-tab').forEach(function (b) { b.classList.remove('active'); });
-        btn.classList.add('active');
-        document.querySelectorAll('.cbt-group').forEach(function (g) {
-            g.style.display = (group === 'tumu' || g.dataset.group === group) ? 'block' : 'none';
-        });
+        var tip = selectedTip || '{{ secili_tip }}';
+        window.location.href = '/cari-borc-takip-sistemi?sube_id=' + sube + '&tip=' + encodeURIComponent(tip);
     }
 
     function exportToExcel() {
@@ -690,9 +624,10 @@
             {% for item in report_data.lists.tumu %}
             {
                 "Firma": {{ item.name | tojson }},
-                "Durum": {{ item.status | tojson }},
+                "Tip": {{ item.status | tojson }},
                 "Mutabakat": {{ item.mutabakat_tutar }},
-                "Fatura": {{ item.fatura_toplam }},
+                "Gelen Fatura": {{ item.gelen_toplam }},
+                "Giden Fatura": {{ item.giden_toplam }},
                 "Ödeme": {{ item.odeme_toplam }},
                 "Bakiye": {{ item.balance }}
             }{% if not loop.last %},{% endif %}
@@ -701,7 +636,7 @@
         var ws = XLSX.utils.json_to_sheet(rows);
         var wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Cari Borç');
-        XLSX.writeFile(wb, 'Cari_Borc_' + document.getElementById('startDate').value + '.xlsx');
+        XLSX.writeFile(wb, 'Cari_Borc_' + '{{ secili_tip }}'.replace(/\s+/g, '_') + '.xlsx');
         {% else %}
         alert('Dışa aktarılacak veri bulunamadı.');
         {% endif %}
