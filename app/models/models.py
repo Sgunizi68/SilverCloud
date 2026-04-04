@@ -712,7 +712,6 @@ class Cari(db.Model):
 
     Cari_ID = Column(Integer, primary_key=True, index=True)
     Alici_Unvani = Column(String(200), nullable=False, index=True)
-    e_Fatura_Kategori_ID = Column(Integer, ForeignKey("Kategori.Kategori_ID"), nullable=True, index=True)
     Odeme_Kategori_ID = Column(Integer, ForeignKey("Kategori.Kategori_ID"), nullable=True, index=True)
     Tip = Column(String(50), nullable=True)
     Aciklama = Column(Text, nullable=True)
@@ -720,7 +719,6 @@ class Cari(db.Model):
     Kayit_Tarihi = Column(DateTime, default=func.now(), onupdate=func.now())
 
     # Relationships
-    e_fatura_kategori = relationship("Kategori", foreign_keys=[e_Fatura_Kategori_ID])
     odeme_kategori = relationship("Kategori", foreign_keys=[Odeme_Kategori_ID])
 
     def __repr__(self):

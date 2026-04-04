@@ -598,8 +598,6 @@ def cari_borc_yonetimi():
         {
             "Cari_ID": c.Cari_ID,
             "Alici_Unvani": c.Alici_Unvani,
-            "e_Fatura_Kategori_ID": c.e_Fatura_Kategori_ID,
-            "e_Fatura_Kategori_Adi": c.e_fatura_kategori.Kategori_Adi if c.e_fatura_kategori else "-",
             "Odeme_Kategori_ID": c.Odeme_Kategori_ID,
             "Odeme_Kategori_Adi": c.odeme_kategori.Kategori_Adi if c.odeme_kategori else "-",
             "Tip": c.Tip,

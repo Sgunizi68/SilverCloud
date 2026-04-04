@@ -1652,8 +1652,6 @@ def list_cariler():
             {
                 "Cari_ID": c.Cari_ID,
                 "Alici_Unvani": c.Alici_Unvani,
-                "e_Fatura_Kategori_ID": c.e_Fatura_Kategori_ID,
-                "e_Fatura_Kategori_Adi": c.e_fatura_kategori.Kategori_Adi if c.e_fatura_kategori else "-",
                 "Odeme_Kategori_ID": c.Odeme_Kategori_ID,
                 "Odeme_Kategori_Adi": c.odeme_kategori.Kategori_Adi if c.odeme_kategori else "-",
                 "Tip": c.Tip,
@@ -1680,7 +1678,6 @@ def create_cari():
         new_cari = queries.create_cari(
             db,
             alici_unvani=data["Alici_Unvani"],
-            e_fatura_kategori_id=data.get("e_Fatura_Kategori_ID"),
             odeme_kategori_id=data.get("Odeme_Kategori_ID"),
             tip=data.get("Tip"),
             aciklama=data.get("Aciklama"),
@@ -1713,7 +1710,6 @@ def update_cari(cari_id):
             db,
             db_cari,
             alici_unvani=data.get("Alici_Unvani"),
-            e_fatura_kategori_id=data.get("e_Fatura_Kategori_ID"),
             odeme_kategori_id=data.get("Odeme_Kategori_ID"),
             tip=data.get("Tip"),
             aciklama=data.get("Aciklama"),

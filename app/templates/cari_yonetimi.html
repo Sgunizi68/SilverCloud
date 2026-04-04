@@ -244,7 +244,6 @@
                 <tr>
                     <th>ID</th>
                     <th>E-FATURA ÜNVAN</th>
-                    <th>E-FATURA KATEGORİ</th>
                     <th>ÖDEME KATEGORİ</th>
                     <th style="text-align: center;">TİP</th>
                     <th style="text-align: center;">DURUM</th>
@@ -258,9 +257,6 @@
                     <td>
                         <div class="alici-name">{{ c.Alici_Unvani }}</div>
                         <small style="color: #94a3b8;">{{ c.Aciklama or "" }}</small>
-                    </td>
-                    <td>
-                        <span class="kategori-badge">{{ c.e_Fatura_Kategori_Adi }}</span>
                     </td>
                     <td>
                         <span class="kategori-badge">{{ c.Odeme_Kategori_Adi }}</span>
@@ -358,14 +354,10 @@
     }
 
     function cariFormHtml(isEdit = false, data = {}, isView = false) {
-        let katOpts = '<option value="">Seçiniz...</option>';
-        KATEGORILER.forEach(k => {
-            const sel = (k.Kategori_ID == data.e_Fatura_Kategori_ID) ? 'selected' : '';
-            katOpts += `<option value="${k.Kategori_ID}" ${sel}>${k.Kategori_Adi}</option>`;
-        });
+        const sortedKategoriler = [...KATEGORILER].sort((a, b) => a.Kategori_Adi.localeCompare(b.Kategori_Adi, 'tr'));
 
         let odemeKatOpts = '<option value="">Seçiniz...</option>';
-        KATEGORILER.forEach(k => {
+        sortedKategoriler.forEach(k => {
             const sel = (k.Kategori_ID == data.Odeme_Kategori_ID) ? 'selected' : '';
             odemeKatOpts += `<option value="${k.Kategori_ID}" ${sel}>${k.Kategori_Adi}</option>`;
         });
@@ -392,12 +384,6 @@
                 <div class="form-group">
                     <label for="Alici_Unvani">Alıcı Ünvanı *</label>
                     <input type="text" id="Alici_Unvani" class="form-control" value="${data.Alici_Unvani || ''}" placeholder="Örn: ABC A.Ş." required>
-                </div>
-                <div class="form-group">
-                    <label for="e_Fatura_Kategori_ID">E-Fatura Kategorisi</label>
-                    <select id="e_Fatura_Kategori_ID" class="form-control">
-                        ${katOpts}
-                    </select>
                 </div>
                 <div class="form-group">
                     <label for="Odeme_Kategori_ID">Ödeme Kategorisi *</label>
@@ -439,7 +425,6 @@
 
         const data = {
             Alici_Unvani: document.getElementById('Alici_Unvani').value.trim(),
-            e_Fatura_Kategori_ID: parseInt(document.getElementById('e_Fatura_Kategori_ID').value) || null,
             Odeme_Kategori_ID: parseInt(document.getElementById('Odeme_Kategori_ID').value) || null,
             Tip: document.getElementById('Tip').value,
             Aciklama: document.getElementById('Aciklama').value.trim(),
