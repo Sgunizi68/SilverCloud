@@ -238,6 +238,9 @@
         color: #b91c1c;
         border-left: 4px solid #ef4444;
     }
+    .save_loading { color: #3b82f6; }
+    .save_success { color: #22c55e; }
+    .save_error { color: #ef4444; }
 </style>
 {% endblock %}
 
@@ -293,12 +296,8 @@
         </div>
     </div>
 
-    <!-- Save button bar -->
-    {% if can_edit %}
-    <div class="save-bar">
-        <button type="submit" class="btn-kaydet"><i class="fas fa-save"></i> Kaydet</button>
-    </div>
-    {% endif %}
+    <!-- Save button removed for auto-save -->
+
 
     <!-- Data table -->
     <div class="table-card">
@@ -328,11 +327,18 @@
                     <td>{{ item.Malzeme_Aciklamasi }}</td>
                     <td>{{ item.Birimi }}</td>
                     <td class="right">
-                        <input type="text" class="miktar-input" name="miktar_{{ item.Malzeme_Kodu }}"
-                            data-fiyat="{{ item.fiyat if item.fiyat else item.Fiyat }}"
-                            value="{{ '{:,.2f}'.format(item.Miktar).replace(',', 'X').replace('.', ',').replace('X', '.') if item.Miktar is not none else '0,00' }}"
-                            oninput="calculateRowTotal(this)" {% if not can_edit %}disabled{% endif %}
-                            autocomplete="off">
+                        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 4px;">
+                            <span class="save-indicator" id="status_{{ item.Malzeme_Kodu }}"></span>
+                            <input type="text" class="miktar-input" name="miktar_{{ item.Malzeme_Kodu }}"
+                                data-fiyat="{{ item.fiyat if item.fiyat else item.Fiyat }}"
+                                data-kod="{{ item.Malzeme_Kodu }}"
+                                value="{{ '{:,.2f}'.format(item.Miktar).replace(',', 'X').replace('.', ',').replace('X', '.') if item.Miktar is not none else '0,00' }}"
+                                oninput="calculateRowTotal(this)" 
+                                onblur="triggerAutoSave(this)"
+                                onkeydown="if(event.key==='Enter'){this.blur(); event.preventDefault();}"
+                                {% if not can_edit %}disabled{% endif %}
+                                autocomplete="off">
+                        </div>
                     </td>
                     <td class="right fiyat-cell">{{ "{:,.2f}".format(item.Fiyat).replace(",", "X").replace(".",
                         ",").replace("X", ".") }}</td>
@@ -463,6 +469,49 @@
         });
 
         document.getElementById('genelToplam').innerText = formatTR(grandTotal);
+    }
+
+    function triggerAutoSave(inputEl) {
+        if (inputEl.disabled) return;
+        
+        const kod = inputEl.getAttribute('data-kod');
+        const miktar = inputEl.value;
+        const indicator = document.getElementById(`status_${kod}`);
+        
+        if (indicator) {
+            indicator.innerHTML = '<i class="fas fa-circle-notch fa-spin save_loading"></i>';
+        }
+
+        fetch('/stok-sayimi/auto-save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                malzeme_kodu: kod,
+                miktar: miktar,
+                donem: SECILI_DONEM,
+                sube_id: SUBE_ID
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (indicator) {
+                    indicator.innerHTML = '<i class="fas fa-check-circle save_success"></i>';
+                    setTimeout(() => { indicator.innerHTML = ''; }, 2000);
+                }
+            } else {
+                if (indicator) {
+                    indicator.innerHTML = '<i class="fas fa-exclamation-circle save_error" title="' + (data.message || 'Hata') + '"></i>';
+                }
+                console.error('Auto-save error:', data.message);
+            }
+        })
+        .catch(err => {
+            if (indicator) {
+                indicator.innerHTML = '<i class="fas fa-exclamation-circle save_error" title="Bağlantı hatası"></i>';
+            }
+            console.error('Fetch error:', err);
+        });
     }
 </script>
 {% endblock %}

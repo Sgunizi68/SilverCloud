@@ -332,3 +332,50 @@ def stok_sayimi_kaydet():
     except Exception as e:
         flash(f"Kayıt hatası: {str(e)}", "danger")
         return redirect(url_for("web_inventory.stok_sayimi"))
+
+@web_inventory_bp.route("/stok-sayimi/auto-save", methods=["POST"])
+@login_required
+@permission_required("Stok Sayım Ekranı Görüntüleme")
+def stok_sayimi_autosave():
+    """Auto-save single stock count via AJAX."""
+    try:
+        data = request.get_json()
+        malzeme_kodu = data.get("malzeme_kodu")
+        miktar_str = str(data.get("miktar", "0")).replace(".", "").replace(",", ".")
+        miktar = float(miktar_str)
+        donem = int(data.get("donem"))
+        sube_id = int(data.get("sube_id"))
+
+        db_session = get_db_session()
+        user = auth_queries.get_kullanici_by_id(db_session, session['user_id'])
+        
+        # Admin/Period check
+        is_admin = (user.Kullanici_Adi and user.Kullanici_Adi.lower() == 'admin')
+        if not is_admin:
+            roles = auth_queries.get_user_roles(db_session, user.Kullanici_ID)
+            is_admin = 'admin' in [r.lower() for r in roles]
+        
+        if not is_admin:
+            from datetime import datetime
+            now = datetime.now()
+            current_donem = int(f"{now.strftime('%y')}{now.strftime('%m')}")
+            py = now.year; pm = now.month - 1
+            if pm < 1: pm = 12; py -= 1
+            prev_donem = int(f"{str(py)[-2:]}{pm:02d}")
+            
+            if donem != current_donem and donem != prev_donem:
+                db_session.close()
+                return jsonify({"success": False, "message": "Yetkisiz dönem."}), 403
+
+        inventory_queries.upsert_stok_sayim(
+            db_session,
+            malzeme_kodu=malzeme_kodu,
+            donem=donem,
+            miktar=miktar,
+            sube_id=sube_id
+        )
+        db_session.close()
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
