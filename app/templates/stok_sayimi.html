@@ -242,7 +242,7 @@
 {% endblock %}
 
 {% block content %}
-{% set can_edit = (is_admin or secili_donem == current_donem) %}
+{% set can_edit = (is_admin or secili_donem == current_donem or secili_donem == prev_donem) %}
 
 <!-- Flash messages -->
 {% with messages = get_flashed_messages(with_categories=true) %}

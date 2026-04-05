@@ -227,6 +227,17 @@ def stok_sayimi():
     donem_listesi = []
     curr_y = now.year
     curr_m = now.month
+    
+    current_donem = int(f"{str(curr_y)[-2:]}{curr_m:02d}")
+    
+    # Calculate previous period for restriction
+    py = curr_y
+    pm = curr_m - 1
+    if pm < 1:
+        pm = 12
+        py -= 1
+    prev_donem = int(f"{str(py)[-2:]}{pm:02d}")
+
     for _ in range(12):
         d_val = int(f"{str(curr_y)[-2:]}{curr_m:02d}")
         months = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
@@ -249,7 +260,8 @@ def stok_sayimi():
         grup_toplamlar=grup_toplamlar,
         genel_toplam=genel_toplam,
         is_admin=is_admin,
-        current_donem=default_donem
+        current_donem=current_donem,
+        prev_donem=prev_donem
     )
 
 
@@ -266,7 +278,33 @@ def stok_sayimi_kaydet():
             flash("Dönem veya Şube bilgisi eksik.", "danger")
             return redirect(url_for("web_inventory.stok_sayimi", sube_id=sube_id, donem=donem))
 
+        # Enforce period restriction for non-admins
         db_session = get_db_session()
+        user = auth_queries.get_kullanici_by_id(db_session, session['user_id'])
+        
+        is_admin = (user.Kullanici_Adi and user.Kullanici_Adi.lower() == 'admin')
+        if not is_admin:
+            roles = auth_queries.get_user_roles(db_session, user.Kullanici_ID)
+            is_admin = 'admin' in [r.lower() for r in roles]
+        
+        if not is_admin:
+            from datetime import datetime
+            now = datetime.now()
+            current_donem = int(f"{now.strftime('%y')}{now.strftime('%m')}")
+            
+            # Calculate prev_donem
+            py = now.year
+            pm = now.month - 1
+            if pm < 1:
+                pm = 12
+                py -= 1
+            prev_donem = int(f"{str(py)[-2:]}{pm:02d}")
+            
+            if donem != current_donem and donem != prev_donem:
+                db_session.close()
+                flash("Bu dönem için veri girişi yetkiniz bulunmamaktadır.", "danger")
+                return redirect(url_for("web_inventory.stok_sayimi", sube_id=sube_id, donem=donem))
+
         saved_count = 0
 
         for key, value in request.form.items():
