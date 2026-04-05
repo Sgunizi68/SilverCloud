@@ -1085,7 +1085,7 @@ def get_cari_borc_takip_raporu(sube_id: int, tip: str = "Açik Hesap"):
                 FROM e_Fatura
                 WHERE Sube_ID = :sube_id
                   AND Alici_Unvani IN ({placeholders})
-                ORDER BY Alici_Unvani, Fatura_Tarihi ASC
+                ORDER BY Alici_Unvani, Fatura_Tarihi DESC
             """)
             fatura_rows = db.execute(sql_fatura, params).fetchall()
         else:
