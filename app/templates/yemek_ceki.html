@@ -266,7 +266,7 @@
                     <td class="cell-muted">{{ item.Son_Tarih }}</td>
                     <td class="text-center">
                         {% if item.has_imaj %}
-                        <a href="#" class="image-link" onclick="viewImageDeferred('{{ item.ID }}', '{{ item.Imaj_Adi }}', this); return false;">
+                        <a href="#" class="image-link" data-imaj-id="{{ item.ID }}" onclick="viewImageDeferred('{{ item.ID }}', '{{ item.Imaj_Adi }}', this); return false;">
                             <i class="fas fa-envelope-open-text"></i> Görüntüle
                         </a>
                         {% endif %}
@@ -354,19 +354,64 @@
         document.getElementById('imageOverlay').style.display = 'flex';
     }
 
+    window.prefetchedImages = {};
+    window.fetchingImages = {};
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Find all image links and start fetching them in the background
+        const links = document.querySelectorAll('.image-link[data-imaj-id]');
+        links.forEach(link => {
+            const id = link.getAttribute('data-imaj-id');
+            if (id && !window.fetchingImages[id]) {
+                window.fetchingImages[id] = fetch(`/api/v1/yemek-cekileri/${id}/image`)
+                    .then(r => {
+                        if (r.ok) return r.json();
+                        throw new Error("Failed");
+                    })
+                    .then(data => {
+                        window.prefetchedImages[id] = data;
+                        return data;
+                    })
+                    .catch(err => {
+                        console.error("Prefetch failed for", id, err);
+                    });
+            }
+        });
+    });
+
     async function viewImageDeferred(id, filename, btn) {
         if (!id) return;
         
+        // Fast path: already fetched
+        if (window.prefetchedImages[id]) {
+            const data = window.prefetchedImages[id];
+            viewImage(data.Imaj_Base64, data.Imaj_Adi || filename);
+            return;
+        }
+
         const originalHtml = btn.innerHTML;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yükleniyor...';
         btn.style.opacity = '0.7';
         btn.style.pointerEvents = 'none';
         
         try {
-            const response = await fetch(`/api/v1/yemek-cekileri/${id}/image`);
-            if (!response.ok) throw new Error("Resim yüklenemedi.");
-            const data = await response.json();
-            viewImage(data.Imaj_Base64, data.Imaj_Adi || filename);
+            let data;
+            // Mid path: currently fetching
+            if (window.fetchingImages[id]) {
+                data = await window.fetchingImages[id];
+            } else {
+                // Slow path: wasn't prefetched for some reason
+                const response = await fetch(`/api/v1/yemek-cekileri/${id}/image`);
+                if (!response.ok) throw new Error("Resim yüklenemedi.");
+                data = await response.json();
+                window.prefetchedImages[id] = data; // Cache it
+            }
+
+            if (data && data.Imaj_Base64) {
+                viewImage(data.Imaj_Base64, data.Imaj_Adi || filename);
+            } else {
+                throw new Error("Resim verisi alınamadı.");
+            }
         } catch (err) {
             alert(err.message);
         } finally {
