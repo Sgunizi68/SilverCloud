@@ -784,16 +784,25 @@ def get_ozet_kontrol_raporu(db, sube_id: int, donem: int, show_gizli: bool = Fal
 
     # 10. Online & Yemek Çeki Metrics (Sourced from Dashboard logic)
     from app.modules.invoicing.queries import get_online_kontrol_dashboard_data, get_yemek_ceki_kontrol_dashboard_data
-    online_res = get_online_kontrol_dashboard_data(db, sube_id, donem)
-    online_summary = online_res.get('summary', {})
-    online_gelir = float(online_summary.get('gelir_toplam', 0))
-    online_virman = float(online_summary.get('toplam_virman', 0))
+    
+    try:
+        online_res = get_online_kontrol_dashboard_data(db, sube_id, donem)
+        online_summary = online_res.get('summary', {})
+        online_gelir = float(online_summary.get('gelir_toplam', 0))
+        online_virman = float(online_summary.get('toplam_virman', 0))
+    except Exception:
+        online_gelir = 0.0
+        online_virman = 0.0
 
     # 12 & 13. Yemek Çeki Metrics (Sourced from Yemek Çeki Kontrol Dashboard logic)
-    yemek_res = get_yemek_ceki_kontrol_dashboard_data(db, sube_id, donem)
-    yemek_stats = yemek_res.get('stats', {})
-    yemek_ceki_aylik = float(yemek_stats.get('total_gelir', 0))
-    yemek_ceki_toplam = float(yemek_stats.get('total_donem_tutar', 0))
+    try:
+        yemek_res = get_yemek_ceki_kontrol_dashboard_data(db, sube_id, donem)
+        yemek_stats = yemek_res.get('stats', {})
+        yemek_ceki_aylik = float(yemek_stats.get('total_gelir', 0))
+        yemek_ceki_toplam = float(yemek_stats.get('total_donem_tutar', 0))
+    except Exception:
+        yemek_ceki_aylik = 0.0
+        yemek_ceki_toplam = 0.0
 
     # 14. TOTAL REVENUE & EXPENSE for Summary Cards (aligned with Dashboard logic)
     # Total Revenue (already fetched as toplam_satis but let's be explicit)
