@@ -849,6 +849,37 @@ def get_diger_harcama(harcama_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@invoicing_bp.route("/diger-harcamalar/<int:harcama_id>/image", methods=["GET"])
+@auth_required
+def get_diger_harcama_image(harcama_id):
+    """Get only the image base64 for an other expense."""
+    try:
+        db = get_db_session()
+        from app.modules.auth import queries as auth_queries
+        user = request.user
+        is_admin = (user.Kullanici_Adi and user.Kullanici_Adi.lower() == 'admin')
+        if not is_admin:
+            roles = auth_queries.get_user_roles(db, user.Kullanici_ID)
+            is_admin = 'admin' in [r.lower() for r in roles]
+        can_view_gizli = is_admin or auth_queries.has_permission(db, user.Kullanici_ID, "Gizli Kategori Veri Erişimi")
+        
+        h = queries.get_diger_harcama_by_id(db, harcama_id, can_view_gizli=can_view_gizli)
+        db.close()
+        
+        if not h:
+            return jsonify({"error": "DigerHarcama not found"}), 404
+            
+        if not h.Imaj:
+            return jsonify({"error": "Resim bulunamadı"}), 404
+            
+        return jsonify({
+            "Harcama_ID": h.Harcama_ID,
+            "Imaj_Base64": base64.b64encode(h.Imaj).decode('utf-8'),
+            "Imaj_Adi": h.Imaj_Adi or "gorsel.jpeg"
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 @invoicing_bp.route("/diger-harcamalar", methods=["POST"])
 @auth_required

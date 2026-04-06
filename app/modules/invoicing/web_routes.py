@@ -394,7 +394,6 @@ def diger_harcamalar():
             'Aciklama': h.Açıklama or '',
             'Imaj_Adi': h.Imaj_Adi or '',
             'has_imaj': bool(h.Imaj),
-            'Imaj_Base64': b64.b64encode(h.Imaj).decode('utf-8') if h.Imaj else '',
         }
         harcamalar_list.append(item)
     
