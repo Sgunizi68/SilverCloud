@@ -2552,10 +2552,10 @@ def get_yemek_ceki_kontrol_dashboard_data(db: Session, sube_id: int, donem: int)
                 and_(
                     EFatura.Sube_ID == sube_id,
                     EFatura.Giden_Fatura == True,
-                    EFatura.Tutar == cek.Tutar,
+                    func.abs(EFatura.Tutar - cek.Tutar) <= 2.0,
                     func.date_sub(EFatura.Fatura_Tarihi, text("INTERVAL 5 DAY")) <= func.date_add(cek.Son_Tarih, text("INTERVAL 90 DAY"))
                 )
-            ).order_by(EFatura.Fatura_Tarihi.desc())
+            ).order_by(func.abs(EFatura.Tutar - cek.Tutar), EFatura.Fatura_Tarihi.desc())
             fat_match = db.scalars(stmt_fatura).first()
 
             # Search range for Payment starts from voucher Son_Tarih (end of service)
