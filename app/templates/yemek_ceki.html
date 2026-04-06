@@ -266,7 +266,7 @@
                     <td class="cell-muted">{{ item.Son_Tarih }}</td>
                     <td class="text-center">
                         {% if item.has_imaj %}
-                        <a href="#" class="image-link" onclick="viewImage('{{ item.Imaj_Base64 }}', 'gorsel.jpeg'); return false;">
+                        <a href="#" class="image-link" onclick="viewImageDeferred('{{ item.ID }}', '{{ item.Imaj_Adi }}', this); return false;">
                             <i class="fas fa-envelope-open-text"></i> Görüntüle
                         </a>
                         {% endif %}
@@ -352,6 +352,28 @@
             document.getElementById('viewerImage').style.display = 'block';
         }
         document.getElementById('imageOverlay').style.display = 'flex';
+    }
+
+    async function viewImageDeferred(id, filename, btn) {
+        if (!id) return;
+        
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yükleniyor...';
+        btn.style.opacity = '0.7';
+        btn.style.pointerEvents = 'none';
+        
+        try {
+            const response = await fetch(`/api/v1/yemek-cekileri/${id}/image`);
+            if (!response.ok) throw new Error("Resim yüklenemedi.");
+            const data = await response.json();
+            viewImage(data.Imaj_Base64, data.Imaj_Adi || filename);
+        } catch (err) {
+            alert(err.message);
+        } finally {
+            btn.innerHTML = originalHtml;
+            btn.style.opacity = '1';
+            btn.style.pointerEvents = 'auto';
+        }
     }
 
     function openAddModal() {

@@ -542,7 +542,7 @@ def yemek_ceki():
             'Ilk_Tarih': c.Ilk_Tarih.strftime('%Y-%m-%d') if c.Ilk_Tarih else '',
             'Son_Tarih': c.Son_Tarih.strftime('%Y-%m-%d') if c.Son_Tarih else '',
             'Sube_ID': c.Sube_ID,
-            'Imaj_Base64': b64.b64encode(c.Imaj).decode('utf-8') if c.Imaj else '',
+            'Imaj_Adi': c.Imaj_Adi or 'gorsel.jpeg',
             'has_imaj': bool(c.Imaj)
         }
         cekiler_list.append(item)

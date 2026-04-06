@@ -1190,6 +1190,30 @@ def list_yemek_cekileri():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@invoicing_bp.route("/yemek-cekileri/<int:ceki_id>/image", methods=["GET"])
+@auth_required
+def get_yemek_ceki_image(ceki_id):
+    """Get only the image base64 for a meal ticket."""
+    try:
+        db = get_db_session()
+        ceki = queries.get_yemek_ceki_by_id(db, ceki_id)
+        db.close()
+        
+        if not ceki:
+            return jsonify({"error": "Kayıt bulunamadı"}), 404
+            
+        if not ceki.Imaj:
+            return jsonify({"error": "Resim bulunamadı"}), 404
+            
+        return jsonify({
+            "ID": ceki.ID,
+            "Imaj_Base64": base64.b64encode(ceki.Imaj).decode('utf-8'),
+            "Imaj_Adi": ceki.Imaj_Adi or "gorsel.jpeg"
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @invoicing_bp.route("/yemek-cekileri", methods=["POST"])
 @auth_required
 def create_yemek_ceki():
