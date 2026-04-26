@@ -186,6 +186,32 @@
                     {% endfor %}
                 </select>
             </div>
+
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Yükleme Modu</label>
+                <select id="loadingMode" class="form-control" onchange="document.getElementById('metadataFields').style.display = (this.value === 'ham_veri' ? 'grid' : 'none');">
+                    <option value="standard">Standart</option>
+                    <option value="ham_veri">Ham Veri</option>
+                </select>
+            </div>
+
+            <div id="metadataFields" style="display: none; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                <div class="form-group">
+                    <label>Tip *</label>
+                    <select id="inject_tip" class="form-control">
+                        <option value="Banka Hesabı">Banka Hesabı</option>
+                        <option value="Kredi Kartı">Kredi Kartı</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Hesap Adı *</label>
+                    <select id="inject_hesap_adi" class="form-control">
+                        <option value="QNB - DBS">QNB - DBS</option>
+                        <option value="QNB - Vadesiz Kobi Nakit">QNB - Vadesiz Kobi Nakit</option>
+                        <option value="QNB-KOBI TROY Temassiz">QNB-KOBI TROY Temassiz</option>
+                    </select>
+                </div>
+            </div>
             <div class="form-group" style="margin-bottom: 15px;">
                 <label>CSV Dosyası (.csv, .xlsx, .xls) *</label>
                 <div class="upload-row">
@@ -289,6 +315,48 @@
         showToast('Örnek şablon indirildi.');
     });
 
+    const transformDBSHamData = (worksheet, subeId, tip, hesapAdi) => {
+        const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        const data = [];
+        
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            
+            // Skip bank metadata (0-9)
+            if (i < 10) continue; 
+            
+            // Skip non-data rows (like header repetitions or "DEVREDEN BAKİYE")
+            const valDateRaw = row[0];
+            const aciklama = String(row[4] || "").trim();
+            
+            if (!valDateRaw || valDateRaw === "-" || aciklama === "DEVREDEN BAKİYE" || aciklama.includes("İşlem Açıklaması")) continue;
+
+            const odemeTarihi = parseDMYDateString(valDateRaw);
+            if (!odemeTarihi) continue;
+
+            const odemeTutari = parseCurrencyValue(row[5]);
+            if (isNaN(odemeTutari) || odemeTutari === 0) continue;
+
+            // Calculate Donem (YYMM)
+            const d = new Date(odemeTarihi);
+            let donemStr = "";
+            if (!isNaN(d.getTime())) {
+                donemStr = d.getFullYear().toString().substring(2) + (d.getMonth() + 1).toString().padStart(2, '0');
+            }
+
+            data.push({
+                Sube_ID: parseInt(subeId),
+                Tip: tip,
+                Hesap_Adi: hesapAdi,
+                Odeme_Tarihi: odemeTarihi,
+                Aciklama: aciklama,
+                Odeme_Tutari: odemeTutari,
+                Donem: donemStr ? parseInt(donemStr) : null
+            });
+        }
+        return data;
+    };
+
     // Upload handler
     document.getElementById('uploadForm').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -313,55 +381,71 @@
                 const workbook = XLSX.read(data, { type: 'array' });
                 const firstSheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[firstSheetName];
-                const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+                const loadingMode = document.getElementById('loadingMode').value;
+                let odemeler = [];
 
-                if (jsonData.length === 0) {
-                    showToast('Dosya boş görünüyor.', 'error');
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
-                    return;
-                }
-
-                const headers = Object.keys(jsonData[0]);
-                const tipKey = headers.find(k => k.toLowerCase().includes("tip") || k.toLowerCase().includes("type"));
-                const hesapAdiKey = headers.find(k => k.toLowerCase().includes("hesap") || k.toLowerCase().includes("account"));
-                const tarihKey = headers.find(k => k.toLowerCase().includes("tarih") || k.toLowerCase().includes("date"));
-                const aciklamaKey = headers.find(k => k.toLowerCase().includes("açıklama") || k.toLowerCase().includes("aciklama") || k.toLowerCase().includes("desc"));
-                const tutarKey = headers.find(k => k.toLowerCase().includes("tutar") || k.toLowerCase().includes("amount"));
-
-                if (!tarihKey || !tutarKey) {
-                    showToast("'Tarih' ve 'Tutar' sütunları bulunamadı. Lütfen sütun adlarını kontrol edin.", 'error');
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
-                    return;
-                }
-
-                const odemeler = jsonData.map((row, index) => {
+                if (loadingMode === 'ham_veri') {
+                    const tip = document.getElementById('inject_tip').value;
+                    const hesapAdi = document.getElementById('inject_hesap_adi').value;
                     try {
-                        const dateStr = parseDMYDateString(row[tarihKey]);
-                        if (!dateStr) return null; // Skip if no date
-
-                        // Calculate Donem (YYMM)
-                        const d = new Date(dateStr);
-                        let donemStr = "";
-                        if (!isNaN(d.getTime())) {
-                             donemStr = d.getFullYear().toString().substring(2) + (d.getMonth() + 1).toString().padStart(2, '0');
-                        }
-
-                        return {
-                            Sube_ID: parseInt(subeId),
-                            Tip: tipKey ? String(row[tipKey] || "").trim() : "",
-                            Hesap_Adi: hesapAdiKey ? String(row[hesapAdiKey] || "").trim() : "",
-                            Odeme_Tarihi: dateStr,
-                            Aciklama: aciklamaKey ? String(row[aciklamaKey] || "").trim() : "",
-                            Odeme_Tutari: parseCurrencyValue(row[tutarKey]),
-                            Donem: donemStr ? parseInt(donemStr) : null
-                        };
+                        odemeler = transformDBSHamData(worksheet, subeId, tip, hesapAdi);
                     } catch (err) {
-                        console.error(`Error at row ${index}:`, err);
-                        return null;
+                        showToast('Ham veri dönüştürme hatası: ' + err.message, 'error');
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
+                        return;
                     }
-                }).filter(x => x !== null);
+                } else {
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+
+                    if (jsonData.length === 0) {
+                        showToast('Dosya boş görünüyor.', 'error');
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
+                        return;
+                    }
+
+                    const headers = Object.keys(jsonData[0]);
+                    const tipKey = headers.find(k => k.toLowerCase().includes("tip") || k.toLowerCase().includes("type"));
+                    const hesapAdiKey = headers.find(k => k.toLowerCase().includes("hesap") || k.toLowerCase().includes("account"));
+                    const tarihKey = headers.find(k => k.toLowerCase().includes("tarih") || k.toLowerCase().includes("date"));
+                    const aciklamaKey = headers.find(k => k.toLowerCase().includes("açıklama") || k.toLowerCase().includes("aciklama") || k.toLowerCase().includes("desc"));
+                    const tutarKey = headers.find(k => k.toLowerCase().includes("tutar") || k.toLowerCase().includes("amount"));
+
+                    if (!tarihKey || !tutarKey) {
+                        showToast("'Tarih' ve 'Tutar' sütunları bulunamadı. Lütfen sütun adlarını kontrol edin.", 'error');
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
+                        return;
+                    }
+
+                    odemeler = jsonData.map((row, index) => {
+                        try {
+                            const dateStr = parseDMYDateString(row[tarihKey]);
+                            if (!dateStr) return null; // Skip if no date
+
+                            // Calculate Donem (YYMM)
+                            const d = new Date(dateStr);
+                            let donemStr = "";
+                            if (!isNaN(d.getTime())) {
+                                donemStr = d.getFullYear().toString().substring(2) + (d.getMonth() + 1).toString().padStart(2, '0');
+                            }
+
+                            return {
+                                Sube_ID: parseInt(subeId),
+                                Tip: tipKey ? String(row[tipKey] || "").trim() : "",
+                                Hesap_Adi: hesapAdiKey ? String(row[hesapAdiKey] || "").trim() : "",
+                                Odeme_Tarihi: dateStr,
+                                Aciklama: aciklamaKey ? String(row[aciklamaKey] || "").trim() : "",
+                                Odeme_Tutari: parseCurrencyValue(row[tutarKey]),
+                                Donem: donemStr ? parseInt(donemStr) : null
+                            };
+                        } catch (err) {
+                            console.error(`Error at row ${index}:`, err);
+                            return null;
+                        }
+                    }).filter(x => x !== null);
+                }
 
                 if (odemeler.length === 0) {
                     showToast('Geçerli veri bulunamadı. Sütun adlarını kontrol edin.', 'error');
