@@ -204,13 +204,20 @@
         </div>
 
         <form id="uploadForm">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 20px;">
                 <div class="form-group">
                     <label>Şube Seçimi</label>
                     <select id="Sube_ID" class="form-control" required>
                         {% for s in subeler %}
                         <option value="{{ s.Sube_ID }}">{{ s.Sube_Adi }}</option>
                         {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Yükleme Modu</label>
+                    <select id="loadingMode" class="form-control">
+                        <option value="standard">Standart</option>
+                        <option value="ham_veri">Ham Veri</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -332,6 +339,47 @@
         return 0;
     };
 
+    const transformHamData = (worksheet, subeId) => {
+        const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+        const data = [];
+        
+        // Column indices based on POSHamData.xls inspection (Row 6+)
+        const COL_ISLEM_TARIHI = 3;
+        const COL_HESABA_GECIS = 9;
+        const COL_PARA_BIRIMI = 14;
+        const COL_ISLEM_TUTARI = 21;
+        const COL_KESINTI_TUTARI = 26;
+        const COL_NET_TUTAR = 32;
+
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            
+            // Skip metadata (0-4) and header (5)
+            if (i <= 5) continue; 
+            
+            // Skip repetitive headers or empty rows
+            const valDate = row[COL_ISLEM_TARIHI];
+            if (!valDate || String(valDate).includes("İşlem Tarihi")) continue;
+
+            const islemTarihi = parseDMYDateString(valDate);
+            if (!islemTarihi) continue;
+
+            const islemTutari = parseCurrencyValue(row[COL_ISLEM_TUTARI]);
+            if (isNaN(islemTutari) || islemTutari === 0) continue;
+
+            data.push({
+                Sube_ID: parseInt(subeId),
+                Islem_Tarihi: islemTarihi,
+                Hesaba_Gecis: parseDMYDateString(row[COL_HESABA_GECIS]) || islemTarihi,
+                Para_Birimi: String(row[COL_PARA_BIRIMI] || "TRY").trim(),
+                Islem_Tutari: islemTutari,
+                Kesinti_Tutari: parseCurrencyValue(row[COL_KESINTI_TUTARI]),
+                Net_Tutar: parseCurrencyValue(row[COL_NET_TUTAR]) || (islemTutari - parseCurrencyValue(row[COL_KESINTI_TUTARI]))
+            });
+        }
+        return data;
+    };
+
     document.getElementById('uploadForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const fileInput = document.getElementById('excelFile');
@@ -351,61 +399,75 @@
                 const workbook = XLSX.read(data, { type: 'array' });
                 const firstSheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[firstSheetName];
-                const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+                const loadingMode = document.getElementById('loadingMode').value;
+                let pos_list = [];
 
-                if (jsonData.length === 0) {
-                    showToast('Dosya boş görünüyor.', 'error');
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
-                    return;
-                }
-
-                const headers = Object.keys(jsonData[0]);
-                const normalizedHeaders = headers.map(h => ({ original: h, normalized: normalizeHeader(h) }));
-
-                const findKey = (patterns) => {
-                    const found = normalizedHeaders.find(nh => patterns.some(p => nh.normalized.includes(p)));
-                    return found ? found.original : null;
-                };
-
-                const islemTarihiKey = findKey(["islem tarihi", "tarih"]);
-                const hesabaGecisKey = findKey(["hesaba gecis", "vade"]);
-                const paraBirimiKey = findKey(["para birimi", "doviz"]);
-                const islemTutariKey = findKey(["islem tutari", "tutar"]);
-                const kesintiTutariKey = findKey(["kesinti tutari", "komisyon"]);
-                const netTutarKey = findKey(["net tutar"]);
-
-                if (!islemTarihiKey || !islemTutariKey) {
-                    showToast("'Islem_Tarihi' ve 'Islem_Tutari' sütunları bulunamadı.", 'error');
-                    console.log("Headers found:", headers);
-                    console.log("Normalized:", normalizedHeaders);
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
-                    return;
-                }
-
-                const pos_list = jsonData.map((row, index) => {
+                if (loadingMode === 'ham_veri') {
                     try {
-                        const islemTarihi = parseDMYDateString(row[islemTarihiKey]);
-                        if (!islemTarihi) return null;
-
-                        const islemTutari = parseCurrencyValue(row[islemTutariKey]);
-                        if (isNaN(islemTutari) || islemTutari === 0) return null;
-
-                        return {
-                            Sube_ID: parseInt(subeId),
-                            Islem_Tarihi: islemTarihi,
-                            Hesaba_Gecis: parseDMYDateString(row[hesabaGecisKey]) || islemTarihi,
-                            Para_Birimi: paraBirimiKey ? String(row[paraBirimiKey] || "TRY").trim() : "TRY",
-                            Islem_Tutari: islemTutari,
-                            Kesinti_Tutari: kesintiTutariKey ? parseCurrencyValue(row[kesintiTutariKey]) : 0,
-                            Net_Tutar: netTutarKey ? parseCurrencyValue(row[netTutarKey]) : islemTutari - (kesintiTutariKey ? parseCurrencyValue(row[kesintiTutariKey]) : 0)
-                        };
+                        pos_list = transformHamData(worksheet, subeId);
                     } catch (err) {
-                        console.error(`Error at row ${index}:`, err);
-                        return null;
+                        showToast('Ham veri dönüştürme hatası: ' + err.message, 'error');
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
+                        return;
                     }
-                }).filter(x => x !== null);
+                } else {
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+                    if (jsonData.length === 0) {
+                        showToast('Dosya boş görünüyor.', 'error');
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
+                        return;
+                    }
+
+                    const headers = Object.keys(jsonData[0]);
+                    const normalizedHeaders = headers.map(h => ({ original: h, normalized: normalizeHeader(h) }));
+
+                    const findKey = (patterns) => {
+                        const found = normalizedHeaders.find(nh => patterns.some(p => nh.normalized.includes(p)));
+                        return found ? found.original : null;
+                    };
+
+                    const islemTarihiKey = findKey(["islem tarihi", "tarih"]);
+                    const hesabaGecisKey = findKey(["hesaba gecis", "vade"]);
+                    const paraBirimiKey = findKey(["para birimi", "doviz"]);
+                    const islemTutariKey = findKey(["islem tutari", "tutar"]);
+                    const kesintiTutariKey = findKey(["kesinti tutari", "komisyon"]);
+                    const netTutarKey = findKey(["net tutar"]);
+
+                    if (!islemTarihiKey || !islemTutariKey) {
+                        showToast("'Islem_Tarihi' ve 'Islem_Tutari' sütunları bulunamadı.", 'error');
+                        console.log("Headers found:", headers);
+                        console.log("Normalized:", normalizedHeaders);
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
+                        return;
+                    }
+
+                    pos_list = jsonData.map((row, index) => {
+                        try {
+                            const islemTarihi = parseDMYDateString(row[islemTarihiKey]);
+                            if (!islemTarihi) return null;
+
+                            const islemTutari = parseCurrencyValue(row[islemTutariKey]);
+                            if (isNaN(islemTutari) || islemTutari === 0) return null;
+
+                            return {
+                                Sube_ID: parseInt(subeId),
+                                Islem_Tarihi: islemTarihi,
+                                Hesaba_Gecis: parseDMYDateString(row[hesabaGecisKey]) || islemTarihi,
+                                Para_Birimi: paraBirimiKey ? String(row[paraBirimiKey] || "TRY").trim() : "TRY",
+                                Islem_Tutari: islemTutari,
+                                Kesinti_Tutari: kesintiTutariKey ? parseCurrencyValue(row[kesintiTutariKey]) : 0,
+                                Net_Tutar: netTutarKey ? parseCurrencyValue(row[netTutarKey]) : islemTutari - (kesintiTutariKey ? parseCurrencyValue(row[kesintiTutariKey]) : 0)
+                            };
+                        } catch (err) {
+                            console.error(`Error at row ${index}:`, err);
+                            return null;
+                        }
+                    }).filter(x => x !== null);
+                }
 
                 if (pos_list.length === 0) {
                     showToast('Geçerli veri bulunamadı.', 'error');
