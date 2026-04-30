@@ -1480,6 +1480,7 @@ def update_odeme_referans(referans_id):
         updated_ref = queries.update_odeme_referans(
             db,
             db_ref,
+            referans_metin=data.get("Referans_Metin"),
             kategori_id=data.get("Kategori_ID"),
             aktif_pasif=data.get("Aktif_Pasif")
         )

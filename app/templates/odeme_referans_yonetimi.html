@@ -382,9 +382,8 @@
             // Edit
             const refId = document.getElementById('Referans_ID').value;
             try {
-                // Not updating text via PUT in the Python backend per standard pattern
-                // but we can pass it, or just pass Kategori_ID and Aktif_Pasif
                 const data = {
+                    Referans_Metin: metin,
                     Kategori_ID: katId,
                     Aktif_Pasif: aktifPasif
                 };

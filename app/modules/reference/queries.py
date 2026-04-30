@@ -678,7 +678,9 @@ def create_odeme_referans(db: Session, referans_metin: str, kategori_id: int, ak
     db.refresh(db_ref)
     return db_ref
 
-def update_odeme_referans(db: Session, db_ref: OdemeReferans, kategori_id: Optional[int] = None, aktif_pasif: Optional[bool] = None) -> OdemeReferans:
+def update_odeme_referans(db: Session, db_ref: OdemeReferans, referans_metin: Optional[str] = None, kategori_id: Optional[int] = None, aktif_pasif: Optional[bool] = None) -> OdemeReferans:
+    if referans_metin is not None:
+        db_ref.Referans_Metin = referans_metin
     if kategori_id is not None:
         db_ref.Kategori_ID = kategori_id
     if aktif_pasif is not None:
