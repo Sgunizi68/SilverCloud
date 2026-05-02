@@ -191,11 +191,11 @@
                 <label>Yükleme Modu</label>
                 <select id="loadingMode" class="form-control" onchange="document.getElementById('metadataFields').style.display = (this.value === 'ham_veri' ? 'grid' : 'none');">
                     <option value="standard">Standart</option>
-                    <option value="ham_veri">Ham Veri</option>
+                    <option value="ham_veri" selected>Ham Veri</option>
                 </select>
             </div>
 
-            <div id="metadataFields" style="display: none; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+            <div id="metadataFields" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                 <div class="form-group">
                     <label>Tip *</label>
                     <select id="inject_tip" class="form-control">
