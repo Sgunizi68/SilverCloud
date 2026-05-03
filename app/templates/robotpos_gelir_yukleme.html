@@ -157,14 +157,13 @@
             <div class="flex items-center gap-3">
                 <i class="fas fa-info-circle text-blue-500"></i>
                 <div class="text-sm text-blue-700">
-                    <p class="font-bold mb-1">Dosya Formatı Bilgisi:</p>
-                    <p class="m-0">Lütfen <strong>.xlsx</strong> formatında bir dosya yükleyin. Gerekli sütunlar:</p>
+                    <p class="font-bold mb-1">Dosya Formatı Bilgisi (Matris Formatı):</p>
+                    <p class="m-0">Lütfen <strong>.xlsx</strong> formatında Robotpos "Kazanç Raporu" (Matris) dosyasını yükleyin:</p>
                     <ul class="mt-1 ml-4 list-disc">
-                        <li><strong>Tarih</strong> (Fatura/İşlem Tarihi)</li>
-                        <li><strong>Ödenen Toplam Tutar</strong> (veya Tutar)</li>
-                        <li><strong>Ödeme Tipi</strong> (Ödeme türü/Kasa tipi)</li>
-                        <li><strong>Çek No</strong> (Opsiyonel)</li>
-                        <li><strong>Satış Kanalı</strong> (Opsiyonel)</li>
+                        <li><strong>B Kolonu</strong>: Tarih bilgisi bulunmalıdır.</li>
+                        <li><strong>1. Satır (C ve sonrası)</strong>: Ödeme Tipleri (Nakit, Kredi Kartı, Sodexo vb.) bulunmalıdır.</li>
+                        <li><strong>Kesişim Hücreleri</strong>: İlgili tarihteki toplam tutarlar yer almalıdır.</li>
+                        <li>Dipteki toplam satırları otomatik olarak ayıklanacaktır.</li>
                     </ul>
                 </div>
             </div>
@@ -303,38 +302,55 @@
                     worksheet['!ref'] = XLSX.utils.encode_range(range);
                 }
 
-                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                // Parse as matrix (header: 1)
+                const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-                if (jsonData.length === 0) {
-                    showToast('Dosya boş görünüyor.', 'error');
+                if (rows.length < 2) {
+                    showToast('Dosya beklenen formatta değil (en az 2 satır olmalı).', 'error');
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
                     return;
                 }
 
-                // Header mapping
-                const headers = Object.keys(jsonData[0]);
-                const dateKey = headers.find(k => k.toLowerCase().includes("tarih") || k.toLowerCase().includes("date"));
-                const tutarKey = headers.find(k => k.toLowerCase().includes("tutar") || k.toLowerCase().includes("amount") || k.toLowerCase().includes("toplam") || k.toLowerCase().includes("brüt"));
-                const odemeTipiKey = headers.find(k => k.toLowerCase().includes("tip") || k.toLowerCase().includes("ödeme") || k.toLowerCase().includes("tür") || k.toLowerCase().includes("kasatipi"));
-                const cekNoKey = headers.find(k => k.toLowerCase().includes("çek") || k.toLowerCase().includes("cek"));
-                const satisKanaliKey = headers.find(k => k.toLowerCase().includes("satış") || k.toLowerCase().includes("satis") || k.toLowerCase().includes("kanal"));
+                // Extract Payment Types from Row 0 (Columns C onwards)
+                const odemeTipleri = rows[0].slice(2).map(v => String(v || "").trim());
+                const records = [];
 
-                if (!dateKey || !tutarKey || !odemeTipiKey) {
-                    showToast('Gerekli sütunlar (Tarih, Tutar, Odeme_Tipi) bulunamadı.', 'error');
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
-                    return;
+                // Iterate through Date rows (starting from Row 1)
+                for (let i = 1; i < rows.length; i++) {
+                    const row = rows[i];
+                    if (!row || row.length < 2) continue;
+
+                    const subeNameCheck = String(row[0] || "").toUpperCase();
+                    const dateValRaw = row[1]; // Column B
+                    
+                    // Filter out footer total rows
+                    if (subeNameCheck.includes("TOTAL") || subeNameCheck.includes("TOPLAM") || !dateValRaw) {
+                        continue;
+                    }
+
+                    const formattedDate = parseDMYDateString(dateValRaw);
+                    if (!formattedDate || formattedDate.length < 10) continue;
+
+                    // For each payment type column
+                    for (let j = 0; j < odemeTipleri.length; j++) {
+                        const label = odemeTipleri[j];
+                        if (!label || label.toUpperCase().includes("GRAND TOTAL") || label.toUpperCase().includes("TOPLAM")) continue;
+
+                        const value = parseCurrencyValue(row[j + 2]); // Values start from Column C (index 2)
+                        
+                        if (value > 0) {
+                            records.push({
+                                Tarih: formattedDate,
+                                Tutar: value,
+                                Odeme_Tipi: label,
+                                Cek_No: null,
+                                Satis_Kanali: null,
+                                Sube_ID: parseInt(subeId)
+                            });
+                        }
+                    }
                 }
-
-                const records = jsonData.map(row => ({
-                    Tarih: parseDMYDateString(row[dateKey]),
-                    Tutar: parseCurrencyValue(row[tutarKey]),
-                    Odeme_Tipi: String(row[odemeTipiKey] || "").trim(),
-                    Cek_No: cekNoKey ? String(row[cekNoKey] || "").trim() : null,
-                    Satis_Kanali: satisKanaliKey ? String(row[satisKanaliKey] || "").trim() : null,
-                    Sube_ID: parseInt(subeId)
-                })).filter(r => r.Tarih && r.Odeme_Tipi);
 
                 if (records.length === 0) {
                     showToast('Yüklenecek geçerli satır bulunamadı.', 'error');

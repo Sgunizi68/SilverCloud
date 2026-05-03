@@ -6,7 +6,7 @@ Uses SQLAlchemy 2.0 style with pagination.
 
 from typing import Optional, List
 from datetime import date
-from sqlalchemy import select
+from sqlalchemy import select, and_, or_
 from sqlalchemy.orm import Session
 from app.models import (
     Kategori, UstKategori, Deger, Sube, Kullanici, KullaniciRol, Rol, Yetki, EFaturaReferans, OdemeReferans, Cari,
@@ -903,7 +903,6 @@ def delete_cari(db: Session, db_cari: Cari) -> bool:
 def get_robotpos_gelir_by_unique_fields(
     db: Session, 
     tarih: date, 
-    tutar: float, 
     odeme_tipi: str, 
     sube_id: int,
     cek_no: Optional[str] = None
@@ -911,14 +910,16 @@ def get_robotpos_gelir_by_unique_fields(
     """Find a RobotposGelir record by unique combination to prevent duplicates."""
     query_conditions = [
         RobotposGelir.Tarih == tarih,
-        RobotposGelir.Tutar == tutar,
         RobotposGelir.Odeme_Tipi == odeme_tipi,
         RobotposGelir.Sube_ID == sube_id
     ]
     if cek_no:
         query_conditions.append(RobotposGelir.Cek_No == cek_no)
+    else:
+        # If cek_no is None in input, it must be None in DB for matching
+        query_conditions.append(or_(RobotposGelir.Cek_No == None, RobotposGelir.Cek_No == ''))
         
-    stmt = select(RobotposGelir).where(*query_conditions)
+    stmt = select(RobotposGelir).where(and_(*query_conditions))
     return db.scalars(stmt).first()
 
 
@@ -930,25 +931,32 @@ def get_gelir_referanslar_for_mapping(db: Session) -> List[RobotposGelirReferans
 
 def bulk_upsert_robotpos_gelir(db: Session, records: List[dict]) -> tuple:
     """
-    Insert RobotPOS income records with duplicate control.
+    Insert or update RobotPOS income records with duplicate control.
     Returns (added_count, skipped_count)
     """
+    from decimal import Decimal
     added = 0
     skipped = 0
     
     for rec in records:
-        # Check for existing
+        # Check for existing by unique keys (excluding Tutar)
         existing = get_robotpos_gelir_by_unique_fields(
             db, 
             rec['Tarih'], 
-            rec['Tutar'], 
             rec['Odeme_Tipi'], 
             rec['Sube_ID'],
             rec.get('Cek_No')
         )
         
         if existing:
-            skipped += 1
+            # Update if Tutar is different
+            new_tutar = Decimal(str(rec['Tutar']))
+            if existing.Tutar != new_tutar:
+                existing.Tutar = new_tutar
+                existing.Kategori_ID = rec['Kategori_ID'] # Update mapping if changed
+                added += 1
+            else:
+                skipped += 1
             continue
             
         new_rec = RobotposGelir(

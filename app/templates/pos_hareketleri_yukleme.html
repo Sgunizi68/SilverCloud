@@ -342,7 +342,7 @@
     const transformHamData = (worksheet, subeId) => {
         const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
         const data = [];
-        
+
         // Column indices based on POSHamData.xls inspection (Row 6+)
         const COL_ISLEM_TARIHI = 3;
         const COL_HESABA_GECIS = 9;
@@ -353,10 +353,10 @@
 
         for (let i = 0; i < rows.length; i++) {
             const row = rows[i];
-            
+
             // Skip metadata (0-4) and header (5)
-            if (i <= 5) continue; 
-            
+            if (i <= 5) continue;
+
             // Skip repetitive headers or empty rows
             const valDate = row[COL_ISLEM_TARIHI];
             if (!valDate || String(valDate).includes("İşlem Tarihi")) continue;
