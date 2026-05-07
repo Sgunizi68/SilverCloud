@@ -104,7 +104,7 @@ def fatura_kategori_atama():
     can_view_gizli = is_admin or has_gizli_permission
     
     # Fetch categories for filtering and assignment
-    raw_kategoriler = ref_queries.get_kategoriler(db_session, tip='Gider', limit=1000, can_view_gizli=can_view_gizli)
+    raw_kategoriler = ref_queries.get_kategoriler(db_session, tip=['Gider', 'Bilgi', 'Giden Fatura'], limit=1000, can_view_gizli=can_view_gizli)
     kategoriler = sorted(raw_kategoriler, key=lambda k: turkish_sort_key(k.Kategori_Adi))
     
     import json
