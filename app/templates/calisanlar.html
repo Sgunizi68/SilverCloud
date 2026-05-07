@@ -165,9 +165,11 @@
                 <input type="text" class="search-input" style="padding-left: 35px;"
                     placeholder="Çalışan Ara (Ad, Soyad, TC)" id="calisan-search">
             </div>
+            {% if can_add %}
             <button class="action-btn primary" onclick="openAddCalisanModal()">
                 <i class="fas fa-plus"></i> Yeni Çalışan
             </button>
+            {% endif %}
         </div>
     </div>
 
@@ -179,7 +181,9 @@
                     <tr>
                         <th style="width: 150px;">TC NO</th>
                         <th>ADI SOYADI</th>
+                        {% if can_view_salary %}
                         <th style="text-align: right;">NET MAAŞ</th>
+                        {% endif %}
                         <th>SİGORTA GİRİŞ</th>
                         <th>SİGORTA ÇIKIŞ</th>
                         <th style="width: 80px; text-align: center;">AKTİF</th>
@@ -191,10 +195,12 @@
                     <tr data-aktif="{{ 'true' if calisan.Aktif_Pasif else 'false' }}" data-cikis="{{ calisan.Sigorta_Cikis or '' }}">
                         <td style="font-family: monospace; font-weight: 600;">{{ calisan.TC_No }}</td>
                         <td style="font-weight: 500;">{{ calisan.Adi }} {{ calisan.Soyadi }}</td>
+                        {% if can_view_salary %}
                         <td class="net-maas">
                             {{ "{:,.2f}".format(calisan.Net_Maas).replace(",", "X").replace(".", ",").replace("X", ".")
                             }}
                         </td>
+                        {% endif %}
                         <td>{{ calisan.Sigorta_Giris or '-' }}</td>
                         <td>{{ calisan.Sigorta_Cikis or '-' }}</td>
                         <td style="text-align: center;">
@@ -205,10 +211,14 @@
                             {% endif %}
                         </td>
                         <td style="text-align: center;">
+                            {% if can_edit %}
                             <button class="edit-btn" title="Düzenle" data-calisan='{{ calisan | tojson | safe }}'
                                 onclick='openEditCalisanModal(JSON.parse(this.getAttribute("data-calisan")))'>
                                 <i class="fas fa-pencil-alt"></i>
                             </button>
+                            {% else %}
+                            -
+                            {% endif %}
                         </td>
                     </tr>
                     {% else %}
@@ -229,6 +239,8 @@
 
 {% block scripts %}
 <script>
+    const canViewSalary = {{ 'true' if can_view_salary else 'false' }};
+
     document.addEventListener('DOMContentLoaded', () => {
         const searchInput = document.getElementById('calisan-search');
         const activeCheckbox = document.getElementById('filter-active');
@@ -291,10 +303,12 @@
                         <input type="text" name="Soyadi" required>
                     </div>
                 </div>
+                ${canViewSalary ? `
                 <div class="form-group">
                     <label>Net Maaş</label>
                     <input type="number" step="0.01" name="Net_Maas">
                 </div>
+                ` : '<input type="hidden" name="Net_Maas" value="0">'}
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div class="form-group">
                         <label>Sigorta Giriş</label>
@@ -338,10 +352,12 @@
                         <input type="text" name="Soyadi" value="${calisan.Soyadi}" required>
                     </div>
                 </div>
+                ${canViewSalary ? `
                 <div class="form-group">
                     <label>Net Maaş</label>
                     <input type="number" step="0.01" name="Net_Maas" value="${calisan.Net_Maas}">
                 </div>
+                ` : `<input type="hidden" name="Net_Maas" value="${calisan.Net_Maas}">`}
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                     <div class="form-group">
                         <label>Sigorta Giriş</label>

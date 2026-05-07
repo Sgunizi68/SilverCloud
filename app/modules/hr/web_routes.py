@@ -74,6 +74,11 @@ def calisanlar():
         
     subeler_list = [{"Sube_ID": s.Sube_ID, "Sube_Adi": s.Sube_Adi} for s in auth_suber]
     
+    # Permissions
+    can_add = is_admin or auth_queries.has_permission(db_session, user.Kullanici_ID, "Yeni Çalışan Ekleme")
+    can_edit = is_admin or auth_queries.has_permission(db_session, user.Kullanici_ID, "Çalışan Düzenleme")
+    can_view_salary = is_admin or auth_queries.has_permission(db_session, user.Kullanici_ID, "Çalışan Maaş Görme")
+    
     db_session.close()
     
     return render_template(
@@ -81,7 +86,10 @@ def calisanlar():
         user=user,
         subeler=subeler_list,
         current_sube_id=sube_id,
-        calisanlar=calisanlar_list
+        calisanlar=calisanlar_list,
+        can_add=can_add,
+        can_edit=can_edit,
+        can_view_salary=can_view_salary
     )
 
 
