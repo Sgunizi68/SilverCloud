@@ -242,31 +242,31 @@
         <!-- 1. GELİRLER -->
         <div class="card-glass">
             <div class="card-header-premium header-gelir">
-                <span>GELİRLER</span>
+                <div style="display: flex; align-items: baseline; gap: 10px;">
+                    <span style="font-size: 15px; opacity: 0.85; text-transform: uppercase;">GELİRLER:</span>
+                    <span id="header-revenue-val" style="font-size: 15px; font-weight: 800;">0,00 ₺</span>
+                </div>
                 <i class="fas fa-arrow-trend-up"></i>
             </div>
             <div class="report-content" id="gelir-items">
                 <!-- Data injected here -->
             </div>
-            <div class="total-row flex justify-between">
-                <span>TOPLAM GELİR</span>
-                <span id="total-revenue-val">0,00 ₺</span>
-            </div>
+
         </div>
 
         <!-- 2. GİDERLER -->
         <div class="card-glass">
             <div class="card-header-premium header-gider">
-                <span>GİDERLER</span>
+                <div style="display: flex; align-items: baseline; gap: 10px;">
+                    <span style="font-size: 15px; opacity: 0.85; text-transform: uppercase;">GİDERLER:</span>
+                    <span id="header-expense-val" style="font-size: 15px; font-weight: 800;">0,00 ₺</span>
+                </div>
                 <i class="fas fa-arrow-trend-down"></i>
             </div>
             <div class="report-content" id="gider-items">
                 <!-- Data injected here -->
             </div>
-            <div class="total-row flex justify-between">
-                <span>TOPLAM GİDER</span>
-                <span id="total-expense-val">0,00 ₺</span>
-            </div>
+
         </div>
 
         <!-- 3. ÖZET VE FİNANSAL DURUM -->
@@ -407,7 +407,7 @@
         });
 
         gelirEl.innerHTML = gelirHtml;
-        document.getElementById('total-revenue-val').textContent = fmt(totalRevenue);
+        document.getElementById('header-revenue-val').textContent = fmt(totalRevenue);
 
         // 2. GIDERLER (Hierarchical)
         const giderEl = document.getElementById('gider-items');
@@ -445,7 +445,7 @@
         });
 
         giderEl.innerHTML = giderHtml;
-        document.getElementById('total-expense-val').textContent = fmt(totalExpense);
+        document.getElementById('header-expense-val').textContent = fmt(totalExpense);
 
         // 3. OZET
         document.getElementById('robotpos-val').textContent = fmt(data.robotpos_total);
