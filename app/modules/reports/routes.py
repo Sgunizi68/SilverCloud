@@ -74,3 +74,27 @@ def route_bayi_karlilik():
         return jsonify(data), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+        
+@reports_bp.route('/api/v1/rapor/gelir-guncelle', methods=['POST'])
+def route_gelir_guncelle():
+    """Update Gelir records based on selected Robotpos data."""
+    try:
+        from app.common.database import get_db_session
+        from .queries import update_gelir_from_robotpos
+        
+        data = request.get_json()
+        if not data or 'updates' not in data:
+            return jsonify({'error': 'No updates provided'}), 400
+            
+        db = get_db_session()
+        try:
+            updated, inserted, errors = update_gelir_from_robotpos(db, data['updates'])
+            return jsonify({
+                'updated': updated,
+                'inserted': inserted,
+                'errors': errors
+            }), 200
+        finally:
+            db.close()
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

@@ -1246,6 +1246,7 @@ def get_gelir_kontrol_raporu(db, sube_id: int, donem: int) -> Dict:
         sql = text("""
             SELECT 
                 combined.Tarih, 
+                combined.Kategori_ID,
                 k.Kategori_Adi, 
                 SUM(combined.robotpos_tutar) as robotpos_tutar, 
                 SUM(combined.gelir_tutar) as gelir_tutar
@@ -1273,7 +1274,7 @@ def get_gelir_kontrol_raporu(db, sube_id: int, donem: int) -> Dict:
         toplam_fark = 0.0
         
         for r in rows:
-            tarih_str = r.Tarih.strftime('%d.%m.%Y') if r.Tarih else ""
+            tarih_str = r.Tarih.strftime('%Y-%m-%d') if r.Tarih else "" # ISO format for better JS handling
             kategori_adi = r.Kategori_Adi or "Bilinmeyen Kategori"
             r_tutar = float(r.robotpos_tutar or 0)
             g_tutar = float(r.gelir_tutar or 0)
@@ -1281,6 +1282,7 @@ def get_gelir_kontrol_raporu(db, sube_id: int, donem: int) -> Dict:
             
             items.append({
                 "Tarih": tarih_str,
+                "Kategori_ID": r.Kategori_ID,
                 "Kategori_Adi": kategori_adi,
                 "Robotpos_Tutar": r_tutar,
                 "Gelir_Tutar": g_tutar,
@@ -1315,3 +1317,45 @@ def get_gelir_kontrol_raporu(db, sube_id: int, donem: int) -> Dict:
         import traceback
         traceback.print_exc()
         return {"rows": [], "summary": {"toplam_robotpos": 0.0, "toplam_gelir": 0.0, "toplam_fark": 0.0}}
+
+def update_gelir_from_robotpos(db, updates: list):
+    """
+    Updates or inserts records in the Gelir table based on selected Robotpos data.
+    updates: list of {"Tarih": "YYYY-MM-DD", "Kategori_ID": int, "Tutar": float, "Sube_ID": int}
+    """
+    updated_count = 0
+    inserted_count = 0
+    errors = []
+    
+    for up in updates:
+        try:
+            tarih_str = up.get("Tarih")
+            kategori_id = up.get("Kategori_ID")
+            tutar = up.get("Tutar")
+            sube_id = up.get("Sube_ID")
+            
+            if not tarih_str or not kategori_id or tutar is None or not sube_id:
+                continue
+            
+            # Parse date string to object for SQLAlchemy if needed, 
+            # though raw text SQL works with ISO strings too.
+            
+            # Check if record exists
+            sql_check = text("SELECT Gelir_ID FROM Gelir WHERE Tarih = :t AND Kategori_ID = :k AND Sube_ID = :s")
+            existing_row = db.execute(sql_check, {"t": tarih_str, "k": kategori_id, "s": sube_id}).fetchone()
+            
+            if existing_row:
+                # UPDATE
+                sql_up = text("UPDATE Gelir SET Tutar = :tutar WHERE Gelir_ID = :id")
+                db.execute(sql_up, {"tutar": tutar, "id": existing_row[0]})
+                updated_count += 1
+            else:
+                # INSERT
+                sql_ins = text("INSERT INTO Gelir (Tarih, Kategori_ID, Tutar, Sube_ID) VALUES (:t, :k, :tutar, :s)")
+                db.execute(sql_ins, {"t": tarih_str, "k": kategori_id, "tutar": tutar, "s": sube_id})
+                inserted_count += 1
+        except Exception as e:
+            errors.append(f"{up.get('Tarih')} - {up.get('Kategori_ID')}: {str(e)}")
+            
+    db.commit()
+    return updated_count, inserted_count, errors

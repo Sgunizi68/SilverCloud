@@ -303,45 +303,48 @@ def gelir_girisi_kontrol():
 
         # Collect unique days and categories
         days_set = set()
-        cats_set = []  # ordered, no dup
+        categories = []  # List of {"id": ..., "name": ...}
         cats_seen = set()
         for row in raw["rows"]:
-            # row["Tarih"] is like "01.03.2026" -> extract day
+            # row["Tarih"] is "YYYY-MM-DD"
             try:
-                day_num = int(row["Tarih"].split(".")[0])
+                day_num = int(row["Tarih"].split("-")[2])
             except Exception:
                 day_num = 0
             days_set.add(day_num)
-            if row["Kategori_Adi"] not in cats_seen:
-                cats_seen.add(row["Kategori_Adi"])
-                cats_set.append(row["Kategori_Adi"])
+            
+            cat_id = row["Kategori_ID"]
+            if cat_id not in cats_seen:
+                cats_seen.add(cat_id)
+                categories.append({"id": cat_id, "name": row["Kategori_Adi"]})
 
         days = sorted(days_set)
 
-        # pivot[kategori][day] = {r, g, f}
-        pivot_data = {cat: {d: {"r": 0.0, "g": 0.0, "f": 0.0} for d in days} for cat in cats_set}
+        # pivot_data[cat_id][day_num] = {r, g, f}
+        pivot_data = {cat["id"]: {d: {"r": 0.0, "g": 0.0, "f": 0.0} for d in days} for cat in categories}
         day_totals = {d: {"r": 0.0, "g": 0.0, "f": 0.0} for d in days}
-        row_totals = {cat: {"r": 0.0, "g": 0.0, "f": 0.0} for cat in cats_set}
+        row_totals = {cat["id"]: {"r": 0.0, "g": 0.0, "f": 0.0} for cat in categories}
         grand = {"r": 0.0, "g": 0.0, "f": 0.0}
 
         for row in raw["rows"]:
             try:
-                day_num = int(row["Tarih"].split(".")[0])
+                day_num = int(row["Tarih"].split("-")[2])
             except Exception:
                 continue
-            cat = row["Kategori_Adi"]
+            cat_id = row["Kategori_ID"]
             r = row["Robotpos_Tutar"]
             g = row["Gelir_Tutar"]
             f = row["Fark"]
-            pivot_data[cat][day_num]["r"] += r
-            pivot_data[cat][day_num]["g"] += g
-            pivot_data[cat][day_num]["f"] += f
+            
+            pivot_data[cat_id][day_num]["r"] += r
+            pivot_data[cat_id][day_num]["g"] += g
+            pivot_data[cat_id][day_num]["f"] += f
             day_totals[day_num]["r"] += r
             day_totals[day_num]["g"] += g
             day_totals[day_num]["f"] += f
-            row_totals[cat]["r"] += r
-            row_totals[cat]["g"] += g
-            row_totals[cat]["f"] += f
+            row_totals[cat_id]["r"] += r
+            row_totals[cat_id]["g"] += g
+            row_totals[cat_id]["f"] += f
             grand["r"] += r
             grand["g"] += g
             grand["f"] += f
@@ -357,7 +360,7 @@ def gelir_girisi_kontrol():
 
         pivot = {
             "days": days,
-            "categories": cats_set,
+            "categories": categories,
             "data": pivot_data,
             "day_totals": day_totals,
             "row_totals": row_totals,
@@ -366,6 +369,7 @@ def gelir_girisi_kontrol():
             "manual_diff": pivot_manual_diff,
             "total_manual": total_manual,
             "total_manual_diff": total_manual_diff,
+            "full_month_prefix": f"20{donem // 100:02d}-{donem % 100:02d}-" # e.g. "2026-03-"
         }
         summary = raw["summary"]
 
