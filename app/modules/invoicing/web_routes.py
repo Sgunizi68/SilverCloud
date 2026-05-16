@@ -313,8 +313,9 @@ def diger_harcamalar():
         s for s in all_suber if s.Sube_ID in auth_queries.get_user_branches(db_session, user.Kullanici_ID)
     ]
     
-    # Check for "Gizli Kategori Veri Erişimi" permission
+    # Check for permissions
     can_view_gizli = is_admin or auth_queries.has_permission(db_session, user.Kullanici_ID, "Gizli Kategori Veri Erişimi")
+    has_match_permission = is_admin or auth_queries.has_permission(db_session, user.Kullanici_ID, "Harcama e-fatura eşleşme")
     
     # Fetch categories for the add/edit modal
     kategoriler_raw = ref_queries.get_kategoriler(db_session, limit=1000, can_view_gizli=can_view_gizli)
@@ -413,6 +414,7 @@ def diger_harcamalar():
         donem_listesi=donem_listesi,
         secili_donem=donem,
         current_donem=current_donem,
+        has_match_permission=has_match_permission
     )
 @web_invoicing_bp.route("/pos-hareketleri-yukleme", methods=["GET"])
 @login_required

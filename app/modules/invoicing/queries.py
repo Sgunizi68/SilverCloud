@@ -1263,6 +1263,12 @@ def delete_diger_harcama(db: Session, harcama_id: int) -> bool:
     db.commit()
     return True
 
+def get_efatura_by_harcama_id(db: Session, harcama_id: int) -> Optional[EFatura]:
+    """Find the e-invoice linked to this Harcama ID via description."""
+    search_str = f"Diğer Harcama - {harcama_id}"
+    stmt = select(EFatura).where(EFatura.Aciklama == search_str)
+    return db.scalars(stmt).first()
+
 # ============================================================================
 # GELIR EKSTRA (REVENUE EXTRA) QUERIES
 # ============================================================================

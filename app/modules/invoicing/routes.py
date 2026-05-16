@@ -849,6 +849,68 @@ def get_diger_harcama(harcama_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+@invoicing_bp.route("/match-harcama-efatura", methods=["POST"])
+@auth_required
+def match_harcama_efatura():
+    """Match a Diger Harcama record with an EFatura record."""
+    try:
+        data = request.get_json()
+        harcama_id = data.get("harcama_id")
+        efatura_id = data.get("efatura_id")
+        
+        if not harcama_id or not efatura_id:
+            return jsonify({"error": "harcama_id ve efatura_id gerekli."}), 400
+            
+        efatura_kategori_id = data.get("efatura_kategori_id")
+            
+        db = get_db_session()
+        
+        # Permission check
+        from app.modules.auth.queries import has_permission, get_user_roles
+        user = request.user
+        roles = get_user_roles(db, user.Kullanici_ID)
+        is_admin = 'admin' in [r.lower() for r in roles]
+        if not is_admin and not has_permission(db, user.Kullanici_ID, "Harcama e-fatura eşleşme"):
+            db.close()
+            return jsonify({"error": "Yetkiniz yok."}), 403
+
+        # Get records
+        harcama = queries.get_diger_harcama_by_id(db, harcama_id, can_view_gizli=True)
+        efatura = queries.get_efatura_by_id(db, efatura_id)
+        
+        if not harcama or not efatura:
+            db.close()
+            return jsonify({"error": "Kayıt bulunamadı."}), 404
+            
+        # Get category ID for "Harcama e-Fatura"
+        from app.modules.reference.queries import get_kategori_by_name
+        kat = get_kategori_by_name(db, "Harcama e-Fatura")
+        if not kat:
+            db.close()
+            return jsonify({"error": "'Harcama e-Fatura' kategorisi bulunamadı."}), 500
+            
+        # Update EFatura
+        efatura.Aciklama = f"Diğer Harcama - {harcama_id}"
+        efatura.Gunluk_Harcama = True
+        if efatura_kategori_id:
+            efatura.Kategori_ID = int(efatura_kategori_id)
+        
+        # Update DigerHarcama
+        harcama.Belge_Numarasi = efatura.Fatura_Numarasi
+        harcama.Tutar = efatura.Tutar
+        harcama.Alici_Adi = efatura.Alici_Unvani
+        harcama.Kategori_ID = kat.Kategori_ID
+        harcama.Gunluk_Harcama = True # Requirement: auto-check "Günlük" field
+        
+        db.commit()
+        db.close()
+        
+        return jsonify({"message": "Eşleştirme başarılı."}), 200
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
 @invoicing_bp.route("/diger-harcamalar/<int:harcama_id>/image", methods=["GET"])
 @auth_required
 def get_diger_harcama_image(harcama_id):

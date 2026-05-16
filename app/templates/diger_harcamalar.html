@@ -183,6 +183,12 @@
         color: #3b82f6;
     }
 
+    .icon-btn.match:hover {
+        background: #f0fdf4;
+        border-color: #bbf7d0;
+        color: #10b981;
+    }
+
     .icon-btn.delete {
         color: #ef4444;
         border-color: #fca5a5;
@@ -358,6 +364,10 @@
                     </td>
                     <td class="text-right hide-on-print">
                         <div class="action-icons">
+                            {% if has_match_permission %}
+                            <button class="icon-btn match" onclick='openMatchModal({{ item | tojson | safe }})'
+                                title="e-Fatura Eşleştir"><i class="fas fa-link"></i></button>
+                            {% endif %}
                             <button class="icon-btn edit" onclick='openEditModal({{ item | tojson | safe }})'
                                 title="Düzenle"><i class="fas fa-pen"></i></button>
                             <button class="icon-btn delete" onclick="deleteRecord({{ item.Harcama_ID }})" title="Sil"><i
@@ -392,12 +402,14 @@
             style="width:800px; height:600px; max-width:100%; display:none; border:none;"></iframe>
     </div>
 </div>
+
 {% endblock %}
 
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
     const KATEGORILER = {{ kategoriler | tojson | safe }};
+    const DONEM_LISTESI = {{ donem_listesi | tojson | safe }};
     let kategorilerMap = {};
     KATEGORILER.forEach(cat => {
         kategorilerMap[cat.Kategori_ID] = cat.Kategori_Adi;
@@ -711,6 +723,203 @@
         clone.querySelectorAll('th:last-child, td:last-child').forEach(el => el.remove());
         const wb = XLSX.utils.table_to_book(clone, { sheet: "Diğer Harcamalar" });
         XLSX.writeFile(wb, "Diger_Harcamalar.xlsx");
+    }
+
+    let currentHarcamaId = null;
+    let currentSubeId = null;
+    let allEfaturas = [];
+
+    async function openMatchModal(item) {
+        currentHarcamaId = item.Harcama_ID;
+        currentSubeId = item.Sube_ID;
+        
+        const donemOpts = DONEM_LISTESI.map(d => `<option value="${d}">${d}</option>`).join('');
+        const katOpts = '<option value="">Seçili e-Faturanın kategorisini değiştirin...</option>' + 
+                        Object.entries(kategorilerMap).map(([id, name]) => `<option value="${id}">${name}</option>`).join('');
+        
+        const modalHtml = `
+            <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <div class="form-group" style="margin:0; flex: 1; min-width: 200px;">
+                    <label style="font-size: 11px;">Arama (Alıcı/Belge No)</label>
+                    <input type="text" id="matchSearch" class="form-control" placeholder="Fatura / Cari ara...">
+                </div>
+                <div class="form-group" style="margin:0; width: 120px;">
+                    <label style="font-size: 11px;">Dönem</label>
+                    <select id="matchDonem" class="form-control">
+                        ${donemOpts}
+                    </select>
+                </div>
+                <div style="font-size: 12px; color: #64748b; margin-top: 20px;">
+                    <span id="matchCount">0</span> fatura bulundu.
+                </div>
+            </div>
+            <div style="max-height: 400px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px;">
+                <table class="ref-table" style="font-size: 12px;">
+                    <thead style="position: sticky; top: 0; background: #f8fafc; z-index: 10;">
+                        <tr>
+                            <th style="width: 40px;">Seç</th>
+                            <th>Fatura No</th>
+                            <th>Cari Ünvan</th>
+                            <th class="text-right">Tutar</th>
+                            <th>Tarih</th>
+                        </tr>
+                    </thead>
+                    <tbody id="matchTableBody">
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer" style="margin-top: 15px; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <label style="font-size: 11px;">e-Fatura Kategorisi:</label>
+                    <select id="matchEfaturaKategori" class="form-control" style="width: 250px;" disabled>
+                        ${katOpts}
+                    </select>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-secondary" onclick="hideModal()">İptal</button>
+                    <button type="button" class="btn btn-primary" style="background:#3b82f6; color:white; border:none;" onclick="saveMatch()">Eşleştir</button>
+                </div>
+            </div>
+        `;
+        
+        showModal('e-Fatura Eşleştir', modalHtml);
+        
+        // Populate and set default values in the newly injected content
+        const searchInput = document.getElementById('matchSearch');
+        const donemSelect = document.getElementById('matchDonem');
+        
+        if (searchInput) {
+            searchInput.value = item.Alici_Adi || '';
+            searchInput.addEventListener('input', applyMatchFilter);
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    applyMatchFilter();
+                }
+            });
+        }
+        
+        if (donemSelect) {
+            donemSelect.value = item.Donem;
+            donemSelect.addEventListener('change', () => loadMatchData(currentSubeId, donemSelect.value));
+        }
+        
+        // Initial load
+        loadMatchData(currentSubeId, item.Donem);
+    }
+
+    async function loadMatchData(subeId, donem) {
+        try {
+            const tbody = document.getElementById('matchTableBody');
+            if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="text-center">Yükleniyor...</td></tr>';
+            
+            const res = await fetch(`/api/v1/efaturalar?sube_id=${subeId}&donem=${donem}&limit=10000`);
+            if (!res.ok) throw new Error("Fatura listesi alınamadı.");
+            allEfaturas = await res.json();
+            
+            // Filter: Gelen Fatura only
+            allEfaturas = allEfaturas.filter(f => !f.Giden_Fatura);
+            
+            applyMatchFilter();
+        } catch (err) {
+            alert(err.message);
+        }
+    }
+
+    function applyMatchFilter() {
+        const searchInput = document.getElementById('matchSearch');
+        if (!searchInput) return;
+        const search = searchInput.value.toLowerCase();
+        
+        const filtered = allEfaturas.filter(f => 
+            (f.Fatura_Numarasi || '').toLowerCase().includes(search) ||
+            (f.Alici_Unvani || '').toLowerCase().includes(search)
+        );
+        
+        const countEl = document.getElementById('matchCount');
+        if (countEl) countEl.textContent = filtered.length;
+        
+        const tbody = document.getElementById('matchTableBody');
+        const katSelect = document.getElementById('matchEfaturaKategori');
+        if (katSelect) {
+            katSelect.disabled = true;
+            katSelect.value = '';
+        }
+        
+        if (!tbody) return;
+
+        if (filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center">Fatura bulunamadı.</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = filtered.map(f => `
+            <tr>
+                <td class="text-center">
+                    <input type="checkbox" class="match-check" data-id="${f.Fatura_ID}" onclick="limitOneCheck(this)">
+                </td>
+                <td>${f.Fatura_Numarasi}</td>
+                <td>${f.Alici_Unvani}</td>
+                <td class="text-right">₺${f.Tutar.toLocaleString('tr-TR', {minimumFractionDigits:2})}</td>
+                <td>${f.Fatura_Tarihi}</td>
+            </tr>
+        `).join('');
+    }
+
+    function limitOneCheck(el) {
+        const id = el.getAttribute('data-id');
+        const katSelect = document.getElementById('matchEfaturaKategori');
+        
+        if (el.checked) {
+            document.querySelectorAll('.match-check').forEach(c => {
+                if (c !== el) c.checked = false;
+            });
+            const f = allEfaturas.find(x => x.Fatura_ID == id);
+            if (f && katSelect) {
+                katSelect.disabled = false;
+                katSelect.value = f.Kategori_ID || '';
+            }
+        } else {
+            if (katSelect) {
+                katSelect.disabled = true;
+                katSelect.value = '';
+            }
+        }
+    }
+
+    async function saveMatch() {
+        const selected = document.querySelector('.match-check:checked');
+        if (!selected) {
+            alert("Lütfen bir fatura seçiniz.");
+            return;
+        }
+        
+        const efaturaId = selected.getAttribute('data-id');
+        const katSelect = document.getElementById('matchEfaturaKategori');
+        const payload = { harcama_id: currentHarcamaId, efatura_id: efaturaId };
+        
+        if (katSelect && !katSelect.disabled && katSelect.value) {
+            payload.efatura_kategori_id = katSelect.value;
+        }
+        
+        try {
+            const res = await fetch('/api/v1/match-harcama-efatura', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || "Eşleştirme başarısız.");
+            }
+            
+            hideModal();
+            showToast("Eşleştirme başarılı.");
+            setTimeout(() => location.reload(), 900);
+        } catch (err) {
+            alert(err.message);
+        }
     }
 
     function printData() {
