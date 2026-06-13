@@ -598,8 +598,6 @@ def create_odeme_bulk(
                 select(Odeme).where(
                     Odeme.Sube_ID == data["Sube_ID"],
                     Odeme.Tarih == tarih,
-                    Odeme.Tip == data.get("Tip", ""),
-                    Odeme.Hesap_Adi == data.get("Hesap_Adi", ""),
                     Odeme.Tutar == data.get("Odeme_Tutari", 0.0),
                     Odeme.Aciklama == aciklama
                 )
