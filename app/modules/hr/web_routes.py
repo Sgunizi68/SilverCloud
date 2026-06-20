@@ -277,6 +277,12 @@ def puantaj_girisi():
         sig_cikis = emp.Sigorta_Cikis
         if sig_cikis and sig_cikis < period_start:
             continue  # Exited before this period; skip
+        
+        # Exclude employees whose start date is after this period
+        sig_giris = emp.Sigorta_Giris
+        if sig_giris and sig_giris > period_end:
+            continue  # Started after this period; skip
+            
         employee_data.append(emp)
 
     # ── Load puantaj records for this month/branch ─────────────────────────
@@ -301,6 +307,11 @@ def puantaj_girisi():
     employees = []
     for emp in employee_data:
         tc       = emp.TC_No
+        
+        # Exclude employees without records in this month if viewing past history
+        if not is_current_period and tc not in puantaj_map:
+            continue
+            
         emp_days = puantaj_map.get(tc, {})
         total    = sum(d["Degeri"] for d in emp_days.values())
 
