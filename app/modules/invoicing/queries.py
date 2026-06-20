@@ -1431,7 +1431,7 @@ from sqlalchemy import extract
 def get_nakitler(db: Session, sube_id: int = None, donem: int = None, limit: int = 1000) -> list[Nakit]:
     """
     Belirli Şube ve/veya döneme göre Nakit kayıtlarını getirir.
-    Sıralama: Tarihe göre Azalan (DESC)
+    Sıralama: Tarihe göre Artan (ASC)
     """
     query = db.query(Nakit)
     if sube_id:
@@ -1439,7 +1439,7 @@ def get_nakitler(db: Session, sube_id: int = None, donem: int = None, limit: int
     if donem:
         query = query.filter(Nakit.Donem == donem)
         
-    return query.order_by(Nakit.Tarih.desc()).limit(limit).all()
+    return query.order_by(Nakit.Tarih.asc()).limit(limit).all()
 
 def get_nakit_by_id(db: Session, nakit_id: int) -> Optional[Nakit]:
     """Nakit ID'sine göre tekil kayıt getirir."""
