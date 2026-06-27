@@ -33,7 +33,7 @@
         padding: 10px 30px;
         display: flex;
         align-items: center;
-        gap: 12px;
+        justify-content: space-between;
     }
 
     .btn-control-icon {
@@ -253,11 +253,10 @@
 <!-- HERO HEADER — report-container dışında, direkt .content içinde -->
 <div class="bayi-hero-header">
     <div style="display: flex; align-items: center; gap: 8px;">
-        <i class="fas fa-chart-line" style="color: #4b3d8f; font-size: 1.3rem;"></i>
-        <span style="font-size: 1.3rem; font-weight: 700; color: #000000; letter-spacing: 0.01em;">Bayi Karlılık Raporu</span>
-        <span style="font-size: 0.85rem; color: rgba(0, 0, 0, 0.4); margin-left: 4px;">(Şube: {{ sube_adi if sube_adi else 'Tüm Şubeler' }})</span>
+        <i class="fas fa-chart-line" style="color: #ffffff; font-size: 1.3rem;"></i>
+        <span style="font-size: 1.3rem; font-weight: 700; color: #ffffff; letter-spacing: 0.01em;">Bayi Karlılık Raporu</span>
     </div>
-    <div style="margin-left: auto; display: flex; align-items: center; gap: 12px;">
+    <div style="display: flex; align-items: center; gap: 12px;">
         <button class="btn-control-icon" title="Yazdır" onclick="window.print()">🖨️</button>
         <button class="btn-control-icon" title="Excel İndir" onclick="exportToExcel()">⬇️</button>
 
@@ -268,7 +267,6 @@
             {% endfor %}
         </select>
 
-        {% if subeler|length > 1 %}
         <select class="select-control"
             onchange="window.location.href='/bayi-karlilik-raporu?sube_id=' + this.value + '&year={{ secili_year }}'">
             {% for sube in subeler %}
@@ -276,11 +274,6 @@
             </option>
             {% endfor %}
         </select>
-        {% else %}
-        <select class="select-control" disabled>
-            <option>{{ sube_adi if sube_adi else 'Tüm Şubeler' }}</option>
-        </select>
-        {% endif %}
     </div>
 </div><!-- /bayi-hero-header -->
 
