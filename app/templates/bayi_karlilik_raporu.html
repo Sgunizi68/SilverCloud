@@ -473,7 +473,44 @@
 
     function exportToExcel() {
         const table = document.getElementById('reportTable');
-        const wb = XLSX.utils.table_to_book(table, { sheet: "Bayi Karlılık Raporu" });
+        const ws = XLSX.utils.table_to_sheet(table, { raw: true });
+        
+        for (let cellRef in ws) {
+            if (cellRef[0] === '!') continue;
+            const cell = ws[cellRef];
+            if (cell && cell.t === 's') {
+                let valStr = String(cell.v).trim().replace(/\s/g, '');
+                if (!valStr) continue;
+                
+                const isPercent = valStr.endsWith('%');
+                let numStr = isPercent ? valStr.slice(0, -1) : valStr;
+                
+                const isNumericPattern = /^[+-]?(?:\d{1,3}(?:\.\d{3})*|\d+)(?:,\d+)?$/.test(numStr);
+                
+                if (isNumericPattern) {
+                    let standardStr = numStr.replace(/\./g, '').replace(',', '.');
+                    let numVal = parseFloat(standardStr);
+                    if (!isNaN(numVal)) {
+                        if (isPercent) {
+                            cell.t = 'n';
+                            cell.v = numVal / 100.0;
+                            cell.z = '0.00%';
+                        } else {
+                            cell.t = 'n';
+                            cell.v = numVal;
+                            if (numStr.includes(',')) {
+                                cell.z = '#,##0.00';
+                            } else {
+                                cell.z = '#,##0';
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Bayi Karlılık Raporu");
         XLSX.writeFile(wb, `Bayi_Karlilik_Raporu_${new Date().getTime()}.xlsx`);
     }
 </script>
