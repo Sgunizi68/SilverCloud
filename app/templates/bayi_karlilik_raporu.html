@@ -25,107 +25,55 @@
     }
 
 
-    /* ── HERO HEADER ─────────────────────────────────────────── */
-    /* .content'in her iki tarafındaki 30px padding'ini sıfırlayıp tam genişliğe yayılır */
+    /* ── PURPLE HEADER MENU ─────────────────────────────────── */
     .bayi-hero-header {
         margin: -30px -30px 24px -30px;
-        background: linear-gradient(135deg, #7c83d6 0%, #6e75c6 60%, #5b62b5 100%);
-        padding: 18px 30px 20px 30px;
-    }
-
-    .hero-top-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 16px;
-    }
-
-    .hero-title {
-        color: #fff;
-        font-size: 1.1rem;
-        font-weight: 700;
+        background: #715db8;
+        /* Purple color matching the screenshot */
+        padding: 10px 30px;
         display: flex;
         align-items: center;
-        gap: 10px;
-        letter-spacing: 0.01em;
+        gap: 12px;
     }
 
-    .hero-icon {
-        font-size: 1rem;
-        color: #fbbf24;
-    }
-
-    .hero-actions {
-        display: flex;
-        gap: 10px;
-    }
-
-    .btn-hero {
+    .btn-control-icon {
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.7);
+        border-radius: 8px;
+        width: 38px;
+        height: 38px;
+        cursor: pointer;
         display: inline-flex;
         align-items: center;
-        gap: 7px;
-        font-size: 0.82rem;
-        font-weight: 600;
-        color: #fff;
-        padding: 7px 16px;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-        transition: filter 0.15s, transform 0.15s;
+        justify-content: center;
+        font-size: 1.15rem;
+        transition: all 0.2s;
+        padding: 0;
     }
 
-    .btn-hero:hover {
-        filter: brightness(1.12);
-        transform: translateY(-1px);
+    .btn-control-icon:hover {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: white;
     }
 
-    .btn-hero-excel  { background: #10b981; }
-    .btn-hero-print  { background: #38bdf8; }
-
-    /* Filtre kartı: mor alanın içinde beyaz kart */
-    .filter-card {
-        background: #fff;
-        border-radius: 6px;
-        padding: 12px 16px;
-        display: flex;
-        gap: 20px;
-    }
-
-    .filter-group {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        flex: 1;
-    }
-
-    .filter-group label {
-        font-size: 0.6rem;
-        font-weight: 700;
-        color: #94a3b8;
-        text-transform: uppercase;
-        letter-spacing: 0.6px;
-        margin: 0;
-    }
-
-    .filter-select {
-        width: 100%;
-        height: 36px;
-        padding: 0 28px 0 10px;
-        border: 1px solid #e2e8f0;
-        border-radius: 5px;
-        font-size: 0.875rem;
+    .select-control {
+        background: white;
         color: #1e293b;
-        background: #fff url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg' width%3D'12' height%3D'12'%3E%3Cpath fill%3D'%2364748b' d%3D'M6 8L1 3h10z'%2F%3E%3C%2Fsvg%3E") no-repeat right 10px center;
+        border: none;
+        border-radius: 8px;
+        height: 38px;
+        padding: 0 28px 0 14px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        outline: none;
         -webkit-appearance: none;
         appearance: none;
-        outline: none;
-        cursor: pointer;
-    }
-
-    .filter-select:focus {
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102,126,234,0.15);
+        background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg' width%3D'292.4' height%3D'292.4'%3E%3Cpath fill%3D'%231e293b' d%3D'M287 69.4a17.6 17.6 0 0 0-13-5.4H18.4c-5 0-9.3 1.8-12.9 5.4A17.6 17.6 0 0 0 0 82.2c0 5 1.8 9.3 5.4 12.9l128 127.9c3.6 3.6 7.8 5.4 12.8 5.4s9.2-1.8 12.8-5.4L287 95c3.5-3.5 5.4-7.8 5.4-12.8 0-5-1.9-9.2-5.5-12.8z'%2F%3E%3C%2Fsvg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 10px auto;
+        min-width: 90px;
     }
 
     /* Table Wrapper */
@@ -195,7 +143,7 @@
         border-right: 1px solid #e2e8f0;
         background: #ffffff;
     }
-    
+
     .table tbody tr:hover td.cell-label {
         background-color: #f8fafc;
     }
@@ -223,8 +171,8 @@
     .row-kar-zarar td.cell-label {
         background-color: #dcfce7;
     }
-    
-    .table tbody tr.row-kar-zarar:hover td.cell-label, 
+
+    .table tbody tr.row-kar-zarar:hover td.cell-label,
     .table tbody tr.row-kar-zarar:hover {
         background-color: #bbf7d0 !important;
     }
@@ -239,11 +187,11 @@
         cursor: pointer;
         background-color: #f8fafc;
     }
-    
+
     .diger-toggle-row:hover {
         background-color: #f1f5f9 !important;
     }
-    
+
     .diger-toggle-row:hover td.cell-label {
         background-color: #f1f5f9;
     }
@@ -262,15 +210,18 @@
         width: 8px;
         height: 8px;
     }
+
     ::-webkit-scrollbar-track {
-        background: #f1f5f9; 
+        background: #f1f5f9;
     }
+
     ::-webkit-scrollbar-thumb {
-        background: #cbd5e1; 
+        background: #cbd5e1;
         border-radius: 4px;
     }
+
     ::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8; 
+        background: #94a3b8;
     }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
@@ -301,49 +252,35 @@
 
 <!-- HERO HEADER — report-container dışında, direkt .content içinde -->
 <div class="bayi-hero-header">
-    <!-- Başlık + Butonlar -->
-    <div class="hero-top-row">
-        <div class="hero-title">
-            <i class="fas fa-chart-line hero-icon"></i>
-            Bayi Karlılık Raporu
-        </div>
-        <div class="hero-actions">
-            <button class="btn-hero btn-hero-excel" onclick="exportToExcel()">
-                <i class="fas fa-file-excel"></i> Excel
-            </button>
-            <button class="btn-hero btn-hero-print" onclick="window.print()">
-                <i class="fas fa-print"></i> Yazdır
-            </button>
-        </div>
+    <div style="display: flex; align-items: center; gap: 8px;">
+        <i class="fas fa-chart-line" style="color: #4b3d8f; font-size: 1.3rem;"></i>
+        <span style="font-size: 1.3rem; font-weight: 700; color: #000000; letter-spacing: 0.01em;">Bayi Karlılık Raporu</span>
+        <span style="font-size: 0.85rem; color: rgba(0, 0, 0, 0.4); margin-left: 4px;">(Şube: {{ sube_adi if sube_adi else 'Tüm Şubeler' }})</span>
     </div>
+    <div style="margin-left: auto; display: flex; align-items: center; gap: 12px;">
+        <button class="btn-control-icon" title="Yazdır" onclick="window.print()">🖨️</button>
+        <button class="btn-control-icon" title="Excel İndir" onclick="exportToExcel()">⬇️</button>
 
-    <!-- Filtre Kartı -->
-    <div class="filter-card">
-        <form id="filterForm" method="GET" action="/bayi-karlilik-raporu" style="display:flex; gap:20px; flex:1; margin:0;">
-            <div class="filter-group">
-                <label>Şube</label>
-                {% if subeler|length > 1 %}
-                <select name="sube_id" class="filter-select" onchange="this.form.submit()">
-                    {% for sube in subeler %}
-                    <option value="{{ sube.Sube_ID }}" {% if sube.Sube_ID==secili_sube_id %}selected{% endif %}>
-                        {{ sube.Sube_Adi }}
-                    </option>
-                    {% endfor %}
-                </select>
-                {% else %}
-                <input type="hidden" name="sube_id" value="{{ subeler[0].Sube_ID if subeler else '' }}">
-                <select class="filter-select" disabled><option>{{ sube_adi if sube_adi else 'Tüm Şubeler' }}</option></select>
-                {% endif %}
-            </div>
-            <div class="filter-group">
-                <label>Yıl</label>
-                <select name="year" class="filter-select" onchange="this.form.submit()">
-                    {% for y in years %}
-                    <option value="{{ y }}" {% if y==secili_year %}selected{% endif %}>{{ y }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-        </form>
+        <select class="select-control"
+            onchange="window.location.href='/bayi-karlilik-raporu?sube_id={{ secili_sube_id }}&year=' + this.value">
+            {% for y in years %}
+            <option value="{{ y }}" {% if y==secili_year %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+        </select>
+
+        {% if subeler|length > 1 %}
+        <select class="select-control"
+            onchange="window.location.href='/bayi-karlilik-raporu?sube_id=' + this.value + '&year={{ secili_year }}'">
+            {% for sube in subeler %}
+            <option value="{{ sube.Sube_ID }}" {% if sube.Sube_ID==secili_sube_id %}selected{% endif %}>{{ sube.Sube_Adi }}
+            </option>
+            {% endfor %}
+        </select>
+        {% else %}
+        <select class="select-control" disabled>
+            <option>{{ sube_adi if sube_adi else 'Tüm Şubeler' }}</option>
+        </select>
+        {% endif %}
     </div>
 </div><!-- /bayi-hero-header -->
 
@@ -368,42 +305,46 @@
                     {% if report_data and report_data.processedExcelRows %}
                     {% for row in report_data.processedExcelRows %}
                     {% set is_karzarar = 'toplam kar' in row['label']|lower %}
-                    <tr class="{% if row['label'] in bold_labels %}row-bold{% endif %} {% if is_karzarar %}row-kar-zarar{% endif %}">
+                    <tr
+                        class="{% if row['label'] in bold_labels %}row-bold{% endif %} {% if is_karzarar %}row-kar-zarar{% endif %}">
                         <td class="cell-label">{{ row['label'] }}</td>
                         {% for val in row['values'] %}
                         <td>
                             {% if val %}
-                                {% if row['category'] == 'percentage' or ' %' in row['label'] %}
-                                    {{ "{:,.2f}%".format(val).replace(',', 'X').replace('.', ',').replace('X', '.') }}
-                                {% elif row['category'] == 'operasyonel' and 'Ziyaretçi' not in row['label'] %}
-                                    {{ "{:,.0f}".format(val).replace(',', 'X').replace('.', ',').replace('X', '.') }}
-                                {% else %}
-                                    {{ "{:,.2f}".format(val).replace(',', 'X').replace('.', ',').replace('X', '.') }}
-                                {% endif %}
+                            {% if row['category'] == 'percentage' or ' %' in row['label'] %}
+                            {{ "{:,.2f}%".format(val).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                            {% elif row['category'] == 'operasyonel' and 'Ziyaretçi' not in row['label'] %}
+                            {{ "{:,.0f}".format(val).replace(',', 'X').replace('.', ',').replace('X', '.') }}
                             {% else %}
-                                0,00
+                            {{ "{:,.2f}".format(val).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                            {% endif %}
+                            {% else %}
+                            0,00
                             {% endif %}
                         </td>
                         {% endfor %}
                         <td class="cell-toplam">
                             {% if row['category'] == 'percentage' or ' %' in row['label'] %}
-                                {{ "{:,.2f}%".format(row['total']).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                            {{ "{:,.2f}%".format(row['total']).replace(',', 'X').replace('.', ',').replace('X', '.') }}
                             {% elif row['category'] == 'operasyonel' and 'Ziyaretçi' not in row['label'] %}
-                                {{ "{:,.0f}".format(row['total']).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                            {{ "{:,.0f}".format(row['total']).replace(',', 'X').replace('.', ',').replace('X', '.') }}
                             {% else %}
-                                {{ "{:,.2f}".format(row['total']).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                            {{ "{:,.2f}".format(row['total']).replace(',', 'X').replace('.', ',').replace('X', '.') }}
                             {% endif %}
                         </td>
                     </tr>
                     {% if row['label'] in separator_labels %}
-                    <tr class="row-separator"><td colspan="14"></td></tr>
+                    <tr class="row-separator">
+                        <td colspan="14"></td>
+                    </tr>
                     {% endif %}
                     {% endfor %}
 
                     {# Diğer Detayı Collapsible Section #}
                     <tr class="diger-toggle-row row-bold" onclick="toggleDiger()">
                         <td class="cell-label">
-                            <i class="fas fa-chevron-down mr-2" id="digerChevron" style="width: 16px; color: #64748b; margin-right: 8px;"></i>
+                            <i class="fas fa-chevron-down mr-2" id="digerChevron"
+                                style="width: 16px; color: #64748b; margin-right: 8px;"></i>
                             Diğer Detayı
                         </td>
                         <td colspan="13"></td>
@@ -414,36 +355,44 @@
                         {% for val in row['values'] %}
                         <td>{{ "{:,.2f}".format(val or 0).replace(',', 'X').replace('.', ',').replace('X', '.') }}</td>
                         {% endfor %}
-                        <td class="cell-toplam">{{ "{:,.2f}".format(row['total'] or 0).replace(',', 'X').replace('.', ',').replace('X', '.') }}</td>
+                        <td class="cell-toplam">{{ "{:,.2f}".format(row['total'] or 0).replace(',', 'X').replace('.',
+                            ',').replace('X', '.') }}</td>
                     </tr>
                     {% endfor %}
 
-                    <tr class="row-separator"><td colspan="14"></td></tr>
+                    <tr class="row-separator">
+                        <td colspan="14"></td>
+                    </tr>
 
                     {# Summary Rows (More) #}
                     {% for row in report_data.processedMoreRows %}
                     {% set is_karzarar = 'toplam kar' in row['label']|lower %}
-                    <tr class="{% if row['label'] in bold_labels %}row-bold{% endif %} {% if is_karzarar %}row-kar-zarar{% endif %}">
+                    <tr
+                        class="{% if row['label'] in bold_labels %}row-bold{% endif %} {% if is_karzarar %}row-kar-zarar{% endif %}">
                         <td class="cell-label">{{ row['label'] }}</td>
                         {% for val in row['values'] %}
                         <td>
                             {% if row['category'] == 'percentage' or ' %' in row['label'] %}
-                                {{ "{:,.2f}%".format(val or 0).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                            {{ "{:,.2f}%".format(val or 0).replace(',', 'X').replace('.', ',').replace('X', '.') }}
                             {% else %}
-                                {{ "{:,.2f}".format(val or 0).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                            {{ "{:,.2f}".format(val or 0).replace(',', 'X').replace('.', ',').replace('X', '.') }}
                             {% endif %}
                         </td>
                         {% endfor %}
                         <td class="cell-toplam">
                             {% if row['category'] == 'percentage' or ' %' in row['label'] %}
-                                {{ "{:,.2f}%".format(row['total'] or 0).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                            {{ "{:,.2f}%".format(row['total'] or 0).replace(',', 'X').replace('.', ',').replace('X',
+                            '.') }}
                             {% else %}
-                                {{ "{:,.2f}".format(row['total'] or 0).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                            {{ "{:,.2f}".format(row['total'] or 0).replace(',', 'X').replace('.', ',').replace('X', '.')
+                            }}
                             {% endif %}
                         </td>
                     </tr>
                     {% if row['label'] in separator_labels %}
-                    <tr class="row-separator"><td colspan="14"></td></tr>
+                    <tr class="row-separator">
+                        <td colspan="14"></td>
+                    </tr>
                     {% endif %}
                     {% endfor %}
                     {% else %}
@@ -474,19 +423,19 @@
     function exportToExcel() {
         const table = document.getElementById('reportTable');
         const ws = XLSX.utils.table_to_sheet(table, { raw: true });
-        
+
         for (let cellRef in ws) {
             if (cellRef[0] === '!') continue;
             const cell = ws[cellRef];
             if (cell && cell.t === 's') {
                 let valStr = String(cell.v).trim().replace(/\s/g, '');
                 if (!valStr) continue;
-                
+
                 const isPercent = valStr.endsWith('%');
                 let numStr = isPercent ? valStr.slice(0, -1) : valStr;
-                
+
                 const isNumericPattern = /^[+-]?(?:\d{1,3}(?:\.\d{3})*|\d+)(?:,\d+)?$/.test(numStr);
-                
+
                 if (isNumericPattern) {
                     let standardStr = numStr.replace(/\./g, '').replace(',', '.');
                     let numVal = parseFloat(standardStr);
@@ -508,7 +457,7 @@
                 }
             }
         }
-        
+
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Bayi Karlılık Raporu");
         XLSX.writeFile(wb, `Bayi_Karlilik_Raporu_${new Date().getTime()}.xlsx`);
