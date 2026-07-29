@@ -365,6 +365,8 @@ class MuavinDefteri(db.Model):
     Eslesme_Gerekli = Column(Boolean, default=False)
     Referans_Tur = Column(String(50), nullable=True)
     Referans_No = Column(String(100), nullable=True)
+    Referans_Tarih = Column(Date, nullable=True, index=True)
+    Referans_Sirket = Column(String(200), nullable=True, index=True)
     Referans_Tutar = Column(DECIMAL(18, 2), nullable=True)
     Eslendi = Column(Boolean, default=False)
     Kayit_Tarih = Column(DateTime, default=func.now())

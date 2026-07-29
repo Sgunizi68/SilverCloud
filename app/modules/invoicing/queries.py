@@ -2862,6 +2862,109 @@ def delete_mutabakat(db: Session, mutabakat_id: int) -> bool:
 # MUAVIN DEFTERI (GENERAL LEDGER) QUERIES
 # ============================================================================
 
+def determine_eslesme_tur(aciklama: Optional[str]) -> Optional[str]:
+    """
+    Determine Eslesme_Tur based on keywords in Aciklama.
+    """
+    if not aciklama:
+        return None
+    import unicodedata
+    s_clean = str(aciklama).replace('ı', 'i').replace('İ', 'i').replace('I', 'i')
+    norm = unicodedata.normalize('NFD', s_clean)
+    norm = ''.join(c for c in norm if unicodedata.category(c) != 'Mn').lower()
+    
+    if "kdv tahakkuk" in norm:
+        return "KDV Tahakkuk"
+    if "personel fisi" in norm or "personel" in norm:
+        return "Personel Fişi"
+    if "yuvarlama" in norm:
+        return "Diğer"
+    if "kredi kart" in norm or "kart islem" in norm:
+        return "Kart İşlemleri"
+    if "acilis" in norm or "aclis" in norm or "050611355906420" in norm:
+        return "Açılış Fişi"
+    if "7/a" in norm or "satilan ticari mal maliyeti" in norm or "hizmet uretim maliyeti" in norm or "satilan hizmet maliyeti" in norm or "smmk" in norm:
+        return "Satılan Malın Maliyeti"
+    if "pazarlama" in norm or "ars., pazarlama" in norm:
+        return "Pazarlama"
+    if "yazar kasa" in norm:
+        return "Yazar Kasa"
+    if "mevduat islem" in norm:
+        return "Mevduat İşlemleri"
+    if "transfer islem" in norm:
+        return "Transfer İşlemleri"
+    if "odeme islem" in norm:
+        return "Ödeme İşlemleri"
+    if "-diger -" in norm or "-diger-" in norm:
+        return "Diğer"
+    return None
+
+
+_PATTERN_FATURA = None
+_PATTERN_FIS = None
+
+
+def _get_second_pass_patterns():
+    """Compile regex patterns once for second-pass matching."""
+    global _PATTERN_FATURA, _PATTERN_FIS
+    if _PATTERN_FATURA is None:
+        import re
+        _PATTERN_FATURA = re.compile(r'^(\d{2}/\d{2}/\d{4})-([A-Za-z0-9]{16})-(.+)$')
+        _PATTERN_FIS = re.compile(r'^(\d{2}/\d{2}/\d{4})-(\d{1,4})-(.+)$')
+    return _PATTERN_FATURA, _PATTERN_FIS
+
+
+def parse_second_pass_matching(aciklama: Optional[str]) -> Optional[dict]:
+    """
+    Second-pass structural parser for MuavinDefteri.Aciklama.
+    Only intended for records where Eslesme_Tur is NULL.
+
+    Supports two formats:
+      Fatura: DD/MM/YYYY-<16-char alphanumeric>-<Company Name>
+      Fiş:    DD/MM/YYYY-<1-4 digits>-<Company Name>
+
+    Returns a dict with Eslesme_Tur, Referans_Tarih, Referans_No, Referans_Sirket
+    or None if Aciklama does not match either format.
+    """
+    if not aciklama:
+        return None
+
+    pat_fatura, pat_fis = _get_second_pass_patterns()
+    aciklama = aciklama.strip()
+
+    # Try Fatura (16-char alphanumeric invoice number)
+    m = pat_fatura.match(aciklama)
+    if m:
+        dt_str, inv_no, sirket = m.groups()
+        try:
+            ref_tarih = datetime.strptime(dt_str, "%d/%m/%Y").date()
+            return {
+                "Eslesme_Tur": "Fatura",
+                "Referans_Tarih": ref_tarih,
+                "Referans_No": inv_no,
+                "Referans_Sirket": sirket.strip()
+            }
+        except ValueError:
+            pass
+
+    # Try Fiş (1-4 digit receipt number)
+    m = pat_fis.match(aciklama)
+    if m:
+        dt_str, rec_no, sirket = m.groups()
+        try:
+            ref_tarih = datetime.strptime(dt_str, "%d/%m/%Y").date()
+            return {
+                "Eslesme_Tur": "Fiş",
+                "Referans_Tarih": ref_tarih,
+                "Referans_No": rec_no,
+                "Referans_Sirket": sirket.strip()
+            }
+        except ValueError:
+            pass
+
+    return None
+
+
 def create_muavin_defteri_bulk(
     db: Session,
     rows: List[dict]
@@ -2869,13 +2972,15 @@ def create_muavin_defteri_bulk(
     """
     Bulk create or update MuavinDefteri records.
     Duplicate keys: Tarih, Tip, Fis_No, Aciklama, Borc, Alacak.
-    Updates existing record if values (e.g. Bakiye, BA) have changed.
-    Returns counts for inserted, updated, skipped (duplicates), invalid_skipped, total.
+    Updates existing record if values (e.g. Bakiye, BA, Eslesme_Tur) have changed.
+    Returns counts and detail lists for updated/inserted records.
     """
     inserted = 0
     updated = 0
     skipped = 0
     invalid_skipped = 0
+    updated_records = []
+    inserted_records = []
 
     if not rows:
         return {
@@ -2883,7 +2988,9 @@ def create_muavin_defteri_bulk(
             "updated": 0,
             "skipped": 0,
             "invalid_skipped": 0,
-            "total": 0
+            "total": 0,
+            "updated_details": [],
+            "inserted_details": []
         }
 
     # Gather dates for batch fetching
@@ -2961,6 +3068,16 @@ def create_muavin_defteri_bulk(
         if not ba_val:
             ba_val = "B" if borc_dec >= alacak_dec else "A"
 
+        # First pass: keyword-based matching
+        eslesme_tur = determine_eslesme_tur(aciklama)
+
+        # Second pass: structural regex matching (only when first pass found nothing)
+        second_pass = None
+        if not eslesme_tur:
+            second_pass = parse_second_pass_matching(aciklama)
+            if second_pass:
+                eslesme_tur = second_pass["Eslesme_Tur"]
+
         key = (
             tarih_dt.isoformat(),
             tip,
@@ -2970,15 +3087,43 @@ def create_muavin_defteri_bulk(
             alacak_dec
         )
 
+        item_detail = {
+            "Tarih": tarih_dt.isoformat(),
+            "Tip": tip,
+            "Fis_No": fis_no,
+            "Aciklama": aciklama,
+            "Borc": float(borc_dec),
+            "Alacak": float(alacak_dec),
+            "Bakiye": float(bakiye_dec),
+            "BA": ba_val,
+            "Eslesme_Tur": eslesme_tur or "",
+            "Referans_Tarih": second_pass["Referans_Tarih"].isoformat() if second_pass else "",
+            "Referans_No": second_pass["Referans_No"] if second_pass else "",
+            "Referans_Sirket": second_pass["Referans_Sirket"] if second_pass else ""
+        }
+
         if key in existing_map:
             rec = existing_map[key]
-            # Check if updated values changed
-            if rec.Bakiye != bakiye_dec or rec.BA != ba_val:
+            # Check if any values changed
+            changed = (
+                rec.Bakiye != bakiye_dec
+                or rec.BA != ba_val
+                or (eslesme_tur and rec.Eslesme_Tur != eslesme_tur)
+                or (second_pass and rec.Referans_No != second_pass["Referans_No"])
+            )
+            if changed:
                 rec.Bakiye = bakiye_dec
                 rec.BA = ba_val
+                if eslesme_tur:
+                    rec.Eslesme_Tur = eslesme_tur
+                if second_pass:
+                    rec.Referans_Tarih = second_pass["Referans_Tarih"]
+                    rec.Referans_No = second_pass["Referans_No"]
+                    rec.Referans_Sirket = second_pass["Referans_Sirket"]
                 updated += 1
+                updated_records.append(item_detail)
             else:
-                skipped += 1 # Duplicate skipped
+                skipped += 1  # Duplicate skipped
         else:
             new_rec = MuavinDefteri(
                 Tarih=tarih_dt,
@@ -2988,11 +3133,16 @@ def create_muavin_defteri_bulk(
                 Borc=borc_dec,
                 Alacak=alacak_dec,
                 Bakiye=bakiye_dec,
-                BA=ba_val
+                BA=ba_val,
+                Eslesme_Tur=eslesme_tur,
+                Referans_Tarih=second_pass["Referans_Tarih"] if second_pass else None,
+                Referans_No=second_pass["Referans_No"] if second_pass else None,
+                Referans_Sirket=second_pass["Referans_Sirket"] if second_pass else None
             )
             db.add(new_rec)
             existing_map[key] = new_rec
             inserted += 1
+            inserted_records.append(item_detail)
 
     db.commit()
     return {
@@ -3000,5 +3150,7 @@ def create_muavin_defteri_bulk(
         "updated": updated,
         "skipped": skipped,
         "invalid_skipped": invalid_skipped,
-        "total": len(rows)
+        "total": len(rows),
+        "updated_details": updated_records,
+        "inserted_details": inserted_records
     }

@@ -194,17 +194,13 @@
         <div id="resultCard" class="result-card result-success">
             <h3 style="margin-top: 0; font-size: 16px;">Yükleme Tamamlandı</h3>
             <div class="result-stats">
-                <div class="stat-item">
-                    <span class="stat-value" id="countTotal" style="color: #3b82f6;">0</span>
-                    <span class="stat-label">Toplam Okunan</span>
-                </div>
-                <div class="stat-item">
+                <div class="stat-item" style="cursor: pointer;" onclick="renderDetailsTable('inserted')">
                     <span class="stat-value" id="countAdded" style="color: #16a34a;">0</span>
                     <span class="stat-label">Eklenen (Yeni)</span>
                 </div>
-                <div class="stat-item">
+                <div class="stat-item" style="cursor: pointer; background: #e0f2fe; border-color: #7dd3fc;" onclick="renderDetailsTable('updated')">
                     <span class="stat-value" id="countUpdated" style="color: #0284c7;">0</span>
-                    <span class="stat-label">Güncellenen</span>
+                    <span class="stat-label">Güncellenen (Detay Gör)</span>
                 </div>
                 <div class="stat-item">
                     <span class="stat-value" id="countSkipped" style="color: #ca8a04;">0</span>
@@ -213,6 +209,50 @@
                 <div class="stat-item">
                     <span class="stat-value" id="countInvalidSkipped" style="color: #dc2626;">0</span>
                     <span class="stat-label">Atlanan (Geçersiz)</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="countTotal" style="color: #3b82f6;">0</span>
+                    <span class="stat-label">Toplam Okunan</span>
+                </div>
+            </div>
+
+            <!-- Download Action Buttons -->
+            <div style="margin-top: 15px; display: flex; gap: 12px; flex-wrap: wrap;">
+                <button type="button" class="btn-template" style="background: #0284c7; color: white; border: none; padding: 10px 18px; font-size: 13px; font-weight: 600; border-radius: 8px;" onclick="exportDetailsToExcel('updated')">
+                    <i class="fas fa-file-excel"></i> Güncellenen Kayıtları Ek Dosya Olarak İndir (.xlsx)
+                </button>
+                <button type="button" class="btn-template" style="background: #16a34a; color: white; border: none; padding: 10px 18px; font-size: 13px; font-weight: 600; border-radius: 8px;" onclick="exportDetailsToExcel('inserted')">
+                    <i class="fas fa-file-excel"></i> Yeni Eklenen Kayıtları Ek Dosya Olarak İndir (.xlsx)
+                </button>
+            </div>
+
+            <!-- Details Section -->
+            <div id="detailsContainer" style="margin-top: 20px; display: none; background: white; border: 1px solid #cbd5e1; border-radius: 8px; padding: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <h4 style="margin: 0; font-size: 14px; color: #1e293b; display: flex; align-items: center; gap: 8px;" id="detailsTitle">
+                        <i class="fas fa-list-ul" style="color: #0284c7;"></i> Güncellenen Kayıtlar Detay Listesi
+                    </h4>
+                    <button type="button" class="btn-template" onclick="exportDetailsToExcel(currentDetailView)">
+                        <i class="fas fa-file-excel" style="color: #16a34a;"></i> Ek Dosya İndir
+                    </button>
+                </div>
+                <div style="max-height: 350px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    <table class="ref-table" style="font-size: 12px; width: 100%;">
+                        <thead style="position: sticky; top: 0; background: #f8fafc; z-index: 10;">
+                            <tr>
+                                <th style="width: 85px;">Tarih</th>
+                                <th style="width: 80px;">Fiş No</th>
+                                <th style="width: 70px;">Tip</th>
+                                <th>Açıklama</th>
+                                <th style="width: 95px; text-align: right;">Borç</th>
+                                <th style="width: 95px; text-align: right;">Alacak</th>
+                                <th style="width: 95px; text-align: right;">Bakiye</th>
+                                <th style="width: 140px;">Eşleşme Türü</th>
+                            </tr>
+                        </thead>
+                        <tbody id="detailsTableBody">
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -223,6 +263,10 @@
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
+    let globalUpdatedDetails = [];
+    let globalInsertedDetails = [];
+    let currentDetailView = 'updated';
+
     const parseDMYDateString = (dateStr) => {
         if (!dateStr) return '';
         if (typeof dateStr === 'number') {
@@ -264,6 +308,82 @@
         return 0;
     };
 
+    const formatCurrency = (num) => {
+        return (num || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺';
+    };
+
+    function renderDetailsTable(type) {
+        currentDetailView = type;
+        const container = document.getElementById('detailsContainer');
+        const titleEl = document.getElementById('detailsTitle');
+        const tbody = document.getElementById('detailsTableBody');
+
+        const list = type === 'updated' ? globalUpdatedDetails : globalInsertedDetails;
+        const label = type === 'updated' ? 'Güncellenen' : 'Eklenen (Yeni)';
+
+        if (!list || list.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center cell-muted" style="padding: 20px;">Gösterilecek ${label.toLowerCase()} kayıt bulunmuyor.</td></tr>`;
+            titleEl.innerHTML = `<i class="fas fa-list-ul" style="color: #0284c7;"></i> ${label} Kayıtlar Detay Listesi (0 Adet)`;
+            container.style.display = 'block';
+            return;
+        }
+
+        titleEl.innerHTML = `<i class="fas fa-list-ul" style="color: #0284c7;"></i> ${label} Kayıtlar Detay Listesi (${list.length} Adet)`;
+        
+        tbody.innerHTML = list.map(item => `
+            <tr>
+                <td>${item.Tarih || '-'}</td>
+                <td style="font-family: monospace;">${item.Fis_No || '-'}</td>
+                <td><span class="badge badge-sube">${item.Tip || '-'}</span></td>
+                <td title="${item.Aciklama || ''}" style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.Aciklama || '-'}</td>
+                <td class="text-right" style="font-weight: 500;">${formatCurrency(item.Borc)}</td>
+                <td class="text-right" style="font-weight: 500;">${formatCurrency(item.Alacak)}</td>
+                <td class="text-right" style="font-weight: 600;">${formatCurrency(item.Bakiye)}</td>
+                <td>
+                    ${item.Eslesme_Tur 
+                        ? `<span class="badge" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;">${item.Eslesme_Tur}</span>` 
+                        : '<span style="color: #94a3b8; font-size: 11px;">-</span>'}
+                </td>
+            </tr>
+        `).join('');
+
+        container.style.display = 'block';
+    }
+
+    function exportDetailsToExcel(targetType) {
+        const type = targetType || currentDetailView || 'updated';
+        const list = type === 'updated' ? globalUpdatedDetails : globalInsertedDetails;
+        const label = type === 'updated' ? 'Güncellenen' : 'Eklenen';
+
+        if (!list || list.length === 0) {
+            showToast(`${label} kayıt listesi bulunamadı.`, 'error');
+            return;
+        }
+
+        const exportData = list.map(x => ({
+            "Tarih": x.Tarih,
+            "Fiş No": x.Fis_No,
+            "Tip": x.Tip,
+            "Açıklama": x.Aciklama,
+            "Borç": x.Borc,
+            "Alacak": x.Alacak,
+            "Bakiye": x.Bakiye,
+            "B/A": x.BA,
+            "Eşleşme Türü": x.Eslesme_Tur
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(exportData);
+        ws['!cols'] = [
+            { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 35 },
+            { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 6 }, { wch: 22 }
+        ];
+        const wb = XLSX.utils.book_new();
+        const sheetName = currentDetailView === 'updated' ? 'Guncellenen_Kayitlar' : 'Eklenen_Kayitlar';
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+        XLSX.writeFile(wb, `Muavin_Defteri_${sheetName}.xlsx`);
+        showToast('Detay listesi Excel olarak indirildi.');
+    }
+
     // Download sample template
     document.getElementById('downloadTemplateBtn').addEventListener('click', () => {
         const sampleData = [
@@ -292,6 +412,9 @@
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> İşleniyor...';
         document.getElementById('resultCard').style.display = 'none';
+        document.getElementById('detailsContainer').style.display = 'none';
+        globalUpdatedDetails = [];
+        globalInsertedDetails = [];
 
         const reader = new FileReader();
         reader.onload = async (event) => {
@@ -392,7 +515,6 @@
                         const bakiyeVal = foundHeaders.bakiye < row.length ? parseCurrencyValue(row[foundHeaders.bakiye]) : 0;
 
                         // Flexible Row Parsing Rule (Section 15):
-                        // Valid row MUST have a valid 10-character YYYY-MM-DD date string
                         const isValidDate = dateStr && dateStr.length >= 10 && !isNaN(new Date(dateStr.substring(0, 10)).getTime());
 
                         if (!isValidDate) {
@@ -448,6 +570,13 @@
                         totalUpdated += resData.updated || 0;
                         totalSkipped += resData.skipped || 0;
                         totalInvalidSkipped += resData.invalid_skipped || 0;
+
+                        if (resData.updated_details && resData.updated_details.length > 0) {
+                            globalUpdatedDetails.push(...resData.updated_details);
+                        }
+                        if (resData.inserted_details && resData.inserted_details.length > 0) {
+                            globalInsertedDetails.push(...resData.inserted_details);
+                        }
                     } else {
                         let errMessage = 'Bilinmeyen Hata';
                         try {
@@ -469,6 +598,14 @@
                     document.getElementById('countSkipped').innerText = totalSkipped;
                     document.getElementById('countInvalidSkipped').innerText = totalInvalidSkipped;
                     document.getElementById('resultCard').style.display = 'block';
+
+                    // Default view details of updated records
+                    if (globalUpdatedDetails.length > 0) {
+                        renderDetailsTable('updated');
+                    } else if (globalInsertedDetails.length > 0) {
+                        renderDetailsTable('inserted');
+                    }
+
                     showToast(`İşlem tamamlandı. Okunan: ${totalRowsRead}, Eklenen: ${totalAdded}, Güncellenen: ${totalUpdated}, Atlanan: ${totalSkipped}`);
                 }
 
