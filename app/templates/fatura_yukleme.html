@@ -333,7 +333,7 @@
                         const vkn = String(row[vknKey] || "").trim();
                         const tutar = parseCurrencyValue(row[tutarKey]);
                         const durum = String(row[durumKey] || "").trim();
-                        const isGidenFatura = durum === "Gönderildi" || durum === "Alıcı Kabul Etti (Otomatik)" || durum.toLowerCase().includes("giden");
+                        const isGidenFatura = durum === "Gönderildi" || durum === "GIB'e İletildi" || durum === "Alıcı Kabul Etti (Otomatik)" || durum.toLowerCase().includes("giden") || durum.toLowerCase().includes("iletildi");
 
                         return {
                             Sube_ID: parseInt(subeId),
