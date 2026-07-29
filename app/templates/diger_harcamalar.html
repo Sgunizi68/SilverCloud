@@ -509,7 +509,7 @@
 
     async function viewImageDeferred(id, filename, btn) {
         if (!id) return;
-        
+
         // Fast path: already fetched
         if (window.prefetchedImages[id]) {
             const data = window.prefetchedImages[id];
@@ -521,7 +521,7 @@
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yükleniyor...';
         btn.style.opacity = '0.7';
         btn.style.pointerEvents = 'none';
-        
+
         try {
             let data;
             // Mid path: currently fetching
@@ -732,11 +732,11 @@
     async function openMatchModal(item) {
         currentHarcamaId = item.Harcama_ID;
         currentSubeId = item.Sube_ID;
-        
+
         const donemOpts = DONEM_LISTESI.map(d => `<option value="${d}">${d}</option>`).join('');
-        const katOpts = '<option value="">Seçili e-Faturanın kategorisini değiştirin...</option>' + 
-                        Object.entries(kategorilerMap).map(([id, name]) => `<option value="${id}">${name}</option>`).join('');
-        
+        const katOpts = '<option value="">Seçili e-Faturanın kategorisini değiştirin...</option>' +
+            Object.entries(kategorilerMap).map(([id, name]) => `<option value="${id}">${name}</option>`).join('');
+
         const modalHtml = `
             <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                 <div class="form-group" style="margin:0; flex: 1; min-width: 200px;">
@@ -781,13 +781,13 @@
                 </div>
             </div>
         `;
-        
+
         showModal('e-Fatura Eşleştir', modalHtml);
-        
+
         // Populate and set default values in the newly injected content
         const searchInput = document.getElementById('matchSearch');
         const donemSelect = document.getElementById('matchDonem');
-        
+
         if (searchInput) {
             searchInput.value = item.Alici_Adi || '';
             searchInput.addEventListener('input', applyMatchFilter);
@@ -798,12 +798,12 @@
                 }
             });
         }
-        
+
         if (donemSelect) {
             donemSelect.value = item.Donem;
             donemSelect.addEventListener('change', () => loadMatchData(currentSubeId, donemSelect.value));
         }
-        
+
         // Initial load
         loadMatchData(currentSubeId, item.Donem);
     }
@@ -812,14 +812,14 @@
         try {
             const tbody = document.getElementById('matchTableBody');
             if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="text-center">Yükleniyor...</td></tr>';
-            
+
             const res = await fetch(`/api/v1/efaturalar?sube_id=${subeId}&donem=${donem}&limit=10000`);
             if (!res.ok) throw new Error("Fatura listesi alınamadı.");
             allEfaturas = await res.json();
-            
+
             // Filter: Gelen Fatura only
             allEfaturas = allEfaturas.filter(f => !f.Giden_Fatura);
-            
+
             applyMatchFilter();
         } catch (err) {
             alert(err.message);
@@ -830,29 +830,29 @@
         const searchInput = document.getElementById('matchSearch');
         if (!searchInput) return;
         const search = searchInput.value.toLowerCase();
-        
-        const filtered = allEfaturas.filter(f => 
+
+        const filtered = allEfaturas.filter(f =>
             (f.Fatura_Numarasi || '').toLowerCase().includes(search) ||
             (f.Alici_Unvani || '').toLowerCase().includes(search)
         );
-        
+
         const countEl = document.getElementById('matchCount');
         if (countEl) countEl.textContent = filtered.length;
-        
+
         const tbody = document.getElementById('matchTableBody');
         const katSelect = document.getElementById('matchEfaturaKategori');
         if (katSelect) {
             katSelect.disabled = true;
             katSelect.value = '';
         }
-        
+
         if (!tbody) return;
 
         if (filtered.length === 0) {
             tbody.innerHTML = '<tr><td colspan="5" class="text-center">Fatura bulunamadı.</td></tr>';
             return;
         }
-        
+
         tbody.innerHTML = filtered.map(f => `
             <tr>
                 <td class="text-center">
@@ -860,7 +860,7 @@
                 </td>
                 <td>${f.Fatura_Numarasi}</td>
                 <td>${f.Alici_Unvani}</td>
-                <td class="text-right">₺${f.Tutar.toLocaleString('tr-TR', {minimumFractionDigits:2})}</td>
+                <td class="text-right">₺${f.Tutar.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}</td>
                 <td>${f.Fatura_Tarihi}</td>
             </tr>
         `).join('');
@@ -869,7 +869,7 @@
     function limitOneCheck(el) {
         const id = el.getAttribute('data-id');
         const katSelect = document.getElementById('matchEfaturaKategori');
-        
+
         if (el.checked) {
             document.querySelectorAll('.match-check').forEach(c => {
                 if (c !== el) c.checked = false;
@@ -893,27 +893,27 @@
             alert("Lütfen bir fatura seçiniz.");
             return;
         }
-        
+
         const efaturaId = selected.getAttribute('data-id');
         const katSelect = document.getElementById('matchEfaturaKategori');
         const payload = { harcama_id: currentHarcamaId, efatura_id: efaturaId };
-        
+
         if (katSelect && !katSelect.disabled && katSelect.value) {
             payload.efatura_kategori_id = katSelect.value;
         }
-        
+
         try {
             const res = await fetch('/api/v1/match-harcama-efatura', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-            
+
             if (!res.ok) {
                 const data = await res.json();
                 throw new Error(data.error || "Eşleştirme başarısız.");
             }
-            
+
             hideModal();
             showToast("Eşleştirme başarılı.");
             setTimeout(() => location.reload(), 900);

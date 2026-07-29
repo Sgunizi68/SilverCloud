@@ -6,12 +6,13 @@ Uses SQLAlchemy 2.0 style with pagination and filtering.
 
 from typing import Optional, List
 from datetime import date, datetime
+from decimal import Decimal
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 from app.models import (
     EFatura, B2BEkstre, DigerHarcama, Odeme, OdemeReferans,
     Nakit, POSHareketleri, Gelir, GelirEkstra, EFaturaReferans,
-    Kategori, Sube, YemekCeki, Mutabakat, Cari
+    Kategori, Sube, YemekCeki, Mutabakat, Cari, MuavinDefteri
 )
 
 
@@ -2855,3 +2856,149 @@ def delete_mutabakat(db: Session, mutabakat_id: int) -> bool:
     db.delete(m)
     db.commit()
     return True
+
+
+# ============================================================================
+# MUAVIN DEFTERI (GENERAL LEDGER) QUERIES
+# ============================================================================
+
+def create_muavin_defteri_bulk(
+    db: Session,
+    rows: List[dict]
+) -> dict:
+    """
+    Bulk create or update MuavinDefteri records.
+    Duplicate keys: Tarih, Tip, Fis_No, Aciklama, Borc, Alacak.
+    Updates existing record if values (e.g. Bakiye, BA) have changed.
+    Returns counts for inserted, updated, skipped (duplicates), invalid_skipped, total.
+    """
+    inserted = 0
+    updated = 0
+    skipped = 0
+    invalid_skipped = 0
+
+    if not rows:
+        return {
+            "inserted": 0,
+            "updated": 0,
+            "skipped": 0,
+            "invalid_skipped": 0,
+            "total": 0
+        }
+
+    # Gather dates for batch fetching
+    dates = set()
+    for row in rows:
+        t_val = row.get("Tarih")
+        if isinstance(t_val, str) and t_val:
+            try:
+                dates.add(datetime.strptime(t_val, "%Y-%m-%d").date())
+            except ValueError:
+                pass
+        elif isinstance(t_val, date):
+            dates.add(t_val)
+
+    existing_map = {}
+    if dates:
+        stmt = select(MuavinDefteri).where(MuavinDefteri.Tarih.in_(list(dates)))
+        existing_records = db.scalars(stmt).all()
+        for rec in existing_records:
+            t_str = rec.Tarih.isoformat() if rec.Tarih else ""
+            key = (
+                t_str,
+                (rec.Tip or "").strip(),
+                (rec.Fis_No or "").strip(),
+                (rec.Aciklama or "").strip(),
+                Decimal(str(rec.Borc or 0)),
+                Decimal(str(rec.Alacak or 0))
+            )
+            existing_map[key] = rec
+
+    for data in rows:
+        tarih_val = data.get("Tarih")
+        if isinstance(tarih_val, str) and tarih_val:
+            try:
+                tarih_dt = datetime.strptime(tarih_val, "%Y-%m-%d").date()
+            except ValueError:
+                invalid_skipped += 1
+                continue
+        elif isinstance(tarih_val, date):
+            tarih_dt = tarih_val
+        else:
+            invalid_skipped += 1
+            continue
+
+        tip = str(data.get("Tip") or "").strip()
+        borc_raw = data.get("Borc", 0.0)
+        alacak_raw = data.get("Alacak", 0.0)
+
+        try:
+            borc_dec = Decimal(str(borc_raw)) if borc_raw not in (None, "") else Decimal("0.00")
+        except Exception:
+            borc_dec = Decimal("0.00")
+
+        try:
+            alacak_dec = Decimal(str(alacak_raw)) if alacak_raw not in (None, "") else Decimal("0.00")
+        except Exception:
+            alacak_dec = Decimal("0.00")
+
+        # Flexible Row Validation Rule:
+        # Must have: valid Tarih, non-empty Tip, at least one numeric Borc or Alacak
+        if not tarih_dt or not tip or (borc_dec == Decimal("0.00") and alacak_dec == Decimal("0.00") and "Borc" not in data and "Alacak" not in data):
+            invalid_skipped += 1
+            continue
+
+        fis_no = str(data.get("Fis_No") or "").strip()
+        aciklama = str(data.get("Aciklama") or "").strip()
+
+        bakiye_raw = data.get("Bakiye", 0.0)
+        try:
+            bakiye_dec = Decimal(str(bakiye_raw)) if bakiye_raw not in (None, "") else Decimal("0.00")
+        except Exception:
+            bakiye_dec = Decimal("0.00")
+
+        ba_val = str(data.get("BA") or "").strip().upper()
+        if not ba_val:
+            ba_val = "B" if borc_dec >= alacak_dec else "A"
+
+        key = (
+            tarih_dt.isoformat(),
+            tip,
+            fis_no,
+            aciklama,
+            borc_dec,
+            alacak_dec
+        )
+
+        if key in existing_map:
+            rec = existing_map[key]
+            # Check if updated values changed
+            if rec.Bakiye != bakiye_dec or rec.BA != ba_val:
+                rec.Bakiye = bakiye_dec
+                rec.BA = ba_val
+                updated += 1
+            else:
+                skipped += 1 # Duplicate skipped
+        else:
+            new_rec = MuavinDefteri(
+                Tarih=tarih_dt,
+                Tip=tip,
+                Fis_No=fis_no,
+                Aciklama=aciklama,
+                Borc=borc_dec,
+                Alacak=alacak_dec,
+                Bakiye=bakiye_dec,
+                BA=ba_val
+            )
+            db.add(new_rec)
+            existing_map[key] = new_rec
+            inserted += 1
+
+    db.commit()
+    return {
+        "inserted": inserted,
+        "updated": updated,
+        "skipped": skipped,
+        "invalid_skipped": invalid_skipped,
+        "total": len(rows)
+    }

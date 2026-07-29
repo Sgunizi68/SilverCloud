@@ -347,6 +347,32 @@ class OdemeReferans(db.Model):
         return f"<OdemeReferans {self.Referans_Metin}>"
 
 
+class MuavinDefteri(db.Model):
+    """General Ledger / Muavin Defteri entity"""
+    __tablename__ = "muavin_defteri"
+    __table_args__ = {"extend_existing": True}
+
+    ID = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    Tarih = Column(Date, nullable=False, index=True)
+    Tip = Column(String(20), nullable=False)
+    Fis_No = Column(String(50), nullable=True)
+    Aciklama = Column(String(500), nullable=True)
+    Borc = Column(DECIMAL(18, 2), default=0.00)
+    Alacak = Column(DECIMAL(18, 2), default=0.00)
+    Bakiye = Column(DECIMAL(18, 2), default=0.00)
+    BA = Column(String(1), nullable=True)
+    Eslesme_Tur = Column(String(50), nullable=True)
+    Eslesme_Gerekli = Column(Boolean, default=False)
+    Referans_Tur = Column(String(50), nullable=True)
+    Referans_No = Column(String(100), nullable=True)
+    Referans_Tutar = Column(DECIMAL(18, 2), nullable=True)
+    Eslendi = Column(Boolean, default=False)
+    Kayit_Tarih = Column(DateTime, default=func.now())
+
+    def __repr__(self):
+        return f"<MuavinDefteri {self.ID} - {self.Fis_No}>"
+
+
 class RobotposGelirReferans(db.Model):
     """Gelir reference mapping (RobotPOS)"""
     __tablename__ = "Robotpos_Gelir_Referans"

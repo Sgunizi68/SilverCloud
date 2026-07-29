@@ -1,0 +1,486 @@
+{% extends "base.html" %}
+
+{% block title %}Muavin Defteri Yükleme - SilverCloud{% endblock %}
+
+{% block acc_fatura_harcama %}active{% endblock %}
+{% block acc_fatura_harcama_content %}open{% endblock %}
+{% block nav_muavin_yukleme %}active{% endblock %}
+
+{% block extra_style %}
+<style>
+    .upload-container {
+        padding: 30px;
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .card-glass {
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        border-radius: 16px;
+        padding: 25px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    .page-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #1e293b;
+        margin-bottom: 25px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 8px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.2s;
+        background: white;
+    }
+
+    .form-control:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        outline: none;
+    }
+
+    .upload-row {
+        display: flex;
+        gap: 15px;
+        align-items: flex-end;
+        margin-bottom: 20px;
+    }
+
+    .upload-row .form-group {
+        flex: 1;
+    }
+
+    .btn-upload {
+        background: #3b82f6;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+        white-space: nowrap;
+        height: 44px;
+    }
+
+    .btn-upload:hover {
+        background: #2563eb;
+        transform: translateY(-1px);
+    }
+
+    .btn-upload:disabled {
+        background: #94a3b8;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .btn-template {
+        background: white;
+        color: #334155;
+        border: 1px solid #cbd5e1;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+    }
+
+    .btn-template:hover {
+        border-color: #3b82f6;
+        color: #3b82f6;
+    }
+
+    .result-card {
+        margin-top: 25px;
+        padding: 20px;
+        border-radius: 12px;
+        display: none;
+        border: 1px solid #e2e8f0;
+    }
+
+    .result-success {
+        background: #f0fdf4;
+        border-color: #bbf7d0;
+        color: #166534;
+    }
+
+    .result-stats {
+        display: flex;
+        gap: 15px;
+        margin-top: 15px;
+        flex-wrap: wrap;
+    }
+
+    .stat-item {
+        text-align: center;
+        flex: 1;
+        min-width: 130px;
+        background: white;
+        padding: 15px 10px;
+        border-radius: 8px;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .stat-value {
+        font-size: 22px;
+        font-weight: 700;
+        display: block;
+    }
+
+    .stat-label {
+        font-size: 11px;
+        color: #64748b;
+        text-transform: uppercase;
+        margin-top: 4px;
+        display: block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="upload-container">
+    <div class="card-glass">
+        <h1 class="page-title">
+            <i class="fas fa-book-open" style="color: #3b82f6;"></i>
+            Muavin Defteri Yükleme
+        </h1>
+
+        <form id="uploadForm">
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Excel Dosyası (.xlsx, .xls) *</label>
+                <div class="upload-row">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <input type="file" id="uploadFile" class="form-control" accept=".xlsx,.xls" required>
+                    </div>
+                    <button type="submit" class="btn-upload" id="submitBtn">
+                        <i class="fas fa-upload"></i> Yükle
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <div style="margin-top: 10px;">
+            <button class="btn-template" id="downloadTemplateBtn">
+                <i class="fas fa-download"></i> Örnek Şablon İndir
+            </button>
+        </div>
+
+        <div id="resultCard" class="result-card result-success">
+            <h3 style="margin-top: 0; font-size: 16px;">Yükleme Tamamlandı</h3>
+            <div class="result-stats">
+                <div class="stat-item">
+                    <span class="stat-value" id="countTotal" style="color: #3b82f6;">0</span>
+                    <span class="stat-label">Toplam Okunan</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="countAdded" style="color: #16a34a;">0</span>
+                    <span class="stat-label">Eklenen (Yeni)</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="countUpdated" style="color: #0284c7;">0</span>
+                    <span class="stat-label">Güncellenen</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="countSkipped" style="color: #ca8a04;">0</span>
+                    <span class="stat-label">Atlanan (Mevcut)</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="countInvalidSkipped" style="color: #dc2626;">0</span>
+                    <span class="stat-label">Atlanan (Geçersiz)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+    const parseDMYDateString = (dateStr) => {
+        if (!dateStr) return '';
+        if (typeof dateStr === 'number') {
+            const excelEpoch = new Date(1899, 11, 30);
+            const excelDate = new Date(excelEpoch.getTime() + dateStr * 24 * 60 * 60 * 1000);
+            if (!isNaN(excelDate.getTime())) {
+                const year = excelDate.getFullYear();
+                const month = (excelDate.getMonth() + 1).toString().padStart(2, '0');
+                const day = excelDate.getDate().toString().padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+        }
+        const parts = String(dateStr).split(/[-./]/);
+        if (parts.length === 3) {
+            let [day, month, year] = parts;
+            if (day && month && year) {
+                if (year.length === 2) {
+                    const currentYear = new Date().getFullYear();
+                    const currentCentury = Math.floor(currentYear / 100) * 100;
+                    let fullYear = currentCentury + parseInt(year, 10);
+                    if (fullYear > currentYear + 20) fullYear -= 100;
+                    year = String(fullYear);
+                }
+                if (year.length === 4) {
+                    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                }
+            }
+        }
+        return String(dateStr);
+    };
+
+    const parseCurrencyValue = (value) => {
+        if (typeof value === 'number') return isNaN(value) ? 0 : value;
+        if (typeof value === 'string') {
+            const sanitized = value.replace(/\./g, '').replace(',', '.');
+            const num = parseFloat(sanitized);
+            return isNaN(num) ? 0 : num;
+        }
+        return 0;
+    };
+
+    // Download sample template
+    document.getElementById('downloadTemplateBtn').addEventListener('click', () => {
+        const sampleData = [
+            { "TARİH": "01.02.2026", "TİP": "Mahsup", "FİŞ NO": "M00001", "AÇIKLAMA": "Hizmet Bedeli Tahakkuku", "BORÇ": 12500.00, "ALACAK": 0, "BAKİYE": 12500.00, "B/A": "B" },
+            { "TARİH": "05.02.2026", "TİP": "Tahsilat", "FİŞ NO": "T00002", "AÇIKLAMA": "Banka Havalesi İle Tahsilat", "BORÇ": 0, "ALACAK": 5000.00, "BAKİYE": 7500.00, "B/A": "B" }
+        ];
+        const ws = XLSX.utils.json_to_sheet(sampleData);
+        ws['!cols'] = [
+            { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 30 },
+            { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 6 }
+        ];
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Muavin Defteri");
+        XLSX.writeFile(wb, "Muavin_Defteri_Sablon.xlsx");
+        showToast('Örnek şablon indirildi.');
+    });
+
+    // Upload handler
+    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fileInput = document.getElementById('uploadFile');
+        const submitBtn = document.getElementById('submitBtn');
+
+        if (!fileInput.files[0]) return;
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> İşleniyor...';
+        document.getElementById('resultCard').style.display = 'none';
+
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            try {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const sheetData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                if (!sheetData || sheetData.length === 0) {
+                    showToast('Dosya boş görünüyor.', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
+                    return;
+                }
+
+                // Header normalization helper (NFD Unicode normalize + remove diacritics)
+                const normalizeHeader = (val) => {
+                    if (!val) return '';
+                    return String(val)
+                        .normalize('NFD')
+                        .replace(/[\u0300-\u036f]/g, '')
+                        .toLowerCase()
+                        .trim()
+                        .replace(/\s+/g, '')
+                        .replace(/:/g, '');
+                };
+
+                // Dynamically find header row in the first 30 rows
+                let headerRowIndex = -1;
+                let foundHeaders = {};
+
+                for (let i = 0; i < Math.min(sheetData.length, 30); i++) {
+                    const row = sheetData[i];
+                    if (!row || row.length === 0) continue;
+
+                    const norm = row.map(normalizeHeader);
+                    const tarihIdx = norm.findIndex(h => h === 'tarih' || h === 'date');
+                    const tipIdx = norm.findIndex(h => h === 'tip' || h === 'type');
+                    const borcIdx = norm.findIndex(h => h.includes('borc') || h.includes('debit'));
+                    const alacakIdx = norm.findIndex(h => h.includes('alacak') || h.includes('credit'));
+                    const fisIdx = norm.findIndex(h => h.includes('fis') || h.includes('receipt'));
+
+                    if (tarihIdx !== -1 && (tipIdx !== -1 || borcIdx !== -1 || alacakIdx !== -1 || fisIdx !== -1)) {
+                        headerRowIndex = i;
+                        foundHeaders = {
+                            tarih: tarihIdx,
+                            tip: tipIdx !== -1 ? tipIdx : 1,
+                            fisNo: fisIdx !== -1 ? fisIdx : 2,
+                            aciklama: norm.findIndex(h => h.includes('aciklama') || h.includes('desc')),
+                            borc: borcIdx !== -1 ? borcIdx : 4,
+                            alacak: alacakIdx !== -1 ? alacakIdx : 5,
+                            bakiye: norm.findIndex(h => h.includes('bakiye') || h.includes('balance')),
+                            ba: norm.findIndex(h => h === 'b/a' || h === 'ba')
+                        };
+                        break;
+                    }
+                }
+
+                if (headerRowIndex === -1) {
+                    showToast("'TARİH' ve 'TİP' sütunları bulunamadı. Lütfen sütun adlarını kontrol edin.", 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
+                    return;
+                }
+
+                let totalRowsRead = sheetData.length;
+                let invalidRowsCount = 0;
+                const rowsToProcess = [];
+
+                for (let index = headerRowIndex + 1; index < sheetData.length; index++) {
+                    const row = sheetData[index];
+                    if (!row || row.length === 0) {
+                        invalidRowsCount++;
+                        continue;
+                    }
+
+                    try {
+                        const rawTarih = foundHeaders.tarih < row.length ? row[foundHeaders.tarih] : null;
+                        if (!rawTarih) {
+                            invalidRowsCount++;
+                            continue;
+                        }
+
+                        const dateStr = parseDMYDateString(rawTarih);
+                        const normTarih = normalizeHeader(dateStr);
+                        if (normTarih === 'tarih' || normTarih === 'toplam' || normTarih === 'aratoplam') {
+                            invalidRowsCount++;
+                            continue;
+                        }
+
+                        let tipStr = foundHeaders.tip < row.length ? String(row[foundHeaders.tip] || "").trim() : "";
+                        if (!tipStr) tipStr = "Mahsup";
+
+                        const borcVal = foundHeaders.borc < row.length ? parseCurrencyValue(row[foundHeaders.borc]) : 0;
+                        const alacakVal = foundHeaders.alacak < row.length ? parseCurrencyValue(row[foundHeaders.alacak]) : 0;
+                        const bakiyeVal = foundHeaders.bakiye < row.length ? parseCurrencyValue(row[foundHeaders.bakiye]) : 0;
+
+                        // Flexible Row Parsing Rule (Section 15):
+                        // Valid row MUST have a valid 10-character YYYY-MM-DD date string
+                        const isValidDate = dateStr && dateStr.length >= 10 && !isNaN(new Date(dateStr.substring(0, 10)).getTime());
+
+                        if (!isValidDate) {
+                            invalidRowsCount++;
+                            continue;
+                        }
+
+                        rowsToProcess.push({
+                            Tarih: dateStr.substring(0, 10),
+                            Tip: tipStr,
+                            Fis_No: foundHeaders.fisNo < row.length ? String(row[foundHeaders.fisNo] || "").trim() : "",
+                            Aciklama: foundHeaders.aciklama < row.length ? String(row[foundHeaders.aciklama] || "").trim() : "",
+                            Borc: borcVal,
+                            Alacak: alacakVal,
+                            Bakiye: bakiyeVal,
+                            BA: foundHeaders.ba < row.length ? String(row[foundHeaders.ba] || "").trim().toUpperCase() : ""
+                        });
+                    } catch (err) {
+                        console.error(`Error parsing row ${index}:`, err);
+                        invalidRowsCount++;
+                    }
+                }
+
+                if (rowsToProcess.length === 0) {
+                    showToast('İşlenebilir geçerli muhasebe kaydı bulunamadı.', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
+                    return;
+                }
+
+                const chunkSize = 250;
+                let totalAdded = 0;
+                let totalUpdated = 0;
+                let totalSkipped = 0;
+                let totalInvalidSkipped = invalidRowsCount;
+                let hasError = false;
+                const totalChunks = Math.ceil(rowsToProcess.length / chunkSize);
+
+                for (let i = 0; i < totalChunks; i++) {
+                    const chunk = rowsToProcess.slice(i * chunkSize, (i + 1) * chunkSize);
+                    submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> İşleniyor... (${i + 1}/${totalChunks})`;
+
+                    const response = await fetch('/api/v1/muavin-defteri/bulk', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ rows: chunk })
+                    });
+
+                    if (response.ok) {
+                        const resData = await response.json();
+                        totalAdded += resData.inserted || 0;
+                        totalUpdated += resData.updated || 0;
+                        totalSkipped += resData.skipped || 0;
+                        totalInvalidSkipped += resData.invalid_skipped || 0;
+                    } else {
+                        let errMessage = 'Bilinmeyen Hata';
+                        try {
+                            const err = await response.json();
+                            errMessage = err.error || errMessage;
+                        } catch (parseErr) {
+                            errMessage = `Sunucu hatası veya zaman aşımı (Status: ${response.status})`;
+                        }
+                        showToast(`Hata (${i + 1}. paket): ${errMessage}`, 'error');
+                        hasError = true;
+                        break;
+                    }
+                }
+
+                if (!hasError) {
+                    document.getElementById('countTotal').innerText = totalRowsRead;
+                    document.getElementById('countAdded').innerText = totalAdded;
+                    document.getElementById('countUpdated').innerText = totalUpdated;
+                    document.getElementById('countSkipped').innerText = totalSkipped;
+                    document.getElementById('countInvalidSkipped').innerText = totalInvalidSkipped;
+                    document.getElementById('resultCard').style.display = 'block';
+                    showToast(`İşlem tamamlandı. Okunan: ${totalRowsRead}, Eklenen: ${totalAdded}, Güncellenen: ${totalUpdated}, Atlanan: ${totalSkipped}`);
+                }
+
+            } catch (err) {
+                console.error(err);
+                showToast('Dosya okuma hatası: ' + err.message, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
+            }
+        };
+        reader.readAsArrayBuffer(fileInput.files[0]);
+    });
+</script>
+{% endblock %}

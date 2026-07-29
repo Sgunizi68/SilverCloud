@@ -450,6 +450,34 @@ def create_odeme_bulk_api():
         return jsonify({"error": str(e)}), 500
 
 
+@invoicing_bp.route("/muavin-defteri/bulk", methods=["POST"])
+@auth_required
+def create_muavin_defteri_bulk_api():
+    """Bulk create/update Muavin Defteri records from uploaded Excel data."""
+    try:
+        db = get_db_session()
+        from app.modules.auth.queries import has_permission, get_user_roles
+        user = request.user
+        roles = get_user_roles(db, user.Kullanici_ID)
+        is_admin = 'admin' in [r.lower() for r in roles]
+        if not is_admin and not has_permission(db, user.Kullanici_ID, "Muavin Defteri Yükleme Ekranı Görüntüleme"):
+            db.close()
+            return jsonify({"error": "Yetkiniz yok."}), 403
+
+        data = request.get_json()
+        if not data or "rows" not in data:
+            db.close()
+            return jsonify({"error": "rows list required"}), 400
+            
+        result = queries.create_muavin_defteri_bulk(db, data["rows"])
+        db.close()
+        
+        return jsonify(result), 200
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
 # ============================================================================
 # NAKIT (CASH) ENDPOINTS
 # ============================================================================

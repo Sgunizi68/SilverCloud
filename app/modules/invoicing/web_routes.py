@@ -225,6 +225,26 @@ def odeme_yukleme():
         subeler=auth_suber
     )
 
+@web_invoicing_bp.route("/muavin-defteri-yukleme", methods=["GET"])
+@login_required
+@permission_required("Muavin Defteri Yükleme Ekranı Görüntüleme")
+def muavin_defteri_yukleme():
+    """
+    Muavin Defteri Yükleme (General Ledger Upload) page.
+    """
+    db_session = get_db_session()
+    user = auth_queries.get_kullanici_by_id(db_session, session['user_id'])
+    
+    if not user:
+        db_session.close()
+        return redirect(url_for('web_auth.login'))
+        
+    db_session.close()
+    return render_template(
+        "muavin_defteri_yukleme.html",
+        user=user
+    )
+
 @web_invoicing_bp.route("/odeme-kategori-atama", methods=["GET"])
 @login_required
 @permission_required("Ödeme Kategori Atama Ekranı Görüntüleme")
