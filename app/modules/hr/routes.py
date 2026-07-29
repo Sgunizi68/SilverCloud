@@ -109,7 +109,7 @@ def create_calisan():
             sube_id=data["Sube_ID"],
             hesap_no=data.get("Hesap_No"),
             iban=data.get("IBAN"),
-            net_maas=float(data.get("Net_Maas")) if "Net_Maas" in data else None,
+            net_maas=float(data.get("Net_Maas")) if data.get("Net_Maas") not in (None, "") else None,
             sigorta_giris=data.get("Sigorta_Giris"),
             sigorta_cikis=data.get("Sigorta_Cikis"),
             aktif_pasif=data.get("Aktif_Pasif", True)
@@ -152,7 +152,8 @@ def update_calisan(tc_no):
             net_maas=data.get("Net_Maas"),
             sigorta_giris=data.get("Sigorta_Giris"),
             sigorta_cikis=data.get("Sigorta_Cikis"),
-            aktif_pasif=data.get("Aktif_Pasif")
+            aktif_pasif=data.get("Aktif_Pasif"),
+            sube_id=data.get("Sube_ID")
         )
         db.close()
         
@@ -813,7 +814,7 @@ def create_calisan_talep():
             tc_no=data["TC_No"],
             adi=data["Adi"],
             soyadi=data["Soyadi"],
-            ilk_soyadi=data["Ilk_Soyadi"],
+            ilk_soyadi=data.get("Ilk_Soyadi"),
             sube_id=data["Sube_ID"],
             talep=data.get("Talep", "İşe Giriş"),
             hesap_no=data.get("Hesap_No"),

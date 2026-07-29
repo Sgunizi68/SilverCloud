@@ -162,7 +162,7 @@ class CalisanTalepCreate:
     TC_No: str
     Adi: str
     Soyadi: str
-    Ilk_Soyadi: str
+    Ilk_Soyadi: Optional[str] = None
     Sube_ID: int
     Talep: str = "İşe Giriş"
     Hesap_No: Optional[str] = None
@@ -203,7 +203,7 @@ class CalisanTalepResponse:
     TC_No: str
     Adi: str
     Soyadi: str
-    Ilk_Soyadi: str
+    Ilk_Soyadi: Optional[str]
     Sube_ID: int
     Hesap_No: Optional[str]
     IBAN: Optional[str]

@@ -632,7 +632,7 @@ class CalisanTalep(db.Model):
     TC_No = Column(String(11), nullable=False, index=True)
     Adi = Column(String(50), nullable=False)
     Soyadi = Column(String(50), nullable=False)
-    Ilk_Soyadi = Column(String(50), nullable=False)
+    Ilk_Soyadi = Column(String(50), nullable=True)
     Hesap_No = Column(String(30), nullable=True)
     IBAN = Column(String(26), nullable=True)
     Ogrenim_Durumu = Column(String(26), nullable=True)

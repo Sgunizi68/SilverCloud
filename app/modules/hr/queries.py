@@ -65,7 +65,52 @@ def create_calisan(
     sigorta_cikis: Optional[date] = None,
     aktif_pasif: bool = True
 ) -> Calisan:
-    """Create a new employee."""
+    """Create a new employee or update existing record on re-hire."""
+    if isinstance(sigorta_giris, str) and sigorta_giris:
+        try:
+            sigorta_giris_dt = date.fromisoformat(sigorta_giris)
+        except ValueError:
+            sigorta_giris_dt = None
+    elif isinstance(sigorta_giris, date):
+        sigorta_giris_dt = sigorta_giris
+    else:
+        sigorta_giris_dt = None
+
+    if isinstance(sigorta_cikis, str) and sigorta_cikis:
+        try:
+            sigorta_cikis_dt = date.fromisoformat(sigorta_cikis)
+        except ValueError:
+            sigorta_cikis_dt = None
+    elif isinstance(sigorta_cikis, date):
+        sigorta_cikis_dt = sigorta_cikis
+    else:
+        sigorta_cikis_dt = None
+
+    net_maas_val = Decimal(str(net_maas)) if net_maas is not None and net_maas != "" else None
+
+    existing = get_calisan_by_tc_no(db, tc_no)
+    if existing:
+        existing.Adi = adi
+        existing.Soyadi = soyadi
+        existing.Sube_ID = sube_id
+        if hesap_no is not None:
+            existing.Hesap_No = hesap_no
+        if iban is not None:
+            existing.IBAN = iban
+        if net_maas is not None and net_maas != "":
+            existing.Net_Maas = net_maas_val
+        if sigorta_giris_dt is not None:
+            existing.Sigorta_Giris = sigorta_giris_dt
+        if sigorta_cikis_dt is not None:
+            existing.Sigorta_Cikis = sigorta_cikis_dt
+        else:
+            existing.Sigorta_Cikis = None
+        existing.Aktif_Pasif = aktif_pasif
+        
+        db.commit()
+        db.refresh(existing)
+        return existing
+
     new_calisan = Calisan(
         TC_No=tc_no,
         Adi=adi,
@@ -73,9 +118,9 @@ def create_calisan(
         Sube_ID=sube_id,
         Hesap_No=hesap_no,
         IBAN=iban,
-        Net_Maas=Decimal(str(net_maas)) if net_maas else None,
-        Sigorta_Giris=date.fromisoformat(sigorta_giris) if isinstance(sigorta_giris, str) and sigorta_giris else sigorta_giris,
-        Sigorta_Cikis=date.fromisoformat(sigorta_cikis) if isinstance(sigorta_cikis, str) and sigorta_cikis else sigorta_cikis,
+        Net_Maas=net_maas_val,
+        Sigorta_Giris=sigorta_giris_dt,
+        Sigorta_Cikis=sigorta_cikis_dt,
         Aktif_Pasif=aktif_pasif
     )
     db.add(new_calisan)
@@ -94,13 +139,16 @@ def update_calisan(
     net_maas: Optional[float] = None,
     sigorta_giris: Optional[date] = None,
     sigorta_cikis: Optional[date] = None,
-    aktif_pasif: Optional[bool] = None
+    aktif_pasif: Optional[bool] = None,
+    sube_id: Optional[int] = None
 ) -> Optional[Calisan]:
     """Update employee."""
     calisan = get_calisan_by_tc_no(db, tc_no)
     if not calisan:
         return None
     
+    if sube_id is not None:
+        calisan.Sube_ID = sube_id
     if adi is not None:
         calisan.Adi = adi
     if soyadi is not None:
@@ -537,8 +585,8 @@ def create_calisan_talep(
     tc_no: str,
     adi: str,
     soyadi: str,
-    ilk_soyadi: str,
     sube_id: int,
+    ilk_soyadi: Optional[str] = None,
     talep: str = "İşe Giriş",
     hesap_no: Optional[str] = None,
     iban: Optional[str] = None,
@@ -740,21 +788,19 @@ def approve_calisan_talep_ssk(db: Session, talep_id: int, user_id: int) -> Optio
     
     # Gümüşbulut Logic: Auto-create employee or update exit date
     if talep.Talep == 'İşe Giriş':
-        existing = get_calisan_by_tc_no(db, talep.TC_No)
-        if not existing:
-            create_calisan(
-                db=db,
-                tc_no=talep.TC_No,
-                adi=talep.Adi,
-                soyadi=talep.Soyadi,
-                sube_id=talep.Sube_ID,
-                hesap_no=talep.Hesap_No,
-                iban=talep.IBAN,
-                net_maas=talep.Net_Maas,
-                sigorta_giris=talep.Sigorta_Giris,
-                sigorta_cikis=talep.Sigorta_Cikis,
-                aktif_pasif=True
-            )
+        create_calisan(
+            db=db,
+            tc_no=talep.TC_No,
+            adi=talep.Adi,
+            soyadi=talep.Soyadi,
+            sube_id=talep.Sube_ID,
+            hesap_no=talep.Hesap_No,
+            iban=talep.IBAN,
+            net_maas=talep.Net_Maas,
+            sigorta_giris=talep.Sigorta_Giris,
+            sigorta_cikis=talep.Sigorta_Cikis,
+            aktif_pasif=True
+        )
     elif talep.Talep == 'İşten Çıkış':
         update_calisan(
             db=db,
