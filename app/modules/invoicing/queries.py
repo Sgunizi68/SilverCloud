@@ -3135,6 +3135,7 @@ def create_muavin_defteri_bulk(
                 Bakiye=bakiye_dec,
                 BA=ba_val,
                 Eslesme_Tur=eslesme_tur,
+                Eslesme_Gerekli=True,
                 Referans_Tarih=second_pass["Referans_Tarih"] if second_pass else None,
                 Referans_No=second_pass["Referans_No"] if second_pass else None,
                 Referans_Sirket=second_pass["Referans_Sirket"] if second_pass else None
