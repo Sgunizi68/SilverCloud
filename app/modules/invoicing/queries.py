@@ -3783,8 +3783,8 @@ def exempt_reverse_matching_records(db: Session, donem: int) -> dict:
                 filtered_opp.append(opp)
                 opp_sum += opp_borc
 
-        # If the sum of opposite records matches the main record amount exactly
-        if filtered_opp and opp_sum == target_amount:
+        # If the difference between the sum of opposite records and matched record is less than 1000 TL
+        if filtered_opp and abs(opp_sum - target_amount) < Decimal("1000.00"):
             groups_count += 1
             for opp in filtered_opp:
                 opp.Eslesme_Gerekli = False

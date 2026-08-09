@@ -371,7 +371,13 @@
 
             <div class="filter-group" style="flex: 1.5; min-width: 200px;">
                 <label for="searchInput">Arama</label>
-                <input type="text" id="searchInput" class="form-control" placeholder="Fiş No, Açıklama, Referans No veya Şirket..." oninput="applyLocalFilters()">
+                <div style="position: relative; display: flex; align-items: center;">
+                    <input type="text" id="searchInput" class="form-control" placeholder="Fiş No, Açıklama, Referans No veya Şirket..." oninput="applyLocalFilters(); toggleSearchClear();" style="padding-right: 28px;">
+                    <button type="button" id="searchClearBtn" onclick="clearSearch()" title="Aramayı temizle"
+                            style="display: none; position: absolute; right: 6px; background: none; border: none; cursor: pointer; color: #94a3b8; font-size: 14px; line-height: 1; padding: 2px 4px;">
+                        &times;
+                    </button>
+                </div>
             </div>
 
             <div style="margin-left: auto;">
@@ -622,6 +628,18 @@
             console.error(err);
             tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; padding: 30px; color: #dc2626;">Hata: ${err.message}</td></tr>`;
         }
+    }
+
+    // Search clear button visibility
+    function toggleSearchClear() {
+        const val = document.getElementById('searchInput').value;
+        document.getElementById('searchClearBtn').style.display = val ? 'block' : 'none';
+    }
+
+    function clearSearch() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('searchClearBtn').style.display = 'none';
+        applyLocalFilters();
     }
 
     // Apply local dropdown & text filters
