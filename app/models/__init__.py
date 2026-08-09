@@ -13,7 +13,7 @@ from app.models.models import (
     Gelir, GelirEkstra,
     Stok, StokFiyat, StokSayim,
     Calisan, PuantajSecimi, Puantaj, AvansIstek, CalisanTalep,
-    YemekCeki, Cari, Mutabakat, RobotposGelirReferans, RobotposGelir, MuavinDefteri
+    YemekCeki, Cari, Mutabakat, RobotposGelirReferans, RobotposGelir, MuavinDefteri, MuavinEslesmeyenler
 )
 
 __all__ = [
@@ -25,5 +25,5 @@ __all__ = [
     "Gelir", "GelirEkstra",
     "Stok", "StokFiyat", "StokSayim",
     "Calisan", "PuantajSecimi", "Puantaj", "AvansIstek", "CalisanTalep",
-    "YemekCeki", "Cari", "Mutabakat", "RobotposGelirReferans", "RobotposGelir", "MuavinDefteri"
+    "YemekCeki", "Cari", "Mutabakat", "RobotposGelirReferans", "RobotposGelir", "MuavinDefteri", "MuavinEslesmeyenler"
 ]

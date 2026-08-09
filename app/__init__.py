@@ -40,7 +40,7 @@ def create_app(config_name: str = "development") -> Flask:
         Gelir, GelirEkstra,
         Stok, StokFiyat, StokSayim,
         Calisan, PuantajSecimi, Puantaj, AvansIstek, CalisanTalep,
-        YemekCeki, Cari, Mutabakat, MuavinDefteri
+        YemekCeki, Cari, Mutabakat, MuavinDefteri, MuavinEslesmeyenler
     )
     
     # Create tables on app context

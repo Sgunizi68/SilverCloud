@@ -479,6 +479,226 @@ def create_muavin_defteri_bulk_api():
 
 
 # ============================================================================
+# MUAVIN DEFTERI ESLESME ENDPOINTS
+# ============================================================================
+
+def _check_eslesme_permission(db, user):
+    from app.modules.auth.queries import has_permission, get_user_roles
+    roles = get_user_roles(db, user.Kullanici_ID)
+    is_admin = 'admin' in [r.lower() for r in roles]
+    return is_admin or has_permission(db, user.Kullanici_ID, "Muavin Defteri Eşleşme Ekranı Görüntüleme")
+
+
+@invoicing_bp.route("/muavin-defteri-eslesme/donemler", methods=["GET"])
+@auth_required
+def get_muavin_eslesme_donemler_api():
+    """Get available periods for matching."""
+    try:
+        db = get_db_session()
+        if not _check_eslesme_permission(db, request.user):
+            db.close()
+            return jsonify({"error": "Yetkiniz yok."}), 403
+
+        donemler = queries.get_muavin_eslesme_donemleri(db)
+        db.close()
+        return jsonify({"donemler": donemler}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@invoicing_bp.route("/muavin-defteri-eslesme/records", methods=["GET"])
+@auth_required
+def get_muavin_eslesme_records_api():
+    """Get Muavin_Defteri records for a selected period."""
+    try:
+        donem = request.args.get("donem", type=int)
+        if not donem:
+            return jsonify({"error": "donem parameter is required"}), 400
+
+        eslesme_tur = request.args.get("eslesme_tur", type=str)
+        status = request.args.get("status", type=str)
+
+        db = get_db_session()
+        if not _check_eslesme_permission(db, request.user):
+            db.close()
+            return jsonify({"error": "Yetkiniz yok."}), 403
+
+        records = queries.get_muavin_eslesme_records(db, donem, eslesme_tur, status)
+        db.close()
+        return jsonify({"records": records}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@invoicing_bp.route("/muavin-defteri-eslesme/auto-match", methods=["POST"])
+@auth_required
+def auto_match_muavin_defteri_api():
+    """Trigger automated matching process for a selected period."""
+    try:
+        data = request.get_json() or {}
+        donem = data.get("donem")
+        if not donem:
+            return jsonify({"error": "donem is required"}), 400
+
+        db = get_db_session()
+        if not _check_eslesme_permission(db, request.user):
+            db.close()
+            return jsonify({"error": "Yetkiniz yok."}), 403
+
+        result = queries.auto_match_muavin_defteri(db, int(donem))
+        db.close()
+        return jsonify(result), 200
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
+@invoicing_bp.route("/muavin-defteri-eslesme/candidates", methods=["GET"])
+@auth_required
+def get_muavin_eslesme_candidates_api():
+    """Get candidate source records for manual matching modal."""
+    try:
+        muavin_id = request.args.get("muavin_id", type=int)
+        if not muavin_id:
+            return jsonify({"error": "muavin_id is required"}), 400
+
+        db = get_db_session()
+        if not _check_eslesme_permission(db, request.user):
+            db.close()
+            return jsonify({"error": "Yetkiniz yok."}), 403
+
+        res = queries.get_muavin_eslesme_candidates(db, muavin_id)
+        db.close()
+        return jsonify(res), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@invoicing_bp.route("/muavin-defteri-eslesme/manual-match", methods=["POST"])
+@auth_required
+def manual_match_muavin_defteri_api():
+    """Manually match a Muavin record to a source record."""
+    try:
+        data = request.get_json() or {}
+        muavin_id = data.get("muavin_id")
+        source_type = data.get("source_type")
+        source_id = data.get("source_id")
+
+        if not muavin_id or not source_type or not source_id:
+            return jsonify({"error": "muavin_id, source_type and source_id are required"}), 400
+
+        db = get_db_session()
+        if not _check_eslesme_permission(db, request.user):
+            db.close()
+            return jsonify({"error": "Yetkiniz yok."}), 403
+
+        ok = queries.manual_match_muavin_defteri(db, int(muavin_id), str(source_type), int(source_id))
+        db.close()
+        if not ok:
+            return jsonify({"error": "Eşleştirme başarısız."}), 400
+        return jsonify({"success": True}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@invoicing_bp.route("/muavin-defteri-eslesme/unmatch", methods=["POST"])
+@auth_required
+def unmatch_muavin_defteri_api():
+    """Clear match for a Muavin record."""
+    try:
+        data = request.get_json() or {}
+        muavin_id = data.get("muavin_id")
+        if not muavin_id:
+            return jsonify({"error": "muavin_id is required"}), 400
+
+        db = get_db_session()
+        if not _check_eslesme_permission(db, request.user):
+            db.close()
+            return jsonify({"error": "Yetkiniz yok."}), 403
+
+        ok = queries.unmatch_muavin_defteri(db, int(muavin_id))
+        db.close()
+        if not ok:
+            return jsonify({"error": "İşlem başarısız."}), 400
+        return jsonify({"success": True}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@invoicing_bp.route("/muavin-defteri-eslesme/exempt", methods=["POST"])
+@auth_required
+def exempt_muavin_defteri_api():
+    """Set Eslesme_Gerekli = 0 for a record."""
+    try:
+        data = request.get_json() or {}
+        muavin_id = data.get("muavin_id")
+        if not muavin_id:
+            return jsonify({"error": "muavin_id is required"}), 400
+
+        db = get_db_session()
+        if not _check_eslesme_permission(db, request.user):
+            db.close()
+            return jsonify({"error": "Yetkiniz yok."}), 403
+
+        ok = queries.exempt_muavin_defteri(db, int(muavin_id))
+        db.close()
+        if not ok:
+            return jsonify({"error": "İşlem başarısız."}), 400
+        return jsonify({"success": True}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@invoicing_bp.route("/muavin-defteri-eslesme/unexempt", methods=["POST"])
+@auth_required
+def unexempt_muavin_defteri_api():
+    """Set Eslesme_Gerekli = 1 for a record."""
+    try:
+        data = request.get_json() or {}
+        muavin_id = data.get("muavin_id")
+        if not muavin_id:
+            return jsonify({"error": "muavin_id is required"}), 400
+
+        db = get_db_session()
+        if not _check_eslesme_permission(db, request.user):
+            db.close()
+            return jsonify({"error": "Yetkiniz yok."}), 403
+
+        ok = queries.unexempt_muavin_defteri(db, int(muavin_id))
+        db.close()
+        if not ok:
+            return jsonify({"error": "İşlem başarısız."}), 400
+        return jsonify({"success": True}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@invoicing_bp.route("/muavin-defteri-eslesme/bulk-exempt-fatura-borc", methods=["POST"])
+@auth_required
+def bulk_exempt_fatura_borc_api():
+    """Bulk-exempt records with Borc > 0 for the given period and optional eslesme_tur."""
+    try:
+        data = request.get_json() or {}
+        donem = data.get("donem")
+        if not donem:
+            return jsonify({"error": "donem is required"}), 400
+
+        eslesme_tur = data.get("eslesme_tur")
+
+        db = get_db_session()
+        if not _check_eslesme_permission(db, request.user):
+            db.close()
+            return jsonify({"error": "Yetkiniz yok."}), 403
+
+        result = queries.bulk_exempt_borc_positive(db, int(donem), eslesme_tur)
+        db.close()
+        return jsonify(result), 200
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
+# ============================================================================
 # NAKIT (CASH) ENDPOINTS
 # ============================================================================
 

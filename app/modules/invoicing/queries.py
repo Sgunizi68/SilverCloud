@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from app.models import (
     EFatura, B2BEkstre, DigerHarcama, Odeme, OdemeReferans,
     Nakit, POSHareketleri, Gelir, GelirEkstra, EFaturaReferans,
-    Kategori, Sube, YemekCeki, Mutabakat, Cari, MuavinDefteri
+    Kategori, Sube, YemekCeki, Mutabakat, Cari, MuavinDefteri, MuavinEslesmeyenler
 )
 
 
@@ -3155,3 +3155,499 @@ def create_muavin_defteri_bulk(
         "updated_details": updated_records,
         "inserted_details": inserted_records
     }
+
+
+# ============================================================================
+# MUAVIN DEFTERI ESLESME QUERIES
+# ============================================================================
+
+def get_muavin_eslesme_donemleri(db: Session) -> List[str]:
+    """Get available periods (YYYYMM) from Muavin_Defteri."""
+    from sqlalchemy import text
+    sql = text("""
+        SELECT DISTINCT DATE_FORMAT(Tarih, '%Y%m') AS Donem
+        FROM Muavin_Defteri
+        WHERE Tarih IS NOT NULL
+        ORDER BY Donem DESC
+    """)
+    rows = db.execute(sql).fetchall()
+    return [str(r._mapping['Donem']) for r in rows if r._mapping['Donem']]
+
+
+def get_muavin_eslesme_records(
+    db: Session,
+    donem: int,
+    eslesme_tur: Optional[str] = None,
+    status: Optional[str] = None
+) -> List[dict]:
+    """
+    Get Muavin_Defteri records for a selected period (YYYYMM) with filters.
+    Exempt records (Eslesme_Gerekli == 0) are always sorted at the very bottom!
+    """
+    import calendar
+    from sqlalchemy import case, or_
+    donem_str = str(donem)
+    year = int(donem_str[:4])
+    month = int(donem_str[4:])
+    start_date = date(year, month, 1)
+    last_day = calendar.monthrange(year, month)[1]
+    end_date = date(year, month, last_day)
+
+    stmt = select(MuavinDefteri).where(
+        MuavinDefteri.Tarih >= start_date,
+        MuavinDefteri.Tarih <= end_date
+    )
+
+    if eslesme_tur:
+        stmt = stmt.where(MuavinDefteri.Eslesme_Tur == eslesme_tur)
+
+    if status == 'eslesdi':
+        stmt = stmt.where(MuavinDefteri.Eslendi == True, MuavinDefteri.Eslesme_Gerekli == True)
+    elif status == 'eslesmedi':
+        stmt = stmt.where(MuavinDefteri.Eslendi == False, MuavinDefteri.Eslesme_Gerekli == True)
+    elif status == 'muaf':
+        stmt = stmt.where(MuavinDefteri.Eslesme_Gerekli == False)
+
+    # Order exempt records at the very bottom
+    stmt = stmt.order_by(
+        case((MuavinDefteri.Eslesme_Gerekli == False, 1), else_=0).asc(),
+        MuavinDefteri.Tarih.asc(),
+        MuavinDefteri.ID.asc()
+    )
+
+    records = db.scalars(stmt).all()
+    result = []
+    for r in records:
+        result.append({
+            "ID": r.ID,
+            "Tarih": r.Tarih.isoformat() if r.Tarih else "",
+            "Tip": r.Tip,
+            "Fis_No": r.Fis_No,
+            "Aciklama": r.Aciklama,
+            "Borc": float(r.Borc or 0.0),
+            "Alacak": float(r.Alacak or 0.0),
+            "Bakiye": float(r.Bakiye or 0.0),
+            "BA": r.BA,
+            "Eslesme_Tur": r.Eslesme_Tur,
+            "Eslesme_Gerekli": bool(r.Eslesme_Gerekli),
+            "Referans_Tur": r.Referans_Tur,
+            "Referans_No": r.Referans_No,
+            "Referans_Tarih": r.Referans_Tarih.isoformat() if r.Referans_Tarih else "",
+            "Referans_Sirket": r.Referans_Sirket,
+            "Referans_Tutar": float(r.Referans_Tutar) if r.Referans_Tutar is not None else None,
+            "Eslendi": bool(r.Eslendi),
+            "Status": "Muaf" if not r.Eslesme_Gerekli else ("Eşleşti" if r.Eslendi else "Eşleşmedi")
+        })
+    return result
+
+
+def auto_match_muavin_defteri(db: Session, donem: int) -> dict:
+    """
+    Automated matching process for a selected period.
+    Matches Eslesme_Tur = 'Fatura' with e_Fatura and 'Fiş' with Diger_Harcama.
+    """
+    import calendar
+    from sqlalchemy import or_
+    donem_str = str(donem)
+    if len(donem_str) == 6:
+        year = int(donem_str[:4])
+        month = int(donem_str[4:])
+        yymm_donem = int(donem_str[2:])
+    else:
+        year = 2000 + int(donem_str[:2])
+        month = int(donem_str[2:])
+        yymm_donem = int(donem_str)
+
+    start_date = date(year, month, 1)
+    last_day = calendar.monthrange(year, month)[1]
+    end_date = date(year, month, last_day)
+
+    # 1. Fetch Muavin_Defteri records for the period
+    stmt_muavin = select(MuavinDefteri).where(
+        MuavinDefteri.Tarih >= start_date,
+        MuavinDefteri.Tarih <= end_date
+    )
+    muavin_recs = db.scalars(stmt_muavin).all()
+
+    total_count = len(muavin_recs)
+    already_matched_count = 0
+    exempt_count = 0
+    ignored_count = 0
+    matched_count = 0
+    unmatched_count = 0
+    failed_count = 0
+
+    to_match = []
+    used_efatura_ids = set()
+    used_diger_harcama_ids = set()
+
+    for r in muavin_recs:
+        if not r.Eslesme_Gerekli:
+            exempt_count += 1
+            continue
+        if r.Eslendi:
+            already_matched_count += 1
+            # Reserve existing references
+            if r.Referans_Tur == 'Fatura' and r.Referans_No:
+                stmt_existing_ef = select(EFatura.Fatura_ID).where(
+                    EFatura.Fatura_Numarasi == r.Referans_No,
+                    EFatura.Donem == yymm_donem
+                )
+                ef_id = db.scalar(stmt_existing_ef)
+                if ef_id:
+                    used_efatura_ids.add(ef_id)
+            elif r.Referans_Tur == 'Fiş' and r.Referans_No:
+                stmt_existing_dh = select(DigerHarcama.Harcama_ID).where(
+                    DigerHarcama.Belge_Numarasi == r.Referans_No,
+                    DigerHarcama.Donem == yymm_donem
+                )
+                dh_id = db.scalar(stmt_existing_dh)
+                if dh_id:
+                    used_diger_harcama_ids.add(dh_id)
+            continue
+        if r.Eslesme_Tur not in ('Fatura', 'Fiş'):
+            ignored_count += 1
+            continue
+        to_match.append(r)
+
+    # 2. Fetch e_Fatura candidates for period (excluding 'İptal Fatura', 'Bilgi', and split sub-invoices)
+    stmt_ef = select(EFatura).outerjoin(Kategori, EFatura.Kategori_ID == Kategori.Kategori_ID).where(
+        EFatura.Donem == yymm_donem,
+        or_(Kategori.Kategori_Adi.is_(None), Kategori.Kategori_Adi.notin_(('İptal Fatura', 'Bilgi')))
+    )
+    ef_candidates_raw = db.scalars(stmt_ef).all()
+
+    # Exclude split sub-invoices (child invoices where Fatura_Numarasi contains dash suffix of a parent invoice)
+    parent_numbers = {ef.Fatura_Numarasi for ef in ef_candidates_raw if ef.Kategori_ID == 88}
+    ef_candidates = []
+    for ef in ef_candidates_raw:
+        if ef.Fatura_ID in used_efatura_ids:
+            continue
+        # Check if ef is a split child
+        is_child = False
+        if '-' in ef.Fatura_Numarasi:
+            prefix = ef.Fatura_Numarasi.rsplit('-', 1)[0]
+            if prefix in parent_numbers:
+                is_child = True
+        if not is_child:
+            ef_candidates.append(ef)
+
+    # 3. Fetch Diger_Harcama candidates for period (excluding 'Harcama e-Fatura')
+    stmt_dh = select(DigerHarcama).outerjoin(Kategori, DigerHarcama.Kategori_ID == Kategori.Kategori_ID).where(
+        DigerHarcama.Donem == yymm_donem,
+        or_(Kategori.Kategori_Adi.is_(None), Kategori.Kategori_Adi != 'Harcama e-Fatura')
+    )
+    dh_candidates_raw = db.scalars(stmt_dh).all()
+    dh_candidates = [dh for dh in dh_candidates_raw if dh.Harcama_ID not in used_diger_harcama_ids]
+
+    # 4. Perform Matching
+    for rec in to_match:
+        try:
+            matched = False
+            ref_no_clean = (rec.Referans_No or "").strip()
+
+            if rec.Eslesme_Tur == 'Fatura':
+                is_giden = (rec.Borc or Decimal(0)) > Decimal(0)
+                target_tutar = Decimal(str(rec.Borc)) if is_giden else Decimal(str(rec.Alacak))
+
+                matches = []
+                for ef in ef_candidates:
+                    if ef.Fatura_ID in used_efatura_ids:
+                        continue
+                    if ef.Fatura_Numarasi.strip() == ref_no_clean:
+                        if bool(ef.Giden_Fatura) == is_giden and Decimal(str(ef.Tutar)) == target_tutar:
+                            matches.append(ef)
+
+                if len(matches) == 1:
+                    ef_match = matches[0]
+                    rec.Referans_Tur = 'Fatura'
+                    rec.Referans_No = ef_match.Fatura_Numarasi
+                    rec.Referans_Tarih = ef_match.Fatura_Tarihi
+                    rec.Referans_Sirket = ef_match.Alici_Unvani
+                    rec.Referans_Tutar = ef_match.Tutar
+                    rec.Eslendi = True
+                    used_efatura_ids.add(ef_match.Fatura_ID)
+                    matched_count += 1
+                    matched = True
+
+            elif rec.Eslesme_Tur == 'Fiş':
+                target_tutar = Decimal(str(rec.Borc)) if (rec.Borc or Decimal(0)) > Decimal(0) else Decimal(str(rec.Alacak))
+                matches = []
+                for dh in dh_candidates:
+                    if dh.Harcama_ID in used_diger_harcama_ids:
+                        continue
+                    dh_ref = (dh.Belge_Numarasi or "").strip()
+                    if dh_ref and dh_ref == ref_no_clean and Decimal(str(dh.Tutar)) == target_tutar:
+                        if dh.Belge_Tarihi == rec.Tarih or dh.Belge_Tarihi == rec.Referans_Tarih:
+                            matches.append(dh)
+
+                if len(matches) == 1:
+                    dh_match = matches[0]
+                    rec.Referans_Tur = 'Fiş'
+                    rec.Referans_No = dh_match.Belge_Numarasi
+                    rec.Referans_Tarih = dh_match.Belge_Tarihi
+                    rec.Referans_Sirket = dh_match.Alici_Adi
+                    rec.Referans_Tutar = dh_match.Tutar
+                    rec.Eslendi = True
+                    used_diger_harcama_ids.add(dh_match.Harcama_ID)
+                    matched_count += 1
+                    matched = True
+
+            if not matched:
+                unmatched_count += 1
+                ref_no_val = rec.Referans_No[:30] if rec.Referans_No else ""
+                stmt_es_check = select(MuavinEslesmeyenler).where(
+                    MuavinEslesmeyenler.Eslesme_Tur == rec.Eslesme_Tur,
+                    MuavinEslesmeyenler.Referans_No == ref_no_val,
+                    MuavinEslesmeyenler.Durum == 'Açık'
+                )
+                existing_es = db.scalar(stmt_es_check)
+                if not existing_es:
+                    tutar_val = rec.Referans_Tutar or (rec.Borc if (rec.Borc or Decimal(0)) > Decimal(0) else rec.Alacak)
+                    new_es = MuavinEslesmeyenler(
+                        Eslesme_Tur=rec.Eslesme_Tur,
+                        Referans_No=ref_no_val,
+                        Referans_Tarih=rec.Referans_Tarih or rec.Tarih,
+                        Referans_Tutar=tutar_val,
+                        Durum='Açık',
+                        Aciklama=(rec.Aciklama or "")[:50],
+                        Kayit_Tarih=datetime.now()
+                    )
+                    db.add(new_es)
+
+        except Exception as e:
+            failed_count += 1
+            print(f"Error auto-matching record {rec.ID}: {e}")
+
+    db.commit()
+    return {
+        "total": total_count,
+        "matched": matched_count,
+        "already_matched": already_matched_count,
+        "unmatched": unmatched_count,
+        "exempt": exempt_count,
+        "ignored": ignored_count,
+        "failed": failed_count
+    }
+
+
+def get_muavin_eslesme_candidates(db: Session, muavin_id: int) -> dict:
+    """Get candidate source records (e_Fatura or Diger_Harcama) for manual matching."""
+    from sqlalchemy import or_
+    stmt = select(MuavinDefteri).where(MuavinDefteri.ID == muavin_id)
+    rec = db.scalar(stmt)
+    if not rec:
+        return {"candidates": [], "muavin": None}
+
+    yymm_donem = int(rec.Tarih.strftime("%y%m")) if rec.Tarih else None
+
+    candidates = []
+    if rec.Eslesme_Tur == 'Fatura' and yymm_donem:
+        stmt_ef = select(EFatura).outerjoin(Kategori, EFatura.Kategori_ID == Kategori.Kategori_ID).where(
+            EFatura.Donem == yymm_donem,
+            or_(Kategori.Kategori_Adi.is_(None), Kategori.Kategori_Adi.notin_(('İptal Fatura', 'Bilgi')))
+        ).order_by(EFatura.Fatura_Tarihi.desc())
+        ef_list = db.scalars(stmt_ef).all()
+        for ef in ef_list:
+            candidates.append({
+                "Source_Type": "Fatura",
+                "Source_ID": ef.Fatura_ID,
+                "Belge_No": ef.Fatura_Numarasi,
+                "Tarih": ef.Fatura_Tarihi.isoformat() if ef.Fatura_Tarihi else "",
+                "Unvan": ef.Alici_Unvani,
+                "Tutar": float(ef.Tutar),
+                "Giden_Fatura": bool(ef.Giden_Fatura)
+            })
+    elif rec.Eslesme_Tur == 'Fiş' and yymm_donem:
+        stmt_dh = select(DigerHarcama).outerjoin(Kategori, DigerHarcama.Kategori_ID == Kategori.Kategori_ID).where(
+            DigerHarcama.Donem == yymm_donem,
+            or_(Kategori.Kategori_Adi.is_(None), Kategori.Kategori_Adi != 'Harcama e-Fatura')
+        ).order_by(DigerHarcama.Belge_Tarihi.desc())
+        dh_list = db.scalars(stmt_dh).all()
+        for dh in dh_list:
+            candidates.append({
+                "Source_Type": "Fiş",
+                "Source_ID": dh.Harcama_ID,
+                "Belge_No": dh.Belge_Numarasi or "",
+                "Tarih": dh.Belge_Tarihi.isoformat() if dh.Belge_Tarihi else "",
+                "Unvan": dh.Alici_Adi,
+                "Tutar": float(dh.Tutar),
+                "Giden_Fatura": False
+            })
+
+    muavin_info = {
+        "ID": rec.ID,
+        "Tarih": rec.Tarih.isoformat() if rec.Tarih else "",
+        "Tip": rec.Tip,
+        "Fis_No": rec.Fis_No,
+        "Aciklama": rec.Aciklama,
+        "Borc": float(rec.Borc or 0.0),
+        "Alacak": float(rec.Alacak or 0.0),
+        "Eslesme_Tur": rec.Eslesme_Tur,
+        "Referans_No": rec.Referans_No
+    }
+    return {"candidates": candidates, "muavin": muavin_info}
+
+
+def manual_match_muavin_defteri(db: Session, muavin_id: int, source_type: str, source_id: int) -> bool:
+    """Manually match a Muavin_Defteri record with a source record (Fatura or Fiş)."""
+    stmt = select(MuavinDefteri).where(MuavinDefteri.ID == muavin_id)
+    rec = db.scalar(stmt)
+    if not rec:
+        return False
+
+    if source_type == 'Fatura':
+        stmt_ef = select(EFatura).where(EFatura.Fatura_ID == source_id)
+        ef = db.scalar(stmt_ef)
+        if not ef:
+            return False
+        rec.Referans_Tur = 'Fatura'
+        rec.Referans_No = ef.Fatura_Numarasi
+        rec.Referans_Tarih = ef.Fatura_Tarihi
+        rec.Referans_Sirket = ef.Alici_Unvani
+        rec.Referans_Tutar = ef.Tutar
+        rec.Eslendi = True
+    elif source_type == 'Fiş':
+        stmt_dh = select(DigerHarcama).where(DigerHarcama.Harcama_ID == source_id)
+        dh = db.scalar(stmt_dh)
+        if not dh:
+            return False
+        rec.Referans_Tur = 'Fiş'
+        rec.Referans_No = dh.Belge_Numarasi
+        rec.Referans_Tarih = dh.Belge_Tarihi
+        rec.Referans_Sirket = dh.Alici_Adi
+        rec.Referans_Tutar = dh.Tutar
+        rec.Eslendi = True
+
+    # Close matching record in Muavin_Eslesmeyenler if exists
+    if rec.Referans_No:
+        stmt_es = select(MuavinEslesmeyenler).where(
+            MuavinEslesmeyenler.Referans_No == rec.Referans_No[:30],
+            MuavinEslesmeyenler.Durum == 'Açık'
+        )
+        es_rec = db.scalar(stmt_es)
+        if es_rec:
+            es_rec.Durum = 'Kapalı'
+
+    db.commit()
+    return True
+
+
+def unmatch_muavin_defteri(db: Session, muavin_id: int) -> bool:
+    """Clear match references for a Muavin_Defteri record."""
+    stmt = select(MuavinDefteri).where(MuavinDefteri.ID == muavin_id)
+    rec = db.scalar(stmt)
+    if not rec:
+        return False
+
+    rec.Eslendi = False
+    rec.Referans_Tur = None
+    rec.Referans_No = None
+    rec.Referans_Tarih = None
+    rec.Referans_Sirket = None
+    rec.Referans_Tutar = None
+
+    db.commit()
+    return True
+
+
+def exempt_muavin_defteri(db: Session, muavin_id: int) -> bool:
+    """Set Eslesme_Gerekli = 0 (Muaf et) and set status = 'Kapalı' in Muavin_Eslesmeyenler."""
+    stmt = select(MuavinDefteri).where(MuavinDefteri.ID == muavin_id)
+    rec = db.scalar(stmt)
+    if not rec:
+        return False
+
+    rec.Eslesme_Gerekli = False
+    if rec.Referans_No:
+        ref_val = rec.Referans_No[:30]
+        stmt_es = select(MuavinEslesmeyenler).where(
+            MuavinEslesmeyenler.Referans_No == ref_val,
+            MuavinEslesmeyenler.Durum == 'Açık'
+        )
+        es_rec = db.scalar(stmt_es)
+        if es_rec:
+            es_rec.Durum = 'Kapalı'
+
+    db.commit()
+    return True
+
+
+def unexempt_muavin_defteri(db: Session, muavin_id: int) -> bool:
+    """Set Eslesme_Gerekli = 1 (Muaflıktan Çıkar) and set status = 'Açık' in Muavin_Eslesmeyenler."""
+    stmt = select(MuavinDefteri).where(MuavinDefteri.ID == muavin_id)
+    rec = db.scalar(stmt)
+    if not rec:
+        return False
+
+    rec.Eslesme_Gerekli = True
+    if rec.Referans_No:
+        ref_val = rec.Referans_No[:30]
+        stmt_es = select(MuavinEslesmeyenler).where(
+            MuavinEslesmeyenler.Referans_No == ref_val,
+            MuavinEslesmeyenler.Durum == 'Kapalı'
+        )
+        es_rec = db.scalar(stmt_es)
+        if es_rec:
+            es_rec.Durum = 'Açık'
+
+    db.commit()
+    return True
+
+
+def bulk_exempt_borc_positive(db: Session, donem: int, eslesme_tur: Optional[str] = None) -> dict:
+    """
+    Bulk-exempt all Muavin_Defteri records where:
+      - Borc > 0
+      - within the given period (YYYYMM)
+      - optionally filtered by Eslesme_Tur (e.g. 'Fatura', 'Fiş', etc.)
+
+    Sets Eslesme_Gerekli = 0 on each matching record and closes any
+    matching open Muavin_Eslesmeyenler row.
+
+    Returns: {"affected": <int>}
+    """
+    import calendar
+    donem_str = str(donem)
+    if len(donem_str) == 6:
+        year = int(donem_str[:4])
+        month = int(donem_str[4:])
+    else:
+        year = 2000 + int(donem_str[:2])
+        month = int(donem_str[2:])
+
+    start_date = date(year, month, 1)
+    last_day = calendar.monthrange(year, month)[1]
+    end_date = date(year, month, last_day)
+
+    stmt = select(MuavinDefteri).where(
+        MuavinDefteri.Tarih >= start_date,
+        MuavinDefteri.Tarih <= end_date,
+        MuavinDefteri.Borc > 0
+    )
+    if eslesme_tur:
+        stmt = stmt.where(MuavinDefteri.Eslesme_Tur == eslesme_tur)
+
+    recs = db.scalars(stmt).all()
+    affected = 0
+
+    for rec in recs:
+        if rec.Eslesme_Gerekli:   # only update if not already exempt
+            rec.Eslesme_Gerekli = False
+
+            # Close any open Muavin_Eslesmeyenler row tied to this record
+            if rec.Referans_No:
+                ref_val = rec.Referans_No[:30]
+                stmt_es = select(MuavinEslesmeyenler).where(
+                    MuavinEslesmeyenler.Referans_No == ref_val,
+                    MuavinEslesmeyenler.Durum == 'Açık'
+                )
+                es_rec = db.scalar(stmt_es)
+                if es_rec:
+                    es_rec.Durum = 'Kapalı'
+
+            affected += 1
+
+    db.commit()
+    return {"affected": affected}
+

@@ -349,7 +349,7 @@ class OdemeReferans(db.Model):
 
 class MuavinDefteri(db.Model):
     """General Ledger / Muavin Defteri entity"""
-    __tablename__ = "muavin_defteri"
+    __tablename__ = "Muavin_Defteri"
     __table_args__ = {"extend_existing": True}
 
     ID = Column(Integer, primary_key=True, autoincrement=True, index=True)
@@ -362,7 +362,7 @@ class MuavinDefteri(db.Model):
     Bakiye = Column(DECIMAL(18, 2), default=0.00)
     BA = Column(String(1), nullable=True)
     Eslesme_Tur = Column(String(50), nullable=True)
-    Eslesme_Gerekli = Column(Boolean, default=False)
+    Eslesme_Gerekli = Column(Boolean, default=True)
     Referans_Tur = Column(String(50), nullable=True)
     Referans_No = Column(String(100), nullable=True)
     Referans_Tarih = Column(Date, nullable=True, index=True)
@@ -373,6 +373,24 @@ class MuavinDefteri(db.Model):
 
     def __repr__(self):
         return f"<MuavinDefteri {self.ID} - {self.Fis_No}>"
+
+
+class MuavinEslesmeyenler(db.Model):
+    """General Ledger Unmatched Entries entity"""
+    __tablename__ = "Muavin_Eslesmeyenler"
+    __table_args__ = {"extend_existing": True}
+
+    ID = Column(Integer, primary_key=True, autoincrement=True)
+    Eslesme_Tur = Column(String(50), nullable=True)
+    Referans_No = Column(String(30), nullable=True)
+    Referans_Tarih = Column(Date, nullable=True)
+    Referans_Tutar = Column(DECIMAL(18, 2), nullable=True)
+    Durum = Column(String(10), default="Açık")
+    Aciklama = Column(String(50), nullable=True)
+    Kayit_Tarih = Column(DateTime, default=func.now())
+
+    def __repr__(self):
+        return f"<MuavinEslesmeyenler {self.ID} - {self.Eslesme_Tur}>"
 
 
 class RobotposGelirReferans(db.Model):
