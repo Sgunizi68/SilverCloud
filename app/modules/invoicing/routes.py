@@ -562,12 +562,15 @@ def get_muavin_eslesme_candidates_api():
         if not muavin_id:
             return jsonify({"error": "muavin_id is required"}), 400
 
+        donem = request.args.get("donem")
+        source_type = request.args.get("source_type", type=str)
+
         db = get_db_session()
         if not _check_eslesme_permission(db, request.user):
             db.close()
             return jsonify({"error": "Yetkiniz yok."}), 403
 
-        res = queries.get_muavin_eslesme_candidates(db, muavin_id)
+        res = queries.get_muavin_eslesme_candidates(db, muavin_id, donem, source_type)
         db.close()
         return jsonify(res), 200
     except Exception as e:
@@ -695,6 +698,84 @@ def bulk_exempt_fatura_borc_api():
         return jsonify(result), 200
     except Exception as e:
         import traceback; traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
+@invoicing_bp.route("/muavin-defteri-eslesme/exempt-reverse", methods=["POST"])
+@auth_required
+def exempt_reverse_records_api():
+    """Bulk-exempt reverse/opposite entries for matched records with matching total."""
+    try:
+        data = request.get_json() or {}
+        donem = data.get("donem")
+        if not donem:
+            return jsonify({"error": "donem is required"}), 400
+
+        db = get_db_session()
+        if not _check_eslesme_permission(db, request.user):
+            db.close()
+            return jsonify({"error": "Yetkiniz yok."}), 403
+
+        result = queries.exempt_reverse_matching_records(db, int(donem))
+        db.close()
+        return jsonify(result), 200
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
+
+@invoicing_bp.route("/muavin-eslesmeyenler", methods=["GET"])
+@auth_required
+def get_muavin_eslesmeyenler_api():
+    """Get unmatched source records from Muavin_Eslesmeyenler."""
+    try:
+        donem = request.args.get("donem", type=int)
+        eslesme_tur = request.args.get("eslesme_tur", type=str)
+        durum = request.args.get("durum", type=str)
+
+        db = get_db_session()
+        if not _check_eslesme_permission(db, request.user):
+            db.close()
+            return jsonify({"error": "Yetkiniz yok."}), 403
+
+        records = queries.get_muavin_eslesmeyenler(db, donem, eslesme_tur, durum)
+        db.close()
+        return jsonify({"records": records}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@invoicing_bp.route("/muavin-eslesmeyenler/<int:record_id>", methods=["PUT"])
+@auth_required
+def update_muavin_eslesmeyen_api(record_id: int):
+    """Update Durum and/or Aciklama of a Muavin_Eslesmeyenler record."""
+    try:
+        data = request.get_json() or {}
+        durum = data.get("durum")
+        aciklama = data.get("aciklama")
+        eslesme_tur = data.get("eslesme_tur")
+        referans_no = data.get("referans_no")
+
+        db = get_db_session()
+        if not _check_eslesme_permission(db, request.user):
+            db.close()
+            return jsonify({"error": "Yetkiniz yok."}), 403
+
+        ok = queries.update_muavin_eslesmeyen_record(
+            db,
+            record_id,
+            durum,
+            aciklama,
+            eslesme_tur,
+            referans_no
+        )
+        db.close()
+        if not ok:
+            return jsonify({"error": "Kayıt bulunamadı."}), 404
+
+        return jsonify({"success": True}), 200
+    except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 

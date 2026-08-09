@@ -200,6 +200,32 @@
         border-color: #cbd5e1;
     }
 
+    /* Tab Buttons */
+    .tab-container {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 15px;
+    }
+
+    .tab-btn {
+        padding: 9px 18px;
+        font-size: 13px;
+        font-weight: 600;
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+        background: white;
+        color: #475569;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+        background: #0284c7;
+        color: white;
+        border-color: #0284c7;
+        box-shadow: 0 2px 8px rgba(2, 132, 199, 0.25);
+    }
+
     /* Summary Card */
     .summary-card {
         display: none;
@@ -301,6 +327,10 @@
                 </p>
             </div>
             <div style="display:flex; gap:8px; align-items:center;">
+                <button type="button" class="btn-template btn-outline" id="exemptReverseBtn" onclick="exemptReverseRecords()"
+                        title="Eşleşen kayıt ile aynı Referans No'ya sahip ve toplam tutarı eşit olan ters alacak/borç kayıtlarını Muaf olarak işaretler.">
+                    <i class="fas fa-random"></i> Ters Kayıtları Muaf Yap
+                </button>
                 <button type="button" class="btn-template btn-outline" id="bulkExemptBorcBtn" onclick="bulkExemptFaturaBorc()"
                         title="Seçili döneme ve filtreye ait Borç > 0 olan tüm kayıtları Muaf olarak işaretler.">
                     <i class="fas fa-ban"></i> <span id="bulkExemptBtnLabel">Borç &gt; 0 Kayıtları Muaf Yap</span>
@@ -389,15 +419,23 @@
         </div>
     </div>
 
-    <!-- Main Table Card -->
-    <div class="card-glass" style="padding: 0; overflow: hidden;">
+    <!-- Tab Navigation -->
+    <div class="tab-container">
+        <button type="button" class="tab-btn active" id="tabMuavinBtn" onclick="switchTab('muavin')">
+            <i class="fas fa-list-alt"></i> Muavin Defteri Kayıtları
+        </button>
+        <button type="button" class="tab-btn" id="tabEslesmeyenlerBtn" onclick="switchTab('eslesmeyenler')">
+            <i class="fas fa-exclamation-circle"></i> Eşleşmeyen Kaynak Kayıtlar (e-Fatura &amp; Fiş)
+        </button>
+    </div>
+
+    <!-- Main Table Card (Muavin Records) -->
+    <div id="muavinView" class="card-glass" style="padding: 0; overflow: hidden;">
         <div class="table-wrapper">
             <table class="compact-table">
                 <thead>
                     <tr>
                         <th style="width: 85px;">Tarih</th>
-                        <th style="width: 70px;">Tip</th>
-                        <th style="width: 80px;">Fiş No</th>
                         <th>Açıklama</th>
                         <th style="width: 90px; text-align: right;">Borç</th>
                         <th style="width: 90px; text-align: right;">Alacak</th>
@@ -412,7 +450,39 @@
                 </thead>
                 <tbody id="recordsTbody">
                     <tr>
-                        <td colspan="13" style="text-align: center; padding: 30px; color: #64748b;">
+                        <td colspan="11" style="text-align: center; padding: 30px; color: #64748b;">
+                            Lütfen yukarıdaki filtre alanından bir <b>Dönem</b> seçiniz.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Unmatched Source Records Card (e-Fatura & Diger Harcama) -->
+    <div id="eslesmeyenlerView" class="card-glass" style="padding: 0; overflow: hidden; display: none;">
+        <div style="padding: 12px 16px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 13px; font-weight: 600; color: #334155;">
+                <i class="fas fa-info-circle" style="color: #ca8a04;"></i> Muavinde bulunmayan ancak e-Fatura veya Diğer Harcama tablosunda olan kayıtlar
+            </span>
+            <span id="eslesmeyenCount" class="badge badge-warning">0 Kayıt</span>
+        </div>
+        <div class="table-wrapper">
+            <table class="compact-table">
+                <thead>
+                    <tr>
+                        <th style="width: 90px;">Eşleşme Türü</th>
+                        <th style="width: 130px;">Referans No</th>
+                        <th style="width: 90px;">Ref. Tarih</th>
+                        <th>Açıklama / Şirket</th>
+                        <th style="width: 110px; text-align: right;">Ref. Tutar</th>
+                        <th style="width: 100px; text-align: center;">Durum</th>
+                        <th style="width: 130px; text-align: center;">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody id="eslesmeyenlerTbody">
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 30px; color: #64748b;">
                             Lütfen yukarıdaki filtre alanından bir <b>Dönem</b> seçiniz.
                         </td>
                     </tr>
@@ -436,13 +506,27 @@
             <div id="selectedMuavinBox" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; margin-bottom: 15px;">
             </div>
 
-            <!-- Candidate Search -->
-            <div style="margin-bottom: 10px;">
-                <input type="text" id="candidateSearch" class="form-control" placeholder="Aday belgenizi belge no veya ünvan ile süzün..." oninput="filterCandidates()">
+            <!-- Modal Filters & Search -->
+            <div style="display: flex; gap: 10px; margin-bottom: 12px; align-items: center;">
+                <div style="width: 150px;">
+                    <select id="modalDonemSelect" class="form-control" style="font-size: 12px; padding: 5px 8px;" onchange="loadCandidatesForModal()">
+                        <option value="">Tüm Dönemler</option>
+                    </select>
+                </div>
+                <div style="width: 140px;">
+                    <select id="modalTurSelect" class="form-control" style="font-size: 12px; padding: 5px 8px;" onchange="loadCandidatesForModal()">
+                        <option value="">Tüm Türler</option>
+                        <option value="Fatura">Fatura</option>
+                        <option value="Fiş">Fiş</option>
+                    </select>
+                </div>
+                <div style="flex: 1;">
+                    <input type="text" id="candidateSearch" class="form-control" style="font-size: 12px; padding: 5px 8px;" placeholder="Aday belgenizi belge no veya ünvan ile süzün..." oninput="filterCandidates()">
+                </div>
             </div>
 
             <!-- Candidate Table -->
-            <div style="max-height: 300px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 6px;">
+            <div style="max-height: 320px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 6px;">
                 <table class="compact-table">
                     <thead style="position: sticky; top: 0; background: #f1f5f9; z-index: 10;">
                         <tr>
@@ -469,13 +553,29 @@
 {% block scripts %}
 <script>
     let allRecords = [];
+    let allEslesmeyenler = [];
     let currentCandidates = [];
     let activeMuavinId = null;
+    let currentTab = 'muavin';
 
     const formatCurrency = (val) => {
         if (val === null || val === undefined || isNaN(val)) return '0,00 ₺';
         return val.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺';
     };
+
+    function switchTab(tab) {
+        currentTab = tab;
+        document.getElementById('tabMuavinBtn').classList.toggle('active', tab === 'muavin');
+        document.getElementById('tabEslesmeyenlerBtn').classList.toggle('active', tab === 'eslesmeyenler');
+        document.getElementById('muavinView').style.display = tab === 'muavin' ? 'block' : 'none';
+        document.getElementById('eslesmeyenlerView').style.display = tab === 'eslesmeyenler' ? 'block' : 'none';
+
+        if (tab === 'eslesmeyenler') {
+            loadEslesmeyenler();
+        } else {
+            applyLocalFilters();
+        }
+    }
 
     // Initial Load Periods
     async function loadDonemler() {
@@ -505,12 +605,12 @@
         const donem = document.getElementById('donemSelect').value;
         const tbody = document.getElementById('recordsTbody');
         if (!donem) {
-            tbody.innerHTML = `<tr><td colspan="13" style="text-align: center; padding: 30px; color: #64748b;">Lütfen yukarıdaki filtre alanından bir <b>Dönem</b> seçiniz.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; padding: 30px; color: #64748b;">Lütfen yukarıdaki filtre alanından bir <b>Dönem</b> seçiniz.</td></tr>`;
             allRecords = [];
             return;
         }
 
-        tbody.innerHTML = `<tr><td colspan="13" style="text-align: center; padding: 30px; color: #64748b;"><i class="fas fa-spinner fa-spin"></i> Kayıtlar yükleniyor...</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; padding: 30px; color: #64748b;"><i class="fas fa-spinner fa-spin"></i> Kayıtlar yükleniyor...</td></tr>`;
 
         try {
             const res = await fetch(`/api/v1/muavin-defteri-eslesme/records?donem=${donem}`);
@@ -520,7 +620,7 @@
             applyLocalFilters();
         } catch (err) {
             console.error(err);
-            tbody.innerHTML = `<tr><td colspan="13" style="text-align: center; padding: 30px; color: #dc2626;">Hata: ${err.message}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; padding: 30px; color: #dc2626;">Hata: ${err.message}</td></tr>`;
         }
     }
 
@@ -550,14 +650,137 @@
         });
 
         updateExemptBtnLabel();
-        renderTable(filtered);
+        if (currentTab === 'eslesmeyenler') {
+            applyEslesmeyenlerFilters();
+        } else {
+            renderTable(filtered);
+        }
+    }
+
+    // Load Unmatched Source Records (Muavin_Eslesmeyenler)
+    async function loadEslesmeyenler() {
+        const donem = document.getElementById('donemSelect').value;
+        const tbody = document.getElementById('eslesmeyenlerTbody');
+        if (!donem) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 30px; color: #64748b;">Lütfen yukarıdaki filtre alanından bir <b>Dönem</b> seçiniz.</td></tr>`;
+            allEslesmeyenler = [];
+            return;
+        }
+
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 30px; color: #64748b;"><i class="fas fa-spinner fa-spin"></i> Kayıtlar yükleniyor...</td></tr>`;
+
+        try {
+            const res = await fetch(`/api/v1/muavin-eslesmeyenler?donem=${donem}`);
+            if (!res.ok) throw new Error('Eşleşmeyen kayıtlar çekilemedi');
+            const data = await res.json();
+            allEslesmeyenler = data.records || [];
+            applyEslesmeyenlerFilters();
+        } catch (err) {
+            console.error(err);
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 30px; color: #dc2626;">Hata: ${err.message}</td></tr>`;
+        }
+    }
+
+    function applyEslesmeyenlerFilters() {
+        const tur = document.getElementById('turSelect').value;
+        const status = document.getElementById('statusSelect').value;
+        const search = document.getElementById('searchInput').value.toLowerCase().trim();
+
+        let filtered = allEslesmeyenler.filter(r => {
+            if (tur && r.Eslesme_Tur !== tur) return false;
+            if (status === 'eslesdi' && r.Durum !== 'Kapalı') return false;
+            if (status === 'eslesmedi' && r.Durum !== 'Açık') return false;
+
+            if (search) {
+                const text = `${r.Referans_No || ''} ${r.Aciklama || ''}`.toLowerCase();
+                if (!text.includes(search)) return false;
+            }
+            return true;
+        });
+
+        document.getElementById('eslesmeyenCount').innerText = `${filtered.length} Kayıt`;
+        renderEslesmeyenler(filtered);
+    }
+
+    function renderEslesmeyenler(records) {
+        const tbody = document.getElementById('eslesmeyenlerTbody');
+        if (!records || records.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 30px; color: #64748b;">Kriterlere uygun eşleşmeyen kaynak kayıt bulunamadı.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = records.map(r => {
+            const isKapali = r.Durum === 'Kapalı';
+            const statusBadge = isKapali 
+                ? `<span class="badge badge-muaf">Kapalı</span>` 
+                : `<span class="badge badge-warning">Açık</span>`;
+            const turBadge = r.Eslesme_Tur ? `<span class="badge badge-tur">${r.Eslesme_Tur}</span>` : '-';
+            const safeAciklama = (r.Aciklama || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+            const safeRefNo = (r.Referans_No || '').replace(/'/g, "\\'");
+
+            return `
+                <tr>
+                    <td>${turBadge}</td>
+                    <td style="font-family: monospace; font-weight: 600;">${r.Referans_No || '-'}</td>
+                    <td>${r.Referans_Tarih || '-'}</td>
+                    <td>
+                        <input type="text" class="form-control" style="font-size: 12px; padding: 4px 8px;" 
+                               value="${safeAciklama}" 
+                               onchange="saveEslesmeyenAciklama(${r.ID || 'null'}, this.value, '${r.Eslesme_Tur}', '${safeRefNo}')" 
+                               placeholder="Açıklama giriniz...">
+                    </td>
+                    <td style="text-align: right; font-weight: 600;">${formatCurrency(r.Referans_Tutar)}</td>
+                    <td style="text-align: center;">${statusBadge}</td>
+                    <td style="text-align: center;">
+                        <button type="button" class="action-btn" onclick="toggleEslesmeyenDurum(${r.ID || 'null'}, '${isKapali ? 'Açık' : 'Kapalı'}', '${r.Eslesme_Tur}', '${safeRefNo}')">
+                            <i class="fas ${isKapali ? 'fa-folder-open' : 'fa-check'}"></i> ${isKapali ? 'Aç' : 'Kapat'}
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    async function toggleEslesmeyenDurum(id, newDurum, eslesme_tur, referans_no) {
+        try {
+            const url = id ? `/api/v1/muavin-eslesmeyenler/${id}` : `/api/v1/muavin-eslesmeyenler/0`;
+            const payload = { durum: newDurum, eslesme_tur, referans_no };
+            const res = await fetch(url, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) throw new Error('Durum güncellenemedi');
+            showToast(`Kayıt durumu "${newDurum}" olarak güncellendi.`);
+            await loadEslesmeyenler();
+        } catch (err) {
+            console.error(err);
+            showToast('Hata: ' + err.message, 'error');
+        }
+    }
+
+    async function saveEslesmeyenAciklama(id, newAciklama, eslesme_tur, referans_no) {
+        try {
+            const url = id ? `/api/v1/muavin-eslesmeyenler/${id}` : `/api/v1/muavin-eslesmeyenler/0`;
+            const res = await fetch(url, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ aciklama: newAciklama, eslesme_tur, referans_no })
+            });
+
+            if (!res.ok) throw new Error('Açıklama kaydedilemedi');
+            showToast('Açıklama güncellendi.');
+        } catch (err) {
+            console.error(err);
+            showToast('Hata: ' + err.message, 'error');
+        }
     }
 
     // Render Table Rows
     function renderTable(records) {
         const tbody = document.getElementById('recordsTbody');
         if (!records || records.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="13" style="text-align: center; padding: 30px; color: #64748b;">Kriterlere uygun kayıt bulunamadı.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; padding: 30px; color: #64748b;">Kriterlere uygun kayıt bulunamadı.</td></tr>`;
             return;
         }
 
@@ -585,7 +808,7 @@
                     actions = `
                         <button class="action-btn" onclick="openManualModal(${r.ID})" title="Eşleşmeyi Değiştir"><i class="fas fa-edit"></i> Değiştir</button>
                         <button class="action-btn action-btn-danger" onclick="unmatchRecord(${r.ID})" title="Eşleşmeyi Boz"><i class="fas fa-unlink"></i> Boz</button>
-                        <button class="action-btn action-btn-muaf" onclick="exemptRecord(${r.ID})" title="Eşleşmeden Muaf"><i class="fas fa-ban"></i> Muaf</button>
+                        <button class="action-btn action-btn-muaf" disabled style="opacity:0.5; cursor:not-allowed;" title="Eşleşmiş kayıt muaf yapılamaz"><i class="fas fa-ban"></i> Muaf</button>
                     `;
                 } else {
                     actions = `
@@ -598,9 +821,7 @@
             return `
                 <tr class="${rowClass}">
                     <td>${r.Tarih || '-'}</td>
-                    <td><span class="badge" style="background:#e2e8f0;">${r.Tip || '-'}</span></td>
-                    <td style="font-family: monospace;">${r.Fis_No || '-'}</td>
-                    <td title="${r.Aciklama || ''}" style="max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${r.Aciklama || '-'}</td>
+                    <td title="${r.Aciklama || ''}" style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${r.Aciklama || '-'}</td>
                     <td style="text-align: right; font-weight: 500;">${r.Borc > 0 ? formatCurrency(r.Borc) : '-'}</td>
                     <td style="text-align: right; font-weight: 500;">${r.Alacak > 0 ? formatCurrency(r.Alacak) : '-'}</td>
                     <td>${turBadge}</td>
@@ -709,15 +930,52 @@
         }
     }
 
+    // Exempt Reverse Records (matching Referans_No and opposite side total)
+    async function exemptReverseRecords() {
+        const donem = document.getElementById('donemSelect').value;
+        if (!donem) {
+            showToast('Lütfen işlem yapılacak dönemi seçiniz.', 'error');
+            return;
+        }
+
+        if (!confirm('Eşleşen kayıtlar ile aynı Referans No\'ya sahip ve tutarları eşit olan ters (Alacak/Borç) kayıtları Muaf tutulacaktır. Onaylıyor musunuz?')) {
+            return;
+        }
+
+        const btn = document.getElementById('exemptReverseBtn');
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> İşleniyor...`;
+
+        try {
+            const res = await fetch('/api/v1/muavin-defteri-eslesme/exempt-reverse', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ donem: parseInt(donem) })
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'İşlem başarısız');
+            }
+
+            const data = await res.json();
+            showToast(`${data.groups || 0} grupta toplam ${data.affected || 0} adet ters kayıt başarıyla Muaf tutuldu.`);
+            await loadRecords();
+        } catch (err) {
+            console.error(err);
+            showToast('Hata: ' + err.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fas fa-random"></i> Ters Kayıtları Muaf Yap`;
+        }
+    }
+
     function updateExemptBtnLabel() {
         const tur = document.getElementById('turSelect').value;
-        const btnLabel = document.getElementById('bulkExemptBtnLabel');
-        if (btnLabel) {
-            if (tur) {
-                btnLabel.innerHTML = `Borç &gt; 0 (${tur}) Muaf Yap`;
-            } else {
-                btnLabel.innerHTML = `Borç &gt; 0 Kayıtları Muaf Yap`;
-            }
+        const btn = document.getElementById('bulkExemptBorcBtn');
+        if (btn) {
+            const labelText = tur ? `Borç &gt; 0 (${tur}) Muaf Yap` : `Borç &gt; 0 Kayıtları Muaf Yap`;
+            btn.innerHTML = `<i class="fas fa-ban"></i> <span id="bulkExemptBtnLabel">${labelText}</span>`;
         }
     }
 
@@ -728,25 +986,23 @@
         const tbody = document.getElementById('candidatesTbody');
         box.innerHTML = `Yükleniyor...`;
         tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px;">Adaylar yükleniyor...</td></tr>`;
+
+        // Sync modal donem dropdown options from main donem select
+        const mainDonemSelect = document.getElementById('donemSelect');
+        const modalDonemSelect = document.getElementById('modalDonemSelect');
+        modalDonemSelect.innerHTML = '<option value="">Tüm Dönemler</option>' + mainDonemSelect.innerHTML.replace('<option value="">Dönem Seçiniz...</option>', '');
+
+        // Default filters from main screen dropdowns
+        const currentDonem = mainDonemSelect.value;
+        const currentTur = document.getElementById('turSelect').value;
+
+        modalDonemSelect.value = currentDonem || "";
+        document.getElementById('modalTurSelect').value = currentTur || "";
+
         document.getElementById('manualMatchModal').style.display = 'flex';
 
         try {
-            const res = await fetch(`/api/v1/muavin-defteri-eslesme/candidates?muavin_id=${muavinId}`);
-            if (!res.ok) throw new Error('Adaylar yüklenemedi');
-            const data = await res.json();
-
-            const m = data.muavin;
-            box.innerHTML = `
-                <div style="font-size: 13px; font-weight: 600; color: #0f172a;">
-                    [#${m.ID}] Tarih: ${m.Tarih} | Fiş No: ${m.Fis_No || '-'} | Tür: ${m.Eslesme_Tur} | Tutar: ${formatCurrency(m.Borc > 0 ? m.Borc : m.Alacak)}
-                </div>
-                <div style="font-size: 12px; color: #64748b; margin-top: 4px;">
-                    Açıklama: ${m.Aciklama || '-'} | Referans No: <b>${m.Referans_No || '-'}</b>
-                </div>
-            `;
-
-            currentCandidates = data.candidates || [];
-            filterCandidates();
+            await loadCandidatesForModal(true);
         } catch (err) {
             console.error(err);
             showToast('Hata: ' + err.message, 'error');
@@ -754,10 +1010,53 @@
         }
     }
 
+    async function loadCandidatesForModal(isInitial = false) {
+        if (!activeMuavinId) return;
+
+        const tbody = document.getElementById('candidatesTbody');
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Adaylar yükleniyor...</td></tr>`;
+
+        const donem = document.getElementById('modalDonemSelect').value;
+        const tur = document.getElementById('modalTurSelect').value;
+
+        let url = `/api/v1/muavin-defteri-eslesme/candidates?muavin_id=${activeMuavinId}`;
+        if (donem !== undefined && donem !== null) {
+            url += `&donem=${donem === '' ? 'all' : donem}`;
+        }
+        if (tur) url += `&source_type=${tur}`;
+
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Adaylar yüklenemedi');
+        const data = await res.json();
+
+        const m = data.muavin;
+        if (m) {
+            const box = document.getElementById('selectedMuavinBox');
+            box.innerHTML = `
+                <div style="font-size: 13px; font-weight: 600; color: #0f172a;">
+                    [#${m.ID}] Tarih: ${m.Tarih} | Fiş No: ${m.Fis_No || '-'} | Tür: ${m.Eslesme_Tur || '-'} | Tutar: ${formatCurrency(m.Borc > 0 ? m.Borc : m.Alacak)}
+                </div>
+                <div style="font-size: 12px; color: #64748b; margin-top: 4px;">
+                    Açıklama: ${m.Aciklama || '-'} | Referans No: <b>${m.Referans_No || '-'}</b>
+                </div>
+            `;
+
+            // Auto-fill candidate search with muavin Referans_No if present on initial modal open
+            if (isInitial) {
+                const searchInput = document.getElementById('candidateSearch');
+                searchInput.value = m.Referans_No || "";
+            }
+        }
+
+        currentCandidates = data.candidates || [];
+        filterCandidates();
+    }
+
     function closeManualModal() {
         document.getElementById('manualMatchModal').style.display = 'none';
         activeMuavinId = null;
         currentCandidates = [];
+        document.getElementById('candidateSearch').value = "";
     }
 
     function filterCandidates() {

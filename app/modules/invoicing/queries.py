@@ -3395,29 +3395,55 @@ def auto_match_muavin_defteri(db: Session, donem: int) -> dict:
 
             if not matched:
                 unmatched_count += 1
-                ref_no_val = rec.Referans_No[:30] if rec.Referans_No else ""
-                stmt_es_check = select(MuavinEslesmeyenler).where(
-                    MuavinEslesmeyenler.Eslesme_Tur == rec.Eslesme_Tur,
-                    MuavinEslesmeyenler.Referans_No == ref_no_val,
-                    MuavinEslesmeyenler.Durum == 'Açık'
-                )
-                existing_es = db.scalar(stmt_es_check)
-                if not existing_es:
-                    tutar_val = rec.Referans_Tutar or (rec.Borc if (rec.Borc or Decimal(0)) > Decimal(0) else rec.Alacak)
-                    new_es = MuavinEslesmeyenler(
-                        Eslesme_Tur=rec.Eslesme_Tur,
-                        Referans_No=ref_no_val,
-                        Referans_Tarih=rec.Referans_Tarih or rec.Tarih,
-                        Referans_Tutar=tutar_val,
-                        Durum='Açık',
-                        Aciklama=(rec.Aciklama or "")[:50],
-                        Kayit_Tarih=datetime.now()
-                    )
-                    db.add(new_es)
 
         except Exception as e:
             failed_count += 1
             print(f"Error auto-matching record {rec.ID}: {e}")
+
+    # 5. Populate Muavin_Eslesmeyenler with source records (e_Fatura & Diger_Harcama) NOT matched in Muavin_Defteri
+    # Unmatched e_Fatura
+    for ef in ef_candidates:
+        if ef.Fatura_ID not in used_efatura_ids:
+            unmatched_count += 1
+            ref_no_val = (ef.Fatura_Numarasi or "")[:30]
+            stmt_es_check = select(MuavinEslesmeyenler).where(
+                MuavinEslesmeyenler.Eslesme_Tur == 'Fatura',
+                MuavinEslesmeyenler.Referans_No == ref_no_val
+            )
+            existing_es = db.scalar(stmt_es_check)
+            if not existing_es:
+                new_es = MuavinEslesmeyenler(
+                    Eslesme_Tur='Fatura',
+                    Referans_No=ref_no_val,
+                    Referans_Tarih=ef.Fatura_Tarihi,
+                    Referans_Tutar=ef.Tutar,
+                    Durum='Açık',
+                    Aciklama=(ef.Alici_Unvani or "")[:50],
+                    Kayit_Tarih=datetime.now()
+                )
+                db.add(new_es)
+
+    # Unmatched Diger_Harcama
+    for dh in dh_candidates:
+        if dh.Harcama_ID not in used_diger_harcama_ids:
+            unmatched_count += 1
+            ref_no_val = (dh.Belge_Numarasi or "")[:30]
+            stmt_es_check = select(MuavinEslesmeyenler).where(
+                MuavinEslesmeyenler.Eslesme_Tur == 'Fiş',
+                MuavinEslesmeyenler.Referans_No == ref_no_val
+            )
+            existing_es = db.scalar(stmt_es_check)
+            if not existing_es:
+                new_es = MuavinEslesmeyenler(
+                    Eslesme_Tur='Fiş',
+                    Referans_No=ref_no_val,
+                    Referans_Tarih=dh.Belge_Tarihi,
+                    Referans_Tutar=dh.Tutar,
+                    Durum='Açık',
+                    Aciklama=(dh.Alici_Adi or "")[:50],
+                    Kayit_Tarih=datetime.now()
+                )
+                db.add(new_es)
 
     db.commit()
     return {
@@ -3431,7 +3457,12 @@ def auto_match_muavin_defteri(db: Session, donem: int) -> dict:
     }
 
 
-def get_muavin_eslesme_candidates(db: Session, muavin_id: int) -> dict:
+def get_muavin_eslesme_candidates(
+    db: Session,
+    muavin_id: int,
+    donem: Optional[int] = None,
+    source_type: Optional[str] = None
+) -> dict:
     """Get candidate source records (e_Fatura or Diger_Harcama) for manual matching."""
     from sqlalchemy import or_
     stmt = select(MuavinDefteri).where(MuavinDefteri.ID == muavin_id)
@@ -3439,30 +3470,59 @@ def get_muavin_eslesme_candidates(db: Session, muavin_id: int) -> dict:
     if not rec:
         return {"candidates": [], "muavin": None}
 
-    yymm_donem = int(rec.Tarih.strftime("%y%m")) if rec.Tarih else None
+    # Determine period filter
+    yymm_donem = None
+    if donem is not None:
+        donem_str = str(donem).strip().lower()
+        if donem_str not in ('0', 'all', '', 'none'):
+            if len(donem_str) == 6:
+                yymm_donem = int(donem_str[2:])
+            else:
+                yymm_donem = int(donem_str)
+    elif rec.Tarih:
+        yymm_donem = int(rec.Tarih.strftime("%y%m"))
+
+    # Target source types to include
+    target_types = []
+    if source_type in ('Fatura', 'Fiş'):
+        target_types = [source_type]
+    elif rec.Eslesme_Tur in ('Fatura', 'Fiş'):
+        target_types = [rec.Eslesme_Tur]
+    else:
+        target_types = ['Fatura', 'Fiş']
 
     candidates = []
-    if rec.Eslesme_Tur == 'Fatura' and yymm_donem:
-        stmt_ef = select(EFatura).outerjoin(Kategori, EFatura.Kategori_ID == Kategori.Kategori_ID).where(
-            EFatura.Donem == yymm_donem,
+
+    if 'Fatura' in target_types:
+        stmt_ef = select(EFatura).outerjoin(Kategori, EFatura.Kategori_ID == Kategori.Kategori_ID)
+        if yymm_donem:
+            stmt_ef = stmt_ef.where(EFatura.Donem == yymm_donem)
+        stmt_ef = stmt_ef.where(
             or_(Kategori.Kategori_Adi.is_(None), Kategori.Kategori_Adi.notin_(('İptal Fatura', 'Bilgi')))
         ).order_by(EFatura.Fatura_Tarihi.desc())
+        if yymm_donem:
+            stmt_ef = stmt_ef.limit(2000)
         ef_list = db.scalars(stmt_ef).all()
         for ef in ef_list:
             candidates.append({
                 "Source_Type": "Fatura",
                 "Source_ID": ef.Fatura_ID,
-                "Belge_No": ef.Fatura_Numarasi,
+                "Belge_No": ef.Fatura_Numarasi or "",
                 "Tarih": ef.Fatura_Tarihi.isoformat() if ef.Fatura_Tarihi else "",
-                "Unvan": ef.Alici_Unvani,
-                "Tutar": float(ef.Tutar),
+                "Unvan": ef.Alici_Unvani or "",
+                "Tutar": float(ef.Tutar) if ef.Tutar is not None else 0.0,
                 "Giden_Fatura": bool(ef.Giden_Fatura)
             })
-    elif rec.Eslesme_Tur == 'Fiş' and yymm_donem:
-        stmt_dh = select(DigerHarcama).outerjoin(Kategori, DigerHarcama.Kategori_ID == Kategori.Kategori_ID).where(
-            DigerHarcama.Donem == yymm_donem,
+
+    if 'Fiş' in target_types:
+        stmt_dh = select(DigerHarcama).outerjoin(Kategori, DigerHarcama.Kategori_ID == Kategori.Kategori_ID)
+        if yymm_donem:
+            stmt_dh = stmt_dh.where(DigerHarcama.Donem == yymm_donem)
+        stmt_dh = stmt_dh.where(
             or_(Kategori.Kategori_Adi.is_(None), Kategori.Kategori_Adi != 'Harcama e-Fatura')
         ).order_by(DigerHarcama.Belge_Tarihi.desc())
+        if yymm_donem:
+            stmt_dh = stmt_dh.limit(2000)
         dh_list = db.scalars(stmt_dh).all()
         for dh in dh_list:
             candidates.append({
@@ -3470,10 +3530,13 @@ def get_muavin_eslesme_candidates(db: Session, muavin_id: int) -> dict:
                 "Source_ID": dh.Harcama_ID,
                 "Belge_No": dh.Belge_Numarasi or "",
                 "Tarih": dh.Belge_Tarihi.isoformat() if dh.Belge_Tarihi else "",
-                "Unvan": dh.Alici_Adi,
-                "Tutar": float(dh.Tutar),
+                "Unvan": dh.Alici_Adi or "",
+                "Tutar": float(dh.Tutar) if dh.Tutar is not None else 0.0,
                 "Giden_Fatura": False
             })
+
+    # Sort all candidates by date desc
+    candidates.sort(key=lambda c: c["Tarih"], reverse=True)
 
     muavin_info = {
         "ID": rec.ID,
@@ -3623,7 +3686,8 @@ def bulk_exempt_borc_positive(db: Session, donem: int, eslesme_tur: Optional[str
     stmt = select(MuavinDefteri).where(
         MuavinDefteri.Tarih >= start_date,
         MuavinDefteri.Tarih <= end_date,
-        MuavinDefteri.Borc > 0
+        MuavinDefteri.Borc > 0,
+        MuavinDefteri.Eslendi == False
     )
     if eslesme_tur:
         stmt = stmt.where(MuavinDefteri.Eslesme_Tur == eslesme_tur)
@@ -3650,4 +3714,265 @@ def bulk_exempt_borc_positive(db: Session, donem: int, eslesme_tur: Optional[str
 
     db.commit()
     return {"affected": affected}
+
+
+def exempt_reverse_matching_records(db: Session, donem: int) -> dict:
+    """
+    Find matched records in Muavin_Defteri for a period, group other records with the same Referans_No.
+    If the matched record has Borc > 0, sum Alacak of unmatched same-Referans_No records.
+    If matched record has Alacak > 0, sum Borc of unmatched same-Referans_No records.
+    If the sum equals the matched record amount, mark those unmatched opposite records as Eslesme_Gerekli = False.
+
+    Returns: {"affected": <int>, "groups": <int>}
+    """
+    import calendar
+    donem_str = str(donem)
+    if len(donem_str) == 6:
+        year = int(donem_str[:4])
+        month = int(donem_str[4:])
+    else:
+        year = 2000 + int(donem_str[:2])
+        month = int(donem_str[2:])
+
+    start_date = date(year, month, 1)
+    last_day = calendar.monthrange(year, month)[1]
+    end_date = date(year, month, last_day)
+
+    # 1. Fetch matched records for the period with Referans_No
+    stmt_matched = select(MuavinDefteri).where(
+        MuavinDefteri.Tarih >= start_date,
+        MuavinDefteri.Tarih <= end_date,
+        MuavinDefteri.Eslendi == True,
+        MuavinDefteri.Referans_No.isnot(None)
+    )
+    matched_recs = db.scalars(stmt_matched).all()
+
+    affected_count = 0
+    groups_count = 0
+
+    for m_rec in matched_recs:
+        ref_no = (m_rec.Referans_No or "").strip()
+        if not ref_no:
+            continue
+
+        is_giden = (m_rec.Borc or Decimal(0)) > Decimal(0)
+        target_amount = Decimal(str(m_rec.Borc)) if is_giden else Decimal(str(m_rec.Alacak))
+
+        # Find unmatched records with the same Referans_No and opposite side
+        stmt_opp = select(MuavinDefteri).where(
+            MuavinDefteri.Tarih >= start_date,
+            MuavinDefteri.Tarih <= end_date,
+            MuavinDefteri.Referans_No == ref_no,
+            MuavinDefteri.Eslendi == False,
+            MuavinDefteri.Eslesme_Gerekli == True
+        )
+        opp_recs = db.scalars(stmt_opp).all()
+
+        # Filter strictly opposite side entries
+        filtered_opp = []
+        opp_sum = Decimal("0.00")
+
+        for opp in opp_recs:
+            opp_borc = Decimal(str(opp.Borc or 0))
+            opp_alacak = Decimal(str(opp.Alacak or 0))
+
+            if is_giden and opp_alacak > Decimal(0) and opp_borc == Decimal(0):
+                filtered_opp.append(opp)
+                opp_sum += opp_alacak
+            elif not is_giden and opp_borc > Decimal(0) and opp_alacak == Decimal(0):
+                filtered_opp.append(opp)
+                opp_sum += opp_borc
+
+        # If the sum of opposite records matches the main record amount exactly
+        if filtered_opp and opp_sum == target_amount:
+            groups_count += 1
+            for opp in filtered_opp:
+                opp.Eslesme_Gerekli = False
+                affected_count += 1
+
+    db.commit()
+    return {"affected": affected_count, "groups": groups_count}
+
+
+
+def get_muavin_eslesmeyenler(
+    db: Session,
+    donem: Optional[int] = None,
+    eslesme_tur: Optional[str] = None,
+    durum: Optional[str] = None
+) -> List[dict]:
+    """
+    Compute unmatched source records LIVE from e_Fatura and Diger_Harcama.
+
+    Logic:
+      1. Collect Referans_No values from Muavin_Defteri where Eslendi=True for the period
+         (these are already matched → exclude from unmatched list).
+      2. Query e_Fatura for the period; exclude matched ones and excluded categories.
+      3. Query Diger_Harcama for the period; exclude matched ones and excluded categories.
+      4. For each unmatched source record, look up Muavin_Eslesmeyenler by (Eslesme_Tur, Referans_No)
+         to retrieve user-set Durum and Aciklama.
+    """
+    import calendar
+    from sqlalchemy import or_
+
+    if not donem:
+        return []
+
+    donem_str = str(donem)
+    if len(donem_str) == 6:
+        year = int(donem_str[:4])
+        month = int(donem_str[4:])
+        yymm_donem = int(donem_str[2:])
+    else:
+        year = 2000 + int(donem_str[:2])
+        month = int(donem_str[2:])
+        yymm_donem = int(donem_str)
+
+    start_date = date(year, month, 1)
+    last_day = calendar.monthrange(year, month)[1]
+    end_date = date(year, month, last_day)
+
+    # 1. Collect matched Referans_No values from Muavin_Defteri (Eslendi=True)
+    matched_stmt = select(MuavinDefteri.Referans_No).where(
+        MuavinDefteri.Tarih >= start_date,
+        MuavinDefteri.Tarih <= end_date,
+        MuavinDefteri.Eslendi == True,
+        MuavinDefteri.Referans_No.isnot(None)
+    )
+    matched_nos = {row[0].strip() for row in db.execute(matched_stmt).fetchall() if row[0]}
+
+    results = []
+
+    # 2. Unmatched e_Fatura
+    if not eslesme_tur or eslesme_tur == 'Fatura':
+        stmt_ef = (
+            select(EFatura)
+            .outerjoin(Kategori, EFatura.Kategori_ID == Kategori.Kategori_ID)
+            .where(
+                EFatura.Donem == yymm_donem,
+                or_(Kategori.Kategori_Adi.is_(None), Kategori.Kategori_Adi.notin_(['İptal Fatura', 'Bilgi']))
+            )
+        )
+        ef_recs = db.scalars(stmt_ef).all()
+
+        for ef in ef_recs:
+            if ef.Fatura_Numarasi.strip() not in matched_nos:
+                ref_no = (ef.Fatura_Numarasi or '').strip()[:30]
+                # Look up user notes from Muavin_Eslesmeyenler
+                es_note = db.scalar(
+                    select(MuavinEslesmeyenler).where(
+                        MuavinEslesmeyenler.Eslesme_Tur == 'Fatura',
+                        MuavinEslesmeyenler.Referans_No == ref_no
+                    )
+                )
+                rec_durum = es_note.Durum if es_note else 'Açık'
+                rec_aciklama = es_note.Aciklama if es_note else (ef.Alici_Unvani or '')[:50]
+                rec_id = es_note.ID if es_note else None
+
+                if durum and rec_durum != durum:
+                    continue
+
+                results.append({
+                    "ID": rec_id,
+                    "Eslesme_Tur": "Fatura",
+                    "Referans_No": ref_no,
+                    "Referans_Tarih": ef.Fatura_Tarihi.isoformat() if ef.Fatura_Tarihi else "",
+                    "Referans_Tutar": float(ef.Tutar) if ef.Tutar is not None else None,
+                    "Durum": rec_durum,
+                    "Aciklama": rec_aciklama,
+                    "Kayit_Tarih": ""
+                })
+
+    # 3. Unmatched Diger_Harcama
+    if not eslesme_tur or eslesme_tur == 'Fiş':
+        stmt_dh = (
+            select(DigerHarcama)
+            .outerjoin(Kategori, DigerHarcama.Kategori_ID == Kategori.Kategori_ID)
+            .where(
+                DigerHarcama.Donem == yymm_donem,
+                or_(Kategori.Kategori_Adi.is_(None), Kategori.Kategori_Adi != 'Harcama e-Fatura')
+            )
+        )
+        dh_recs = db.scalars(stmt_dh).all()
+
+        for dh in dh_recs:
+            dh_ref = (dh.Belge_Numarasi or '').strip()
+            if dh_ref and dh_ref not in matched_nos:
+                ref_no = dh_ref[:30]
+                es_note = db.scalar(
+                    select(MuavinEslesmeyenler).where(
+                        MuavinEslesmeyenler.Eslesme_Tur == 'Fiş',
+                        MuavinEslesmeyenler.Referans_No == ref_no
+                    )
+                )
+                rec_durum = es_note.Durum if es_note else 'Açık'
+                rec_aciklama = es_note.Aciklama if es_note else (dh.Alici_Adi or '')[:50]
+                rec_id = es_note.ID if es_note else None
+
+                if durum and rec_durum != durum:
+                    continue
+
+                results.append({
+                    "ID": rec_id,
+                    "Eslesme_Tur": "Fiş",
+                    "Referans_No": ref_no,
+                    "Referans_Tarih": dh.Belge_Tarihi.isoformat() if dh.Belge_Tarihi else "",
+                    "Referans_Tutar": float(dh.Tutar) if dh.Tutar is not None else None,
+                    "Durum": rec_durum,
+                    "Aciklama": rec_aciklama,
+                    "Kayit_Tarih": ""
+                })
+
+    # Sort by date desc
+    results.sort(key=lambda r: r["Referans_Tarih"], reverse=True)
+    return results
+
+
+def update_muavin_eslesmeyen_record(
+    db: Session,
+    record_id: Optional[int],
+    durum: Optional[str] = None,
+    aciklama: Optional[str] = None,
+    eslesme_tur: Optional[str] = None,
+    referans_no: Optional[str] = None
+) -> bool:
+    """
+    Update Durum and/or Aciklama of a Muavin_Eslesmeyenler record.
+    If record_id is None (no existing row), creates a new one using eslesme_tur + referans_no.
+    """
+    if record_id:
+        stmt = select(MuavinEslesmeyenler).where(MuavinEslesmeyenler.ID == record_id)
+        rec = db.scalar(stmt)
+        if not rec:
+            return False
+    elif eslesme_tur and referans_no:
+        # Upsert: find or create
+        stmt = select(MuavinEslesmeyenler).where(
+            MuavinEslesmeyenler.Eslesme_Tur == eslesme_tur,
+            MuavinEslesmeyenler.Referans_No == referans_no[:30]
+        )
+        rec = db.scalar(stmt)
+        if not rec:
+            rec = MuavinEslesmeyenler(
+                Eslesme_Tur=eslesme_tur,
+                Referans_No=referans_no[:30],
+                Durum=durum or 'Açık',
+                Aciklama=(aciklama or '')[:50],
+                Kayit_Tarih=datetime.now()
+            )
+            db.add(rec)
+            db.commit()
+            return True
+    else:
+        return False
+
+    if durum is not None:
+        rec.Durum = durum
+    if aciklama is not None:
+        rec.Aciklama = aciklama[:50]
+
+    db.commit()
+    return True
+
+
 
