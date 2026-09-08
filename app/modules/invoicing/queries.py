@@ -1564,14 +1564,22 @@ def get_gunluk_harcamalar_by_donem(db: Session, sube_id: int, year: int, month: 
     """
     Belirli döneme ait Gunluk_Harcama (eFatura ve DigerHarcama) tablo değerlerini çeker.
     "FİŞ / FATURA" gösterimi (read-only) için kullanılır.
+    Kategorisi 'Harcama e-Fatura' olan kayıtlar Harcama-Diğer toplamı dışında tutulur.
     """
-    from app.models import DigerHarcama, EFatura
+    from app.models import DigerHarcama, EFatura, Kategori
+    from sqlalchemy import extract, or_, func
     
-    diger_harcamalar = db.query(DigerHarcama).filter(
+    diger_harcamalar = db.query(DigerHarcama).outerjoin(
+        Kategori, DigerHarcama.Kategori_ID == Kategori.Kategori_ID
+    ).filter(
         DigerHarcama.Sube_ID == sube_id,
         extract('year', DigerHarcama.Belge_Tarihi) == year,
         extract('month', DigerHarcama.Belge_Tarihi) == month,
-        DigerHarcama.Gunluk_Harcama == True
+        DigerHarcama.Gunluk_Harcama == True,
+        or_(
+            Kategori.Kategori_ID == None,
+            func.trim(Kategori.Kategori_Adi) != 'Harcama e-Fatura'
+        )
     ).all()
     
     efaturalar = db.query(EFatura).filter(
@@ -1584,6 +1592,9 @@ def get_gunluk_harcamalar_by_donem(db: Session, sube_id: int, year: int, month: 
     harcama_data = {}
     
     for h in diger_harcamalar:
+        # Kategorisi 'Harcama e-Fatura' olan kayıtları hesaplama dışında tut
+        if h.kategori and h.kategori.Kategori_Adi and h.kategori.Kategori_Adi.strip() == 'Harcama e-Fatura':
+            continue
         gun = h.Belge_Tarihi.day
         if gun not in harcama_data:
             harcama_data[gun] = {'efatura': 0.0, 'diger': 0.0}

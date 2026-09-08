@@ -739,6 +739,7 @@ def get_ozet_kontrol_raporu(db, sube_id: int, donem: int, show_gizli: bool = Fal
         SELECT IFNULL(SUM(dh.Tutar), 0) FROM Diger_Harcama dh
         JOIN Kategori k ON dh.Kategori_ID = k.Kategori_ID
         WHERE dh.Sube_ID = :sube_id AND dh.Donem = :donem AND dh.Gunluk_Harcama = 1
+          AND TRIM(k.Kategori_Adi) != 'Harcama e-Fatura'
         {gizli_filter}
     """)
     gh_diger = db.execute(dh_sql, {"sube_id": sube_id, "donem": donem}).scalar() or 0.0
@@ -825,6 +826,7 @@ def get_ozet_kontrol_raporu(db, sube_id: int, donem: int, show_gizli: bool = Fal
         SELECT IFNULL(SUM(dh.Tutar), 0) FROM Diger_Harcama dh
         JOIN Kategori k ON dh.Kategori_ID = k.Kategori_ID
         WHERE dh.Sube_ID = :sube_id AND dh.Donem = :donem
+          AND TRIM(k.Kategori_Adi) != 'Harcama e-Fatura'
         {gizli_filter}
         """),
         {"sube_id": sube_id, "donem": donem}
