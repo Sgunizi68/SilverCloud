@@ -533,15 +533,15 @@ def get_bayi_karlilik_raporu(sube_id: int, year: int) -> Dict:
         # 4. Expenses (Alımlar, Maaş, Kira, etc.)
         expense_rows = session.execute(
             text("""
-                SELECT src, Donem, Tutar, Kategori_Adi, UstKategori_Adi, Aciklama 
+                SELECT src, Donem, Tutar, Kategori_ID, Kategori_Adi, UstKategori_Adi, Aciklama 
                 FROM (
-                    SELECT 'efat' as src, Donem, Tutar, k.Kategori_Adi, uk.UstKategori_Adi, e.Aciklama
+                    SELECT 'efat' as src, Donem, Tutar, k.Kategori_ID, k.Kategori_Adi, uk.UstKategori_Adi, e.Aciklama
                     FROM e_Fatura e
                     JOIN Kategori k ON e.Kategori_ID = k.Kategori_ID
                     JOIN UstKategori uk ON k.Ust_Kategori_ID = uk.UstKategori_ID
                     WHERE e.Sube_ID = :sube_id AND e.Donem BETWEEN :s_donem AND :e_donem AND (e.Giden_Fatura = 0 OR e.Giden_Fatura IS NULL)
                     UNION ALL
-                    SELECT 'diger' as src, Donem, Tutar, k.Kategori_Adi, uk.UstKategori_Adi, dh.Açıklama as Aciklama
+                    SELECT 'diger' as src, Donem, Tutar, k.Kategori_ID, k.Kategori_Adi, uk.UstKategori_Adi, dh.Açıklama as Aciklama
                     FROM Diger_Harcama dh
                     JOIN Kategori k ON dh.Kategori_ID = k.Kategori_ID
                     JOIN UstKategori uk ON k.Ust_Kategori_ID = uk.UstKategori_ID
@@ -553,7 +553,7 @@ def get_bayi_karlilik_raporu(sube_id: int, year: int) -> Dict:
 
         # Group Expenses
         e_m = lambda d: (d % 100) - 1
-        for src, donem, tutar, kat_ad, ust_ad, acik in expense_rows:
+        for src, donem, tutar, kat_id, kat_ad, ust_ad, acik in expense_rows:
             m_idx = e_m(donem)
             val = float(tutar or 0)
             
@@ -571,9 +571,9 @@ def get_bayi_karlilik_raporu(sube_id: int, year: int) -> Dict:
             if kat_ad == 'Depo Kira': rows_kira[3]["values"][m_idx] += val
             if kat_ad == 'Ortak Gider': rows_kira[4]["values"][m_idx] += val
 
-            if kat_ad == 'Yemek Sepeti (Online) Komisyonu':
+            if kat_id == 23 or kat_ad in ('Online Platform Komisyonu', 'Yemek Sepeti (Online) Komisyonu'):
                 acik_l = (acik or "").lower()
-                if 'yemek sepeti' in acik_l: rows_lojistik[1]["values"][m_idx] += val
+                if 'yemek sepeti' in acik_l or 'yemeksepeti' in acik_l: rows_lojistik[1]["values"][m_idx] += val
                 elif 'trendyol' in acik_l: rows_lojistik[3]["values"][m_idx] += val
                 elif 'getir' in acik_l: rows_lojistik[4]["values"][m_idx] += val
                 elif 'migros' in acik_l: rows_lojistik[5]["values"][m_idx] += val
@@ -588,6 +588,8 @@ def get_bayi_karlilik_raporu(sube_id: int, year: int) -> Dict:
                 rows_diger_detay[6]["values"][m_idx] += val
             elif kat_ad == 'Hijyen / Gizli Müşteri Denetimi':
                 rows_diger_detay[17]["values"][m_idx] += val
+            elif kat_id == 23 or kat_ad in ('Online Platform Komisyonu', 'Yemek Sepeti (Online) Komisyonu'):
+                pass
             else:
                 for r_d in rows_diger_detay:
                     if kat_ad == r_d["label"]:
