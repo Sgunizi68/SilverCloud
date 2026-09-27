@@ -676,6 +676,49 @@ def unexempt_muavin_defteri_api():
         return jsonify({"error": str(e)}), 500
 
 
+@invoicing_bp.route("/muavin-defteri-eslesme/update-tur", methods=["POST"])
+@auth_required
+def update_muavin_eslesme_tur_api():
+    """Update Eslesme_Tur for a specific Muavin record."""
+    try:
+        data = request.get_json() or {}
+        muavin_id = data.get("muavin_id")
+        eslesme_tur = data.get("eslesme_tur")
+        if not muavin_id:
+            return jsonify({"error": "muavin_id is required"}), 400
+
+        db = get_db_session()
+        if not _check_eslesme_permission(db, request.user):
+            db.close()
+            return jsonify({"error": "Yetkiniz yok."}), 403
+
+        ok = queries.update_muavin_eslesme_tur(db, int(muavin_id), eslesme_tur)
+        db.close()
+        if not ok:
+            return jsonify({"error": "Kayıt bulunamadı."}), 404
+        return jsonify({"success": True, "muavin_id": muavin_id, "eslesme_tur": eslesme_tur}), 200
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
+@invoicing_bp.route("/muavin-defteri-eslesme/turler", methods=["GET"])
+@auth_required
+def get_muavin_eslesme_turleri_api():
+    """Get all distinct Eslesme_Tur choices."""
+    try:
+        db = get_db_session()
+        if not _check_eslesme_permission(db, request.user):
+            db.close()
+            return jsonify({"error": "Yetkiniz yok."}), 403
+
+        turler = queries.get_muavin_eslesme_turleri(db)
+        db.close()
+        return jsonify({"turler": turler}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @invoicing_bp.route("/muavin-defteri-eslesme/bulk-exempt-fatura-borc", methods=["POST"])
 @auth_required
 def bulk_exempt_fatura_borc_api():

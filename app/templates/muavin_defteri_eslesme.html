@@ -329,6 +329,75 @@
         border-color: #cbd5e1;
     }
 
+    .action-btn-tur {
+        color: #0284c7;
+        border-color: #bae6fd;
+        background: #f0f9ff;
+    }
+
+    .action-btn-tur:hover {
+        background: #e0f2fe;
+        color: #0369a1;
+        border-color: #7dd3fc;
+    }
+
+    .tur-select-card {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background: white;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        color: #334155;
+        transition: all 0.15s ease;
+        user-select: none;
+    }
+
+    .tur-select-card:hover {
+        border-color: #93c5fd;
+        background: #f8fafc;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    }
+
+    .tur-select-card.selected {
+        border-color: #0284c7;
+        background: #f0f9ff;
+        color: #0369a1;
+        font-weight: 700;
+        box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.18);
+    }
+
+    .tur-select-card .tur-card-check {
+        margin-left: auto;
+        font-size: 13px;
+        color: #0284c7;
+        display: none;
+    }
+
+    .tur-select-card.selected .tur-card-check {
+        display: inline-block;
+    }
+
+    .tur-select-card .tur-current-tag {
+        font-size: 10px;
+        padding: 1px 6px;
+        border-radius: 4px;
+        background: #e2e8f0;
+        color: #475569;
+        font-weight: 600;
+        margin-left: auto;
+    }
+
+    .tur-select-card.selected .tur-current-tag {
+        margin-left: 0;
+        margin-right: 6px;
+    }
+
     /* Tab Buttons */
     .tab-container {
         display: flex;
@@ -606,7 +675,7 @@
                         <th>Referans Şirket</th>
                         <th style="width: 90px; text-align: right;">Ref. Tutar</th>
                         <th style="width: 80px; text-align: center;">Durum</th>
-                        <th style="width: 140px; text-align: center;">İşlemler</th>
+                        <th style="width: 190px; text-align: center;">İşlemler</th>
                     </tr>
                 </thead>
                 <tbody id="recordsTbody">
@@ -757,6 +826,62 @@
                 <button type="button" class="btn-template btn-outline" onclick="closeTurExemptModal()">Vazgeç</button>
                 <button type="button" class="btn-template btn-warning-solid" id="turExemptConfirmBtn" onclick="executeBulkExemptTur()">
                     <i class="fas fa-check"></i> Evet, Muaf Yap
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Change Eşleşme Türü Modal -->
+<div id="changeTurModal" class="modal-backdrop">
+    <div class="modal-content" style="max-width: 560px;">
+        <div class="modal-header" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+            <h3 style="margin: 0; font-size: 16px; color: #0f172a; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-tags" style="color: #0284c7;"></i> Eşleşme Türünü Değiştir
+            </h3>
+            <button type="button" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #64748b;" onclick="closeChangeTurModal()">&times;</button>
+        </div>
+        <div class="modal-body" style="padding: 18px 20px;">
+            <!-- Record Summary Box -->
+            <div id="changeTurRecordInfo" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; margin-bottom: 16px; font-size: 13px;">
+                <!-- Populated dynamically -->
+            </div>
+
+            <!-- Options Selection Area -->
+            <div style="margin-bottom: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <label style="margin: 0; font-size: 12px; font-weight: 700; color: #334155; text-transform: uppercase; letter-spacing: 0.5px;">
+                        Yeni Eşleşme Türü Seçin
+                    </label>
+                    <span id="modalTurCountBadge" style="font-size: 11px; color: #64748b;"></span>
+                </div>
+                
+                <!-- Quick filter/search input for types -->
+                <div style="position: relative; margin-bottom: 10px;">
+                    <input type="text" id="modalTurFilterInput" class="form-control" placeholder="Tür seçeneklerinde ara..." 
+                           style="font-size: 12px; padding: 7px 30px 7px 10px;" oninput="filterModalTurOptions()">
+                    <i class="fas fa-search" style="position: absolute; right: 10px; top: 10px; color: #94a3b8; font-size: 12px; pointer-events: none;"></i>
+                </div>
+                
+                <!-- Grid of clickable option cards -->
+                <div id="modalTurGrid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; max-height: 280px; overflow-y: auto; padding: 2px;">
+                    <!-- Dynamically generated list of all available options -->
+                </div>
+            </div>
+
+            <div style="font-size: 12px; color: #475569; line-height: 1.4; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 9px 12px; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-info-circle" style="color: #16a34a;"></i>
+                <span>Bir türe çift tıklayarak veya seçip <b>Kaydet</b>'e basarak güncelleyebilirsiniz.</span>
+            </div>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; background: #fafafa;">
+            <div style="font-size: 13px; color: #475569;">
+                Seçilen: <span id="selectedTurName" style="color: #0284c7; font-weight: 700;">-</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn-template btn-outline" onclick="closeChangeTurModal()">Vazgeç</button>
+                <button type="button" class="btn-template btn-primary-blue" id="saveTurConfirmBtn" onclick="saveRecordTur()">
+                    <i class="fas fa-check"></i> Kaydet
                 </button>
             </div>
         </div>
@@ -1196,20 +1321,33 @@
             const turBadge = r.Eslesme_Tur ? `<span class="badge badge-tur">${r.Eslesme_Tur}</span>` : '-';
 
             // Actions logic
+            const turBtn = `<button class="action-btn action-btn-tur" onclick="openChangeTurModal(${r.ID})" title="Eşleşme Türünü Değiştir"><i class="fas fa-tags"></i> Tür</button>`;
+
             let actions = '';
             if (isMuaf) {
-                actions = `<button class="action-btn" onclick="unexemptRecord(${r.ID})" title="Muaflıktan Çıkar"><i class="fas fa-undo"></i> Muaflıktan Çıkar</button>`;
+                actions = `
+                    <div style="display: inline-flex; gap: 4px; align-items: center; justify-content: center;">
+                        ${turBtn}
+                        <button class="action-btn" onclick="unexemptRecord(${r.ID})" title="Muaflıktan Çıkar"><i class="fas fa-undo"></i> Muaflıktan Çıkar</button>
+                    </div>
+                `;
             } else {
                 if (r.Eslendi) {
                     actions = `
-                        <button class="action-btn" onclick="openManualModal(${r.ID})" title="Eşleşmeyi Değiştir"><i class="fas fa-edit"></i> Değiştir</button>
-                        <button class="action-btn action-btn-danger" onclick="unmatchRecord(${r.ID})" title="Eşleşmeyi Boz"><i class="fas fa-unlink"></i> Boz</button>
-                        <button class="action-btn action-btn-muaf" disabled style="opacity:0.5; cursor:not-allowed;" title="Eşleşmiş kayıt muaf yapılamaz"><i class="fas fa-ban"></i> Muaf</button>
+                        <div style="display: inline-flex; gap: 4px; align-items: center; justify-content: center;">
+                            ${turBtn}
+                            <button class="action-btn" onclick="openManualModal(${r.ID})" title="Eşleşmeyi Değiştir"><i class="fas fa-edit"></i> Değiştir</button>
+                            <button class="action-btn action-btn-danger" onclick="unmatchRecord(${r.ID})" title="Eşleşmeyi Boz"><i class="fas fa-unlink"></i> Boz</button>
+                            <button class="action-btn action-btn-muaf" disabled style="opacity:0.5; cursor:not-allowed;" title="Eşleşmiş kayıt muaf yapılamaz"><i class="fas fa-ban"></i> Muaf</button>
+                        </div>
                     `;
                 } else {
                     actions = `
-                        <button class="action-btn" onclick="openManualModal(${r.ID})" title="Manuel Eşleştir"><i class="fas fa-link"></i> Eşleştir</button>
-                        <button class="action-btn action-btn-muaf" onclick="exemptRecord(${r.ID})" title="Eşleşmeden Muaf"><i class="fas fa-ban"></i> Muaf</button>
+                        <div style="display: inline-flex; gap: 4px; align-items: center; justify-content: center;">
+                            ${turBtn}
+                            <button class="action-btn" onclick="openManualModal(${r.ID})" title="Manuel Eşleştir"><i class="fas fa-link"></i> Eşleştir</button>
+                            <button class="action-btn action-btn-muaf" onclick="exemptRecord(${r.ID})" title="Eşleşmeden Muaf"><i class="fas fa-ban"></i> Muaf</button>
+                        </div>
                     `;
                 }
             }
@@ -1721,9 +1859,231 @@
         }
     }
 
+    // Change Eşleşme Türü Logic
+    let activeTurRecordId = null;
+    let selectedNewTur = null;
+
+    const TUR_ICONS = {
+        'Fatura': 'fa-file-invoice',
+        'Fiş': 'fa-receipt',
+        'Mevduat İşlemleri': 'fa-university',
+        'Yazar Kasa': 'fa-cash-register',
+        'Transfer İşlemleri': 'fa-exchange-alt',
+        'Kart İşlemleri': 'fa-credit-card',
+        'Ödeme İşlemleri': 'fa-money-bill-wave',
+        'Pazarlama': 'fa-bullhorn',
+        'Satılan Malın Maliyeti': 'fa-boxes',
+        'Açılış Fişi': 'fa-folder-open',
+        'Personel Fişi': 'fa-users',
+        'KDV Tahakkuk': 'fa-percent',
+        'Diğer': 'fa-ellipsis-h'
+    };
+
+    async function loadServerTurler() {
+        try {
+            const res = await fetch('/api/v1/muavin-defteri-eslesme/turler');
+            if (res.ok) {
+                const data = await res.json();
+                if (data.turler && data.turler.length > 0) {
+                    const set = new Set(availableTurler);
+                    data.turler.forEach(t => {
+                        if (t && !set.has(t)) {
+                            availableTurler.push(t);
+                            set.add(t);
+                        }
+                    });
+                    renderTurOptions();
+                }
+            }
+        } catch (e) {
+            console.warn('Could not load server turler:', e);
+        }
+    }
+
+    function openChangeTurModal(recordId) {
+        const record = allRecords.find(r => r.ID === recordId);
+        if (!record) {
+            showToast('Kayıt bulunamadı.', 'error');
+            return;
+        }
+
+        activeTurRecordId = recordId;
+        selectedNewTur = record.Eslesme_Tur || 'Diğer';
+
+        const infoBox = document.getElementById('changeTurRecordInfo');
+        const tutarStr = record.Borc > 0 ? formatCurrency(record.Borc) + ' (Borç)' : (record.Alacak > 0 ? formatCurrency(record.Alacak) + ' (Alacak)' : '0,00 ₺');
+        const safeAciklama = (record.Aciklama || '-').replace(/"/g, '&quot;');
+        const currentTurBadge = record.Eslesme_Tur 
+            ? `<span class="badge badge-tur">${record.Eslesme_Tur}</span>` 
+            : `<span class="badge badge-muaf">Belirtilmemiş</span>`;
+
+        infoBox.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+                <div>
+                    <span style="font-weight: 700; color: #0f172a; font-size: 14px;">[#${record.ID}] Fiş No: ${record.Fis_No || '-'}</span>
+                    <span style="color: #64748b; font-size: 12px; margin-left: 8px;">Tarih: ${record.Tarih || '-'}</span>
+                </div>
+                <div style="text-align: right;">
+                    <span style="font-size: 13px; font-weight: 700; color: #0f172a;">${tutarStr}</span>
+                </div>
+            </div>
+            <div style="font-size: 12px; color: #475569; margin-bottom: 8px; line-height: 1.4; word-break: break-word;">
+                <b>Açıklama:</b> ${safeAciklama}
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; border-top: 1px solid #e2e8f0; padding-top: 6px;">
+                <span style="color: #64748b;">Mevcut Eşleşme Türü:</span>
+                ${currentTurBadge}
+            </div>
+        `;
+
+        document.getElementById('modalTurFilterInput').value = '';
+        renderModalTurGrid(record.Eslesme_Tur);
+        updateSelectedTurPreview();
+
+        document.getElementById('changeTurModal').style.display = 'flex';
+        setTimeout(() => {
+            const inp = document.getElementById('modalTurFilterInput');
+            if (inp) inp.focus();
+        }, 100);
+    }
+
+    function renderModalTurGrid(currentTur) {
+        const grid = document.getElementById('modalTurGrid');
+        if (!grid) return;
+
+        // Ensure availableTurler includes all current values
+        const allTypes = [...new Set([...availableTurler, ...DEFAULT_TURLER])];
+        if (currentTur && !allTypes.includes(currentTur)) {
+            allTypes.push(currentTur);
+        }
+
+        document.getElementById('modalTurCountBadge').textContent = `${allTypes.length} Seçenek`;
+
+        grid.innerHTML = allTypes.map(tur => {
+            const isCurrent = (tur === currentTur);
+            const isSelected = (tur === selectedNewTur);
+            const iconClass = TUR_ICONS[tur] || 'fa-tag';
+            const safeTur = tur.replace(/'/g, "\\'");
+
+            return `
+                <div class="tur-select-card ${isSelected ? 'selected' : ''}" 
+                     data-tur="${tur}"
+                     onclick="selectTurOption('${safeTur}')"
+                     ondblclick="selectAndSaveTurOption('${safeTur}')"
+                     title="${tur} (Çift tık: Hemen kaydet)">
+                    <i class="fas ${iconClass}" style="color: ${isSelected ? '#0284c7' : '#64748b'}; font-size: 13px; width: 16px; text-align: center;"></i>
+                    <span style="flex: 1; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${tur}</span>
+                    ${isCurrent ? '<span class="tur-current-tag">Mevcut</span>' : ''}
+                    <i class="fas fa-check-circle tur-card-check"></i>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function selectTurOption(tur) {
+        selectedNewTur = tur;
+        const cards = document.querySelectorAll('#modalTurGrid .tur-select-card');
+        cards.forEach(card => {
+            const cTur = card.getAttribute('data-tur');
+            const isSel = (cTur === tur);
+            card.classList.toggle('selected', isSel);
+            const icon = card.querySelector('i:first-child');
+            if (icon) {
+                icon.style.color = isSel ? '#0284c7' : '#64748b';
+            }
+        });
+        updateSelectedTurPreview();
+    }
+
+    async function selectAndSaveTurOption(tur) {
+        selectTurOption(tur);
+        await saveRecordTur();
+    }
+
+    function updateSelectedTurPreview() {
+        const nameSpan = document.getElementById('selectedTurName');
+        if (nameSpan) {
+            nameSpan.textContent = selectedNewTur || '-';
+        }
+    }
+
+    function filterModalTurOptions() {
+        const query = (document.getElementById('modalTurFilterInput').value || '').toLowerCase().trim();
+        const cards = document.querySelectorAll('#modalTurGrid .tur-select-card');
+        let visibleCount = 0;
+        cards.forEach(card => {
+            const turName = (card.getAttribute('data-tur') || '').toLowerCase();
+            const matches = !query || turName.includes(query);
+            card.style.display = matches ? 'flex' : 'none';
+            if (matches) visibleCount++;
+        });
+        document.getElementById('modalTurCountBadge').textContent = `${visibleCount} Seçenek`;
+    }
+
+    function closeChangeTurModal() {
+        document.getElementById('changeTurModal').style.display = 'none';
+        activeTurRecordId = null;
+        selectedNewTur = null;
+    }
+
+    async function saveRecordTur() {
+        if (!activeTurRecordId) {
+            showToast('Lütfen geçerli bir kayıt seçiniz.', 'error');
+            return;
+        }
+
+        if (!selectedNewTur) {
+            showToast('Lütfen bir Eşleşme Türü seçiniz.', 'warning');
+            return;
+        }
+
+        const btn = document.getElementById('saveTurConfirmBtn');
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Kaydediliyor...`;
+
+        try {
+            const res = await fetch('/api/v1/muavin-defteri-eslesme/update-tur', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    muavin_id: activeTurRecordId,
+                    eslesme_tur: selectedNewTur
+                })
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'Eşleşme türü güncellenemedi');
+            }
+
+            // Update in local records
+            const rec = allRecords.find(r => r.ID === activeTurRecordId);
+            if (rec) {
+                rec.Eslesme_Tur = selectedNewTur;
+            }
+
+            // Ensure selectedNewTur is in availableTurler
+            if (!availableTurler.includes(selectedNewTur)) {
+                availableTurler.push(selectedNewTur);
+            }
+
+            renderTurOptions();
+            applyLocalFilters();
+            closeChangeTurModal();
+            showToast(`Eşleşme Türü başarıyla "${selectedNewTur}" olarak güncellendi.`);
+        } catch (err) {
+            console.error(err);
+            showToast('Hata: ' + err.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fas fa-check"></i> Kaydet`;
+        }
+    }
+
     // Initialize Page
     document.addEventListener('DOMContentLoaded', () => {
         loadDonemler();
+        loadServerTurler();
     });
 </script>
 {% endblock %}

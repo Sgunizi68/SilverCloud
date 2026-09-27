@@ -7,7 +7,7 @@ Uses SQLAlchemy 2.0 style with pagination and filtering.
 from typing import Optional, List
 from datetime import date, datetime
 from decimal import Decimal
-from sqlalchemy import select, func
+from sqlalchemy import select, func, distinct
 from sqlalchemy.orm import Session
 from app.models import (
     EFatura, B2BEkstre, DigerHarcama, Odeme, OdemeReferans,
@@ -3667,6 +3667,50 @@ def unexempt_muavin_defteri(db: Session, muavin_id: int) -> bool:
 
     db.commit()
     return True
+
+
+def update_muavin_eslesme_tur(db: Session, muavin_id: int, eslesme_tur: Optional[str]) -> bool:
+    """Update Eslesme_Tur for a Muavin_Defteri record."""
+    stmt = select(MuavinDefteri).where(MuavinDefteri.ID == muavin_id)
+    rec = db.scalar(stmt)
+    if not rec:
+        return False
+
+    rec.Eslesme_Tur = eslesme_tur.strip() if eslesme_tur and eslesme_tur.strip() else None
+    db.commit()
+    return True
+
+
+def get_muavin_eslesme_turleri(db: Session) -> List[str]:
+    """Get all distinct Eslesme_Tur values from Muavin_Defteri merged with defaults."""
+    default_turler = [
+        "Mevduat İşlemleri",
+        "Yazar Kasa",
+        "Transfer İşlemleri",
+        "Fatura",
+        "Fiş",
+        "Kart İşlemleri",
+        "Ödeme İşlemleri",
+        "Pazarlama",
+        "Satılan Malın Maliyeti",
+        "Açılış Fişi",
+        "Personel Fişi",
+        "KDV Tahakkuk",
+        "Diğer"
+    ]
+    stmt = select(distinct(MuavinDefteri.Eslesme_Tur)).where(MuavinDefteri.Eslesme_Tur.isnot(None))
+    db_turler = db.execute(stmt).scalars().all()
+    turler_set = set()
+    result = []
+    for t in default_turler:
+        if t and t not in turler_set:
+            turler_set.add(t)
+            result.append(t)
+    for t in db_turler:
+        if t and t.strip() and t.strip() not in turler_set:
+            turler_set.add(t.strip())
+            result.append(t.strip())
+    return result
 
 
 def bulk_exempt_borc_positive(db: Session, donem: int, eslesme_tur: Optional[str] = None) -> dict:
