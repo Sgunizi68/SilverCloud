@@ -95,6 +95,135 @@
         border-color: #94a3b8;
     }
 
+    .btn-warning-soft {
+        background: #fef3c7;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+
+    .btn-warning-soft:hover {
+        background: #fde68a;
+        color: #78350f;
+    }
+
+    .btn-warning-solid {
+        background: #f59e0b;
+        color: white;
+        border: 1px solid #d97706;
+    }
+
+    .btn-warning-solid:hover {
+        background: #d97706;
+    }
+
+    .filter-card-top {
+        position: relative;
+        z-index: 100;
+    }
+
+    /* Multi-select dropdown for Eşleşme Türü */
+    .multi-select-container {
+        position: relative;
+        width: 100%;
+        z-index: 110;
+    }
+
+    .multi-select-trigger {
+        width: 100%;
+        height: 35px;
+        padding: 6px 10px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 13px;
+        background: white;
+        color: #1e293b;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        text-align: left;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        overflow: hidden;
+    }
+
+    .multi-select-trigger:focus,
+    .multi-select-trigger.active {
+        border-color: #0284c7;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1);
+    }
+
+    .multi-select-dropdown {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        min-width: 280px;
+        width: 100%;
+        max-width: 360px;
+        background: white;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        box-shadow: 0 14px 28px rgba(0, 0, 0, 0.18), 0 10px 10px rgba(0, 0, 0, 0.08);
+        z-index: 9999;
+        display: none;
+        padding: 8px;
+    }
+
+    .multi-select-dropdown.show {
+        display: block;
+    }
+
+    .multi-select-header {
+        padding-bottom: 6px;
+        margin-bottom: 6px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .multi-select-options {
+        max-height: 220px;
+        overflow-y: auto;
+    }
+
+    .multi-select-option {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 400;
+        text-transform: none;
+        letter-spacing: normal;
+        color: #334155;
+        transition: background-color 0.15s;
+        user-select: none;
+    }
+
+    .multi-select-option:hover {
+        background: #f1f5f9;
+    }
+
+    .multi-select-option input[type="checkbox"] {
+        cursor: pointer;
+        accent-color: #0284c7;
+        width: 14px;
+        height: 14px;
+    }
+
+    .tur-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: #fef3c7;
+        color: #92400e;
+        border: 1px solid #fde68a;
+        border-radius: 9999px;
+        padding: 3px 10px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
     .table-wrapper {
         overflow-x: auto;
         border-radius: 8px;
@@ -315,8 +444,8 @@
 
 {% block content %}
 <div class="eslesme-container">
-    <!-- Header -->
-    <div class="card-glass">
+    <!-- Header & Filters Card -->
+    <div class="card-glass filter-card-top" style="position: relative; z-index: 100;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
             <div>
                 <h2 style="margin: 0; font-size: 20px; color: #0f172a; font-weight: 700;">
@@ -327,6 +456,10 @@
                 </p>
             </div>
             <div style="display:flex; gap:8px; align-items:center;">
+                <button type="button" class="btn-template btn-warning-soft" id="bulkExemptTurHeaderBtn" onclick="confirmBulkExemptTur()"
+                        title="Seçilen Eşleşme Türlerindeki tüm kayıtları bu dönem için Muaf yapar.">
+                    <i class="fas fa-shield-alt"></i> Seçilen Türleri Muaf Yap
+                </button>
                 <button type="button" class="btn-template btn-outline" id="exemptReverseBtn" onclick="exemptReverseRecords()"
                         title="Eşleşen kayıt ile aynı Referans No'ya sahip ve toplam tutarı eşit olan ters alacak/borç kayıtlarını Muaf olarak işaretler.">
                     <i class="fas fa-random"></i> Ters Kayıtları Muaf Yap
@@ -350,13 +483,35 @@
                 </select>
             </div>
 
-            <div class="filter-group">
-                <label for="turSelect">Eşleşme Türü</label>
-                <select id="turSelect" class="form-control" onchange="applyLocalFilters()">
-                    <option value="">Tüm Türler</option>
-                    <option value="Fatura">Fatura</option>
-                    <option value="Fiş">Fiş</option>
-                </select>
+            <div class="filter-group" style="min-width: 260px; position: relative; z-index: 110;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                    <label style="margin: 0; font-size: 12px; font-weight: 600; color: #475569;">Eşleşme Türü</label>
+                    <span id="turSelectedBadge" style="font-size: 11px; color: #0284c7; font-weight: 600; cursor: pointer; display: none;" onclick="clearTurSelection(event)">Temizle</span>
+                </div>
+                <div style="display: flex; gap: 6px; align-items: center;">
+                    <div class="multi-select-container" id="turContainer">
+                        <button type="button" class="multi-select-trigger" id="turDropdownBtn" onclick="toggleTurDropdown(event)">
+                            <span id="turDropdownText" style="text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Tüm Türler</span>
+                            <i class="fas fa-chevron-down" style="font-size: 11px; color: #64748b; margin-left: 6px;"></i>
+                        </button>
+                        <div class="multi-select-dropdown" id="turDropdownMenu">
+                            <div class="multi-select-header">
+                                <input type="text" id="turSearchInput" class="form-control" placeholder="Tür ara..." style="font-size: 12px; padding: 4px 8px; margin-bottom: 6px;" oninput="filterTurList()">
+                                <div style="display: flex; justify-content: space-between; font-size: 11px;">
+                                    <a href="javascript:void(0)" onclick="selectAllTur()" style="color: #0284c7; text-decoration: none; font-weight: 600;">Tümünü Seç</a>
+                                    <a href="javascript:void(0)" onclick="clearTurSelection(event)" style="color: #64748b; text-decoration: none;">Temizle</a>
+                                </div>
+                            </div>
+                            <div class="multi-select-options" id="turOptionsList">
+                                <!-- Populated dynamically by renderTurOptions() -->
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-template btn-warning-solid" id="turMuafQuickBtn" onclick="confirmBulkExemptTur()"
+                            title="Seçilen Eşleşme Türlerindeki tüm kayıtları bu dönem için Muaf Yap" style="white-space: nowrap; height: 35px; padding: 0 12px; font-weight: 600; font-size: 12px;">
+                        <i class="fas fa-ban"></i> Muaf Yap
+                    </button>
+                </div>
             </div>
 
             <div class="filter-group">
@@ -554,6 +709,59 @@
         </div>
     </div>
 </div>
+
+<!-- Bulk Exempt by Eşleşme Türü Modal -->
+<div id="turExemptModal" class="modal-backdrop">
+    <div class="modal-content" style="max-width: 550px;">
+        <div class="modal-header" style="background: #fffbeb; border-bottom: 1px solid #fef3c7;">
+            <h3 style="margin: 0; font-size: 16px; color: #92400e; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-shield-alt" style="color: #f59e0b;"></i> Toplu Eşleşme Türü Muaflığı
+            </h3>
+            <button type="button" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #94a3b8;" onclick="closeTurExemptModal()">&times;</button>
+        </div>
+        <div class="modal-body" style="padding: 20px;">
+            <div style="margin-bottom: 14px; font-size: 13px; color: #334155;">
+                Aşağıdaki dönem ve eşleşme türlerine ait tüm kayıtlar <b>Muaf</b> olarak işaretlenecektir:
+            </div>
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px;">
+                    <span style="color: #64748b;">Seçili Dönem:</span>
+                    <span id="modalTurDonem" style="font-weight: 700; color: #0f172a;">-</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; font-size: 13px;">
+                    <span style="color: #64748b; white-space: nowrap;">Seçilen Türler:</span>
+                    <div id="modalTurChips" style="display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; max-width: 75%;"></div>
+                </div>
+                <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 8px 0;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 13px;">
+                    <span style="color: #64748b;">Etkilenecek (Muaf Olacak) Kayıt:</span>
+                    <span id="modalTurAffectedCount" style="font-weight: 700; color: #d97706;">0 adet</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; color: #94a3b8;">
+                    <span>Zaten Muaf Olan Kayıt:</span>
+                    <span id="modalTurAlreadyExemptCount">0 adet</span>
+                </div>
+            </div>
+            <div style="font-size: 12px; color: #475569; line-height: 1.5; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 10px; display: flex; gap: 8px;">
+                <i class="fas fa-info-circle" style="color: #16a34a; margin-top: 2px;"></i>
+                <div>
+                    Bu işlem sonucunda seçilen türlerdeki kayıtlar eşleşme gerektirmeyecek (<code>Eslesme_Gerekli = Hayır</code>) ve ilgili açık kaynak kayıtlar otomatik olarak kapatılacaktır.
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer" style="background: #fafafa; display: flex; justify-content: space-between; align-items: center;">
+            <button type="button" class="btn-template btn-outline" onclick="executeBulkUnexemptTur()" id="turUnexemptBtn" style="color: #64748b; font-size: 12px;" title="Bu türlerin muaflığını kaldırıp tekrar eşleşmeye açar">
+                <i class="fas fa-undo"></i> Muaflığı Geri Al
+            </button>
+            <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn-template btn-outline" onclick="closeTurExemptModal()">Vazgeç</button>
+                <button type="button" class="btn-template btn-warning-solid" id="turExemptConfirmBtn" onclick="executeBulkExemptTur()">
+                    <i class="fas fa-check"></i> Evet, Muaf Yap
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -563,6 +771,24 @@
     let currentCandidates = [];
     let activeMuavinId = null;
     let currentTab = 'muavin';
+
+    const DEFAULT_TURLER = [
+        'Mevduat İşlemleri',
+        'Yazar Kasa',
+        'Transfer İşlemleri',
+        'Fatura',
+        'Fiş',
+        'Kart İşlemleri',
+        'Ödeme İşlemleri',
+        'Pazarlama',
+        'Satılan Malın Maliyeti',
+        'Açılış Fişi',
+        'Personel Fişi',
+        'KDV Tahakkuk',
+        'Diğer'
+    ];
+    let availableTurler = [...DEFAULT_TURLER];
+    let selectedTurler = [];
 
     const formatCurrency = (val) => {
         if (val === null || val === undefined || isNaN(val)) return '0,00 ₺';
@@ -606,6 +832,141 @@
         }
     }
 
+    // Multi-Select UI Logic for Eşleşme Türü
+    function renderTurOptions() {
+        const list = document.getElementById('turOptionsList');
+        if (!list) return;
+
+        // Calculate count of records per type in allRecords
+        const counts = {};
+        allRecords.forEach(r => {
+            const t = r.Eslesme_Tur || 'Diğer';
+            counts[t] = (counts[t] || 0) + 1;
+        });
+
+        list.innerHTML = availableTurler.map(t => {
+            const isChecked = selectedTurler.includes(t);
+            const count = counts[t] || 0;
+            const countBadge = count > 0 
+                ? `<span style="margin-left: auto; font-size: 11px; background: #e2e8f0; color: #475569; padding: 1px 6px; border-radius: 9999px;">${count}</span>` 
+                : '';
+            return `
+                <label class="multi-select-option" data-tur="${t}">
+                    <input type="checkbox" value="${t}" ${isChecked ? 'checked' : ''} onchange="onTurCheckboxChange(this)">
+                    <span style="font-weight: ${isChecked ? '600' : '400'};">${t}</span>
+                    ${countBadge}
+                </label>
+            `;
+        }).join('');
+
+        updateTurTriggerText();
+    }
+
+    function updateTurTriggerText() {
+        const textSpan = document.getElementById('turDropdownText');
+        const badge = document.getElementById('turSelectedBadge');
+        if (!textSpan) return;
+
+        if (selectedTurler.length === 0) {
+            textSpan.textContent = 'Tüm Türler';
+            textSpan.style.color = '#1e293b';
+            textSpan.style.fontWeight = '400';
+            if (badge) badge.style.display = 'none';
+        } else if (selectedTurler.length === 1) {
+            textSpan.textContent = selectedTurler[0];
+            textSpan.style.color = '#0284c7';
+            textSpan.style.fontWeight = '600';
+            if (badge) {
+                badge.style.display = 'inline';
+                badge.textContent = `Temizle (1)`;
+            }
+        } else if (selectedTurler.length === 2) {
+            textSpan.textContent = selectedTurler.join(', ');
+            textSpan.style.color = '#0284c7';
+            textSpan.style.fontWeight = '600';
+            if (badge) {
+                badge.style.display = 'inline';
+                badge.textContent = `Temizle (2)`;
+            }
+        } else {
+            textSpan.textContent = `${selectedTurler.length} Tür Seçildi (${selectedTurler.slice(0, 2).join(', ')}...)`;
+            textSpan.style.color = '#0284c7';
+            textSpan.style.fontWeight = '600';
+            if (badge) {
+                badge.style.display = 'inline';
+                badge.textContent = `Temizle (${selectedTurler.length})`;
+            }
+        }
+    }
+
+    function onTurCheckboxChange(el) {
+        const val = el.value;
+        if (el.checked) {
+            if (!selectedTurler.includes(val)) selectedTurler.push(val);
+        } else {
+            selectedTurler = selectedTurler.filter(t => t !== val);
+        }
+        updateTurTriggerText();
+        applyLocalFilters();
+    }
+
+    function selectAllTur() {
+        const searchVal = (document.getElementById('turSearchInput').value || '').toLowerCase().trim();
+        const visibleOptions = availableTurler.filter(t => !searchVal || t.toLowerCase().includes(searchVal));
+        visibleOptions.forEach(t => {
+            if (!selectedTurler.includes(t)) selectedTurler.push(t);
+        });
+        renderTurOptions();
+        applyLocalFilters();
+    }
+
+    function clearTurSelection(e) {
+        if (e) e.stopPropagation();
+        selectedTurler = [];
+        renderTurOptions();
+        applyLocalFilters();
+    }
+
+    function toggleTurDropdown(e) {
+        if (e) e.stopPropagation();
+        const menu = document.getElementById('turDropdownMenu');
+        const btn = document.getElementById('turDropdownBtn');
+        const isOpen = menu.classList.contains('show');
+        if (isOpen) {
+            menu.classList.remove('show');
+            btn.classList.remove('active');
+        } else {
+            menu.classList.add('show');
+            btn.classList.add('active');
+            const searchInput = document.getElementById('turSearchInput');
+            if (searchInput) {
+                searchInput.value = '';
+                filterTurList();
+                setTimeout(() => searchInput.focus(), 50);
+            }
+        }
+    }
+
+    function filterTurList() {
+        const query = (document.getElementById('turSearchInput').value || '').toLowerCase().trim();
+        const items = document.querySelectorAll('#turOptionsList .multi-select-option');
+        items.forEach(item => {
+            const turName = item.getAttribute('data-tur').toLowerCase();
+            item.style.display = turName.includes(query) ? 'flex' : 'none';
+        });
+    }
+
+    // Close multi-select dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        const container = document.getElementById('turContainer');
+        if (container && !container.contains(e.target)) {
+            const menu = document.getElementById('turDropdownMenu');
+            const btn = document.getElementById('turDropdownBtn');
+            if (menu) menu.classList.remove('show');
+            if (btn) btn.classList.remove('active');
+        }
+    });
+
     // Load Muavin Records for selected Period
     async function loadRecords() {
         const donem = document.getElementById('donemSelect').value;
@@ -613,6 +974,7 @@
         if (!donem) {
             tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; padding: 30px; color: #64748b;">Lütfen yukarıdaki filtre alanından bir <b>Dönem</b> seçiniz.</td></tr>`;
             allRecords = [];
+            renderTurOptions();
             return;
         }
 
@@ -623,6 +985,17 @@
             if (!res.ok) throw new Error('Kayıtlar çekilemedi');
             const data = await res.json();
             allRecords = data.records || [];
+
+            // Dynamically discover any other types present in data
+            const existingSet = new Set(availableTurler);
+            allRecords.forEach(r => {
+                if (r.Eslesme_Tur && !existingSet.has(r.Eslesme_Tur)) {
+                    availableTurler.push(r.Eslesme_Tur);
+                    existingSet.add(r.Eslesme_Tur);
+                }
+            });
+
+            renderTurOptions();
             applyLocalFilters();
         } catch (err) {
             console.error(err);
@@ -644,12 +1017,16 @@
 
     // Apply local dropdown & text filters
     function applyLocalFilters() {
-        const tur = document.getElementById('turSelect').value;
         const status = document.getElementById('statusSelect').value;
         const search = document.getElementById('searchInput').value.toLowerCase().trim();
 
         let filtered = allRecords.filter(r => {
-            if (tur && r.Eslesme_Tur !== tur) return false;
+            if (selectedTurler.length > 0) {
+                const rTur = r.Eslesme_Tur || 'Diğer';
+                if (!selectedTurler.includes(r.Eslesme_Tur) && !(selectedTurler.includes('Diğer') && !r.Eslesme_Tur)) {
+                    return false;
+                }
+            }
             if (status === 'eslesdi' && (!r.Eslendi || !r.Eslesme_Gerekli)) return false;
             if (status === 'eslesmedi' && (r.Eslendi || !r.Eslesme_Gerekli)) return false;
             if (status === 'muaf' && r.Eslesme_Gerekli) return false;
@@ -700,12 +1077,13 @@
     }
 
     function applyEslesmeyenlerFilters() {
-        const tur = document.getElementById('turSelect').value;
         const status = document.getElementById('statusSelect').value;
         const search = document.getElementById('searchInput').value.toLowerCase().trim();
 
         let filtered = allEslesmeyenler.filter(r => {
-            if (tur && r.Eslesme_Tur !== tur) return false;
+            if (selectedTurler.length > 0) {
+                if (!selectedTurler.includes(r.Eslesme_Tur)) return false;
+            }
             if (status === 'eslesdi' && r.Durum !== 'Kapalı') return false;
             if (status === 'eslesmedi' && r.Durum !== 'Açık') return false;
 
@@ -907,8 +1285,12 @@
             return;
         }
 
-        const tur = document.getElementById('turSelect').value;
-        const turLabel = tur ? `"${tur}" türündeki` : 'tüm';
+        let turLabel = 'tüm';
+        if (selectedTurler.length === 1) {
+            turLabel = `"${selectedTurler[0]}" türündeki`;
+        } else if (selectedTurler.length > 1) {
+            turLabel = `seçili (${selectedTurler.join(', ')}) türlerdeki`;
+        }
         const msg = `Seçili döneme ait, ${turLabel} Borç > 0 olan kayıtlar Muaf olarak işaretlenecektir. Onaylıyor musunuz?`;
 
         if (!confirm(msg)) {
@@ -921,8 +1303,8 @@
 
         try {
             const payload = { donem: parseInt(donem) };
-            if (tur) {
-                payload.eslesme_tur = tur;
+            if (selectedTurler.length === 1) {
+                payload.eslesme_tur = selectedTurler[0];
             }
 
             const res = await fetch('/api/v1/muavin-defteri-eslesme/bulk-exempt-fatura-borc', {
@@ -937,7 +1319,7 @@
             }
 
             const data = await res.json();
-            showToast(`${data.affected || 0} adet ${tur ? tur + ' ' : ''}(Borç > 0) kaydı başarıyla Muaf tutuldu.`);
+            showToast(`${data.affected || 0} adet ${selectedTurler.length === 1 ? selectedTurler[0] + ' ' : ''}(Borç > 0) kaydı başarıyla Muaf tutuldu.`);
             await loadRecords();
         } catch (err) {
             console.error(err);
@@ -989,10 +1371,14 @@
     }
 
     function updateExemptBtnLabel() {
-        const tur = document.getElementById('turSelect').value;
         const btn = document.getElementById('bulkExemptBorcBtn');
         if (btn) {
-            const labelText = tur ? `Borç &gt; 0 (${tur}) Muaf Yap` : `Borç &gt; 0 Kayıtları Muaf Yap`;
+            let labelText = 'Borç &gt; 0 Kayıtları Muaf Yap';
+            if (selectedTurler.length === 1) {
+                labelText = `Borç &gt; 0 (${selectedTurler[0]}) Muaf Yap`;
+            } else if (selectedTurler.length > 1) {
+                labelText = `Borç &gt; 0 (${selectedTurler.length} Tür) Muaf Yap`;
+            }
             btn.innerHTML = `<i class="fas fa-ban"></i> <span id="bulkExemptBtnLabel">${labelText}</span>`;
         }
     }
@@ -1012,7 +1398,7 @@
 
         // Default filters from main screen dropdowns
         const currentDonem = mainDonemSelect.value;
-        const currentTur = document.getElementById('turSelect').value;
+        const currentTur = selectedTurler.length === 1 ? selectedTurler[0] : "";
 
         modalDonemSelect.value = currentDonem || "";
         document.getElementById('modalTurSelect').value = currentTur || "";
@@ -1199,6 +1585,139 @@
         } catch (err) {
             console.error(err);
             showToast('Hata: ' + err.message, 'error');
+        }
+    }
+
+    // Bulk Exempt by Eşleşme Türü
+    function confirmBulkExemptTur() {
+        const donemSelect = document.getElementById('donemSelect');
+        const donem = donemSelect.value;
+        if (!donem) {
+            showToast('Lütfen önce bir Dönem seçiniz.', 'error');
+            return;
+        }
+
+        if (selectedTurler.length === 0) {
+            showToast('Lütfen muaf yapmak istediğiniz en az bir "Eşleşme Türü" seçiniz.', 'warning');
+            const menu = document.getElementById('turDropdownMenu');
+            if (menu && !menu.classList.contains('show')) {
+                toggleTurDropdown();
+            }
+            return;
+        }
+
+        const donemFormatted = `${donem.substring(0, 4)} / ${donem.substring(4)}`;
+        document.getElementById('modalTurDonem').textContent = `${donemFormatted} (${donem})`;
+
+        // Populate chips
+        const chipsContainer = document.getElementById('modalTurChips');
+        chipsContainer.innerHTML = selectedTurler.map(t => `<span class="tur-chip">${t}</span>`).join('');
+
+        let totalMatching = 0;
+        let activeMatching = 0;
+        let alreadyExempt = 0;
+
+        allRecords.forEach(r => {
+            const matches = selectedTurler.includes(r.Eslesme_Tur) || (selectedTurler.includes('Diğer') && !r.Eslesme_Tur);
+            if (matches) {
+                totalMatching++;
+                if (r.Eslesme_Gerekli) {
+                    activeMatching++;
+                } else {
+                    alreadyExempt++;
+                }
+            }
+        });
+
+        document.getElementById('modalTurAffectedCount').textContent = `${activeMatching} adet (${totalMatching} kayıttan)`;
+        document.getElementById('modalTurAlreadyExemptCount').textContent = `${alreadyExempt} adet`;
+
+        document.getElementById('turExemptModal').style.display = 'flex';
+    }
+
+    function closeTurExemptModal() {
+        document.getElementById('turExemptModal').style.display = 'none';
+    }
+
+    async function executeBulkExemptTur() {
+        const donem = document.getElementById('donemSelect').value;
+        if (!donem || selectedTurler.length === 0) return;
+
+        const btn = document.getElementById('turExemptConfirmBtn');
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> İşleniyor...`;
+
+        try {
+            const res = await fetch('/api/v1/muavin-defteri-eslesme/bulk-exempt-by-tur', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    donem: parseInt(donem),
+                    eslesme_turleri: selectedTurler
+                })
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'İşlem başarısız');
+            }
+
+            const data = await res.json();
+            showToast(`${data.affected || 0} adet kayıt başarıyla Muaf tutuldu.`);
+            closeTurExemptModal();
+            await loadRecords();
+            if (currentTab === 'eslesmeyenler') {
+                await loadEslesmeyenler();
+            }
+        } catch (err) {
+            console.error(err);
+            showToast('Hata: ' + err.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fas fa-check"></i> Evet, Muaf Yap`;
+        }
+    }
+
+    async function executeBulkUnexemptTur() {
+        const donem = document.getElementById('donemSelect').value;
+        if (!donem || selectedTurler.length === 0) return;
+
+        if (!confirm('Seçilen türlerdeki kayıtların muaflığı kaldırılıp tekrar eşleşme gerektirir duruma getirilecektir. Onaylıyor musunuz?')) {
+            return;
+        }
+
+        const btn = document.getElementById('turUnexemptBtn');
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> İşleniyor...`;
+
+        try {
+            const res = await fetch('/api/v1/muavin-defteri-eslesme/bulk-unexempt-by-tur', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    donem: parseInt(donem),
+                    eslesme_turleri: selectedTurler
+                })
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || 'İşlem başarısız');
+            }
+
+            const data = await res.json();
+            showToast(`${data.affected || 0} adet kaydın muaflığı kaldırıldı.`);
+            closeTurExemptModal();
+            await loadRecords();
+            if (currentTab === 'eslesmeyenler') {
+                await loadEslesmeyenler();
+            }
+        } catch (err) {
+            console.error(err);
+            showToast('Hata: ' + err.message, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fas fa-undo"></i> Muaflığı Geri Al`;
         }
     }
 

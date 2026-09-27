@@ -3727,6 +3727,135 @@ def bulk_exempt_borc_positive(db: Session, donem: int, eslesme_tur: Optional[str
     return {"affected": affected}
 
 
+def bulk_exempt_by_tur(db: Session, donem: int, eslesme_turleri: List[str]) -> dict:
+    """
+    Bulk-exempt all Muavin_Defteri records for the given period (YYYYMM)
+    where Eslesme_Tur is in eslesme_turleri.
+
+    Sets Eslesme_Gerekli = False on all matching records.
+    Closes any matching open Muavin_Eslesmeyenler rows.
+
+    Returns: {"affected": <int>, "types": <list>}
+    """
+    import calendar
+    from sqlalchemy import or_
+
+    donem_str = str(donem)
+    if len(donem_str) == 6:
+        year = int(donem_str[:4])
+        month = int(donem_str[4:])
+    else:
+        year = 2000 + int(donem_str[:2])
+        month = int(donem_str[2:])
+
+    start_date = date(year, month, 1)
+    last_day = calendar.monthrange(year, month)[1]
+    end_date = date(year, month, last_day)
+
+    if not eslesme_turleri:
+        return {"affected": 0, "types": []}
+
+    types_clean = [t.strip() for t in eslesme_turleri if t and t.strip()]
+    if not types_clean:
+        return {"affected": 0, "types": []}
+
+    conditions = [MuavinDefteri.Eslesme_Tur.in_(types_clean)]
+    if "Diğer" in types_clean:
+        conditions.append(MuavinDefteri.Eslesme_Tur.is_(None))
+        conditions.append(MuavinDefteri.Eslesme_Tur == "")
+
+    stmt = select(MuavinDefteri).where(
+        MuavinDefteri.Tarih >= start_date,
+        MuavinDefteri.Tarih <= end_date,
+        or_(*conditions)
+    )
+
+    recs = db.scalars(stmt).all()
+    affected = 0
+    ref_nos = set()
+
+    for rec in recs:
+        if rec.Eslesme_Gerekli:
+            rec.Eslesme_Gerekli = False
+            affected += 1
+            if rec.Referans_No:
+                ref_nos.add(rec.Referans_No[:30])
+
+    if ref_nos:
+        stmt_es = select(MuavinEslesmeyenler).where(
+            MuavinEslesmeyenler.Referans_No.in_(list(ref_nos)),
+            MuavinEslesmeyenler.Durum == 'Açık'
+        )
+        for es_rec in db.scalars(stmt_es).all():
+            es_rec.Durum = 'Kapalı'
+
+    db.commit()
+    return {"affected": affected, "types": types_clean}
+
+
+def bulk_unexempt_by_tur(db: Session, donem: int, eslesme_turleri: List[str]) -> dict:
+    """
+    Reverse bulk-exempt for the given period and list of eslesme_turleri.
+    Sets Eslesme_Gerekli = True and opens corresponding Muavin_Eslesmeyenler rows.
+
+    Returns: {"affected": <int>, "types": <list>}
+    """
+    import calendar
+    from sqlalchemy import or_
+
+    donem_str = str(donem)
+    if len(donem_str) == 6:
+        year = int(donem_str[:4])
+        month = int(donem_str[4:])
+    else:
+        year = 2000 + int(donem_str[:2])
+        month = int(donem_str[2:])
+
+    start_date = date(year, month, 1)
+    last_day = calendar.monthrange(year, month)[1]
+    end_date = date(year, month, last_day)
+
+    if not eslesme_turleri:
+        return {"affected": 0, "types": []}
+
+    types_clean = [t.strip() for t in eslesme_turleri if t and t.strip()]
+    if not types_clean:
+        return {"affected": 0, "types": []}
+
+    conditions = [MuavinDefteri.Eslesme_Tur.in_(types_clean)]
+    if "Diğer" in types_clean:
+        conditions.append(MuavinDefteri.Eslesme_Tur.is_(None))
+        conditions.append(MuavinDefteri.Eslesme_Tur == "")
+
+    stmt = select(MuavinDefteri).where(
+        MuavinDefteri.Tarih >= start_date,
+        MuavinDefteri.Tarih <= end_date,
+        or_(*conditions)
+    )
+
+    recs = db.scalars(stmt).all()
+    affected = 0
+    ref_nos = set()
+
+    for rec in recs:
+        if not rec.Eslesme_Gerekli:
+            rec.Eslesme_Gerekli = True
+            affected += 1
+            if rec.Referans_No:
+                ref_nos.add(rec.Referans_No[:30])
+
+    if ref_nos:
+        stmt_es = select(MuavinEslesmeyenler).where(
+            MuavinEslesmeyenler.Referans_No.in_(list(ref_nos)),
+            MuavinEslesmeyenler.Durum == 'Kapalı'
+        )
+        for es_rec in db.scalars(stmt_es).all():
+            es_rec.Durum = 'Açık'
+
+    db.commit()
+    return {"affected": affected, "types": types_clean}
+
+
 def exempt_reverse_matching_records(db: Session, donem: int) -> dict:
     """
     Find matched records in Muavin_Defteri for a period, group other records with the same Referans_No.

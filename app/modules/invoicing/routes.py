@@ -701,6 +701,60 @@ def bulk_exempt_fatura_borc_api():
         return jsonify({"error": str(e)}), 500
 
 
+@invoicing_bp.route("/muavin-defteri-eslesme/bulk-exempt-by-tur", methods=["POST"])
+@auth_required
+def bulk_exempt_by_tur_api():
+    """Bulk-exempt records for the given period and list of eslesme_turleri."""
+    try:
+        data = request.get_json() or {}
+        donem = data.get("donem")
+        if not donem:
+            return jsonify({"error": "donem is required"}), 400
+
+        eslesme_turleri = data.get("eslesme_turleri", [])
+        if not eslesme_turleri or not isinstance(eslesme_turleri, list):
+            return jsonify({"error": "En az bir eşleşme türü seçilmelidir."}), 400
+
+        db = get_db_session()
+        if not _check_eslesme_permission(db, request.user):
+            db.close()
+            return jsonify({"error": "Yetkiniz yok."}), 403
+
+        result = queries.bulk_exempt_by_tur(db, int(donem), eslesme_turleri)
+        db.close()
+        return jsonify(result), 200
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
+@invoicing_bp.route("/muavin-defteri-eslesme/bulk-unexempt-by-tur", methods=["POST"])
+@auth_required
+def bulk_unexempt_by_tur_api():
+    """Reverse bulk-exempt records for the given period and list of eslesme_turleri."""
+    try:
+        data = request.get_json() or {}
+        donem = data.get("donem")
+        if not donem:
+            return jsonify({"error": "donem is required"}), 400
+
+        eslesme_turleri = data.get("eslesme_turleri", [])
+        if not eslesme_turleri or not isinstance(eslesme_turleri, list):
+            return jsonify({"error": "En az bir eşleşme türü seçilmelidir."}), 400
+
+        db = get_db_session()
+        if not _check_eslesme_permission(db, request.user):
+            db.close()
+            return jsonify({"error": "Yetkiniz yok."}), 403
+
+        result = queries.bulk_unexempt_by_tur(db, int(donem), eslesme_turleri)
+        db.close()
+        return jsonify(result), 200
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
 @invoicing_bp.route("/muavin-defteri-eslesme/exempt-reverse", methods=["POST"])
 @auth_required
 def exempt_reverse_records_api():
