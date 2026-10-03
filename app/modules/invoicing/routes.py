@@ -492,64 +492,65 @@ def _check_eslesme_permission(db, user):
 @auth_required
 def get_muavin_eslesme_donemler_api():
     """Get available periods for matching."""
+    db = get_db_session()
     try:
-        db = get_db_session()
         if not _check_eslesme_permission(db, request.user):
-            db.close()
             return jsonify({"error": "Yetkiniz yok."}), 403
 
         donemler = queries.get_muavin_eslesme_donemleri(db)
-        db.close()
         return jsonify({"donemler": donemler}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
 
 
 @invoicing_bp.route("/muavin-defteri-eslesme/records", methods=["GET"])
 @auth_required
 def get_muavin_eslesme_records_api():
     """Get Muavin_Defteri records for a selected period."""
+    donem = request.args.get("donem", type=int)
+    if not donem:
+        return jsonify({"error": "donem parameter is required"}), 400
+
+    eslesme_tur = request.args.get("eslesme_tur", type=str)
+    status = request.args.get("status", type=str)
+
+    db = get_db_session()
     try:
-        donem = request.args.get("donem", type=int)
-        if not donem:
-            return jsonify({"error": "donem parameter is required"}), 400
-
-        eslesme_tur = request.args.get("eslesme_tur", type=str)
-        status = request.args.get("status", type=str)
-
-        db = get_db_session()
         if not _check_eslesme_permission(db, request.user):
-            db.close()
             return jsonify({"error": "Yetkiniz yok."}), 403
 
         records = queries.get_muavin_eslesme_records(db, donem, eslesme_tur, status)
-        db.close()
         return jsonify({"records": records}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
 
 
 @invoicing_bp.route("/muavin-defteri-eslesme/auto-match", methods=["POST"])
 @auth_required
 def auto_match_muavin_defteri_api():
     """Trigger automated matching process for a selected period."""
-    try:
-        data = request.get_json() or {}
-        donem = data.get("donem")
-        if not donem:
-            return jsonify({"error": "donem is required"}), 400
+    data = request.get_json() or {}
+    donem = data.get("donem")
+    if not donem:
+        return jsonify({"error": "donem is required"}), 400
 
-        db = get_db_session()
+    db = get_db_session()
+    try:
         if not _check_eslesme_permission(db, request.user):
-            db.close()
             return jsonify({"error": "Yetkiniz yok."}), 403
 
         result = queries.auto_match_muavin_defteri(db, int(donem))
-        db.close()
         return jsonify(result), 200
     except Exception as e:
+        db.rollback()
         import traceback; traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
 
 
 @invoicing_bp.route("/muavin-defteri-eslesme/candidates", methods=["GET"])
@@ -722,102 +723,106 @@ def get_muavin_eslesme_turleri_api():
 @auth_required
 def bulk_exempt_fatura_borc_api():
     """Bulk-exempt records with Borc > 0 for the given period and optional eslesme_tur."""
+    data = request.get_json() or {}
+    donem = data.get("donem")
+    if not donem:
+        return jsonify({"error": "donem is required"}), 400
+
+    eslesme_tur = data.get("eslesme_tur")
+
+    db = get_db_session()
     try:
-        data = request.get_json() or {}
-        donem = data.get("donem")
-        if not donem:
-            return jsonify({"error": "donem is required"}), 400
-
-        eslesme_tur = data.get("eslesme_tur")
-
-        db = get_db_session()
         if not _check_eslesme_permission(db, request.user):
-            db.close()
             return jsonify({"error": "Yetkiniz yok."}), 403
 
         result = queries.bulk_exempt_borc_positive(db, int(donem), eslesme_tur)
-        db.close()
         return jsonify(result), 200
     except Exception as e:
+        db.rollback()
         import traceback; traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
 
 
 @invoicing_bp.route("/muavin-defteri-eslesme/bulk-exempt-by-tur", methods=["POST"])
 @auth_required
 def bulk_exempt_by_tur_api():
     """Bulk-exempt records for the given period and list of eslesme_turleri."""
+    data = request.get_json() or {}
+    donem = data.get("donem")
+    if not donem:
+        return jsonify({"error": "donem is required"}), 400
+
+    eslesme_turleri = data.get("eslesme_turleri", [])
+    if not eslesme_turleri or not isinstance(eslesme_turleri, list):
+        return jsonify({"error": "En az bir eşleşme türü seçilmelidir."}), 400
+
+    db = get_db_session()
     try:
-        data = request.get_json() or {}
-        donem = data.get("donem")
-        if not donem:
-            return jsonify({"error": "donem is required"}), 400
-
-        eslesme_turleri = data.get("eslesme_turleri", [])
-        if not eslesme_turleri or not isinstance(eslesme_turleri, list):
-            return jsonify({"error": "En az bir eşleşme türü seçilmelidir."}), 400
-
-        db = get_db_session()
         if not _check_eslesme_permission(db, request.user):
-            db.close()
             return jsonify({"error": "Yetkiniz yok."}), 403
 
         result = queries.bulk_exempt_by_tur(db, int(donem), eslesme_turleri)
-        db.close()
         return jsonify(result), 200
     except Exception as e:
+        db.rollback()
         import traceback; traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
 
 
 @invoicing_bp.route("/muavin-defteri-eslesme/bulk-unexempt-by-tur", methods=["POST"])
 @auth_required
 def bulk_unexempt_by_tur_api():
     """Reverse bulk-exempt records for the given period and list of eslesme_turleri."""
+    data = request.get_json() or {}
+    donem = data.get("donem")
+    if not donem:
+        return jsonify({"error": "donem is required"}), 400
+
+    eslesme_turleri = data.get("eslesme_turleri", [])
+    if not eslesme_turleri or not isinstance(eslesme_turleri, list):
+        return jsonify({"error": "En az bir eşleşme türü seçilmelidir."}), 400
+
+    db = get_db_session()
     try:
-        data = request.get_json() or {}
-        donem = data.get("donem")
-        if not donem:
-            return jsonify({"error": "donem is required"}), 400
-
-        eslesme_turleri = data.get("eslesme_turleri", [])
-        if not eslesme_turleri or not isinstance(eslesme_turleri, list):
-            return jsonify({"error": "En az bir eşleşme türü seçilmelidir."}), 400
-
-        db = get_db_session()
         if not _check_eslesme_permission(db, request.user):
-            db.close()
             return jsonify({"error": "Yetkiniz yok."}), 403
 
         result = queries.bulk_unexempt_by_tur(db, int(donem), eslesme_turleri)
-        db.close()
         return jsonify(result), 200
     except Exception as e:
+        db.rollback()
         import traceback; traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
 
 
 @invoicing_bp.route("/muavin-defteri-eslesme/exempt-reverse", methods=["POST"])
 @auth_required
 def exempt_reverse_records_api():
     """Bulk-exempt reverse/opposite entries for matched records with matching total."""
-    try:
-        data = request.get_json() or {}
-        donem = data.get("donem")
-        if not donem:
-            return jsonify({"error": "donem is required"}), 400
+    data = request.get_json() or {}
+    donem = data.get("donem")
+    if not donem:
+        return jsonify({"error": "donem is required"}), 400
 
-        db = get_db_session()
+    db = get_db_session()
+    try:
         if not _check_eslesme_permission(db, request.user):
-            db.close()
             return jsonify({"error": "Yetkiniz yok."}), 403
 
         result = queries.exempt_reverse_matching_records(db, int(donem))
-        db.close()
         return jsonify(result), 200
     except Exception as e:
+        db.rollback()
         import traceback; traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
 
 
 

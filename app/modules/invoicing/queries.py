@@ -7,7 +7,8 @@ Uses SQLAlchemy 2.0 style with pagination and filtering.
 from typing import Optional, List
 from datetime import date, datetime
 from decimal import Decimal
-from sqlalchemy import select, func, distinct, and_, or_
+from collections import defaultdict
+from sqlalchemy import select, func, distinct, and_, or_, update
 from sqlalchemy.orm import Session
 from app.models import (
     EFatura, B2BEkstre, DigerHarcama, Odeme, OdemeReferans,
@@ -3281,9 +3282,9 @@ def auto_match_muavin_defteri(db: Session, donem: int) -> dict:
     """
     Automated matching process for a selected period.
     Matches Eslesme_Tur = 'Fatura' with e_Fatura and 'Fiş' with Diger_Harcama.
+    Optimized with batch pre-fetching and in-memory indexing for remote/slow databases.
     """
     import calendar
-    from sqlalchemy import or_
     donem_str = str(donem)
     if len(donem_str) == 6:
         year = int(donem_str[:4])
@@ -3305,6 +3306,22 @@ def auto_match_muavin_defteri(db: Session, donem: int) -> dict:
     )
     muavin_recs = db.scalars(stmt_muavin).all()
 
+    # 2. Fetch e_Fatura candidates for period (excluding 'İptal Fatura', 'Bilgi', and split sub-invoices)
+    stmt_ef = select(EFatura).outerjoin(Kategori, EFatura.Kategori_ID == Kategori.Kategori_ID).where(
+        EFatura.Donem == yymm_donem,
+        or_(Kategori.Kategori_Adi.is_(None), Kategori.Kategori_Adi.notin_(('İptal Fatura', 'Bilgi')))
+    )
+    ef_candidates_raw = db.scalars(stmt_ef).all()
+    ef_no_to_id = {ef.Fatura_Numarasi.strip(): ef.Fatura_ID for ef in ef_candidates_raw if ef.Fatura_Numarasi}
+
+    # 3. Fetch Diger_Harcama candidates for period (excluding 'Harcama e-Fatura')
+    stmt_dh = select(DigerHarcama).outerjoin(Kategori, DigerHarcama.Kategori_ID == Kategori.Kategori_ID).where(
+        DigerHarcama.Donem == yymm_donem,
+        or_(Kategori.Kategori_Adi.is_(None), Kategori.Kategori_Adi != 'Harcama e-Fatura')
+    )
+    dh_candidates_raw = db.scalars(stmt_dh).all()
+    dh_no_to_id = {dh.Belge_Numarasi.strip(): dh.Harcama_ID for dh in dh_candidates_raw if dh.Belge_Numarasi}
+
     total_count = len(muavin_recs)
     already_matched_count = 0
     exempt_count = 0
@@ -3323,21 +3340,13 @@ def auto_match_muavin_defteri(db: Session, donem: int) -> dict:
             continue
         if r.Eslendi:
             already_matched_count += 1
-            # Reserve existing references
+            # Reserve existing references via in-memory lookup (avoids N queries)
             if r.Referans_Tur == 'Fatura' and r.Referans_No:
-                stmt_existing_ef = select(EFatura.Fatura_ID).where(
-                    EFatura.Fatura_Numarasi == r.Referans_No,
-                    EFatura.Donem == yymm_donem
-                )
-                ef_id = db.scalar(stmt_existing_ef)
+                ef_id = ef_no_to_id.get(r.Referans_No.strip())
                 if ef_id:
                     used_efatura_ids.add(ef_id)
             elif r.Referans_Tur == 'Fiş' and r.Referans_No:
-                stmt_existing_dh = select(DigerHarcama.Harcama_ID).where(
-                    DigerHarcama.Belge_Numarasi == r.Referans_No,
-                    DigerHarcama.Donem == yymm_donem
-                )
-                dh_id = db.scalar(stmt_existing_dh)
+                dh_id = dh_no_to_id.get(r.Referans_No.strip())
                 if dh_id:
                     used_diger_harcama_ids.add(dh_id)
             continue
@@ -3346,20 +3355,12 @@ def auto_match_muavin_defteri(db: Session, donem: int) -> dict:
             continue
         to_match.append(r)
 
-    # 2. Fetch e_Fatura candidates for period (excluding 'İptal Fatura', 'Bilgi', and split sub-invoices)
-    stmt_ef = select(EFatura).outerjoin(Kategori, EFatura.Kategori_ID == Kategori.Kategori_ID).where(
-        EFatura.Donem == yymm_donem,
-        or_(Kategori.Kategori_Adi.is_(None), Kategori.Kategori_Adi.notin_(('İptal Fatura', 'Bilgi')))
-    )
-    ef_candidates_raw = db.scalars(stmt_ef).all()
-
     # Exclude split sub-invoices (child invoices where Fatura_Numarasi contains dash suffix of a parent invoice)
     parent_numbers = {ef.Fatura_Numarasi for ef in ef_candidates_raw if ef.Kategori_ID == 88}
     ef_candidates = []
     for ef in ef_candidates_raw:
         if ef.Fatura_ID in used_efatura_ids:
             continue
-        # Check if ef is a split child
         is_child = False
         if '-' in ef.Fatura_Numarasi:
             prefix = ef.Fatura_Numarasi.rsplit('-', 1)[0]
@@ -3368,13 +3369,18 @@ def auto_match_muavin_defteri(db: Session, donem: int) -> dict:
         if not is_child:
             ef_candidates.append(ef)
 
-    # 3. Fetch Diger_Harcama candidates for period (excluding 'Harcama e-Fatura')
-    stmt_dh = select(DigerHarcama).outerjoin(Kategori, DigerHarcama.Kategori_ID == Kategori.Kategori_ID).where(
-        DigerHarcama.Donem == yymm_donem,
-        or_(Kategori.Kategori_Adi.is_(None), Kategori.Kategori_Adi != 'Harcama e-Fatura')
-    )
-    dh_candidates_raw = db.scalars(stmt_dh).all()
     dh_candidates = [dh for dh in dh_candidates_raw if dh.Harcama_ID not in used_diger_harcama_ids]
+
+    # Index candidates in memory for O(1) matching
+    ef_by_num = defaultdict(list)
+    for ef in ef_candidates:
+        if ef.Fatura_Numarasi:
+            ef_by_num[ef.Fatura_Numarasi.strip()].append(ef)
+
+    dh_by_num = defaultdict(list)
+    for dh in dh_candidates:
+        if dh.Belge_Numarasi:
+            dh_by_num[dh.Belge_Numarasi.strip()].append(dh)
 
     # 4. Perform Matching
     for rec in to_match:
@@ -3387,12 +3393,12 @@ def auto_match_muavin_defteri(db: Session, donem: int) -> dict:
                 target_tutar = Decimal(str(rec.Borc)) if is_giden else Decimal(str(rec.Alacak))
 
                 matches = []
-                for ef in ef_candidates:
+                cands = ef_by_num.get(ref_no_clean, [])
+                for ef in cands:
                     if ef.Fatura_ID in used_efatura_ids:
                         continue
-                    if ef.Fatura_Numarasi.strip() == ref_no_clean:
-                        if bool(ef.Giden_Fatura) == is_giden and Decimal(str(ef.Tutar)) == target_tutar:
-                            matches.append(ef)
+                    if bool(ef.Giden_Fatura) == is_giden and Decimal(str(ef.Tutar)) == target_tutar:
+                        matches.append(ef)
 
                 if len(matches) == 1:
                     ef_match = matches[0]
@@ -3409,11 +3415,11 @@ def auto_match_muavin_defteri(db: Session, donem: int) -> dict:
             elif rec.Eslesme_Tur == 'Fiş':
                 target_tutar = Decimal(str(rec.Borc)) if (rec.Borc or Decimal(0)) > Decimal(0) else Decimal(str(rec.Alacak))
                 matches = []
-                for dh in dh_candidates:
+                cands = dh_by_num.get(ref_no_clean, [])
+                for dh in cands:
                     if dh.Harcama_ID in used_diger_harcama_ids:
                         continue
-                    dh_ref = (dh.Belge_Numarasi or "").strip()
-                    if dh_ref and dh_ref == ref_no_clean and Decimal(str(dh.Tutar)) == target_tutar:
+                    if Decimal(str(dh.Tutar)) == target_tutar:
                         if dh.Belge_Tarihi == rec.Tarih or dh.Belge_Tarihi == rec.Referans_Tarih:
                             matches.append(dh)
 
@@ -3437,17 +3443,22 @@ def auto_match_muavin_defteri(db: Session, donem: int) -> dict:
             print(f"Error auto-matching record {rec.ID}: {e}")
 
     # 5. Populate Muavin_Eslesmeyenler with source records (e_Fatura & Diger_Harcama) NOT matched in Muavin_Defteri
+    # Pre-fetch existing reference numbers in 1 query to avoid N queries
+    existing_es_refs = set(
+        db.scalars(
+            select(MuavinEslesmeyenler.Referans_No)
+            .where(MuavinEslesmeyenler.Referans_No.is_not(None))
+        ).all()
+    )
+    new_es_list = []
+
     # Unmatched e_Fatura
     for ef in ef_candidates:
         if ef.Fatura_ID not in used_efatura_ids:
             unmatched_count += 1
             ref_no_val = (ef.Fatura_Numarasi or "")[:30]
-            stmt_es_check = select(MuavinEslesmeyenler).where(
-                MuavinEslesmeyenler.Eslesme_Tur == 'Fatura',
-                MuavinEslesmeyenler.Referans_No == ref_no_val
-            )
-            existing_es = db.scalar(stmt_es_check)
-            if not existing_es:
+            if ref_no_val and ref_no_val not in existing_es_refs:
+                existing_es_refs.add(ref_no_val)
                 new_es = MuavinEslesmeyenler(
                     Eslesme_Tur='Fatura',
                     Referans_No=ref_no_val,
@@ -3457,19 +3468,15 @@ def auto_match_muavin_defteri(db: Session, donem: int) -> dict:
                     Aciklama=(ef.Alici_Unvani or "")[:50],
                     Kayit_Tarih=datetime.now()
                 )
-                db.add(new_es)
+                new_es_list.append(new_es)
 
     # Unmatched Diger_Harcama
     for dh in dh_candidates:
         if dh.Harcama_ID not in used_diger_harcama_ids:
             unmatched_count += 1
             ref_no_val = (dh.Belge_Numarasi or "")[:30]
-            stmt_es_check = select(MuavinEslesmeyenler).where(
-                MuavinEslesmeyenler.Eslesme_Tur == 'Fiş',
-                MuavinEslesmeyenler.Referans_No == ref_no_val
-            )
-            existing_es = db.scalar(stmt_es_check)
-            if not existing_es:
+            if ref_no_val and ref_no_val not in existing_es_refs:
+                existing_es_refs.add(ref_no_val)
                 new_es = MuavinEslesmeyenler(
                     Eslesme_Tur='Fiş',
                     Referans_No=ref_no_val,
@@ -3479,7 +3486,10 @@ def auto_match_muavin_defteri(db: Session, donem: int) -> dict:
                     Aciklama=(dh.Alici_Adi or "")[:50],
                     Kayit_Tarih=datetime.now()
                 )
-                db.add(new_es)
+                new_es_list.append(new_es)
+
+    if new_es_list:
+        db.add_all(new_es_list)
 
     db.commit()
     return {
@@ -3740,15 +3750,8 @@ def get_muavin_eslesme_turleri(db: Session) -> List[str]:
 
 def bulk_exempt_borc_positive(db: Session, donem: int, eslesme_tur: Optional[str] = None) -> dict:
     """
-    Bulk-exempt all Muavin_Defteri records where:
-      - Borc > 0
-      - within the given period (YYYYMM)
-      - optionally filtered by Eslesme_Tur (e.g. 'Fatura', 'Fiş', etc.)
-
-    Sets Eslesme_Gerekli = 0 on each matching record and closes any
-    matching open Muavin_Eslesmeyenler row.
-
-    Returns: {"affected": <int>}
+    Bulk-exempt all Muavin_Defteri records where Borc > 0.
+    Executes in a single bulk update query for high speed on remote databases.
     """
     import calendar
     donem_str = str(donem)
@@ -3763,34 +3766,41 @@ def bulk_exempt_borc_positive(db: Session, donem: int, eslesme_tur: Optional[str
     last_day = calendar.monthrange(year, month)[1]
     end_date = date(year, month, last_day)
 
-    stmt = select(MuavinDefteri).where(
+    conditions = [
         MuavinDefteri.Tarih >= start_date,
         MuavinDefteri.Tarih <= end_date,
         MuavinDefteri.Borc > 0,
-        MuavinDefteri.Eslendi == False
-    )
+        MuavinDefteri.Eslendi == False,
+        MuavinDefteri.Eslesme_Gerekli == True
+    ]
     if eslesme_tur:
-        stmt = stmt.where(MuavinDefteri.Eslesme_Tur == eslesme_tur)
+        conditions.append(MuavinDefteri.Eslesme_Tur == eslesme_tur)
 
-    recs = db.scalars(stmt).all()
-    affected = 0
+    # 1. Fetch matching Referans_No list for Muavin_Eslesmeyenler closure
+    ref_stmt = select(MuavinDefteri.Referans_No).where(
+        and_(*conditions),
+        MuavinDefteri.Referans_No.is_not(None)
+    )
+    ref_nos = [r for r in db.scalars(ref_stmt).all() if r and r.strip()]
 
-    for rec in recs:
-        if rec.Eslesme_Gerekli:   # only update if not already exempt
-            rec.Eslesme_Gerekli = False
+    # 2. Bulk UPDATE Muavin_Defteri in 1 single statement
+    upd_stmt = update(MuavinDefteri).where(and_(*conditions)).values(Eslesme_Gerekli=False)
+    res = db.execute(upd_stmt)
+    affected = res.rowcount
 
-            # Close any open Muavin_Eslesmeyenler row tied to this record
-            if rec.Referans_No:
-                ref_val = rec.Referans_No[:30]
-                stmt_es = select(MuavinEslesmeyenler).where(
-                    MuavinEslesmeyenler.Referans_No == ref_val,
+    # 3. Close open Muavin_Eslesmeyenler in chunks
+    if ref_nos:
+        clean_refs = list({r[:30] for r in ref_nos})
+        for i in range(0, len(clean_refs), 500):
+            chunk = clean_refs[i:i + 500]
+            db.execute(
+                update(MuavinEslesmeyenler)
+                .where(
+                    MuavinEslesmeyenler.Referans_No.in_(chunk),
                     MuavinEslesmeyenler.Durum == 'Açık'
                 )
-                es_rec = db.scalar(stmt_es)
-                if es_rec:
-                    es_rec.Durum = 'Kapalı'
-
-            affected += 1
+                .values(Durum='Kapalı')
+            )
 
     db.commit()
     return {"affected": affected}
@@ -3800,14 +3810,9 @@ def bulk_exempt_by_tur(db: Session, donem: int, eslesme_turleri: List[str]) -> d
     """
     Bulk-exempt all Muavin_Defteri records for the given period (YYYYMM)
     where Eslesme_Tur is in eslesme_turleri.
-
-    Sets Eslesme_Gerekli = False on all matching records.
-    Closes any matching open Muavin_Eslesmeyenler rows.
-
-    Returns: {"affected": <int>, "types": <list>}
+    Executes in a single bulk update query for high speed on remote databases.
     """
     import calendar
-    from sqlalchemy import or_
 
     donem_str = str(donem)
     if len(donem_str) == 6:
@@ -3828,35 +3833,43 @@ def bulk_exempt_by_tur(db: Session, donem: int, eslesme_turleri: List[str]) -> d
     if not types_clean:
         return {"affected": 0, "types": []}
 
-    conditions = [MuavinDefteri.Eslesme_Tur.in_(types_clean)]
+    tur_conditions = [MuavinDefteri.Eslesme_Tur.in_(types_clean)]
     if "Diğer" in types_clean:
-        conditions.append(MuavinDefteri.Eslesme_Tur.is_(None))
-        conditions.append(MuavinDefteri.Eslesme_Tur == "")
+        tur_conditions.append(MuavinDefteri.Eslesme_Tur.is_(None))
+        tur_conditions.append(MuavinDefteri.Eslesme_Tur == "")
 
-    stmt = select(MuavinDefteri).where(
+    base_conditions = [
         MuavinDefteri.Tarih >= start_date,
         MuavinDefteri.Tarih <= end_date,
-        or_(*conditions)
+        MuavinDefteri.Eslesme_Gerekli == True,
+        or_(*tur_conditions)
+    ]
+
+    # 1. Fetch matching Referans_No list for Muavin_Eslesmeyenler closure
+    ref_stmt = select(MuavinDefteri.Referans_No).where(
+        and_(*base_conditions),
+        MuavinDefteri.Referans_No.is_not(None)
     )
+    ref_nos = [r for r in db.scalars(ref_stmt).all() if r and r.strip()]
 
-    recs = db.scalars(stmt).all()
-    affected = 0
-    ref_nos = set()
+    # 2. Bulk UPDATE Muavin_Defteri in 1 single statement
+    upd_stmt = update(MuavinDefteri).where(and_(*base_conditions)).values(Eslesme_Gerekli=False)
+    res = db.execute(upd_stmt)
+    affected = res.rowcount
 
-    for rec in recs:
-        if rec.Eslesme_Gerekli:
-            rec.Eslesme_Gerekli = False
-            affected += 1
-            if rec.Referans_No:
-                ref_nos.add(rec.Referans_No[:30])
-
+    # 3. Close open Muavin_Eslesmeyenler in chunks
     if ref_nos:
-        stmt_es = select(MuavinEslesmeyenler).where(
-            MuavinEslesmeyenler.Referans_No.in_(list(ref_nos)),
-            MuavinEslesmeyenler.Durum == 'Açık'
-        )
-        for es_rec in db.scalars(stmt_es).all():
-            es_rec.Durum = 'Kapalı'
+        clean_refs = list({r[:30] for r in ref_nos})
+        for i in range(0, len(clean_refs), 500):
+            chunk = clean_refs[i:i + 500]
+            db.execute(
+                update(MuavinEslesmeyenler)
+                .where(
+                    MuavinEslesmeyenler.Referans_No.in_(chunk),
+                    MuavinEslesmeyenler.Durum == 'Açık'
+                )
+                .values(Durum='Kapalı')
+            )
 
     db.commit()
     return {"affected": affected, "types": types_clean}
@@ -3865,12 +3878,9 @@ def bulk_exempt_by_tur(db: Session, donem: int, eslesme_turleri: List[str]) -> d
 def bulk_unexempt_by_tur(db: Session, donem: int, eslesme_turleri: List[str]) -> dict:
     """
     Reverse bulk-exempt for the given period and list of eslesme_turleri.
-    Sets Eslesme_Gerekli = True and opens corresponding Muavin_Eslesmeyenler rows.
-
-    Returns: {"affected": <int>, "types": <list>}
+    Executes in a single bulk update query for high speed on remote databases.
     """
     import calendar
-    from sqlalchemy import or_
 
     donem_str = str(donem)
     if len(donem_str) == 6:
@@ -3891,35 +3901,43 @@ def bulk_unexempt_by_tur(db: Session, donem: int, eslesme_turleri: List[str]) ->
     if not types_clean:
         return {"affected": 0, "types": []}
 
-    conditions = [MuavinDefteri.Eslesme_Tur.in_(types_clean)]
+    tur_conditions = [MuavinDefteri.Eslesme_Tur.in_(types_clean)]
     if "Diğer" in types_clean:
-        conditions.append(MuavinDefteri.Eslesme_Tur.is_(None))
-        conditions.append(MuavinDefteri.Eslesme_Tur == "")
+        tur_conditions.append(MuavinDefteri.Eslesme_Tur.is_(None))
+        tur_conditions.append(MuavinDefteri.Eslesme_Tur == "")
 
-    stmt = select(MuavinDefteri).where(
+    base_conditions = [
         MuavinDefteri.Tarih >= start_date,
         MuavinDefteri.Tarih <= end_date,
-        or_(*conditions)
+        MuavinDefteri.Eslesme_Gerekli == False,
+        or_(*tur_conditions)
+    ]
+
+    # 1. Fetch matching Referans_No list for Muavin_Eslesmeyenler reopening
+    ref_stmt = select(MuavinDefteri.Referans_No).where(
+        and_(*base_conditions),
+        MuavinDefteri.Referans_No.is_not(None)
     )
+    ref_nos = [r for r in db.scalars(ref_stmt).all() if r and r.strip()]
 
-    recs = db.scalars(stmt).all()
-    affected = 0
-    ref_nos = set()
+    # 2. Bulk UPDATE Muavin_Defteri in 1 single statement
+    upd_stmt = update(MuavinDefteri).where(and_(*base_conditions)).values(Eslesme_Gerekli=True)
+    res = db.execute(upd_stmt)
+    affected = res.rowcount
 
-    for rec in recs:
-        if not rec.Eslesme_Gerekli:
-            rec.Eslesme_Gerekli = True
-            affected += 1
-            if rec.Referans_No:
-                ref_nos.add(rec.Referans_No[:30])
-
+    # 3. Re-open matching Muavin_Eslesmeyenler in chunks
     if ref_nos:
-        stmt_es = select(MuavinEslesmeyenler).where(
-            MuavinEslesmeyenler.Referans_No.in_(list(ref_nos)),
-            MuavinEslesmeyenler.Durum == 'Kapalı'
-        )
-        for es_rec in db.scalars(stmt_es).all():
-            es_rec.Durum = 'Açık'
+        clean_refs = list({r[:30] for r in ref_nos})
+        for i in range(0, len(clean_refs), 500):
+            chunk = clean_refs[i:i + 500]
+            db.execute(
+                update(MuavinEslesmeyenler)
+                .where(
+                    MuavinEslesmeyenler.Referans_No.in_(chunk),
+                    MuavinEslesmeyenler.Durum == 'Kapalı'
+                )
+                .values(Durum='Açık')
+            )
 
     db.commit()
     return {"affected": affected, "types": types_clean}
@@ -3928,11 +3946,7 @@ def bulk_unexempt_by_tur(db: Session, donem: int, eslesme_turleri: List[str]) ->
 def exempt_reverse_matching_records(db: Session, donem: int) -> dict:
     """
     Find matched records in Muavin_Defteri for a period, group other records with the same Referans_No.
-    If the matched record has Borc > 0, sum Alacak of unmatched same-Referans_No records.
-    If matched record has Alacak > 0, sum Borc of unmatched same-Referans_No records.
-    If the sum equals the matched record amount, mark those unmatched opposite records as Eslesme_Gerekli = False.
-
-    Returns: {"affected": <int>, "groups": <int>}
+    Optimized with single query pre-fetching and dictionary grouping.
     """
     import calendar
     donem_str = str(donem)
@@ -3952,36 +3966,43 @@ def exempt_reverse_matching_records(db: Session, donem: int) -> dict:
         MuavinDefteri.Tarih >= start_date,
         MuavinDefteri.Tarih <= end_date,
         MuavinDefteri.Eslendi == True,
-        MuavinDefteri.Referans_No.isnot(None)
+        MuavinDefteri.Referans_No.is_not(None)
     )
     matched_recs = db.scalars(stmt_matched).all()
+    if not matched_recs:
+        return {"affected": 0, "groups": 0}
+
+    # 2. Fetch all candidate opposite records in 1 query instead of querying inside a loop
+    stmt_opp = select(MuavinDefteri).where(
+        MuavinDefteri.Tarih >= start_date,
+        MuavinDefteri.Tarih <= end_date,
+        MuavinDefteri.Eslendi == False,
+        MuavinDefteri.Eslesme_Gerekli == True,
+        MuavinDefteri.Referans_No.is_not(None)
+    )
+    opp_by_ref = defaultdict(list)
+    for opp in db.scalars(stmt_opp).all():
+        if opp.Referans_No:
+            opp_by_ref[opp.Referans_No.strip()].append(opp)
 
     affected_count = 0
     groups_count = 0
 
     for m_rec in matched_recs:
         ref_no = (m_rec.Referans_No or "").strip()
-        if not ref_no:
+        if not ref_no or ref_no not in opp_by_ref:
             continue
 
         is_giden = (m_rec.Borc or Decimal(0)) > Decimal(0)
         target_amount = Decimal(str(m_rec.Borc)) if is_giden else Decimal(str(m_rec.Alacak))
+        opp_recs = opp_by_ref[ref_no]
 
-        # Find unmatched records with the same Referans_No and opposite side
-        stmt_opp = select(MuavinDefteri).where(
-            MuavinDefteri.Tarih >= start_date,
-            MuavinDefteri.Tarih <= end_date,
-            MuavinDefteri.Referans_No == ref_no,
-            MuavinDefteri.Eslendi == False,
-            MuavinDefteri.Eslesme_Gerekli == True
-        )
-        opp_recs = db.scalars(stmt_opp).all()
-
-        # Filter strictly opposite side entries
         filtered_opp = []
         opp_sum = Decimal("0.00")
 
         for opp in opp_recs:
+            if not opp.Eslesme_Gerekli:
+                continue
             opp_borc = Decimal(str(opp.Borc or 0))
             opp_alacak = Decimal(str(opp.Alacak or 0))
 
@@ -3992,7 +4013,6 @@ def exempt_reverse_matching_records(db: Session, donem: int) -> dict:
                 filtered_opp.append(opp)
                 opp_sum += opp_borc
 
-        # If the difference between the sum of opposite records and matched record is less than 1000 TL
         if filtered_opp and abs(opp_sum - target_amount) < Decimal("1000.00"):
             groups_count += 1
             for opp in filtered_opp:
