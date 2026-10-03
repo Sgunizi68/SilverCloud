@@ -545,7 +545,7 @@
                     return;
                 }
 
-                const chunkSize = 250;
+                const chunkSize = 50;
                 let totalAdded = 0;
                 let totalUpdated = 0;
                 let totalSkipped = 0;
@@ -555,37 +555,57 @@
 
                 for (let i = 0; i < totalChunks; i++) {
                     const chunk = rowsToProcess.slice(i * chunkSize, (i + 1) * chunkSize);
-                    submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> İşleniyor... (${i + 1}/${totalChunks})`;
+                    const progressPercent = Math.round(((i + 1) / totalChunks) * 100);
+                    submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> İşleniyor... (%${progressPercent} - ${i + 1}/${totalChunks})`;
 
-                    const response = await fetch('/api/v1/muavin-defteri/bulk', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
-                        body: JSON.stringify({ rows: chunk })
-                    });
+                    let chunkSuccess = false;
+                    let lastErrMsg = '';
+                    const maxRetries = 3;
 
-                    if (response.ok) {
-                        const resData = await response.json();
-                        totalAdded += resData.inserted || 0;
-                        totalUpdated += resData.updated || 0;
-                        totalSkipped += resData.skipped || 0;
-                        totalInvalidSkipped += resData.invalid_skipped || 0;
-
-                        if (resData.updated_details && resData.updated_details.length > 0) {
-                            globalUpdatedDetails.push(...resData.updated_details);
-                        }
-                        if (resData.inserted_details && resData.inserted_details.length > 0) {
-                            globalInsertedDetails.push(...resData.inserted_details);
-                        }
-                    } else {
-                        let errMessage = 'Bilinmeyen Hata';
+                    for (let attempt = 1; attempt <= maxRetries; attempt++) {
                         try {
-                            const err = await response.json();
-                            errMessage = err.error || errMessage;
-                        } catch (parseErr) {
-                            errMessage = `Sunucu hatası veya zaman aşımı (Status: ${response.status})`;
+                            if (attempt > 1) {
+                                submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Yeniden deneniyor (${attempt}/${maxRetries})... (${i + 1}/${totalChunks})`;
+                                await new Promise(r => setTimeout(r, 1500 * attempt));
+                            }
+
+                            const response = await fetch('/api/v1/muavin-defteri/bulk', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                credentials: 'include',
+                                body: JSON.stringify({ rows: chunk })
+                            });
+
+                            if (response.ok) {
+                                const resData = await response.json();
+                                totalAdded += resData.inserted || 0;
+                                totalUpdated += resData.updated || 0;
+                                totalSkipped += resData.skipped || 0;
+                                totalInvalidSkipped += resData.invalid_skipped || 0;
+
+                                if (resData.updated_details && resData.updated_details.length > 0) {
+                                    globalUpdatedDetails.push(...resData.updated_details);
+                                }
+                                if (resData.inserted_details && resData.inserted_details.length > 0) {
+                                    globalInsertedDetails.push(...resData.inserted_details);
+                                }
+                                chunkSuccess = true;
+                                break;
+                            } else {
+                                try {
+                                    const err = await response.json();
+                                    lastErrMsg = err.error || `Sunucu hatası (Status: ${response.status})`;
+                                } catch (parseErr) {
+                                    lastErrMsg = `Sunucu yanıt vermedi veya zaman aşımı (Status: ${response.status})`;
+                                }
+                            }
+                        } catch (networkErr) {
+                            lastErrMsg = 'Ağ bağlantısı hatası: ' + networkErr.message;
                         }
-                        showToast(`Hata (${i + 1}. paket): ${errMessage}`, 'error');
+                    }
+
+                    if (!chunkSuccess) {
+                        showToast(`Hata (${i + 1}. paket): ${lastErrMsg}`, 'error');
                         hasError = true;
                         break;
                     }

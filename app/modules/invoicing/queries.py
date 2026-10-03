@@ -7,7 +7,7 @@ Uses SQLAlchemy 2.0 style with pagination and filtering.
 from typing import Optional, List
 from datetime import date, datetime
 from decimal import Decimal
-from sqlalchemy import select, func, distinct
+from sqlalchemy import select, func, distinct, and_, or_
 from sqlalchemy.orm import Session
 from app.models import (
     EFatura, B2BEkstre, DigerHarcama, Odeme, OdemeReferans,
@@ -3004,8 +3004,11 @@ def create_muavin_defteri_bulk(
             "inserted_details": []
         }
 
-    # Gather dates for batch fetching
+    # Gather dates and fis_nos for targeted batch fetching
     dates = set()
+    fis_nos = set()
+    has_empty_fis = False
+
     for row in rows:
         t_val = row.get("Tarih")
         if isinstance(t_val, str) and t_val:
@@ -3016,9 +3019,31 @@ def create_muavin_defteri_bulk(
         elif isinstance(t_val, date):
             dates.add(t_val)
 
+        f_no = str(row.get("Fis_No") or "").strip()
+        if f_no:
+            fis_nos.add(f_no)
+        else:
+            has_empty_fis = True
+
     existing_map = {}
     if dates:
-        stmt = select(MuavinDefteri).where(MuavinDefteri.Tarih.in_(list(dates)))
+        conditions = [MuavinDefteri.Tarih.in_(list(dates))]
+        if fis_nos:
+            if has_empty_fis:
+                conditions.append(or_(
+                    MuavinDefteri.Fis_No.in_(list(fis_nos)),
+                    MuavinDefteri.Fis_No.is_(None),
+                    MuavinDefteri.Fis_No == ""
+                ))
+            else:
+                conditions.append(MuavinDefteri.Fis_No.in_(list(fis_nos)))
+        elif has_empty_fis:
+            conditions.append(or_(
+                MuavinDefteri.Fis_No.is_(None),
+                MuavinDefteri.Fis_No == ""
+            ))
+
+        stmt = select(MuavinDefteri).where(and_(*conditions))
         existing_records = db.scalars(stmt).all()
         for rec in existing_records:
             t_str = rec.Tarih.isoformat() if rec.Tarih else ""
