@@ -3946,7 +3946,10 @@ def bulk_unexempt_by_tur(db: Session, donem: int, eslesme_turleri: List[str]) ->
 def exempt_reverse_matching_records(db: Session, donem: int) -> dict:
     """
     Find matched records in Muavin_Defteri for a period, group other records with the same Referans_No.
-    Optimized with single query pre-fetching and dictionary grouping.
+    If the matched record has Borc > 0, sum Alacak of unmatched same-Referans_No records.
+    If matched record has Alacak > 0, sum Borc of unmatched same-Referans_No records.
+    If the sum equals the matched record amount (within 1000 TL), mark those unmatched opposite records as Eslesme_Gerekli = False.
+    Optimized with column pre-fetching, safe decimal conversion, and single batch UPDATE.
     """
     import calendar
     donem_str = str(donem)
@@ -3961,19 +3964,29 @@ def exempt_reverse_matching_records(db: Session, donem: int) -> dict:
     last_day = calendar.monthrange(year, month)[1]
     end_date = date(year, month, last_day)
 
-    # 1. Fetch matched records for the period with Referans_No
-    stmt_matched = select(MuavinDefteri).where(
+    # 1. Fetch matched records for the period with Referans_No (column select for speed)
+    stmt_matched = select(
+        MuavinDefteri.ID,
+        MuavinDefteri.Referans_No,
+        MuavinDefteri.Borc,
+        MuavinDefteri.Alacak
+    ).where(
         MuavinDefteri.Tarih >= start_date,
         MuavinDefteri.Tarih <= end_date,
         MuavinDefteri.Eslendi == True,
         MuavinDefteri.Referans_No.is_not(None)
     )
-    matched_recs = db.scalars(stmt_matched).all()
+    matched_recs = db.execute(stmt_matched).all()
     if not matched_recs:
         return {"affected": 0, "groups": 0}
 
-    # 2. Fetch all candidate opposite records in 1 query instead of querying inside a loop
-    stmt_opp = select(MuavinDefteri).where(
+    # 2. Fetch all candidate opposite records in 1 query
+    stmt_opp = select(
+        MuavinDefteri.ID,
+        MuavinDefteri.Referans_No,
+        MuavinDefteri.Borc,
+        MuavinDefteri.Alacak
+    ).where(
         MuavinDefteri.Tarih >= start_date,
         MuavinDefteri.Tarih <= end_date,
         MuavinDefteri.Eslendi == False,
@@ -3981,43 +3994,87 @@ def exempt_reverse_matching_records(db: Session, donem: int) -> dict:
         MuavinDefteri.Referans_No.is_not(None)
     )
     opp_by_ref = defaultdict(list)
-    for opp in db.scalars(stmt_opp).all():
-        if opp.Referans_No:
-            opp_by_ref[opp.Referans_No.strip()].append(opp)
+    for opp_id, opp_ref, opp_borc, opp_alacak in db.execute(stmt_opp).all():
+        if opp_ref and opp_ref.strip():
+            opp_by_ref[opp_ref.strip()].append({
+                "ID": opp_id,
+                "Borc": Decimal(str(opp_borc or 0)),
+                "Alacak": Decimal(str(opp_alacak or 0)),
+                "Referans_No": opp_ref.strip()
+            })
 
-    affected_count = 0
+    def _to_decimal(val) -> Decimal:
+        if val is None or val == "":
+            return Decimal("0.00")
+        try:
+            return Decimal(str(val))
+        except Exception:
+            return Decimal("0.00")
+
     groups_count = 0
+    ids_to_exempt = set()
+    ref_nos_to_close = set()
 
-    for m_rec in matched_recs:
-        ref_no = (m_rec.Referans_No or "").strip()
+    for m_id, m_ref, m_borc, m_alacak in matched_recs:
+        ref_no = (m_ref or "").strip()
         if not ref_no or ref_no not in opp_by_ref:
             continue
 
-        is_giden = (m_rec.Borc or Decimal(0)) > Decimal(0)
-        target_amount = Decimal(str(m_rec.Borc)) if is_giden else Decimal(str(m_rec.Alacak))
-        opp_recs = opp_by_ref[ref_no]
+        borc_dec = _to_decimal(m_borc)
+        alacak_dec = _to_decimal(m_alacak)
+        is_giden = borc_dec > Decimal(0)
+        target_amount = borc_dec if is_giden else alacak_dec
 
+        opp_recs = opp_by_ref[ref_no]
         filtered_opp = []
         opp_sum = Decimal("0.00")
 
         for opp in opp_recs:
-            if not opp.Eslesme_Gerekli:
+            if opp["ID"] in ids_to_exempt:
                 continue
-            opp_borc = Decimal(str(opp.Borc or 0))
-            opp_alacak = Decimal(str(opp.Alacak or 0))
+            o_borc = opp["Borc"]
+            o_alacak = opp["Alacak"]
 
-            if is_giden and opp_alacak > Decimal(0) and opp_borc == Decimal(0):
+            if is_giden and o_alacak > Decimal(0) and o_borc == Decimal(0):
                 filtered_opp.append(opp)
-                opp_sum += opp_alacak
-            elif not is_giden and opp_borc > Decimal(0) and opp_alacak == Decimal(0):
+                opp_sum += o_alacak
+            elif not is_giden and o_borc > Decimal(0) and o_alacak == Decimal(0):
                 filtered_opp.append(opp)
-                opp_sum += opp_borc
+                opp_sum += o_borc
 
         if filtered_opp and abs(opp_sum - target_amount) < Decimal("1000.00"):
             groups_count += 1
             for opp in filtered_opp:
-                opp.Eslesme_Gerekli = False
-                affected_count += 1
+                ids_to_exempt.add(opp["ID"])
+                if opp.get("Referans_No"):
+                    ref_nos_to_close.add(opp["Referans_No"][:30])
+
+    affected_count = len(ids_to_exempt)
+
+    # 3. Bulk UPDATE Muavin_Defteri in batches
+    if ids_to_exempt:
+        id_list = list(ids_to_exempt)
+        for i in range(0, len(id_list), 500):
+            chunk = id_list[i:i + 500]
+            db.execute(
+                update(MuavinDefteri)
+                .where(MuavinDefteri.ID.in_(chunk))
+                .values(Eslesme_Gerekli=False)
+            )
+
+    # 4. Close matching open Muavin_Eslesmeyenler in batches
+    if ref_nos_to_close:
+        ref_list = list(ref_nos_to_close)
+        for i in range(0, len(ref_list), 500):
+            chunk = ref_list[i:i + 500]
+            db.execute(
+                update(MuavinEslesmeyenler)
+                .where(
+                    MuavinEslesmeyenler.Referans_No.in_(chunk),
+                    MuavinEslesmeyenler.Durum == 'Açık'
+                )
+                .values(Durum='Kapalı')
+            )
 
     db.commit()
     return {"affected": affected_count, "groups": groups_count}
