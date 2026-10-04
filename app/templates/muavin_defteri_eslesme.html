@@ -1470,7 +1470,20 @@
 
             const data = await res.json();
             showToast(`${data.affected || 0} adet ${selectedTurler.length === 1 ? selectedTurler[0] + ' ' : ''}(Borç > 0) kaydı başarıyla Muaf tutuldu.`);
-            await loadRecords();
+            
+            // In-memory update
+            allRecords.forEach(r => {
+                const isBorc = (r.Borc || 0) > 0;
+                const matchesTur = selectedTurler.length === 1 ? (r.Eslesme_Tur === selectedTurler[0] || (selectedTurler[0] === 'Diğer' && !r.Eslesme_Tur)) : true;
+                if (isBorc && matchesTur && !r.Eslendi) {
+                    r.Eslesme_Gerekli = false;
+                    r.Status = 'Muaf';
+                }
+            });
+            applyLocalFilters();
+            if (currentTab === 'eslesmeyenler') {
+                await loadEslesmeyenler();
+            }
         } catch (err) {
             console.error(err);
             showToast('Hata: ' + err.message, 'error');
@@ -1668,9 +1681,24 @@
                 throw new Error(err.error || 'Eşleştirme başarısız');
             }
 
+            const resData = await res.json();
             showToast('Kayıt başarıyla eşleştirildi.');
+
+            // In-memory update
+            const rec = allRecords.find(r => r.ID === activeMuavinId);
+            if (rec) {
+                if (resData.record) {
+                    Object.assign(rec, resData.record);
+                } else {
+                    rec.Eslendi = true;
+                    rec.Status = 'Eşleşti';
+                }
+            }
             closeManualModal();
-            await loadRecords();
+            applyLocalFilters();
+            if (currentTab === 'eslesmeyenler') {
+                await loadEslesmeyenler();
+            }
         } catch (err) {
             console.error(err);
             showToast('Hata: ' + err.message, 'error');
@@ -1693,7 +1721,22 @@
             }
 
             showToast('Eşleşme bozuldu.');
-            await loadRecords();
+
+            // In-memory update
+            const rec = allRecords.find(r => r.ID === muavinId);
+            if (rec) {
+                rec.Referans_Tur = null;
+                rec.Referans_No = null;
+                rec.Referans_Tarih = null;
+                rec.Referans_Sirket = null;
+                rec.Referans_Tutar = null;
+                rec.Eslendi = false;
+                rec.Status = rec.Eslesme_Gerekli ? 'Eşleşmedi' : 'Muaf';
+            }
+            applyLocalFilters();
+            if (currentTab === 'eslesmeyenler') {
+                await loadEslesmeyenler();
+            }
         } catch (err) {
             console.error(err);
             showToast('Hata: ' + err.message, 'error');
@@ -1715,7 +1758,17 @@
             }
 
             showToast('Kayıt eşleşmeden muaf tutuldu.');
-            await loadRecords();
+
+            // In-memory update
+            const rec = allRecords.find(r => r.ID === muavinId);
+            if (rec) {
+                rec.Eslesme_Gerekli = false;
+                rec.Status = 'Muaf';
+            }
+            applyLocalFilters();
+            if (currentTab === 'eslesmeyenler') {
+                await loadEslesmeyenler();
+            }
         } catch (err) {
             console.error(err);
             showToast('Hata: ' + err.message, 'error');
@@ -1737,7 +1790,17 @@
             }
 
             showToast('Kayıt tekrar eşleşme kapsamına alındı.');
-            await loadRecords();
+
+            // In-memory update
+            const rec = allRecords.find(r => r.ID === muavinId);
+            if (rec) {
+                rec.Eslesme_Gerekli = true;
+                rec.Status = rec.Eslendi ? 'Eşleşti' : 'Eşleşmedi';
+            }
+            applyLocalFilters();
+            if (currentTab === 'eslesmeyenler') {
+                await loadEslesmeyenler();
+            }
         } catch (err) {
             console.error(err);
             showToast('Hata: ' + err.message, 'error');
@@ -1827,7 +1890,16 @@
             const data = await res.json();
             showToast(`${data.affected || 0} adet kayıt başarıyla Muaf tutuldu.`);
             closeTurExemptModal();
-            await loadRecords();
+            
+            // In-memory update
+            allRecords.forEach(r => {
+                const matches = selectedTurler.includes(r.Eslesme_Tur) || (selectedTurler.includes('Diğer') && !r.Eslesme_Tur);
+                if (matches && !r.Eslendi) {
+                    r.Eslesme_Gerekli = false;
+                    r.Status = 'Muaf';
+                }
+            });
+            applyLocalFilters();
             if (currentTab === 'eslesmeyenler') {
                 await loadEslesmeyenler();
             }
@@ -1876,7 +1948,16 @@
             const data = await res.json();
             showToast(`${data.affected || 0} adet kaydın muaflığı kaldırıldı.`);
             closeTurExemptModal();
-            await loadRecords();
+            
+            // In-memory update
+            allRecords.forEach(r => {
+                const matches = selectedTurler.includes(r.Eslesme_Tur) || (selectedTurler.includes('Diğer') && !r.Eslesme_Tur);
+                if (matches && !r.Eslendi) {
+                    r.Eslesme_Gerekli = true;
+                    r.Status = 'Eşleşmedi';
+                }
+            });
+            applyLocalFilters();
             if (currentTab === 'eslesmeyenler') {
                 await loadEslesmeyenler();
             }

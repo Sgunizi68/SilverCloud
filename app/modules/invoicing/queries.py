@@ -3220,9 +3220,10 @@ def get_muavin_eslesme_records(
     """
     Get Muavin_Defteri records for a selected period (YYYYMM) with filters.
     Exempt records (Eslesme_Gerekli == 0) are always sorted at the very bottom!
+    Optimized with direct column selection for fast transfer on remote databases.
     """
     import calendar
-    from sqlalchemy import case, or_
+    from sqlalchemy import case
     donem_str = str(donem)
     year = int(donem_str[:4])
     month = int(donem_str[4:])
@@ -3230,7 +3231,25 @@ def get_muavin_eslesme_records(
     last_day = calendar.monthrange(year, month)[1]
     end_date = date(year, month, last_day)
 
-    stmt = select(MuavinDefteri).where(
+    stmt = select(
+        MuavinDefteri.ID,
+        MuavinDefteri.Tarih,
+        MuavinDefteri.Tip,
+        MuavinDefteri.Fis_No,
+        MuavinDefteri.Aciklama,
+        MuavinDefteri.Borc,
+        MuavinDefteri.Alacak,
+        MuavinDefteri.Bakiye,
+        MuavinDefteri.BA,
+        MuavinDefteri.Eslesme_Tur,
+        MuavinDefteri.Eslesme_Gerekli,
+        MuavinDefteri.Referans_Tur,
+        MuavinDefteri.Referans_No,
+        MuavinDefteri.Referans_Tarih,
+        MuavinDefteri.Referans_Sirket,
+        MuavinDefteri.Referans_Tutar,
+        MuavinDefteri.Eslendi
+    ).where(
         MuavinDefteri.Tarih >= start_date,
         MuavinDefteri.Tarih <= end_date
     )
@@ -3252,28 +3271,30 @@ def get_muavin_eslesme_records(
         MuavinDefteri.ID.asc()
     )
 
-    records = db.scalars(stmt).all()
+    rows = db.execute(stmt).fetchall()
     result = []
-    for r in records:
+    for r in rows:
+        eslesme_gerekli = bool(r[10])
+        eslendi = bool(r[16])
         result.append({
-            "ID": r.ID,
-            "Tarih": r.Tarih.isoformat() if r.Tarih else "",
-            "Tip": r.Tip,
-            "Fis_No": r.Fis_No,
-            "Aciklama": r.Aciklama,
-            "Borc": float(r.Borc or 0.0),
-            "Alacak": float(r.Alacak or 0.0),
-            "Bakiye": float(r.Bakiye or 0.0),
-            "BA": r.BA,
-            "Eslesme_Tur": r.Eslesme_Tur,
-            "Eslesme_Gerekli": bool(r.Eslesme_Gerekli),
-            "Referans_Tur": r.Referans_Tur,
-            "Referans_No": r.Referans_No,
-            "Referans_Tarih": r.Referans_Tarih.isoformat() if r.Referans_Tarih else "",
-            "Referans_Sirket": r.Referans_Sirket,
-            "Referans_Tutar": float(r.Referans_Tutar) if r.Referans_Tutar is not None else None,
-            "Eslendi": bool(r.Eslendi),
-            "Status": "Muaf" if not r.Eslesme_Gerekli else ("Eşleşti" if r.Eslendi else "Eşleşmedi")
+            "ID": r[0],
+            "Tarih": r[1].isoformat() if r[1] else "",
+            "Tip": r[2],
+            "Fis_No": r[3],
+            "Aciklama": r[4],
+            "Borc": float(r[5] or 0.0),
+            "Alacak": float(r[6] or 0.0),
+            "Bakiye": float(r[7] or 0.0),
+            "BA": r[8],
+            "Eslesme_Tur": r[9],
+            "Eslesme_Gerekli": eslesme_gerekli,
+            "Referans_Tur": r[11],
+            "Referans_No": r[12],
+            "Referans_Tarih": r[13].isoformat() if r[13] else "",
+            "Referans_Sirket": r[14],
+            "Referans_Tutar": float(r[15]) if r[15] is not None else None,
+            "Eslendi": eslendi,
+            "Status": "Muaf" if not eslesme_gerekli else ("Eşleşti" if eslendi else "Eşleşmedi")
         })
     return result
 
@@ -3598,18 +3619,18 @@ def get_muavin_eslesme_candidates(
     return {"candidates": candidates, "muavin": muavin_info}
 
 
-def manual_match_muavin_defteri(db: Session, muavin_id: int, source_type: str, source_id: int) -> bool:
+def manual_match_muavin_defteri(db: Session, muavin_id: int, source_type: str, source_id: int) -> Optional[dict]:
     """Manually match a Muavin_Defteri record with a source record (Fatura or Fiş)."""
     stmt = select(MuavinDefteri).where(MuavinDefteri.ID == muavin_id)
     rec = db.scalar(stmt)
     if not rec:
-        return False
+        return None
 
     if source_type == 'Fatura':
         stmt_ef = select(EFatura).where(EFatura.Fatura_ID == source_id)
         ef = db.scalar(stmt_ef)
         if not ef:
-            return False
+            return None
         rec.Referans_Tur = 'Fatura'
         rec.Referans_No = ef.Fatura_Numarasi
         rec.Referans_Tarih = ef.Fatura_Tarihi
@@ -3620,7 +3641,7 @@ def manual_match_muavin_defteri(db: Session, muavin_id: int, source_type: str, s
         stmt_dh = select(DigerHarcama).where(DigerHarcama.Harcama_ID == source_id)
         dh = db.scalar(stmt_dh)
         if not dh:
-            return False
+            return None
         rec.Referans_Tur = 'Fiş'
         rec.Referans_No = dh.Belge_Numarasi
         rec.Referans_Tarih = dh.Belge_Tarihi
@@ -3639,7 +3660,16 @@ def manual_match_muavin_defteri(db: Session, muavin_id: int, source_type: str, s
             es_rec.Durum = 'Kapalı'
 
     db.commit()
-    return True
+    return {
+        "ID": rec.ID,
+        "Referans_Tur": rec.Referans_Tur,
+        "Referans_No": rec.Referans_No,
+        "Referans_Tarih": rec.Referans_Tarih.isoformat() if rec.Referans_Tarih else "",
+        "Referans_Sirket": rec.Referans_Sirket,
+        "Referans_Tutar": float(rec.Referans_Tutar) if rec.Referans_Tutar is not None else None,
+        "Eslendi": True,
+        "Status": "Eşleşti"
+    }
 
 
 def unmatch_muavin_defteri(db: Session, muavin_id: int) -> bool:

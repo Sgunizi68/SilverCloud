@@ -581,125 +581,129 @@ def get_muavin_eslesme_candidates_api():
 @auth_required
 def manual_match_muavin_defteri_api():
     """Manually match a Muavin record to a source record."""
+    data = request.get_json() or {}
+    muavin_id = data.get("muavin_id")
+    source_type = data.get("source_type")
+    source_id = data.get("source_id")
+
+    if not muavin_id or not source_type or not source_id:
+        return jsonify({"error": "muavin_id, source_type and source_id are required"}), 400
+
+    db = get_db_session()
     try:
-        data = request.get_json() or {}
-        muavin_id = data.get("muavin_id")
-        source_type = data.get("source_type")
-        source_id = data.get("source_id")
-
-        if not muavin_id or not source_type or not source_id:
-            return jsonify({"error": "muavin_id, source_type and source_id are required"}), 400
-
-        db = get_db_session()
         if not _check_eslesme_permission(db, request.user):
-            db.close()
             return jsonify({"error": "Yetkiniz yok."}), 403
 
-        ok = queries.manual_match_muavin_defteri(db, int(muavin_id), str(source_type), int(source_id))
-        db.close()
-        if not ok:
+        record = queries.manual_match_muavin_defteri(db, int(muavin_id), str(source_type), int(source_id))
+        if not record:
             return jsonify({"error": "Eşleştirme başarısız."}), 400
-        return jsonify({"success": True}), 200
+        return jsonify({"success": True, "record": record}), 200
     except Exception as e:
+        db.rollback()
         return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
 
 
 @invoicing_bp.route("/muavin-defteri-eslesme/unmatch", methods=["POST"])
 @auth_required
 def unmatch_muavin_defteri_api():
     """Clear match for a Muavin record."""
-    try:
-        data = request.get_json() or {}
-        muavin_id = data.get("muavin_id")
-        if not muavin_id:
-            return jsonify({"error": "muavin_id is required"}), 400
+    data = request.get_json() or {}
+    muavin_id = data.get("muavin_id")
+    if not muavin_id:
+        return jsonify({"error": "muavin_id is required"}), 400
 
-        db = get_db_session()
+    db = get_db_session()
+    try:
         if not _check_eslesme_permission(db, request.user):
-            db.close()
             return jsonify({"error": "Yetkiniz yok."}), 403
 
         ok = queries.unmatch_muavin_defteri(db, int(muavin_id))
-        db.close()
         if not ok:
             return jsonify({"error": "İşlem başarısız."}), 400
         return jsonify({"success": True}), 200
     except Exception as e:
+        db.rollback()
         return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
 
 
 @invoicing_bp.route("/muavin-defteri-eslesme/exempt", methods=["POST"])
 @auth_required
 def exempt_muavin_defteri_api():
     """Set Eslesme_Gerekli = 0 for a record."""
-    try:
-        data = request.get_json() or {}
-        muavin_id = data.get("muavin_id")
-        if not muavin_id:
-            return jsonify({"error": "muavin_id is required"}), 400
+    data = request.get_json() or {}
+    muavin_id = data.get("muavin_id")
+    if not muavin_id:
+        return jsonify({"error": "muavin_id is required"}), 400
 
-        db = get_db_session()
+    db = get_db_session()
+    try:
         if not _check_eslesme_permission(db, request.user):
-            db.close()
             return jsonify({"error": "Yetkiniz yok."}), 403
 
         ok = queries.exempt_muavin_defteri(db, int(muavin_id))
-        db.close()
         if not ok:
             return jsonify({"error": "İşlem başarısız."}), 400
         return jsonify({"success": True}), 200
     except Exception as e:
+        db.rollback()
         return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
 
 
 @invoicing_bp.route("/muavin-defteri-eslesme/unexempt", methods=["POST"])
 @auth_required
 def unexempt_muavin_defteri_api():
     """Set Eslesme_Gerekli = 1 for a record."""
-    try:
-        data = request.get_json() or {}
-        muavin_id = data.get("muavin_id")
-        if not muavin_id:
-            return jsonify({"error": "muavin_id is required"}), 400
+    data = request.get_json() or {}
+    muavin_id = data.get("muavin_id")
+    if not muavin_id:
+        return jsonify({"error": "muavin_id is required"}), 400
 
-        db = get_db_session()
+    db = get_db_session()
+    try:
         if not _check_eslesme_permission(db, request.user):
-            db.close()
             return jsonify({"error": "Yetkiniz yok."}), 403
 
         ok = queries.unexempt_muavin_defteri(db, int(muavin_id))
-        db.close()
         if not ok:
             return jsonify({"error": "İşlem başarısız."}), 400
         return jsonify({"success": True}), 200
     except Exception as e:
+        db.rollback()
         return jsonify({"error": str(e)}), 500
-
+    finally:
+        db.close()
 
 @invoicing_bp.route("/muavin-defteri-eslesme/update-tur", methods=["POST"])
 @auth_required
 def update_muavin_eslesme_tur_api():
     """Update Eslesme_Tur for a specific Muavin record."""
-    try:
-        data = request.get_json() or {}
-        muavin_id = data.get("muavin_id")
-        eslesme_tur = data.get("eslesme_tur")
-        if not muavin_id:
-            return jsonify({"error": "muavin_id is required"}), 400
+    data = request.get_json() or {}
+    muavin_id = data.get("muavin_id")
+    eslesme_tur = data.get("eslesme_tur")
+    if not muavin_id:
+        return jsonify({"error": "muavin_id is required"}), 400
 
-        db = get_db_session()
+    db = get_db_session()
+    try:
         if not _check_eslesme_permission(db, request.user):
-            db.close()
             return jsonify({"error": "Yetkiniz yok."}), 403
 
         ok = queries.update_muavin_eslesme_tur(db, int(muavin_id), eslesme_tur)
-        db.close()
         if not ok:
             return jsonify({"error": "Kayıt bulunamadı."}), 404
         return jsonify({"success": True, "muavin_id": muavin_id, "eslesme_tur": eslesme_tur}), 200
     except Exception as e:
+        db.rollback()
         import traceback; traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
 
 
 @invoicing_bp.route("/muavin-defteri-eslesme/turler", methods=["GET"])
