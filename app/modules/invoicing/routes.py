@@ -867,7 +867,7 @@ def update_muavin_eslesmeyen_api(record_id: int):
             db.close()
             return jsonify({"error": "Yetkiniz yok."}), 403
 
-        ok = queries.update_muavin_eslesmeyen_record(
+        updated_record = queries.update_muavin_eslesmeyen_record(
             db,
             record_id,
             durum,
@@ -876,10 +876,10 @@ def update_muavin_eslesmeyen_api(record_id: int):
             referans_no
         )
         db.close()
-        if not ok:
+        if not updated_record:
             return jsonify({"error": "Kayıt bulunamadı."}), 404
 
-        return jsonify({"success": True}), 200
+        return jsonify({"success": True, "record": updated_record}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

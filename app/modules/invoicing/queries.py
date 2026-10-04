@@ -4157,6 +4157,11 @@ def get_muavin_eslesmeyenler(
     )
     matched_nos = {row[0].strip() for row in db.execute(matched_stmt).fetchall() if row[0]}
 
+    # Pre-fetch all MuavinEslesmeyenler into a fast dict lookup (Eliminate N+1 queries)
+    es_notes_stmt = select(MuavinEslesmeyenler)
+    es_notes = db.scalars(es_notes_stmt).all()
+    es_note_map = {(n.Eslesme_Tur, (n.Referans_No or '').strip()): n for n in es_notes}
+
     results = []
 
     # 2. Unmatched e_Fatura
@@ -4174,15 +4179,10 @@ def get_muavin_eslesmeyenler(
         for ef in ef_recs:
             if ef.Fatura_Numarasi.strip() not in matched_nos:
                 ref_no = (ef.Fatura_Numarasi or '').strip()[:30]
-                # Look up user notes from Muavin_Eslesmeyenler
-                es_note = db.scalar(
-                    select(MuavinEslesmeyenler).where(
-                        MuavinEslesmeyenler.Eslesme_Tur == 'Fatura',
-                        MuavinEslesmeyenler.Referans_No == ref_no
-                    )
-                )
+                # Look up user notes from pre-fetched map
+                es_note = es_note_map.get(('Fatura', ref_no))
                 rec_durum = es_note.Durum if es_note else 'Açık'
-                rec_aciklama = es_note.Aciklama if es_note else (ef.Alici_Unvani or '')[:50]
+                rec_aciklama = es_note.Aciklama if (es_note and es_note.Aciklama) else (ef.Alici_Unvani or '')[:50]
                 rec_id = es_note.ID if es_note else None
 
                 if durum and rec_durum != durum:
@@ -4215,14 +4215,9 @@ def get_muavin_eslesmeyenler(
             dh_ref = (dh.Belge_Numarasi or '').strip()
             if dh_ref and dh_ref not in matched_nos:
                 ref_no = dh_ref[:30]
-                es_note = db.scalar(
-                    select(MuavinEslesmeyenler).where(
-                        MuavinEslesmeyenler.Eslesme_Tur == 'Fiş',
-                        MuavinEslesmeyenler.Referans_No == ref_no
-                    )
-                )
+                es_note = es_note_map.get(('Fiş', ref_no))
                 rec_durum = es_note.Durum if es_note else 'Açık'
-                rec_aciklama = es_note.Aciklama if es_note else (dh.Alici_Adi or '')[:50]
+                rec_aciklama = es_note.Aciklama if (es_note and es_note.Aciklama) else (dh.Alici_Adi or '')[:50]
                 rec_id = es_note.ID if es_note else None
 
                 if durum and rec_durum != durum:
@@ -4251,17 +4246,19 @@ def update_muavin_eslesmeyen_record(
     aciklama: Optional[str] = None,
     eslesme_tur: Optional[str] = None,
     referans_no: Optional[str] = None
-) -> bool:
+) -> Optional[Dict[str, Any]]:
     """
     Update Durum and/or Aciklama of a Muavin_Eslesmeyenler record.
     If record_id is None (no existing row), creates a new one using eslesme_tur + referans_no.
+    Preserves default company/name description if not explicitly changed.
+    Returns the updated record dictionary or None.
     """
+    rec = None
     if record_id:
         stmt = select(MuavinEslesmeyenler).where(MuavinEslesmeyenler.ID == record_id)
         rec = db.scalar(stmt)
-        if not rec:
-            return False
-    elif eslesme_tur and referans_no:
+    
+    if not rec and eslesme_tur and referans_no:
         # Upsert: find or create
         stmt = select(MuavinEslesmeyenler).where(
             MuavinEslesmeyenler.Eslesme_Tur == eslesme_tur,
@@ -4273,14 +4270,22 @@ def update_muavin_eslesmeyen_record(
                 Eslesme_Tur=eslesme_tur,
                 Referans_No=referans_no[:30],
                 Durum=durum or 'Açık',
-                Aciklama=(aciklama or '')[:50],
+                Aciklama=(aciklama or '')[:50] if aciklama is not None else '',
                 Kayit_Tarih=datetime.now()
             )
             db.add(rec)
             db.commit()
-            return True
-    else:
-        return False
+            db.refresh(rec)
+            return {
+                "ID": rec.ID,
+                "Eslesme_Tur": rec.Eslesme_Tur,
+                "Referans_No": rec.Referans_No,
+                "Durum": rec.Durum,
+                "Aciklama": rec.Aciklama
+            }
+
+    if not rec:
+        return None
 
     if durum is not None:
         rec.Durum = durum
@@ -4288,7 +4293,14 @@ def update_muavin_eslesmeyen_record(
         rec.Aciklama = aciklama[:50]
 
     db.commit()
-    return True
+    db.refresh(rec)
+    return {
+        "ID": rec.ID,
+        "Eslesme_Tur": rec.Eslesme_Tur,
+        "Referans_No": rec.Referans_No,
+        "Durum": rec.Durum,
+        "Aciklama": rec.Aciklama
+    }
 
 
 

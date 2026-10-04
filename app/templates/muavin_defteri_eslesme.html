@@ -1264,16 +1264,32 @@
 
     async function toggleEslesmeyenDurum(id, newDurum, eslesme_tur, referans_no) {
         try {
+            // Find current record in memory
+            const rec = allEslesmeyenler.find(r => 
+                (id && r.ID === id) || (r.Eslesme_Tur === eslesme_tur && r.Referans_No === referans_no)
+            );
+            const currentAciklama = rec ? rec.Aciklama : undefined;
+
             const url = id ? `/api/v1/muavin-eslesmeyenler/${id}` : `/api/v1/muavin-eslesmeyenler/0`;
-            const payload = { durum: newDurum, eslesme_tur, referans_no };
+            const payload = { durum: newDurum, eslesme_tur, referans_no, aciklama: currentAciklama };
+            
             const res = await fetch(url, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
             if (!res.ok) throw new Error('Durum güncellenemedi');
+            const data = await res.json();
+            
+            // In-memory update
+            if (rec) {
+                rec.Durum = newDurum;
+                if (data.record && data.record.ID) {
+                    rec.ID = data.record.ID;
+                }
+            }
+            applyEslesmeyenlerFilters();
             showToast(`Kayıt durumu "${newDurum}" olarak güncellendi.`);
-            await loadEslesmeyenler();
         } catch (err) {
             console.error(err);
             showToast('Hata: ' + err.message, 'error');
@@ -1290,6 +1306,18 @@
             });
 
             if (!res.ok) throw new Error('Açıklama kaydedilemedi');
+            const data = await res.json();
+            
+            // In-memory update
+            const rec = allEslesmeyenler.find(r => 
+                (id && r.ID === id) || (r.Eslesme_Tur === eslesme_tur && r.Referans_No === referans_no)
+            );
+            if (rec) {
+                rec.Aciklama = newAciklama;
+                if (data.record && data.record.ID) {
+                    rec.ID = data.record.ID;
+                }
+            }
             showToast('Açıklama güncellendi.');
         } catch (err) {
             console.error(err);
