@@ -4,7 +4,7 @@ CRUD operations for EFatura, Odeme, Nakit, Gelir, and related entities.
 Uses SQLAlchemy 2.0 style with pagination and filtering.
 """
 
-from typing import Optional, List
+from typing import Optional, List, Dict, Any, Tuple
 from datetime import date, datetime
 from decimal import Decimal
 from collections import defaultdict
