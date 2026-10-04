@@ -1219,6 +1219,18 @@
             return true;
         });
 
+        // Durumu "Açık" olanlar üstte, "Kapalı" olanlar altta, grup içinde tarih azalan
+        filtered.sort((a, b) => {
+            const durumA = a.Durum === 'Açık' ? 0 : 1;
+            const durumB = b.Durum === 'Açık' ? 0 : 1;
+            if (durumA !== durumB) {
+                return durumA - durumB;
+            }
+            const dateA = a.Referans_Tarih || '';
+            const dateB = b.Referans_Tarih || '';
+            return dateB.localeCompare(dateA);
+        });
+
         document.getElementById('eslesmeyenCount').innerText = `${filtered.length} Kayıt`;
         renderEslesmeyenler(filtered);
     }

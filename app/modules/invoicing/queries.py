@@ -4234,8 +4234,10 @@ def get_muavin_eslesmeyenler(
                     "Kayit_Tarih": ""
                 })
 
-    # Sort by date desc
-    results.sort(key=lambda r: r["Referans_Tarih"], reverse=True)
+    # Sort: Durumu "Açık" olanlar üstte (0), "Kapalı" olanlar altta (1), ardından tarihe göre azalan
+    results.sort(key=lambda r: (0 if r["Durum"] == "Açık" else 1, r["Referans_Tarih"] or ""), reverse=False)
+    # Since we want date descending within each group:
+    results.sort(key=lambda r: (0 if r["Durum"] == "Açık" else 1, -(int(r["Referans_Tarih"].replace("-", "")) if r.get("Referans_Tarih") else 0)))
     return results
 
 
