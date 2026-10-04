@@ -3327,17 +3327,28 @@ def auto_match_muavin_defteri(db: Session, donem: int) -> dict:
     )
     muavin_recs = db.scalars(stmt_muavin).all()
 
-    # 2. Fetch e_Fatura candidates for period (excluding 'İptal Fatura', 'Bilgi', and split sub-invoices)
+    # Collect all Referans_No from muavin records to include cross-period matching candidates
+    all_needed_ref_nos = {r.Referans_No.strip() for r in muavin_recs if r.Referans_No and r.Referans_No.strip()}
+
+    # 2. Fetch e_Fatura candidates: Include current period candidates + any cross-period candidates matching needed Referans_No
+    ef_conditions = [EFatura.Donem == yymm_donem]
+    if all_needed_ref_nos:
+        ef_conditions.append(EFatura.Fatura_Numarasi.in_(all_needed_ref_nos))
+
     stmt_ef = select(EFatura).outerjoin(Kategori, EFatura.Kategori_ID == Kategori.Kategori_ID).where(
-        EFatura.Donem == yymm_donem,
+        or_(*ef_conditions),
         or_(Kategori.Kategori_Adi.is_(None), Kategori.Kategori_Adi.notin_(('İptal Fatura', 'Bilgi')))
     )
     ef_candidates_raw = db.scalars(stmt_ef).all()
     ef_no_to_id = {ef.Fatura_Numarasi.strip(): ef.Fatura_ID for ef in ef_candidates_raw if ef.Fatura_Numarasi}
 
-    # 3. Fetch Diger_Harcama candidates for period (excluding 'Harcama e-Fatura')
+    # 3. Fetch Diger_Harcama candidates: Include current period candidates + any cross-period candidates matching needed Referans_No
+    dh_conditions = [DigerHarcama.Donem == yymm_donem]
+    if all_needed_ref_nos:
+        dh_conditions.append(DigerHarcama.Belge_Numarasi.in_(all_needed_ref_nos))
+
     stmt_dh = select(DigerHarcama).outerjoin(Kategori, DigerHarcama.Kategori_ID == Kategori.Kategori_ID).where(
-        DigerHarcama.Donem == yymm_donem,
+        or_(*dh_conditions),
         or_(Kategori.Kategori_Adi.is_(None), Kategori.Kategori_Adi != 'Harcama e-Fatura')
     )
     dh_candidates_raw = db.scalars(stmt_dh).all()
@@ -3559,11 +3570,15 @@ def get_muavin_eslesme_candidates(
         target_types = ['Fatura', 'Fiş']
 
     candidates = []
+    ref_no_clean = (rec.Referans_No or "").strip()
 
     if 'Fatura' in target_types:
         stmt_ef = select(EFatura).outerjoin(Kategori, EFatura.Kategori_ID == Kategori.Kategori_ID)
         if yymm_donem:
-            stmt_ef = stmt_ef.where(EFatura.Donem == yymm_donem)
+            if ref_no_clean:
+                stmt_ef = stmt_ef.where(or_(EFatura.Donem == yymm_donem, EFatura.Fatura_Numarasi == ref_no_clean))
+            else:
+                stmt_ef = stmt_ef.where(EFatura.Donem == yymm_donem)
         stmt_ef = stmt_ef.where(
             or_(Kategori.Kategori_Adi.is_(None), Kategori.Kategori_Adi.notin_(('İptal Fatura', 'Bilgi')))
         ).order_by(EFatura.Fatura_Tarihi.desc())
@@ -3584,7 +3599,10 @@ def get_muavin_eslesme_candidates(
     if 'Fiş' in target_types:
         stmt_dh = select(DigerHarcama).outerjoin(Kategori, DigerHarcama.Kategori_ID == Kategori.Kategori_ID)
         if yymm_donem:
-            stmt_dh = stmt_dh.where(DigerHarcama.Donem == yymm_donem)
+            if ref_no_clean:
+                stmt_dh = stmt_dh.where(or_(DigerHarcama.Donem == yymm_donem, DigerHarcama.Belge_Numarasi == ref_no_clean))
+            else:
+                stmt_dh = stmt_dh.where(DigerHarcama.Donem == yymm_donem)
         stmt_dh = stmt_dh.where(
             or_(Kategori.Kategori_Adi.is_(None), Kategori.Kategori_Adi != 'Harcama e-Fatura')
         ).order_by(DigerHarcama.Belge_Tarihi.desc())
