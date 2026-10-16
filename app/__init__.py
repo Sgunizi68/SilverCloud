@@ -4,8 +4,10 @@ SilverCloud Application Package
 Organized by business domain, not technical layers.
 """
 
-from flask import Flask
+import os
+from flask import Flask, send_from_directory
 from flask_session import Session
+
 
 
 def create_app(config_name: str = "development") -> Flask:
@@ -85,4 +87,13 @@ def create_app(config_name: str = "development") -> Flask:
         from app.config import get_app_version
         return dict(app_version=get_app_version())
 
+    @app.route('/favicon.ico')
+    def favicon():
+        return send_from_directory(
+            os.path.join(app.root_path, 'static'),
+            'favicon.ico',
+            mimetype='image/vnd.microsoft.icon'
+        )
+
     return app
+

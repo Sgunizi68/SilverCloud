@@ -6,10 +6,19 @@ Handles token generation, validation, and password hashing.
 from datetime import datetime, timedelta
 from typing import Optional
 import jwt
+import bcrypt
+
+# Compatibility shim for passlib with bcrypt>=4.0.0
+if not hasattr(bcrypt, "__about__"):
+    class _About:
+        __version__ = getattr(bcrypt, "__version__", "4.0.1")
+    bcrypt.__about__ = _About()
+
 from passlib.context import CryptContext
 
 # Password hashing context
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 
 JWT_ALGORITHM = "HS256"
 
