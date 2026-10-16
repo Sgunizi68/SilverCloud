@@ -410,10 +410,8 @@
 <script>
     const KATEGORILER = {{ kategoriler | tojson | safe }};
     const DONEM_LISTESI = {{ donem_listesi | tojson | safe }};
-    let kategorilerMap = {};
-    KATEGORILER.forEach(cat => {
-        kategorilerMap[cat.Kategori_ID] = cat.Kategori_Adi;
-    });
+    let kategorilerMap = {{ kategori_map | tojson | safe }};
+
 
     // --- Client-side Search/Filter ---
     document.addEventListener('DOMContentLoaded', () => {
@@ -553,10 +551,16 @@
     function harcamaFormHtml(isEdit = false, item = null) {
         const subeOpts = `{% for sube in subeler %}<option value="{{ sube.Sube_ID }}">{{ sube.Sube_Adi }}</option>{% endfor %}`;
         let katOpts = '<option value="">Seçiniz...</option>';
+        let selectedFound = false;
         KATEGORILER.forEach(k => {
             const sel = (item && k.Kategori_ID == item.Kategori_ID) ? 'selected' : '';
+            if (sel) selectedFound = true;
             katOpts += '<option value="' + k.Kategori_ID + '" ' + sel + '>' + k.Kategori_Adi + '</option>';
         });
+        if (item && item.Kategori_ID && !selectedFound && kategorilerMap[item.Kategori_ID]) {
+            katOpts += '<option value="' + item.Kategori_ID + '" selected>' + kategorilerMap[item.Kategori_ID] + ' (Mevcut)</option>';
+        }
+
 
         return `
             <form id="harcamaForm" onsubmit="saveData(event)">
@@ -727,15 +731,25 @@
 
     let currentHarcamaId = null;
     let currentSubeId = null;
+    let currentHarcamaKategoriId = null;
     let allEfaturas = [];
 
     async function openMatchModal(item) {
         currentHarcamaId = item.Harcama_ID;
         currentSubeId = item.Sube_ID;
+        currentHarcamaKategoriId = item.Kategori_ID || null;
 
         const donemOpts = DONEM_LISTESI.map(d => `<option value="${d}">${d}</option>`).join('');
-        const katOpts = '<option value="">Seçili e-Faturanın kategorisini değiştirin...</option>' +
-            Object.entries(kategorilerMap).map(([id, name]) => `<option value="${id}">${name}</option>`).join('');
+        let katOpts = '<option value="">Seçiniz...</option>';
+        let selectedFound = false;
+        KATEGORILER.forEach(k => {
+            const sel = (item && k.Kategori_ID == item.Kategori_ID) ? 'selected' : '';
+            if (sel) selectedFound = true;
+            katOpts += '<option value="' + k.Kategori_ID + '" ' + sel + '>' + k.Kategori_Adi + '</option>';
+        });
+        if (item && item.Kategori_ID && !selectedFound && kategorilerMap[item.Kategori_ID]) {
+            katOpts += '<option value="' + item.Kategori_ID + '" selected>' + kategorilerMap[item.Kategori_ID] + ' (Mevcut)</option>';
+        }
 
         const modalHtml = `
             <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
@@ -771,7 +785,7 @@
             <div class="modal-footer" style="margin-top: 15px; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <label style="font-size: 11px;">e-Fatura Kategorisi:</label>
-                    <select id="matchEfaturaKategori" class="form-control" style="width: 250px;" disabled>
+                    <select id="matchEfaturaKategori" class="form-control" style="width: 250px;">
                         ${katOpts}
                     </select>
                 </div>
@@ -781,6 +795,7 @@
                 </div>
             </div>
         `;
+
 
         showModal('e-Fatura Eşleştir', modalHtml);
 
@@ -842,8 +857,8 @@
         const tbody = document.getElementById('matchTableBody');
         const katSelect = document.getElementById('matchEfaturaKategori');
         if (katSelect) {
-            katSelect.disabled = true;
-            katSelect.value = '';
+            // Keep the selected harcama's category as default value
+            katSelect.value = currentHarcamaKategoriId || '';
         }
 
         if (!tbody) return;
@@ -874,18 +889,13 @@
             document.querySelectorAll('.match-check').forEach(c => {
                 if (c !== el) c.checked = false;
             });
-            const f = allEfaturas.find(x => x.Fatura_ID == id);
-            if (f && katSelect) {
-                katSelect.disabled = false;
-                katSelect.value = f.Kategori_ID || '';
-            }
-        } else {
-            if (katSelect) {
-                katSelect.disabled = true;
-                katSelect.value = '';
+            // If the user already has the harcama's category set or wants to change it, keep harcama's category as default unless changed
+            if (katSelect && (!katSelect.value && currentHarcamaKategoriId)) {
+                katSelect.value = currentHarcamaKategoriId;
             }
         }
     }
+
 
     async function saveMatch() {
         const selected = document.querySelector('.match-check:checked');

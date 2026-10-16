@@ -357,14 +357,33 @@ def diger_harcamalar():
     can_view_gizli = is_admin or auth_queries.has_permission(db_session, user.Kullanici_ID, "Gizli Kategori Veri Erişimi")
     has_match_permission = is_admin or auth_queries.has_permission(db_session, user.Kullanici_ID, "Harcama e-fatura eşleşme")
     
-    # Fetch categories for the add/edit modal
-    kategoriler_raw = ref_queries.get_kategoriler(db_session, limit=1000, can_view_gizli=can_view_gizli)
+    # Fetch categories for the add/edit modal (Only Gider or Bilgi categories)
+    all_kategoriler_raw = ref_queries.get_kategoriler(db_session, limit=1000, can_view_gizli=can_view_gizli)
     
+    # Filter categories: Only those with Tip in ('Gider', 'Bilgi') or whose parent category has 'Gider'/'Bilgi'
+    filtered_kategoriler = [
+        k for k in all_kategoriler_raw
+        if (k.Tip in ['Gider', 'Bilgi']) or
+           (k.ust_kategori and any(word in (k.ust_kategori.UstKategori_Adi or '').lower() for word in ['gider', 'bilgi']))
+    ]
+
+    # Turkish alphabetical sorting
+    tr_alphabet = 'abcçdefgğhıijklmnoöprsştuüvyz0123456789'
+    tr_map = {c: i for i, c in enumerate(tr_alphabet)}
+    def _tr_sort_key(name: str):
+        lowered = (name or '').replace('İ', 'i').replace('I', 'ı').lower()
+        return [_tr_map_get(ch) for ch in lowered]
+    def _tr_map_get(ch):
+        return tr_map.get(ch, ord(ch) + 1000)
+
+    filtered_kategoriler.sort(key=lambda k: _tr_sort_key(k.Kategori_Adi))
+
     # Serialize kategoriler to plain dicts so tojson filter works in template
     kategoriler = [
         {'Kategori_ID': k.Kategori_ID, 'Kategori_Adi': k.Kategori_Adi}
-        for k in kategoriler_raw
+        for k in filtered_kategoriler
     ]
+
     
     # Get filter params from query string
     sube_id = request.args.get('sube_id', None, type=int)
@@ -438,8 +457,9 @@ def diger_harcamalar():
         }
         harcamalar_list.append(item)
     
-    # Build kategori map (id -> name) for server-side rendering
-    kategori_map = {k['Kategori_ID']: k['Kategori_Adi'] for k in kategoriler}
+    # Build kategori map (id -> name) for server-side table rendering (all categories)
+    kategori_map = {k.Kategori_ID: k.Kategori_Adi for k in all_kategoriler_raw}
+
     
     db_session.close()
     
