@@ -305,6 +305,33 @@ class DigerHarcama(db.Model):
         return f"<DigerHarcama {self.Harcama_ID}>"
 
 
+class DigerHarcamaDefault(db.Model):
+    """Default other expenses template"""
+    __tablename__ = "Diger_Harcama_Default"
+    __table_args__ = {"extend_existing": True}
+
+    Harcama_Default_ID = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    Alici_Adi = Column(String(200), nullable=False)
+    Belge_Numarasi = Column(String(50), nullable=True)
+    Tutar = Column(DECIMAL(15, 2), nullable=False)
+    Kategori_ID = Column(Integer, ForeignKey("Kategori.Kategori_ID"), nullable=False, index=True)
+    Harcama_Tipi = Column(
+        Enum('Nakit', 'Banka Ödeme', 'Kredi Kartı'),
+        nullable=False
+    )
+    Gunluk_Harcama = Column(Boolean, default=False, nullable=False)
+    Sube_ID = Column(Integer, ForeignKey("Sube.Sube_ID"), nullable=False, index=True)
+    Aciklama = Column(String(45), nullable=True)
+
+    # Relationships
+    kategori = relationship("Kategori")
+    sube = relationship("Sube")
+
+    def __repr__(self):
+        return f"<DigerHarcamaDefault {self.Harcama_Default_ID}>"
+
+
+
 class Odeme(db.Model):
     """Payment"""
     __tablename__ = "Odeme"

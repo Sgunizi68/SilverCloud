@@ -1263,6 +1263,43 @@ def delete_diger_harcama(db: Session, harcama_id: int) -> bool:
     db.commit()
     return True
 
+
+def get_diger_harcama_defaults(db: Session) -> List[Any]:
+    """Get all default other expenses templates."""
+    from app.models.models import DigerHarcamaDefault
+    stmt = select(DigerHarcamaDefault).order_by(DigerHarcamaDefault.Harcama_Default_ID.asc())
+    return db.scalars(stmt).all()
+
+
+def bulk_create_diger_harcama(db: Session, records: List[dict]) -> List[DigerHarcama]:
+    """Bulk create Diger Harcama records in a single transaction."""
+    from app.models.models import DigerHarcama
+    created = []
+    try:
+        for r in records:
+            item = DigerHarcama(
+                Alici_Adi=r["Alici_Adi"],
+                Belge_Numarasi=r.get("Belge_Numarasi"),
+                Belge_Tarihi=r["Belge_Tarihi"],
+                Donem=r["Donem"],
+                Tutar=r["Tutar"],
+                Kategori_ID=r["Kategori_ID"],
+                Harcama_Tipi=r["Harcama_Tipi"],
+                Gunluk_Harcama=r.get("Gunluk_Harcama", False),
+                Sube_ID=r["Sube_ID"],
+                Açıklama=r.get("Açıklama"),
+                Imaj=None,
+                Imaj_Adi=None
+            )
+            db.add(item)
+            created.append(item)
+        db.commit()
+        return created
+    except Exception as e:
+        db.rollback()
+        raise e
+
+
 def get_efatura_by_harcama_id(db: Session, harcama_id: int) -> Optional[EFatura]:
     """Find the e-invoice linked to this Harcama ID via description."""
     search_str = f"Diğer Harcama - {harcama_id}"

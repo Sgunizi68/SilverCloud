@@ -8,7 +8,7 @@ from app.common.database import db
 from app.models.models import (
     Sube, Kullanici, Rol, Yetki, KullaniciRol, RolYetki,
     Deger, UstKategori, Kategori,
-    EFatura, B2BEkstre, DigerHarcama, Odeme, OdemeReferans,
+    EFatura, B2BEkstre, DigerHarcama, DigerHarcamaDefault, Odeme, OdemeReferans,
     Nakit, EFaturaReferans, POSHareketleri,
     Gelir, GelirEkstra,
     Stok, StokFiyat, StokSayim,
@@ -20,7 +20,8 @@ __all__ = [
     "db",
     "Sube", "Kullanici", "Rol", "Yetki", "KullaniciRol", "RolYetki",
     "Deger", "UstKategori", "Kategori",
-    "EFatura", "B2BEkstre", "DigerHarcama", "Odeme", "OdemeReferans",
+    "EFatura", "B2BEkstre", "DigerHarcama", "DigerHarcamaDefault", "Odeme", "OdemeReferans",
+
     "Nakit", "EFaturaReferans", "POSHareketleri",
     "Gelir", "GelirEkstra",
     "Stok", "StokFiyat", "StokSayim",

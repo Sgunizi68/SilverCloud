@@ -7,7 +7,9 @@ All endpoints protected by @auth_required decorator.
 from functools import wraps
 from datetime import date, datetime
 from flask import Blueprint, request, jsonify
+from sqlalchemy import select
 from app.common.database import get_db_session
+
 from app.modules.invoicing import queries
 from app.modules.reference import queries as ref_queries
 
@@ -1500,6 +1502,186 @@ def delete_diger_harcama(harcama_id):
         return jsonify({"message": "DigerHarcama deleted"}), 204
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@invoicing_bp.route("/diger-harcamalar-defaults", methods=["GET"])
+@auth_required
+def get_diger_harcamalar_defaults():
+    """Get all default expense templates (Permission 73 / Admin required)."""
+    try:
+        db = get_db_session()
+        from app.modules.auth import queries as auth_queries
+        user = request.user
+        is_admin = (user.Kullanici_Adi and user.Kullanici_Adi.lower() == 'admin')
+        if not is_admin:
+            roles = auth_queries.get_user_roles(db, user.Kullanici_ID)
+            is_admin = 'admin' in [r.lower() for r in roles]
+
+        if not is_admin and not auth_queries.has_permission(db, user.Kullanici_ID, "Aybaşı Default Diğer Harcamaları Ekleme"):
+            db.close()
+            return jsonify({"error": "Bu işlem için yetkiniz bulunmamaktadır."}), 403
+
+        defaults = queries.get_diger_harcama_defaults(db)
+        db.close()
+
+        result = []
+        for d in defaults:
+            result.append({
+                "Harcama_Default_ID": d.Harcama_Default_ID,
+                "Alici_Adi": d.Alici_Adi,
+                "Belge_Numarasi": d.Belge_Numarasi or "",
+                "Tutar": float(d.Tutar) if d.Tutar is not None else 0.0,
+                "Kategori_ID": d.Kategori_ID,
+                "Harcama_Tipi": d.Harcama_Tipi,
+                "Gunluk_Harcama": bool(d.Gunluk_Harcama),
+                "Sube_ID": d.Sube_ID,
+                "Aciklama": d.Aciklama or ""
+            })
+
+        return jsonify(result), 200
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
+@invoicing_bp.route("/diger-harcamalar/bulk-default", methods=["POST"])
+@auth_required
+def bulk_create_default_harcamalar():
+    """Bulk create Diger Harcama records from default popup (Permission 73 / Admin required)."""
+    try:
+        db = get_db_session()
+        from app.modules.auth import queries as auth_queries
+        user = request.user
+        is_admin = (user.Kullanici_Adi and user.Kullanici_Adi.lower() == 'admin')
+        if not is_admin:
+            roles = auth_queries.get_user_roles(db, user.Kullanici_ID)
+            is_admin = 'admin' in [r.lower() for r in roles]
+
+        if not is_admin and not auth_queries.has_permission(db, user.Kullanici_ID, "Aybaşı Default Diğer Harcamaları Ekleme"):
+            db.close()
+            return jsonify({"error": "Bu işlem için yetkiniz bulunmamaktadır."}), 403
+
+        payload = request.get_json()
+        if not payload or not isinstance(payload, list) or len(payload) == 0:
+            db.close()
+            return jsonify({"error": "Eklenecek kayıt bulunamadı."}), 400
+
+        # Fetch valid IDs for foreign key validation
+        from app.models.models import Kategori, Sube
+        valid_kat_ids = set(db.scalars(select(Kategori.Kategori_ID)).all())
+        valid_sube_ids = set(db.scalars(select(Sube.Sube_ID)).all())
+        valid_harcama_tipleri = {'Nakit', 'Banka Ödeme', 'Kredi Kartı'}
+
+        validated_records = []
+        for idx, row in enumerate(payload):
+            row_num = idx + 1
+            alici_adi = str(row.get("Alici_Adi", "") or "").strip()
+            if not alici_adi:
+                db.close()
+                return jsonify({"error": f"Satır {row_num}: Alıcı Adı boş bırakılamaz."}), 400
+            if len(alici_adi) > 200:
+                db.close()
+                return jsonify({"error": f"Satır {row_num}: Alıcı Adı en fazla 200 karakter olabilir."}), 400
+
+            belge_no = row.get("Belge_Numarasi")
+            if belge_no is not None:
+                belge_no = str(belge_no).strip() or None
+                if belge_no and len(belge_no) > 50:
+                    db.close()
+                    return jsonify({"error": f"Satır {row_num}: Belge Numarası en fazla 50 karakter olabilir."}), 400
+
+            aciklama = row.get("Açıklama") if "Açıklama" in row else row.get("Aciklama")
+            if aciklama is not None:
+                aciklama = str(aciklama).strip() or None
+                if aciklama and len(aciklama) > 45:
+                    db.close()
+                    return jsonify({"error": f"Satır {row_num}: Açıklama en fazla 45 karakter olabilir."}), 400
+
+            # Belge Tarihi
+            tarih_val = row.get("Belge_Tarihi")
+            if not tarih_val:
+                db.close()
+                return jsonify({"error": f"Satır {row_num}: Belge Tarihi zorunludur."}), 400
+            if isinstance(tarih_val, str):
+                try:
+                    belge_tarihi = datetime.strptime(tarih_val[:10], "%Y-%m-%d").date()
+                except ValueError:
+                    db.close()
+                    return jsonify({"error": f"Satır {row_num}: Geçersiz Belge Tarihi formatı (YYYY-AA-GG olmalı)."}), 400
+            elif isinstance(tarih_val, date):
+                belge_tarihi = tarih_val
+            else:
+                db.close()
+                return jsonify({"error": f"Satır {row_num}: Geçersiz Belge Tarihi."}), 400
+
+            # Donem
+            donem_val = row.get("Donem")
+            try:
+                donem = int(donem_val)
+                if donem < 1000 or donem > 9912:
+                    raise ValueError()
+            except (ValueError, TypeError):
+                db.close()
+                return jsonify({"error": f"Satır {row_num}: Geçersiz Dönem (YYMM formatında olmalı)."}), 400
+
+            # Tutar
+            try:
+                tutar = round(float(row.get("Tutar", 0)), 2)
+            except (ValueError, TypeError):
+                db.close()
+                return jsonify({"error": f"Satır {row_num}: Geçersiz Tutar değeri."}), 400
+
+            # Harcama Tipi
+            harcama_tipi = row.get("Harcama_Tipi")
+            if harcama_tipi not in valid_harcama_tipleri:
+                db.close()
+                return jsonify({"error": f"Satır {row_num}: Harcama Tipi 'Nakit', 'Banka Ödeme' veya 'Kredi Kartı' olmalıdır."}), 400
+
+            # Kategori ID
+            try:
+                kategori_id = int(row.get("Kategori_ID"))
+                if kategori_id not in valid_kat_ids:
+                    raise ValueError()
+            except (ValueError, TypeError):
+                db.close()
+                return jsonify({"error": f"Satır {row_num}: Geçersiz Kategori seçimi."}), 400
+
+            # Sube ID
+            try:
+                sube_id = int(row.get("Sube_ID"))
+                if sube_id not in valid_sube_ids:
+                    raise ValueError()
+            except (ValueError, TypeError):
+                db.close()
+                return jsonify({"error": f"Satır {row_num}: Geçersiz Şube seçimi."}), 400
+
+            gunluk = bool(row.get("Gunluk_Harcama", False))
+
+            validated_records.append({
+                "Alici_Adi": alici_adi,
+                "Belge_Numarasi": belge_no,
+                "Belge_Tarihi": belge_tarihi,
+                "Donem": donem,
+                "Tutar": tutar,
+                "Kategori_ID": kategori_id,
+                "Harcama_Tipi": harcama_tipi,
+                "Gunluk_Harcama": gunluk,
+                "Sube_ID": sube_id,
+                "Açıklama": aciklama
+            })
+
+        # Bulk create within transaction
+        created_records = queries.bulk_create_diger_harcama(db, validated_records)
+        db.close()
+
+        return jsonify({
+            "message": f"{len(created_records)} adet default harcama başarıyla eklendi.",
+            "count": len(created_records)
+        }), 201
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return jsonify({"error": f"Kayıt ekleme sırasında hata oluştu: {str(e)}"}), 500
+
 
 
 # ============================================================================
