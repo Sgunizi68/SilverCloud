@@ -416,9 +416,12 @@ def send_report_mail():
                     excel_base64 = excel_base64.split(",", 1)[1]
                 excel_bytes = base64.b64decode(excel_base64)
 
-                # Clean filename
-                clean_filename = re.sub(r'[\\/*?:"<>|]', "", filename)
-                if not clean_filename.lower().endswith(".xlsx"):
+                # Clean filename with timestamp fallback
+                clean_filename = re.sub(r'[\\/*?:"<>|]', "", filename).strip()
+                if not clean_filename or clean_filename == ".xlsx":
+                    from datetime import datetime
+                    clean_filename = f"Rapor_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+                elif not clean_filename.lower().endswith(".xlsx"):
                     clean_filename += ".xlsx"
 
                 attachments.append({

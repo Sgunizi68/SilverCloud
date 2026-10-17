@@ -73,7 +73,19 @@ def send_email(
                 part = MIMEBase(maintype, subtype)
                 part.set_payload(content)
                 encoders.encode_base64(part)
-                part.add_header("Content-Disposition", f'attachment; filename="{fname}"')
+                # Ensure clean filename and RFC 2231 / ASCII fallback for email clients
+                safe_ascii = fname.encode('ascii', 'ignore').decode('ascii').strip()
+                if not safe_ascii or safe_ascii == ".xlsx":
+                    import datetime
+                    ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                    safe_ascii = f"Rapor_{ts}.xlsx"
+                
+                from email.header import Header
+                from urllib.parse import quote
+                # Provide standard filename and UTF-8 encoded filename*
+                encoded_fname = quote(fname.encode('utf-8'))
+                part.add_header("Content-Disposition", "attachment", filename=safe_ascii)
+                part.set_param("filename*", f"UTF-8''{encoded_fname}", header="Content-Disposition")
                 msg.attach(part)
         else:
             msg = MIMEMultipart("alternative")

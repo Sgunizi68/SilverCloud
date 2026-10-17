@@ -1285,7 +1285,19 @@
 
                 // 2. Get Excel base64 attachment
                 let excelBase64 = null;
-                let filename = (options.filename || subject).replace(/[^a-zA-Z0-9_\-ğüşıöçĞÜŞİÖÇ ]/g, '').trim() + '.xlsx';
+                const trMap = { 'ç': 'c', 'Ç': 'C', 'ğ': 'g', 'Ğ': 'G', 'ı': 'i', 'I': 'I', 'İ': 'I', 'ö': 'o', 'Ö': 'O', 'ş': 's', 'Ş': 'S', 'ü': 'u', 'Ü': 'U' };
+                let rawBaseName = (options.filename || subject || '').replace(/[çÇğĞıIİöÖşŞüÜ]/g, c => trMap[c] || c);
+                let safeName = rawBaseName.replace(/[^a-zA-Z0-9_\- ]/g, '').trim().replace(/\s+/g, '_');
+                const now = new Date();
+                const pad = (n) => String(n).padStart(2, '0');
+                const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+                if (!safeName) {
+                    safeName = `Rapor_${timestamp}`;
+                }
+                if (!safeName.toLowerCase().endsWith('.xlsx')) {
+                    safeName += '.xlsx';
+                }
+                const filename = safeName;
 
                 if (typeof options.getExcelBase64 === 'function') {
                     excelBase64 = await options.getExcelBase64();
