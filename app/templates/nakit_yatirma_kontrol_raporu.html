@@ -332,6 +332,7 @@
         <div class="control-bar">
             <button class="btn-icon" title="Yazdır" onclick="window.print()">🖨️</button>
             <button class="btn-icon" title="İndir" onclick="exportTableToCSV()">⬇️</button>
+            <button class="btn-icon" data-permission="Mail Gönder" title="Mail Gönder" onclick="openReportMailModal({ tableSelector: '.nakit-table' })">✉️</button>
             <select class="donem-select"
                 onchange="window.location.href='/nakit-yatirma-kontrol-raporu?sube_id={{ secili_sube_id }}&donem=' + this.value">
                 {% for d in donem_listesi %}

@@ -1120,6 +1120,208 @@
                 setTimeout(() => toast.remove(), 500);
             }, 4000);
         }
+
+        // ==========================================
+        // REPORT MAIL SYSTEM (Yetki 74: Mail Gönder)
+        // ==========================================
+        window.openReportMailModal = function(options = {}) {
+            const pageTitle = (options.title || document.querySelector('h1, h2, .page-title, .header-title')?.textContent || document.title || 'Rapor').trim().replace(/\s+/g, ' ');
+            const modalHtml = `
+                <div style="font-family: inherit;">
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 5px;">
+                            <i class="fas fa-envelope" style="color: #3b82f6; margin-right: 4px;"></i> Alıcı E-posta Adresleri:
+                        </label>
+                        <input type="text" id="reportMailRecipients" class="form-control" 
+                               style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; box-sizing: border-box;"
+                               placeholder="ornek@alanadi.com, alici2@alanadi.com">
+                        <small style="color: #64748b; font-size: 11px; margin-top: 4px; display: block;">
+                            Birden fazla adresi virgül (,) veya noktalı virgül (;) ile ayırabilirsiniz.
+                        </small>
+                    </div>
+
+                    <div style="margin-bottom: 18px;">
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 5px;">
+                            <i class="fas fa-heading" style="color: #6366f1; margin-right: 4px;"></i> Konu:
+                        </label>
+                        <input type="text" id="reportMailSubject" class="form-control" 
+                               style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; box-sizing: border-box;"
+                               value="${pageTitle}">
+                    </div>
+
+                    <div id="reportMailError" style="display: none; background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; padding: 10px 14px; border-radius: 6px; font-size: 12px; margin-bottom: 15px;">
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; gap: 10px; padding-top: 15px; border-top: 1px solid #e2e8f0;">
+                        <button type="button" class="btn btn-secondary" onclick="hideModal()" style="padding: 8px 16px; border: 1px solid #cbd5e1; background: #fff; color: #475569; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500;">
+                            İptal
+                        </button>
+                        <button type="button" id="btnSendReportMail" class="btn btn-primary" style="padding: 8px 18px; border: none; background: #2563eb; color: #fff; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                            <i class="fas fa-paper-plane"></i> Gönder
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            showModal('Mail Gönder', modalHtml);
+
+            // Fetch remembered recipients
+            fetch('/api/v1/mail/recipients', { method: 'GET', credentials: 'include' })
+                .then(r => r.ok ? r.json() : { recipients: [] })
+                .catch(() => ({ recipients: [] }))
+                .then(data => {
+                    const recInput = document.getElementById('reportMailRecipients');
+                    if (recInput && data && data.recipients && data.recipients.length > 0) {
+                        recInput.value = data.recipients.join(', ');
+                    }
+                });
+
+            // Bind send click
+            const btnSend = document.getElementById('btnSendReportMail');
+            if (btnSend) {
+                btnSend.onclick = () => window.handleSendReportMail(options);
+            }
+        };
+
+        window.handleSendReportMail = async function(options) {
+            const btnSend = document.getElementById('btnSendReportMail');
+            const errDiv = document.getElementById('reportMailError');
+            const recInput = document.getElementById('reportMailRecipients');
+            const subInput = document.getElementById('reportMailSubject');
+
+            if (errDiv) {
+                errDiv.style.display = 'none';
+                errDiv.textContent = '';
+            }
+
+            const recipients = (recInput ? recInput.value : '').trim();
+            const subject = (subInput ? subInput.value : '').trim();
+
+            if (!recipients) {
+                if (errDiv) {
+                    errDiv.textContent = 'Lütfen en az bir alıcı e-posta adresi girin.';
+                    errDiv.style.display = 'block';
+                }
+                return;
+            }
+
+            if (!subject) {
+                if (errDiv) {
+                    errDiv.textContent = 'Konu alanı boş bırakılamaz.';
+                    errDiv.style.display = 'block';
+                }
+                return;
+            }
+
+            // Client-side email validation
+            const emailList = recipients.split(/[,;]+/).map(e => e.trim()).filter(e => e.length > 0);
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            const invalid = emailList.filter(e => !emailRegex.test(e));
+            if (invalid.length > 0) {
+                if (errDiv) {
+                    errDiv.textContent = `Geçersiz e-posta adresi: ${invalid.join(', ')}`;
+                    errDiv.style.display = 'block';
+                }
+                return;
+            }
+
+            // Set loading state
+            btnSend.disabled = true;
+            const originalBtnHtml = btnSend.innerHTML;
+            btnSend.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gönderiliyor...';
+
+            try {
+                // 1. Get HTML Body (print content)
+                let htmlBody = '';
+                if (typeof options.getHtml === 'function') {
+                    htmlBody = await options.getHtml();
+                } else if (options.printSelector) {
+                    const el = document.querySelector(options.printSelector);
+                    if (el) htmlBody = el.outerHTML;
+                } else {
+                    const fallbackTable = document.querySelector('table.ref-table, table.custom-table, table.table, table.modern-report-table, table.ceki-table, table.pos-table, table.online-table, table.legacy-table, table');
+                    if (fallbackTable) {
+                        htmlBody = fallbackTable.outerHTML;
+                    }
+                }
+
+                // Wrap HTML body nicely with styled container
+                if (htmlBody) {
+                    htmlBody = `
+                        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; padding: 20px;">
+                            <h2 style="margin: 0 0 15px 0; color: #0f172a; border-bottom: 2px solid #3b82f6; padding-bottom: 8px;">${subject}</h2>
+                            <p style="margin: 0 0 15px 0; color: #64748b; font-size: 13px;">Rapor Tarihi: ${new Date().toLocaleString('tr-TR')}</p>
+                            <div style="overflow-x: auto; margin-top: 15px;">
+                                ${htmlBody}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // 2. Get Excel base64 attachment
+                let excelBase64 = null;
+                let filename = (options.filename || subject).replace(/[^a-zA-Z0-9_\-ğüşıöçĞÜŞİÖÇ ]/g, '').trim() + '.xlsx';
+
+                if (typeof options.getExcelBase64 === 'function') {
+                    excelBase64 = await options.getExcelBase64();
+                } else if (typeof XLSX !== 'undefined') {
+                    // Try to generate workbook from active table or options.tableSelector
+                    let targetTable = null;
+                    if (options.tableSelector) {
+                        targetTable = document.querySelector(options.tableSelector);
+                    } else if (options.tableId) {
+                        targetTable = document.getElementById(options.tableId);
+                    } else {
+                        targetTable = document.querySelector('table.ref-table, table.custom-table, table.table, table.modern-report-table, table.ceki-table, table.pos-table, table.online-table, table.legacy-table, table');
+                    }
+
+                    if (targetTable) {
+                        const clone = targetTable.cloneNode(true);
+                        clone.querySelectorAll('.hide-on-print, th:last-child, td:last-child').forEach(el => {
+                            if (el.textContent.includes('İŞLEMLER') || el.closest('th, td')?.classList.contains('hide-on-print')) {
+                                el.remove();
+                            }
+                        });
+                        const wb = XLSX.utils.table_to_book(clone, { sheet: "Rapor" });
+                        excelBase64 = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+                    }
+                }
+
+                // 3. POST to backend
+                const response = await fetch('/api/v1/mail/send-report', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        recipients: emailList,
+                        subject: subject,
+                        html_body: htmlBody,
+                        excel_base64: excelBase64,
+                        filename: filename
+                    })
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    showToast(result.message || 'E-posta başarıyla gönderildi.', 'success');
+                    hideModal();
+                } else {
+                    if (errDiv) {
+                        errDiv.textContent = result.error || 'E-posta gönderilemedi.';
+                        errDiv.style.display = 'block';
+                    }
+                }
+            } catch (err) {
+                console.error('Mail send error:', err);
+                if (errDiv) {
+                    errDiv.textContent = 'İşlem sırasında bir hata oluştu: ' + (err.message || err);
+                    errDiv.style.display = 'block';
+                }
+            } finally {
+                btnSend.disabled = false;
+                btnSend.innerHTML = originalBtnHtml;
+            }
+        };
         document.addEventListener('DOMContentLoaded', () => {
             // Profile Dropdown Toggle
             const userProfileBtn = document.getElementById('userProfileBtn');
@@ -1197,6 +1399,18 @@
                                 }
                             });
                         }
+
+                        // Also control standalone buttons with data-permission (e.g. Mail Gönder buttons)
+                        document.querySelectorAll('[data-permission]').forEach(el => {
+                            if (el.closest('#menu')) return; // already handled above
+                            const perm = el.getAttribute('data-permission');
+                            const hasPerm = userPermissions.some(p => p.toLowerCase() === perm.toLowerCase());
+                            if (!hasPerm) {
+                                el.style.setProperty('display', 'none', 'important');
+                            } else {
+                                el.style.display = '';
+                            }
+                        });
                     });
             };
 

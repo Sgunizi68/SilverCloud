@@ -105,6 +105,7 @@ table.pivot tbody tr:hover td { background: #f8fafc !important; }
       <button class="btn-act btn-update" id="btnUpdateGelir" onclick="updateIncome()" {% if not pivot %}disabled{% endif %}>🔄 Gelir Güncelle</button>
       <button class="btn-act btn-excel" onclick="exportExcel()">📥 Excel</button>
       <button class="btn-act btn-print" onclick="window.print()">🖨️ Yazdır</button>
+      <button class="btn-act" data-permission="Mail Gönder" onclick="openReportMailModal({ tableId: 'pivotTable' })" style="background:#e0f2fe; color:#0369a1; border-color:#bae6fd;">✉️ Mail Gönder</button>
     </div>
   </div>
 

@@ -359,6 +359,10 @@
             <button class="action-btn" onclick="exportToExcel()" title="Excel'e Aktar">
                 <i class="fas fa-download"></i>
             </button>
+            <!-- Mail Gönder -->
+            <button class="action-btn" data-permission="Mail Gönder" onclick="openReportMailModal({ tableId: 'dataTable' })" title="Mail Gönder">
+                <i class="fas fa-envelope" style="color: #3b82f6;"></i> Mail Gönder
+            </button>
             <!-- Search -->
             <input type="text" class="toolbar-input search-input" placeholder="Alıcı/Belge No ara..." id="searchInput">
             <!-- Type Filter -->

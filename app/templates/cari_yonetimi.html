@@ -230,6 +230,10 @@
             <button class="action-btn" onclick="exportCarilerToExcel()" title="Dışa Aktar">
                 <i class="fas fa-download"></i> Dışa Aktar
             </button>
+            <!-- Mail Gönder -->
+            <button class="action-btn" data-permission="Mail Gönder" onclick="openReportMailModal({ tableId: 'cariler-table' })" title="Mail Gönder">
+                <i class="fas fa-envelope" style="color: #3b82f6;"></i> Mail Gönder
+            </button>
             <!-- New -->
             <button class="action-btn primary" onclick="openAddModal()">
                 <i class="fas fa-plus"></i> Yeni Cari

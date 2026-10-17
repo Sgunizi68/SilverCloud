@@ -203,6 +203,10 @@
             <button class="action-btn" onclick="exportReferanslarToExcel()" title="Excel'e Aktar">
                 <i class="fas fa-download"></i>
             </button>
+            <!-- Mail Gönder -->
+            <button class="action-btn" data-permission="Mail Gönder" onclick="openReportMailModal({ tableId: 'referanslar-table' })" title="Mail Gönder">
+                <i class="fas fa-envelope" style="color: #3b82f6;"></i>
+            </button>
             <!-- Search -->
             <input type="text" class="search-input" placeholder="Ödeme tipini ara..." id="ref-search">
             <!-- New -->

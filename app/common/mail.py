@@ -8,7 +8,9 @@ import smtplib
 import logging
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from typing import List, Union, Optional
+from email.mime.base import MIMEBase
+from email import encoders
+from typing import List, Union, Optional, Tuple, Dict, Any
 from flask import current_app
 
 logger = logging.getLogger(__name__)
@@ -19,7 +21,8 @@ def send_email(
     subject: str,
     body: str,
     html: Optional[str] = None,
-    sender: Optional[str] = None
+    sender: Optional[str] = None,
+    attachments: Optional[List[Dict[str, Any]]] = None
 ) -> bool:
     """
     Send an email via SMTP (TLS).
@@ -30,6 +33,7 @@ def send_email(
         body: Plain text body.
         html: Optional HTML body.
         sender: Optional sender address (defaults to configured Gmail_Username).
+        attachments: Optional list of dicts: [{'filename': str, 'content': bytes, 'content_type': Optional[str]}]
 
     Returns:
         True if sent successfully, False otherwise.
@@ -51,17 +55,37 @@ def send_email(
         from_addr = sender or default_sender
         recipients = [to] if isinstance(to, str) else list(to)
 
-        msg = MIMEMultipart("alternative")
+        # Use 'mixed' multipart when attachments exist, else 'alternative'
+        if attachments:
+            msg = MIMEMultipart("mixed")
+            body_part = MIMEMultipart("alternative")
+            body_part.attach(MIMEText(body, "plain", "utf-8"))
+            if html:
+                body_part.attach(MIMEText(html, "html", "utf-8"))
+            msg.attach(body_part)
+
+            for att in attachments:
+                fname = att.get("filename", "attachment.bin")
+                content = att.get("content", b"")
+                content_type = att.get("content_type", "application/octet-stream")
+                maintype, subtype = content_type.split("/", 1) if "/" in content_type else ("application", "octet-stream")
+
+                part = MIMEBase(maintype, subtype)
+                part.set_payload(content)
+                encoders.encode_base64(part)
+                part.add_header("Content-Disposition", f'attachment; filename="{fname}"')
+                msg.attach(part)
+        else:
+            msg = MIMEMultipart("alternative")
+            msg.attach(MIMEText(body, "plain", "utf-8"))
+            if html:
+                msg.attach(MIMEText(html, "html", "utf-8"))
+
         msg["From"] = from_addr
         msg["To"] = ", ".join(recipients)
         msg["Subject"] = subject
 
-        # Attach text and html parts
-        msg.attach(MIMEText(body, "plain", "utf-8"))
-        if html:
-            msg.attach(MIMEText(html, "html", "utf-8"))
-
-        with smtplib.SMTP(server_host, port, timeout=20) as server:
+        with smtplib.SMTP(server_host, port, timeout=25) as server:
             server.ehlo()
             server.starttls()
             server.ehlo()
@@ -74,3 +98,4 @@ def send_email(
     except Exception as e:
         logger.error(f"Failed to send email to {to}: {e}", exc_info=True)
         return False
+

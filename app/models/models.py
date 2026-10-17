@@ -63,6 +63,7 @@ class Kullanici(db.Model):
     Email = Column(String(100), nullable=True, index=True)
     Expire_Date = Column(Date, nullable=True)
     Aktif_Pasif = Column(Boolean, default=True, index=True)
+    Son_Mail_Alicilari = Column(Text, nullable=True)
 
     # Relationships
     kullanici_rolleri = relationship("KullaniciRol", back_populates="kullanici")

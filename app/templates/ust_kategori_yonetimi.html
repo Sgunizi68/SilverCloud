@@ -175,6 +175,7 @@
             <!-- Icons from reference image -->
             <button class="icon-btn" onclick="window.print()" title="Yazdır"><i class="fas fa-print"></i></button>
             <button class="icon-btn" onclick="exportToExcel()" title="Excel"><i class="fas fa-download"></i></button>
+            <button class="icon-btn" data-permission="Mail Gönder" onclick="openReportMailModal({ tableId: 'ust-kat-table' })" title="Mail Gönder"><i class="fas fa-envelope" style="color: #3b82f6;"></i></button>
             <input type="text" class="search-input" placeholder="Üst Kategori ara..." id="ust-kat-search">
             <button class="action-btn primary" onclick="openAddModal()">
                 <i class="fas fa-plus"></i> Yeni Üst Kategori

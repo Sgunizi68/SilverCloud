@@ -180,9 +180,14 @@
                 💳 Ödeme Kategori Atama
                 <span class="badge-count" id="rowCount">0</span>
             </h1>
-            <button class="btn btn-excel" id="exportExcelBtn">
-                <i class="fas fa-file-excel"></i> Excel
-            </button>
+            <div style="display:flex; gap: 8px;">
+                <button class="btn btn-excel" id="exportExcelBtn">
+                    <i class="fas fa-file-excel"></i> Excel
+                </button>
+                <button class="btn btn-excel" data-permission="Mail Gönder" onclick="openReportMailModal({ tableId: 'odemeTable' })" style="background: #2563eb;">
+                    <i class="fas fa-envelope"></i> Mail Gönder
+                </button>
+            </div>
         </div>
 
         <!-- Filters Row -->

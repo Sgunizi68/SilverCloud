@@ -321,6 +321,9 @@
             <button class="icon-btn" title="Excel İndir" onclick="exportExcel()">
                 <i class="fas fa-file-excel" style="color: #10b981;"></i>
             </button>
+            <button class="icon-btn" data-permission="Mail Gönder" title="Mail Gönder" onclick="openReportMailModal({ tableId: 'puantaj-table' })">
+                <i class="fas fa-envelope" style="color: #3b82f6;"></i>
+            </button>
             <label style="font-size: 12px; font-weight: 600; color: #64748b;">Dönem:</label>
             <select class="donem-select" id="donem-select" onchange="changePeriod(this.value)">
                 {% for opt in donem_options %}

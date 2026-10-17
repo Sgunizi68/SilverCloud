@@ -320,6 +320,9 @@
             <button class="btn-download" onclick="exportToExcel()">
                 <i class="fas fa-file-excel"></i> EXCEL
             </button>
+            <button class="btn-download" data-permission="Mail Gönder" onclick="openReportMailModal({ tableSelector: '.legacy-table' })" style="background: #2563eb;">
+                <i class="fas fa-envelope"></i> MAİL
+            </button>
             <select class="form-select-sm" id="branchSelect" onchange="updateFilters()">
                 {% for s in subeler %}
                 <option value="{{ s.Sube_ID }}" {% if s.Sube_ID == secili_sube_id %}selected{% endif %}>{{ s.Sube_Adi }}</option>

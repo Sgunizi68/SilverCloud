@@ -301,3 +301,169 @@ def health():
         }
     """
     return jsonify({"status": "ok"}), 200
+
+
+@auth_bp.route("/mail/recipients", methods=["GET"])
+@auth_required
+def get_mail_recipients():
+    """
+    Get last used email recipients for the logged-in user.
+    """
+    try:
+        user = request.user
+        db_session = get_db_session()
+        db_user = queries.get_kullanici_by_id(db_session, user.Kullanici_ID)
+        recipients_str = db_user.Son_Mail_Alicilari if db_user else ""
+        db_session.close()
+
+        recipients = [r.strip() for r in (recipients_str or "").split(",") if r.strip()]
+        return jsonify({
+            "recipients": recipients,
+            "raw": recipients_str or ""
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@auth_bp.route("/mail/send-report", methods=["POST"])
+@auth_required
+def send_report_mail():
+    """
+    Send report email with HTML print body and Excel attachment.
+    Enforces authorization: Admin or Permission ID 74 ("Mail Gönder").
+    Validates recipients and subject.
+    Saves last-used recipients on success.
+    """
+    import base64
+    import re
+    from app.common.mail import send_email
+    from app.models.models import Kullanici, RolYetki, KullaniciRol
+
+    try:
+        user = request.user
+        db_session = get_db_session()
+
+        # 1. Authorization check: Admin OR Permission ID 74 ("Mail Gönder")
+        is_admin = False
+        if getattr(user, "Kullanici_Adi", "") and user.Kullanici_Adi.lower() == "admin":
+            is_admin = True
+        else:
+            user_roles = queries.get_user_roles(db_session, user.Kullanici_ID)
+            if "admin" in [r.lower() for r in user_roles]:
+                is_admin = True
+
+        has_perm_74 = False
+        if not is_admin:
+            # Query KullaniciRol within active db_session
+            user_roles = db_session.query(KullaniciRol).filter_by(
+                Kullanici_ID=user.Kullanici_ID,
+                Aktif_Pasif=True
+            ).all()
+            role_ids = [kr.Rol_ID for kr in user_roles]
+
+            if role_ids:
+                matched_perm = db_session.query(RolYetki).filter(
+                    RolYetki.Rol_ID.in_(role_ids),
+                    RolYetki.Yetki_ID == 74,
+                    RolYetki.Aktif_Pasif == True
+                ).first()
+                if matched_perm:
+                    has_perm_74 = True
+
+        if not is_admin and not has_perm_74:
+            db_session.close()
+            return jsonify({
+                "error": "Bu işlem için yetkiniz bulunmamaktadır (Yetki: Mail Gönder)."
+            }), 403
+
+        # 2. Parse and validate request payload
+        data = request.get_json(silent=True) or {}
+        recipients_input = data.get("recipients", "")
+        subject = (data.get("subject") or "").strip()
+        html_body = data.get("html_body") or ""
+        excel_base64 = data.get("excel_base64")
+        filename = (data.get("filename") or "Rapor.xlsx").strip()
+
+        if not subject:
+            db_session.close()
+            return jsonify({"error": "E-posta konusu boş olamaz."}), 400
+
+        # Parse recipients (support list or comma/semicolon delimited string)
+        if isinstance(recipients_input, list):
+            raw_recipients = recipients_input
+        else:
+            raw_recipients = re.split(r"[,;]+", str(recipients_input))
+
+        recipients = [r.strip() for r in raw_recipients if r.strip()]
+        if not recipients:
+            db_session.close()
+            return jsonify({"error": "Lütfen en az bir geçerli alıcı e-posta adresi girin."}), 400
+
+        email_regex = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+        invalid_emails = [r for r in recipients if not email_regex.match(r)]
+        if invalid_emails:
+            db_session.close()
+            return jsonify({
+                "error": f"Geçersiz e-posta adresi tespit edildi: {', '.join(invalid_emails)}"
+            }), 400
+
+        # 3. Prepare attachments
+        attachments = []
+        if excel_base64:
+            try:
+                # Remove data URL prefix if present
+                if "," in excel_base64:
+                    excel_base64 = excel_base64.split(",", 1)[1]
+                excel_bytes = base64.b64decode(excel_base64)
+
+                # Clean filename
+                clean_filename = re.sub(r'[\\/*?:"<>|]', "", filename)
+                if not clean_filename.lower().endswith(".xlsx"):
+                    clean_filename += ".xlsx"
+
+                attachments.append({
+                    "filename": clean_filename,
+                    "content": excel_bytes,
+                    "content_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                })
+            except Exception as e:
+                db_session.close()
+                return jsonify({"error": f"Excel eki işlenirken hata oluştu: {str(e)}"}), 400
+
+        # Plain text fallback
+        plain_body = f"{subject}\n\nDetaylar ekteki rapor ve HTML gövdesinde sunulmuştur."
+
+        # 4. Send email via existing mail utility
+        success = send_email(
+            to=recipients,
+            subject=subject,
+            body=plain_body,
+            html=html_body,
+            attachments=attachments if attachments else None
+        )
+
+        if not success:
+            db_session.close()
+            return jsonify({
+                "error": "E-posta gönderimi başarısız oldu. Lütfen SMTP ayarlarını ve alıcı adreslerini kontrol edin."
+            }), 500
+
+        # 5. On successful delivery, save last used recipients for this user
+        try:
+            db_user = db_session.query(Kullanici).filter_by(Kullanici_ID=user.Kullanici_ID).first()
+            if db_user:
+                db_user.Son_Mail_Alicilari = ", ".join(recipients)
+                db_session.commit()
+        except Exception as e:
+            # Non-blocking for client, but logged
+            db_session.rollback()
+
+        db_session.close()
+        return jsonify({
+            "message": "E-posta başarıyla gönderildi.",
+            "recipients": recipients
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": f"Beklenmeyen bir hata oluştu: {str(e)}"}), 500
+

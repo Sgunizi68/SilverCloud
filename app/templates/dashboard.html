@@ -230,6 +230,9 @@
                 <button class="action-btn" onclick="printReport()">
                     <i class="fas fa-file-pdf" style="color: #ef4444;"></i> PDF
                 </button>
+                <button class="action-btn" data-permission="Mail Gönder" onclick="openDashboardMail()" title="Mail Gönder">
+                    <i class="fas fa-envelope" style="color: #3b82f6;"></i> Mail
+                </button>
                 <button class="action-btn primary" id="refresh-reports">
                     <i class="fas fa-sync-alt"></i> Yenile
                 </button>
@@ -567,6 +570,39 @@
             pdf.addImage(imgData, 'PNG', 0, 10, pdfWidth, pdfHeight);
             pdf.save(`Dashboard_${document.getElementById('period-dropdown').value}.pdf`);
             element.style.cssText = originalStyle;
+        });
+    }
+
+    function openDashboardMail() {
+        openReportMailModal({
+            title: 'Dashboard Raporu',
+            printSelector: '#printable-area',
+            getExcelBase64: () => {
+                if (!lastFetchedData) return null;
+                const wb = XLSX.utils.book_new();
+                const rows = [];
+                rows.push(["DÖNEM", document.getElementById('period-dropdown').value]);
+                rows.push(["ŞUBE", document.getElementById('dashboard-title').textContent.split(' - ')[1] || '']);
+                rows.push([]);
+                rows.push(["GELİRLER", "Tutar"]);
+                lastFetchedData.gelirler.forEach(it => rows.push([it.label, it.amount]));
+                rows.push(["TOPLAM GELİR", lastFetchedData.financial_summary.total_revenue]);
+                rows.push([]);
+                rows.push(["GİDERLER", "Tutar"]);
+                lastFetchedData.giderler.forEach(it => rows.push([it.label, it.amount]));
+                rows.push(["TOPLAM GİDER", lastFetchedData.financial_summary.total_expense]);
+                rows.push([]);
+                rows.push(["FİNANSAL ÖZET", "Değer"]);
+                rows.push(["RobotPOS Toplamı", lastFetchedData.robotpos_total]);
+                rows.push(["Dönem Stok", lastFetchedData.financial_summary.current_stock]);
+                rows.push(["Önceki Dönem Stok", lastFetchedData.financial_summary.prev_stock]);
+                rows.push(["Stok Farkı", lastFetchedData.financial_summary.stok_farki]);
+                rows.push(["Cirodan Kalan", lastFetchedData.financial_summary.cirodan_kalan]);
+                rows.push(["Dönem Kar/Zarar", lastFetchedData.financial_summary.donem_kar_zarar]);
+                const ws = XLSX.utils.aoa_to_sheet(rows);
+                XLSX.utils.book_append_sheet(wb, ws, "Dashboard");
+                return XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+            }
         });
     }
 

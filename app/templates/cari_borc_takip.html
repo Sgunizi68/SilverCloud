@@ -11,9 +11,14 @@
     <div class="cbt-header">
         <div class="cbt-header-top">
             <h1 class="cbt-title">Cari Borç Takip Sistemi</h1>
-            <button class="cbt-btn-icon" onclick="exportToExcel()" title="Excel'e Aktar">
-                <i class="fas fa-download"></i>
-            </button>
+            <div style="display: flex; gap: 8px;">
+                <button class="cbt-btn-icon" data-permission="Mail Gönder" onclick="openReportMailModal({ printSelector: '.cbt-wrapper' })" title="Mail Gönder">
+                    <i class="fas fa-envelope" style="color: #3b82f6;"></i>
+                </button>
+                <button class="cbt-btn-icon" onclick="exportToExcel()" title="Excel'e Aktar">
+                    <i class="fas fa-download"></i>
+                </button>
+            </div>
         </div>
 
         <div class="cbt-filters">
