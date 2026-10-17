@@ -1125,7 +1125,32 @@
         // REPORT MAIL SYSTEM (Yetki 74: Mail Gönder)
         // ==========================================
         window.openReportMailModal = function(options = {}) {
-            const pageTitle = (options.title || document.querySelector('h1, h2, .page-title, .header-title')?.textContent || document.title || 'Rapor').trim().replace(/\s+/g, ' ');
+            let pageTitle = options.title;
+            if (!pageTitle) {
+                // Look within main content area first (avoid sidebar .sidebar-header h1)
+                const scope = document.querySelector('.content, .main-content') || document;
+                const titleEl = scope.querySelector('.report-title, .header-title h1, .header-title h2, .header-title, .page-title, .card-header h3, .card-header h2, .card-header h1, h1:not(.sidebar-header h1), h2, h3');
+                if (titleEl) {
+                    const clone = titleEl.cloneNode(true);
+                    // Remove buttons, icons, dropdowns or badges inside title
+                    clone.querySelectorAll('button, select, i, span, small, .badge').forEach(el => el.remove());
+                    pageTitle = clone.textContent.trim();
+                    if (!pageTitle) {
+                        pageTitle = titleEl.textContent.trim();
+                    }
+                }
+            }
+            if (!pageTitle && document.title) {
+                // Strip suffix "- SilverCloud" or "SilverCloud"
+                let dt = document.title.replace(/\s*-\s*SilverCloud.*$/i, '').trim();
+                if (dt && dt.toLowerCase() !== 'silvercloud') {
+                    pageTitle = dt;
+                }
+            }
+            if (!pageTitle || pageTitle.toLowerCase() === 'silvercloud') {
+                pageTitle = 'Rapor';
+            }
+            pageTitle = pageTitle.replace(/\s+/g, ' ');
             const modalHtml = `
                 <div style="font-family: inherit;">
                     <div style="margin-bottom: 15px;">
