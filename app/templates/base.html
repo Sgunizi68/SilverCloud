@@ -1165,13 +1165,22 @@
                         </small>
                     </div>
 
-                    <div style="margin-bottom: 18px;">
+                    <div style="margin-bottom: 15px;">
                         <label style="display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 5px;">
                             <i class="fas fa-heading" style="color: #6366f1; margin-right: 4px;"></i> Konu:
                         </label>
                         <input type="text" id="reportMailSubject" class="form-control" 
                                style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; box-sizing: border-box;"
                                value="${pageTitle}">
+                    </div>
+
+                    <div style="margin-bottom: 18px;">
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 5px;">
+                            <i class="fas fa-sticky-note" style="color: #10b981; margin-right: 4px;"></i> Not (İsteğe Bağlı):
+                        </label>
+                        <textarea id="reportMailNote" class="form-control" rows="3"
+                                  style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; box-sizing: border-box; resize: vertical; font-family: inherit;"
+                                  placeholder="E-postanın başına eklemek istediğiniz açıklama veya not..."></textarea>
                     </div>
 
                     <div id="reportMailError" style="display: none; background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; padding: 10px 14px; border-radius: 6px; font-size: 12px; margin-bottom: 15px;">
@@ -1213,6 +1222,7 @@
             const errDiv = document.getElementById('reportMailError');
             const recInput = document.getElementById('reportMailRecipients');
             const subInput = document.getElementById('reportMailSubject');
+            const noteInput = document.getElementById('reportMailNote');
 
             if (errDiv) {
                 errDiv.style.display = 'none';
@@ -1221,6 +1231,7 @@
 
             const recipients = (recInput ? recInput.value : '').trim();
             const subject = (subInput ? subInput.value : '').trim();
+            const note = (noteInput ? noteInput.value : '').trim();
 
             if (!recipients) {
                 if (errDiv) {
@@ -1332,6 +1343,7 @@
                     body: JSON.stringify({
                         recipients: emailList,
                         subject: subject,
+                        note: note,
                         html_body: htmlBody,
                         excel_base64: excelBase64,
                         filename: filename

@@ -381,6 +381,7 @@ def send_report_mail():
         recipients_input = data.get("recipients", "")
         subject = (data.get("subject") or "").strip()
         html_body = data.get("html_body") or ""
+        note = (data.get("note") or "").strip()
         excel_base64 = data.get("excel_base64")
         filename = (data.get("filename") or "Rapor.xlsx").strip()
 
@@ -406,6 +407,23 @@ def send_report_mail():
             return jsonify({
                 "error": f"Geçersiz e-posta adresi tespit edildi: {', '.join(invalid_emails)}"
             }), 400
+
+        # Prepend note to html_body if present
+        if note:
+            escaped_note = note.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br>")
+            note_html = (
+                f'<div style="margin-bottom: 20px; padding: 14px 18px; background: #f0fdf4; '
+                f'border-left: 4px solid #10b981; border-radius: 6px; font-size: 14px; '
+                f'color: #166534; line-height: 1.6; font-family: sans-serif;">'
+                f'<strong style="display: block; margin-bottom: 4px; color: #14532d; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Not:</strong>'
+                f'{escaped_note}'
+                f'</div>'
+            )
+            if html_body:
+                # If wrapped in our standard container div, insert inside or at top
+                html_body = f'<div style="font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, Helvetica, Arial, sans-serif; padding: 20px;">{note_html}</div>' + html_body
+            else:
+                html_body = note_html
 
         # 3. Prepare attachments
         attachments = []
@@ -434,7 +452,8 @@ def send_report_mail():
                 return jsonify({"error": f"Excel eki işlenirken hata oluştu: {str(e)}"}), 400
 
         # Plain text fallback
-        plain_body = f"{subject}\n\nDetaylar ekteki rapor ve HTML gövdesinde sunulmuştur."
+        note_prefix = f"Not:\n{note}\n\n" if note else ""
+        plain_body = f"{note_prefix}{subject}\n\nDetaylar ekteki rapor ve HTML gövdesinde sunulmuştur."
 
         # 4. Send email via existing mail utility
         success = send_email(
