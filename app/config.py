@@ -79,8 +79,17 @@ class Config:
     DEFAULT_PAGE_SIZE = 100
     MAX_PAGE_SIZE = 1000
 
+    # SMTP / Mail Settings
+    SMTP_SERVER = os.getenv("SMTP_Server", "smtp.gmail.com")
+    SMTP_PORT_TLS = int(os.getenv("SMTP_Port_TLS", "587"))
+    GMAIL_USERNAME = os.getenv("Gmail_Username", "")
+    GMAIL_PASSWORD = os.getenv("Gmail_Password", "")
+    GMAIL_APP = os.getenv("GMAIL_APP", "")
+    MAIL_DEFAULT_SENDER = os.getenv("Gmail_Username", "")
+
 
 class DevelopmentConfig(Config):
+
     """Development configuration"""
     
     DEBUG = True
