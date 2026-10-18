@@ -12,7 +12,7 @@
         <div class="cbt-header-top">
             <h1 class="cbt-title">Cari Borç Takip Sistemi</h1>
             <div style="display: flex; gap: 8px;">
-                <button class="cbt-btn-icon" data-permission="Mail Gönder" onclick="openReportMailModal({ printSelector: '.cbt-wrapper' })" title="Mail Gönder">
+                <button class="cbt-btn-icon" data-permission="Mail Gönder" onclick="openCbtReportMail()" title="Mail Gönder">
                     <i class="fas fa-envelope" style="color: #3b82f6;"></i>
                 </button>
                 <button class="cbt-btn-icon" onclick="exportToExcel()" title="Excel'e Aktar">
@@ -587,10 +587,9 @@
     }
 </style>
 
-<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
 <script>
+    // ─── Card Toggle ──────────────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', function () {
-        // Find all rows that should be clickable
         var rows = document.querySelectorAll('.cbt-card-row');
         rows.forEach(function (row) {
             row.addEventListener('click', function () {
@@ -599,19 +598,12 @@
                 var detail = card.querySelector('.cbt-detail');
                 var chev = this.querySelector('.cbt-chevron');
                 if (!detail) return;
-
                 if (detail.style.display === 'none' || detail.style.display === '') {
-                    // Show it
                     detail.style.display = 'block';
-                    if (chev) {
-                        chev.classList.add('open');
-                    }
+                    if (chev) chev.classList.add('open');
                 } else {
-                    // Hide it
                     detail.style.display = 'none';
-                    if (chev) {
-                        chev.classList.remove('open');
-                    }
+                    if (chev) chev.classList.remove('open');
                 }
             });
         });
@@ -623,28 +615,257 @@
         window.location.href = '/cari-borc-takip-sistemi?sube_id=' + sube + '&tip=' + encodeURIComponent(tip);
     }
 
+    // ─── Server-side data ─────────────────────────────────────────────────────
+    const CBT_SUBE = "{{ subeler | selectattr('Sube_ID', 'equalto', secili_sube_id) | map(attribute='Sube_Adi') | first | default('') }}";
+    const CBT_TIP  = {{ secili_tip | tojson }};
+    {% if report_data %}
+    const CBT_SUMMARY = {
+        count:  {{ report_data.summary.tumu_count }},
+        bakiye: {{ report_data.summary.tumu_bakiye }}
+    };
+    const CBT_FIRMS = [
+        {% for f in report_data.lists.tumu %}
+        {
+            name:       {{ f.name | tojson }},
+            status:     {{ f.status | tojson }},
+            balance:    {{ f.balance }},
+            mutabakat:  {{ f.mutabakat_tutar }},
+            mutTarih:   {{ (f.mutabakat_tarih or '') | tojson }},
+            gelen:      {{ f.gelen_toplam }},
+            giden:      {{ f.giden_toplam }},
+            odeme:      {{ f.odeme_toplam }},
+            faturaDetails: [
+                {% for fd in f.fatura_details %}
+                { no: {{ fd.no | tojson }}, date: {{ fd.date | tojson }}, amount: {{ fd.amount }}, type: {{ fd.type | tojson }} },
+                {% endfor %}
+            ],
+            odemeDetails: [
+                {% for od in f.odeme_details %}
+                { desc: {{ od.desc | tojson }}, date: {{ od.date | tojson }}, amount: {{ od.amount }} },
+                {% endfor %}
+            ]
+        },
+        {% endfor %}
+    ];
+    {% else %}
+    const CBT_SUMMARY = { count: 0, bakiye: 0 };
+    const CBT_FIRMS = [];
+    {% endif %}
+
+    // ─── Helpers ──────────────────────────────────────────────────────────────
+    function fmtTL(v) {
+        return new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v) + ' \u20ba';
+    }
+
+    // ─── Excel Export ─────────────────────────────────────────────────────────
     function exportToExcel() {
-        {% if report_data %}
-        var rows = [
-            {% for item in report_data.lists.tumu %}
-            {
-                "Firma": {{ item.name | tojson }},
-                "Tip": {{ item.status | tojson }},
-                "Mutabakat": {{ item.mutabakat_tutar }},
-                "Gelen Fatura": {{ item.gelen_toplam }},
-                "Giden Fatura": {{ item.giden_toplam }},
-                "Ödeme": {{ item.odeme_toplam }},
-                "Bakiye": {{ item.balance }}
-            }{% if not loop.last %},{% endif %}
-            {% endfor %}
+        if (typeof XLSX === 'undefined') { alert('Excel k\u00fct\u00fcphanesi y\u00fcklenemedi.'); return; }
+        if (!CBT_FIRMS.length) { alert('D\u0131\u015fa aktar\u0131lacak veri bulunamad\u0131.'); return; }
+
+        const wb = XLSX.utils.book_new();
+        const numFmt = '#,##0.00';
+
+        // Sheet 1: Firma \u00d6zeti
+        const sumHeader = [
+            ['CAR\u0130 BOR\u00c7 TAK\u0130P - F\u0130RMA \u00d6ZET\u0130'],
+            ['\u015eube:', CBT_SUBE],
+            ['Tip:', CBT_TIP],
+            ['Bakiye Veren Firma:', CBT_SUMMARY.count],
+            ['Toplam Bakiye:', CBT_SUMMARY.bakiye],
+            ['Rapor Tarihi:', new Date().toLocaleString('tr-TR')],
+            [],
+            ['Firma', 'Tip', 'Mutabakat', 'Gelen Fatura', 'Giden Fatura', '\u00d6deme', 'Bakiye']
         ];
-        var ws = XLSX.utils.json_to_sheet(rows);
-        var wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'Cari Borç');
-        XLSX.writeFile(wb, 'Cari_Borc_' + '{{ secili_tip }}'.replace(/\s+/g, '_') + '.xlsx');
-        {% else %}
-        alert('Dışa aktarılacak veri bulunamadı.');
-        {% endif %}
+        CBT_FIRMS.forEach(f => {
+            sumHeader.push([f.name, f.status, f.mutabakat, f.gelen, f.giden, f.odeme, f.balance]);
+        });
+        // Toplam sat\u0131r\u0131
+        sumHeader.push([]);
+        sumHeader.push([
+            'TOPLAM', '', 
+            CBT_FIRMS.reduce((s,f)=>s+f.mutabakat,0),
+            CBT_FIRMS.reduce((s,f)=>s+f.gelen,0),
+            CBT_FIRMS.reduce((s,f)=>s+f.giden,0),
+            CBT_FIRMS.reduce((s,f)=>s+f.odeme,0),
+            CBT_FIRMS.reduce((s,f)=>s+f.balance,0)
+        ]);
+        const ws1 = XLSX.utils.aoa_to_sheet(sumHeader);
+        ws1['!cols'] = [{wch:35},{wch:14},{wch:16},{wch:16},{wch:16},{wch:16},{wch:16}];
+        // Numeric format for data rows
+        const dataStart = 8; // 0-indexed row where data starts
+        const dataEnd = dataStart + CBT_FIRMS.length + 1; // +1 for TOPLAM
+        for (let r = dataStart; r <= dataEnd + 1; r++) {
+            for (let c = 2; c <= 6; c++) {
+                const cell = ws1[XLSX.utils.encode_cell({r, c})];
+                if (cell && typeof cell.v === 'number') { cell.t = 'n'; cell.z = numFmt; }
+            }
+        }
+        XLSX.utils.book_append_sheet(wb, ws1, 'Firma \u00d6zeti');
+
+        // Sheet 2: Detay (t\u00fcm fatura ve \u00f6deme sat\u0131rlar\u0131)
+        const detData = [['Firma', 'Tip', 'Belge/A\u00e7\u0131klama', 'Tarih', 'Tutar']];
+        CBT_FIRMS.forEach(f => {
+            f.faturaDetails.forEach(fd => {
+                detData.push([f.name, 'Fatura (' + fd.type + ')', fd.no, fd.date, fd.amount]);
+            });
+            f.odemeDetails.forEach(od => {
+                detData.push([f.name, '\u00d6deme', od.desc, od.date, od.amount]);
+            });
+        });
+        const ws2 = XLSX.utils.aoa_to_sheet(detData);
+        ws2['!cols'] = [{wch:35},{wch:18},{wch:28},{wch:12},{wch:16}];
+        for (let r = 1; r < detData.length; r++) {
+            const cell = ws2[XLSX.utils.encode_cell({r, c: 4})];
+            if (cell && typeof cell.v === 'number') { cell.t = 'n'; cell.z = numFmt; }
+        }
+        XLSX.utils.book_append_sheet(wb, ws2, 'Detay');
+
+        const ts = new Date().toISOString().slice(0,10).replace(/-/g,'');
+        XLSX.writeFile(wb, `Cari_Borc_${CBT_TIP.replace(/\s+/g,'_')}_${ts}.xlsx`);
+    }
+
+    // ─── Mail HTML ────────────────────────────────────────────────────────────
+    function getCbtMailHtml() {
+        // Firma \u00f6zet sat\u0131rlar\u0131
+        const firmRows = CBT_FIRMS.map((f, i) => {
+            const bg = i % 2 === 0 ? '#ffffff' : '#f8fafc';
+            const balClr = f.balance > 0 ? '#ef4444' : '#16a34a';
+            return `
+            <tr>
+                <td bgcolor="${bg}" style="padding:8px 12px;font-size:13px;font-weight:600;color:#1e293b;background-color:${bg};border-bottom:1px solid #f1f5f9;">${f.name}</td>
+                <td bgcolor="${bg}" style="padding:8px 12px;font-size:12px;color:#64748b;background-color:${bg};border-bottom:1px solid #f1f5f9;text-align:center;">
+                    <span style="background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;">${f.status}</span>
+                </td>
+                <td align="right" bgcolor="${bg}" style="padding:8px 12px;font-size:12px;color:#ea580c;font-weight:600;background-color:${bg};border-bottom:1px solid #f1f5f9;text-align:right;">${fmtTL(f.gelen)}</td>
+                <td align="right" bgcolor="${bg}" style="padding:8px 12px;font-size:12px;color:#16a34a;font-weight:600;background-color:${bg};border-bottom:1px solid #f1f5f9;text-align:right;">${fmtTL(f.giden)}</td>
+                <td align="right" bgcolor="${bg}" style="padding:8px 12px;font-size:12px;color:#16a34a;font-weight:600;background-color:${bg};border-bottom:1px solid #f1f5f9;text-align:right;">${fmtTL(f.odeme)}</td>
+                <td align="right" bgcolor="${bg}" style="padding:8px 12px;font-size:14px;font-weight:800;color:${balClr};background-color:${bg};border-bottom:1px solid #f1f5f9;text-align:right;">${fmtTL(f.balance)}</td>
+            </tr>`;
+        }).join('');
+
+        // Toplam sat\u0131r\u0131
+        const totGelen = CBT_FIRMS.reduce((s,f)=>s+f.gelen,0);
+        const totGiden = CBT_FIRMS.reduce((s,f)=>s+f.giden,0);
+        const totOdeme = CBT_FIRMS.reduce((s,f)=>s+f.odeme,0);
+        const totBakiye = CBT_FIRMS.reduce((s,f)=>s+f.balance,0);
+        const totBalClr = totBakiye > 0 ? '#ef4444' : '#16a34a';
+
+        return `
+            <!-- BA\u015eLIK -->
+            <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                   style="width:100%;border-collapse:separate;margin-bottom:22px;border:2px solid #6366f1;border-radius:8px;overflow:hidden;background-color:#ffffff;">
+                <tr>
+                    <td colspan="4" bgcolor="#eef2ff"
+                        style="padding:14px 20px;background-color:#eef2ff;border-bottom:2px solid #c7d2fe;text-align:center;">
+                        <span style="font-size:16px;font-weight:bold;color:#3730a3;">
+                            \ud83c\udfe6 Cari Bor\u00e7 Takip &nbsp;|&nbsp; \u015eube: ${CBT_SUBE} &nbsp;|&nbsp; Tip: ${CBT_TIP}
+                        </span>
+                    </td>
+                </tr>
+                <tr>
+                    <td width="50%" align="center" bgcolor="#f8fafc" style="padding:14px 10px;background-color:#f8fafc;border-right:1px solid #e2e8f0;text-align:center;">
+                        <div style="font-size:11px;font-weight:bold;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Bakiye Veren Firma</div>
+                        <div style="font-size:22px;font-weight:800;color:#1e40af;">${CBT_SUMMARY.count}</div>
+                    </td>
+                    <td width="50%" align="center" bgcolor="#f8fafc" style="padding:14px 10px;background-color:#f8fafc;text-align:center;">
+                        <div style="font-size:11px;font-weight:bold;color:#64748b;text-transform:uppercase;margin-bottom:4px;">Toplam Bakiye</div>
+                        <div style="font-size:22px;font-weight:800;color:#ef4444;">${fmtTL(CBT_SUMMARY.bakiye)}</div>
+                    </td>
+                </tr>
+            </table>
+
+            <!-- F\u0130RMA \u00d6ZET TABLOSU -->
+            <div style="margin-bottom:10px;font-size:14px;font-weight:bold;color:#1e3a8a;border-left:4px solid #6366f1;padding-left:10px;">\ud83d\udccb Firma Bor\u00e7 \u00d6zeti</div>
+            <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                   style="width:100%;border-collapse:collapse;margin-bottom:10px;border:1px solid #e0e6ef;border-radius:8px;overflow:hidden;background-color:#ffffff;">
+                <thead>
+                    <tr bgcolor="#1e293b" style="background-color:#1e293b;">
+                        <th align="left"   style="padding:10px 12px;color:white;font-size:11px;font-weight:bold;">F\u0130RMA</th>
+                        <th align="center" style="padding:10px 12px;color:white;font-size:11px;font-weight:bold;">T\u0130P</th>
+                        <th align="right"  style="padding:10px 12px;color:white;font-size:11px;font-weight:bold;text-align:right;">GELEN FATURA</th>
+                        <th align="right"  style="padding:10px 12px;color:white;font-size:11px;font-weight:bold;text-align:right;">G\u0130DEN FATURA</th>
+                        <th align="right"  style="padding:10px 12px;color:white;font-size:11px;font-weight:bold;text-align:right;">\u00d6DEME</th>
+                        <th align="right"  style="padding:10px 12px;color:white;font-size:11px;font-weight:bold;text-align:right;">BAK\u0130YE</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${firmRows}
+                    <tr>
+                        <td colspan="2" bgcolor="#f1f5f9" style="padding:10px 12px;font-size:13px;font-weight:800;color:#1e293b;background-color:#f1f5f9;border-top:2px solid #e2e8f0;">TOPLAM</td>
+                        <td align="right" bgcolor="#f1f5f9" style="padding:10px 12px;font-size:13px;font-weight:800;color:#ea580c;background-color:#f1f5f9;border-top:2px solid #e2e8f0;text-align:right;">${fmtTL(totGelen)}</td>
+                        <td align="right" bgcolor="#f1f5f9" style="padding:10px 12px;font-size:13px;font-weight:800;color:#16a34a;background-color:#f1f5f9;border-top:2px solid #e2e8f0;text-align:right;">${fmtTL(totGiden)}</td>
+                        <td align="right" bgcolor="#f1f5f9" style="padding:10px 12px;font-size:13px;font-weight:800;color:#16a34a;background-color:#f1f5f9;border-top:2px solid #e2e8f0;text-align:right;">${fmtTL(totOdeme)}</td>
+                        <td align="right" bgcolor="#f1f5f9" style="padding:10px 12px;font-size:14px;font-weight:800;color:${totBalClr};background-color:#f1f5f9;border-top:2px solid #e2e8f0;text-align:right;">${fmtTL(totBakiye)}</td>
+                    </tr>
+                </tbody>
+            </table>
+        `;
+    }
+
+    // ─── Mail Excel ───────────────────────────────────────────────────────────
+    function getCbtMailExcel() {
+        if (typeof XLSX === 'undefined') return null;
+        const wb = XLSX.utils.book_new();
+        const numFmt = '#,##0.00';
+
+        const sumData = [
+            ['CAR\u0130 BOR\u00c7 TAK\u0130P - F\u0130RMA \u00d6ZET\u0130'],
+            ['\u015eube:', CBT_SUBE],
+            ['Tip:', CBT_TIP],
+            ['Rapor Tarihi:', new Date().toLocaleString('tr-TR')],
+            [],
+            ['Firma', 'Tip', 'Mutabakat', 'Gelen Fatura', 'Giden Fatura', '\u00d6deme', 'Bakiye']
+        ];
+        CBT_FIRMS.forEach(f => {
+            sumData.push([f.name, f.status, f.mutabakat, f.gelen, f.giden, f.odeme, f.balance]);
+        });
+        sumData.push([]);
+        sumData.push([
+            'TOPLAM', '',
+            CBT_FIRMS.reduce((s,f)=>s+f.mutabakat,0),
+            CBT_FIRMS.reduce((s,f)=>s+f.gelen,0),
+            CBT_FIRMS.reduce((s,f)=>s+f.giden,0),
+            CBT_FIRMS.reduce((s,f)=>s+f.odeme,0),
+            CBT_FIRMS.reduce((s,f)=>s+f.balance,0)
+        ]);
+        const ws1 = XLSX.utils.aoa_to_sheet(sumData);
+        ws1['!cols'] = [{wch:35},{wch:14},{wch:16},{wch:16},{wch:16},{wch:16},{wch:16}];
+        for (let r = 6; r < sumData.length; r++) {
+            for (let c = 2; c <= 6; c++) {
+                const cell = ws1[XLSX.utils.encode_cell({r, c})];
+                if (cell && typeof cell.v === 'number') { cell.t = 'n'; cell.z = numFmt; }
+            }
+        }
+        XLSX.utils.book_append_sheet(wb, ws1, 'Firma \u00d6zeti');
+
+        const detData = [['Firma', 'Tip', 'Belge/A\u00e7\u0131klama', 'Tarih', 'Tutar']];
+        CBT_FIRMS.forEach(f => {
+            f.faturaDetails.forEach(fd => {
+                detData.push([f.name, 'Fatura (' + fd.type + ')', fd.no, fd.date, fd.amount]);
+            });
+            f.odemeDetails.forEach(od => {
+                detData.push([f.name, '\u00d6deme', od.desc, od.date, od.amount]);
+            });
+        });
+        const ws2 = XLSX.utils.aoa_to_sheet(detData);
+        ws2['!cols'] = [{wch:35},{wch:18},{wch:28},{wch:12},{wch:16}];
+        for (let r = 1; r < detData.length; r++) {
+            const cell = ws2[XLSX.utils.encode_cell({r, c: 4})];
+            if (cell && typeof cell.v === 'number') { cell.t = 'n'; cell.z = numFmt; }
+        }
+        XLSX.utils.book_append_sheet(wb, ws2, 'Detay');
+
+        return XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+    }
+
+    // ─── Open Mail Modal ──────────────────────────────────────────────────────
+    function openCbtReportMail() {
+        openReportMailModal({
+            title: 'Cari Bor\u00e7 Takip',
+            filename: `Cari_Borc_{{ secili_tip | replace(' ', '_') }}_{{ secili_sube_id }}.xlsx`,
+            getHtml: getCbtMailHtml,
+            getExcelBase64: getCbtMailExcel
+        });
     }
 </script>
 {% endblock %}
