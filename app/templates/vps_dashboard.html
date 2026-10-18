@@ -371,6 +371,143 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
         }
+
+        /* Action Buttons */
+        .vps-action-btns {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .vps-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            border: 2px solid white;
+            border-radius: 12px;
+            padding: 0.4rem 0.85rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.8);
+            color: #1e293b;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .vps-btn:hover {
+            background: white;
+            transform: translateY(-1px);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Print Styles */
+        @page {
+            size: A3 landscape;
+            margin: 8mm 6mm;
+        }
+
+        @media print {
+            /* Hide all chrome */
+            .header-right,
+            .vps-action-btns,
+            nav, sidebar, .sidebar,
+            [class*="nav-"],
+            [class*="sidebar"],
+            footer, .footer,
+            .dashboard-sidebar,
+            #sidebar {
+                display: none !important;
+            }
+
+            /* Reset layout for full-page print */
+            html, body {
+                width: 100% !important;
+                height: auto !important;
+                overflow: visible !important;
+                background: white !important;
+            }
+
+            .vps-viewport-wrapper {
+                display: block !important;
+                height: auto !important;
+                overflow: visible !important;
+                background: white !important;
+                width: 100% !important;
+            }
+
+            .vps-data-area {
+                overflow: visible !important;
+                padding: 0 !important;
+                width: 100% !important;
+            }
+
+            .vps-scrollable-content {
+                overflow: visible !important;
+                width: 100% !important;
+            }
+
+            /* Table: scale to fit all columns */
+            .table-card {
+                overflow: visible !important;
+                box-shadow: none !important;
+                border: 1px solid #e2e8f0 !important;
+            }
+
+            .table-container {
+                overflow: visible !important;
+                width: 100% !important;
+            }
+
+            .vps-table {
+                width: 100% !important;
+                table-layout: auto !important;
+                font-size: 0.6rem !important;
+                transform-origin: top left;
+            }
+
+            .vps-table thead th,
+            .vps-table tbody td {
+                padding: 3px 2px !important;
+                white-space: nowrap !important;
+            }
+
+            /* Release sticky so all columns appear */
+            .sticky-col, .total-col {
+                position: static !important;
+                border: 1px solid #e2e8f0 !important;
+            }
+
+            thead th.sticky-col {
+                position: static !important;
+            }
+
+            /* Scale stat grid down */
+            .stat-grid {
+                grid-template-columns: repeat(4, 1fr) !important;
+                gap: 0.5rem !important;
+                margin-bottom: 0.75rem !important;
+            }
+
+            .stat-card {
+                padding: 0.5rem 0.75rem !important;
+                box-shadow: none !important;
+            }
+
+            .stat-value {
+                font-size: 1rem !important;
+            }
+
+            /* Avoid page breaks inside rows */
+            tr {
+                page-break-inside: avoid !important;
+            }
+
+            .separator-bar {
+                page-break-before: avoid !important;
+            }
+        }
     </style>
 
     <!-- Main Content Area -->
@@ -402,6 +539,21 @@
                         </option>
                         {% endfor %}
                     </select>
+                </div>
+                <!-- Action Buttons (permission-controlled) -->
+                <div class="vps-action-btns">
+                    <button class="vps-btn" data-permission="Yazdırma Yetkisi"
+                        onclick="window.print()" title="Yazdır">
+                        <i class="fas fa-print" style="color: #64748b;"></i> Yazdır
+                    </button>
+                    <button class="vps-btn" data-permission="Excele Aktar"
+                        onclick="exportVpsToExcel()" title="Excel İndir">
+                        <i class="fas fa-file-excel" style="color: #10b981;"></i> Excel
+                    </button>
+                    <button class="vps-btn" data-permission="Mail Gönder"
+                        onclick="openVpsReportMail()" title="Mail Gönder">
+                        <i class="fas fa-envelope" style="color: #3b82f6;"></i> Mail
+                    </button>
                 </div>
             </div>
         </header>
@@ -545,4 +697,235 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ─── VPS Dashboard Data (rendered server-side) ───────────────────────────────
+const VPS_SUBE_ADI = "{% for s in auth_suber %}{% if s.Sube_ID == secili_sube_id %}{{ s.Sube_Adi }}{% endif %}{% endfor %}";
+const VPS_DONEM_LABEL = "{{ secili_donem // 100 + 2000 }} / {{ '%02d' % (secili_donem % 100) }}";
+const VPS_STATS = {
+    calisan_ort:    {{ dashboard_data.stats.calisan_ort }},
+    aktif_ort:      {{ dashboard_data.stats.aktif_ort }},
+    izinli_ort:     {{ dashboard_data.stats.izinli_ort }},
+    ise_giren:      {{ dashboard_data.stats.ise_giren }},
+    isten_cikan:    {{ dashboard_data.stats.isten_cikan }},
+    total_tabak:    {{ dashboard_data.stats.total_tabak }},
+    total_puantaj:  {{ dashboard_data.stats.total_puantaj_gunu }},
+    total_vps:      {{ dashboard_data.stats.total_vps }}
+};
+const VPS_DATES = {{ dashboard_data.dates | tojson }};
+const VPS_MAIN_ROWS = [
+{% for row in dashboard_data.main_rows %}
+    { label: {{ row.label | tojson }}, data: {{ row.data_points | tojson }}, total: {{ row.total }} },
+{% endfor %}
+];
+const VPS_PUANTAJ_ROWS = [
+{% for row in dashboard_data.puantaj_ozeti %}
+    { label: {{ row.label | tojson }}, multiplier: {{ row.multiplier | tojson }}, counts: {{ row.counts | tojson }}, total: {{ row.total }} },
+{% endfor %}
+];
+const VPS_YEAR  = {{ dashboard_data.year }};
+const VPS_MONTH = {{ dashboard_data.month }};
+
+// ─── Excel Export ─────────────────────────────────────────────────────────────
+function exportVpsToExcel() {
+    if (typeof XLSX === 'undefined') {
+        alert('Excel kütüphanesi yüklenemedi.');
+        return;
+    }
+
+    const wb = XLSX.utils.book_new();
+
+    // Sheet 1: Özet
+    const summaryData = [
+        ['VPS DASHBOARD - ÖZET'],
+        ['Şube:', VPS_SUBE_ADI],
+        ['Dönem:', VPS_DONEM_LABEL],
+        ['Rapor Tarihi:', new Date().toLocaleString('tr-TR')],
+        [],
+        ['Metrik', 'Değer'],
+        ['Çalışan Ortalaması', VPS_STATS.calisan_ort],
+        ['Aktif Çalışan Ortalaması', VPS_STATS.aktif_ort],
+        ['İzinli Çalışan Ortalaması', VPS_STATS.izinli_ort],
+        ['İşe Giren', VPS_STATS.ise_giren],
+        ['İşten Çıkan', VPS_STATS.isten_cikan],
+        ['Toplam Tabak', VPS_STATS.total_tabak],
+        ['Toplam Puantaj Günü', VPS_STATS.total_puantaj],
+        ['Genel VPS', VPS_STATS.total_vps]
+    ];
+    const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+    wsSummary['!cols'] = [{ wch: 30 }, { wch: 20 }];
+    XLSX.utils.book_append_sheet(wb, wsSummary, 'Özet');
+
+    // Sheet 2: Detaylı Analiz (main_rows)
+    const detailHeader = ['Metrik', ...VPS_DATES.map(d => d.toString()), 'Toplam'];
+    const detailData = [detailHeader];
+    VPS_MAIN_ROWS.forEach(row => {
+        const cells = row.data.map(v => (typeof v === 'number' ? v : parseFloat(v) || 0));
+        detailData.push([row.label, ...cells, row.total]);
+    });
+    const wsDetail = XLSX.utils.aoa_to_sheet(detailData);
+    const detailColCount = detailHeader.length;
+    wsDetail['!cols'] = [{ wch: 30 }, ...Array(detailColCount - 1).fill({ wch: 6 })];
+    XLSX.utils.book_append_sheet(wb, wsDetail, 'Detaylı Analiz');
+
+    // Sheet 3: Puantaj Özeti
+    const puantajHeader = ['Puantaj Türü', 'Çarpan', ...VPS_DATES.map(d => d.toString()), 'Genel Toplam'];
+    const puantajData = [puantajHeader];
+    VPS_PUANTAJ_ROWS.forEach(row => {
+        puantajData.push([row.label, row.multiplier, ...row.counts, row.total]);
+    });
+    const wsPuantaj = XLSX.utils.aoa_to_sheet(puantajData);
+    wsPuantaj['!cols'] = [{ wch: 30 }, { wch: 8 }, ...Array(VPS_DATES.length + 1).fill({ wch: 6 })];
+    XLSX.utils.book_append_sheet(wb, wsPuantaj, 'Puantaj Özeti');
+
+    // Download
+    const ts = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    XLSX.writeFile(wb, `VPS_Dashboard_{{ secili_sube_id }}_{{ secili_donem }}_${ts}.xlsx`);
+}
+
+// ─── Mail: HTML Body ───────────────────────────────────────────────────────────
+function getVpsMailHtml() {
+    // Özet Kartlar
+    const statCards = [
+        { label: 'Çalışan Ortalaması', value: VPS_STATS.calisan_ort, color: '#3b82f6' },
+        { label: 'Aktif Çalışan Ort.', value: VPS_STATS.aktif_ort,   color: '#10b981' },
+        { label: 'İzinli Çalışan Ort.', value: VPS_STATS.izinli_ort, color: '#f59e0b' },
+        { label: 'İşe Giren',           value: VPS_STATS.ise_giren,   color: '#8b5cf6' },
+        { label: 'İşten Çıkan',         value: VPS_STATS.isten_cikan, color: '#ef4444' },
+        { label: 'Toplam Tabak',        value: VPS_STATS.total_tabak, color: '#f97316' },
+        { label: 'Puantaj Günü',        value: VPS_STATS.total_puantaj, color: '#6366f1' },
+        { label: 'Genel VPS',           value: VPS_STATS.total_vps,   color: '#0ea5e9' },
+    ];
+
+    const cardCells = statCards.map(c => `
+        <td align="center" bgcolor="#f8fafc" style="width: 12.5%; padding: 12px 8px; background-color: #f8fafc; border-right: 1px solid #e2e8f0; text-align: center;">
+            <div style="font-size: 10px; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">${c.label}</div>
+            <div style="font-size: 18px; font-weight: 800; color: ${c.color};">${c.value}</div>
+        </td>
+    `).join('');
+
+    // Detaylı Analiz - sadece ilk/son sütun + Toplam (kısaltılmış tablo)
+    const detailRows = VPS_MAIN_ROWS.map((row, idx) => {
+        const bg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
+        return `
+        <tr>
+            <td bgcolor="${bg}" style="padding: 8px 12px; font-weight: 600; color: #1e293b; font-size: 12px; background-color: ${bg}; border-bottom: 1px solid #f1f5f9;">${row.label}</td>
+            <td align="center" bgcolor="${bg}" style="padding: 8px 12px; font-weight: 800; color: #2563eb; font-size: 13px; background-color: ${bg}; border-bottom: 1px solid #f1f5f9;">${row.total}</td>
+        </tr>`;
+    }).join('');
+
+    // Puantaj Özeti
+    const puantajRows = VPS_PUANTAJ_ROWS.map((row, idx) => {
+        const bg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
+        return `
+        <tr>
+            <td bgcolor="${bg}" style="padding: 7px 12px; font-weight: 600; color: #334155; font-size: 12px; background-color: ${bg}; border-bottom: 1px solid #f1f5f9;">${row.label}</td>
+            <td align="center" bgcolor="${bg}" style="padding: 7px 12px; color: #475569; font-size: 11px; background-color: ${bg}; border-bottom: 1px solid #f1f5f9;">${row.multiplier}</td>
+            <td align="center" bgcolor="${bg}" style="padding: 7px 12px; font-weight: 700; color: #1e293b; font-size: 12px; background-color: ${bg}; border-bottom: 1px solid #f1f5f9;">${row.total}</td>
+        </tr>`;
+    }).join('');
+
+    return `
+        <!-- BAŞLIK -->
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: separate; margin-bottom: 22px; border: 2px solid #6366f1; border-radius: 8px; overflow: hidden; background-color: #ffffff;">
+            <tr>
+                <td colspan="8" bgcolor="#eef2ff" style="padding: 12px 18px; background-color: #eef2ff; border-bottom: 2px solid #c7d2fe; text-align: center;">
+                    <span style="font-size: 15px; font-weight: bold; color: #3730a3;">
+                        📊 VPS Dashboard &nbsp;|&nbsp; Şube: ${VPS_SUBE_ADI} &nbsp;|&nbsp; Dönem: ${VPS_DONEM_LABEL}
+                    </span>
+                </td>
+            </tr>
+            <tr>${cardCells}</tr>
+        </table>
+
+        <!-- DETAYLI ANALİZ (Özet Satırlar) -->
+        <div style="margin-bottom: 12px; font-size: 15px; font-weight: bold; color: #1e3a8a; border-left: 4px solid #6366f1; padding-left: 10px;">📈 Detaylı Analiz - Dönem Toplamları</div>
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; margin-bottom: 22px; border: 2px solid #e2e8f0; border-radius: 8px; overflow: hidden; background-color: #ffffff;">
+            <thead>
+                <tr bgcolor="#1e293b" style="background-color: #1e293b;">
+                    <th align="left" style="padding: 10px 12px; color: white; font-size: 11px; font-weight: bold;">METRİK</th>
+                    <th align="center" style="padding: 10px 12px; color: white; font-size: 11px; font-weight: bold;">DÖNEM TOPLAM / ORT.</th>
+                </tr>
+            </thead>
+            <tbody>${detailRows}</tbody>
+        </table>
+
+        <!-- PUANTAJ ÖZETİ -->
+        <div style="margin-bottom: 12px; font-size: 15px; font-weight: bold; color: #1e3a8a; border-left: 4px solid #8b5cf6; padding-left: 10px;">📋 Puantaj Özeti</div>
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; margin-bottom: 10px; border: 2px solid #e2e8f0; border-radius: 8px; overflow: hidden; background-color: #ffffff;">
+            <thead>
+                <tr bgcolor="#1e293b" style="background-color: #1e293b;">
+                    <th align="left" style="padding: 10px 12px; color: white; font-size: 11px; font-weight: bold;">PUANTAJ TÜRÜ</th>
+                    <th align="center" style="padding: 10px 12px; color: white; font-size: 11px; font-weight: bold;">ÇARPAN</th>
+                    <th align="center" style="padding: 10px 12px; color: white; font-size: 11px; font-weight: bold;">TOPLAM</th>
+                </tr>
+            </thead>
+            <tbody>${puantajRows}</tbody>
+        </table>
+    `;
+}
+
+// ─── Mail: Excel Attachment ────────────────────────────────────────────────────
+function getVpsMailExcelBase64() {
+    if (typeof XLSX === 'undefined') return null;
+
+    const wb = XLSX.utils.book_new();
+
+    // Özet sayfası
+    const summaryData = [
+        ['VPS DASHBOARD - ÖZET'],
+        ['Şube:', VPS_SUBE_ADI],
+        ['Dönem:', VPS_DONEM_LABEL],
+        ['Rapor Tarihi:', new Date().toLocaleString('tr-TR')],
+        [],
+        ['Metrik', 'Değer'],
+        ['Çalışan Ortalaması', VPS_STATS.calisan_ort],
+        ['Aktif Çalışan Ortalaması', VPS_STATS.aktif_ort],
+        ['İzinli Çalışan Ortalaması', VPS_STATS.izinli_ort],
+        ['İşe Giren', VPS_STATS.ise_giren],
+        ['İşten Çıkan', VPS_STATS.isten_cikan],
+        ['Toplam Tabak', VPS_STATS.total_tabak],
+        ['Toplam Puantaj Günü', VPS_STATS.total_puantaj],
+        ['Genel VPS', VPS_STATS.total_vps]
+    ];
+    const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+    wsSummary['!cols'] = [{ wch: 30 }, { wch: 20 }];
+    XLSX.utils.book_append_sheet(wb, wsSummary, 'Özet');
+
+    // Detaylı Analiz
+    const detailHeader = ['Metrik', ...VPS_DATES.map(d => d.toString()), 'Toplam'];
+    const detailData = [detailHeader];
+    VPS_MAIN_ROWS.forEach(row => {
+        const cells = row.data.map(v => (typeof v === 'number' ? v : parseFloat(v) || 0));
+        detailData.push([row.label, ...cells, row.total]);
+    });
+    const wsDetail = XLSX.utils.aoa_to_sheet(detailData);
+    wsDetail['!cols'] = [{ wch: 30 }, ...Array(detailHeader.length - 1).fill({ wch: 6 })];
+    XLSX.utils.book_append_sheet(wb, wsDetail, 'Detaylı Analiz');
+
+    // Puantaj Özeti
+    const puantajHeader = ['Puantaj Türü', 'Çarpan', ...VPS_DATES.map(d => d.toString()), 'Genel Toplam'];
+    const puantajData = [puantajHeader];
+    VPS_PUANTAJ_ROWS.forEach(row => {
+        puantajData.push([row.label, row.multiplier, ...row.counts, row.total]);
+    });
+    const wsPuantaj = XLSX.utils.aoa_to_sheet(puantajData);
+    wsPuantaj['!cols'] = [{ wch: 30 }, { wch: 8 }, ...Array(VPS_DATES.length + 1).fill({ wch: 6 })];
+    XLSX.utils.book_append_sheet(wb, wsPuantaj, 'Puantaj Özeti');
+
+    return XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+}
+
+// ─── Open Mail Modal ───────────────────────────────────────────────────────────
+function openVpsReportMail() {
+    openReportMailModal({
+        title: 'VPS Dashboard',
+        filename: `VPS_Dashboard_{{ secili_sube_id }}_{{ secili_donem }}.xlsx`,
+        getHtml: getVpsMailHtml,
+        getExcelBase64: getVpsMailExcelBase64
+    });
+}
+</script>
 {% endblock %}
