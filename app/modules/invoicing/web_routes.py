@@ -1049,7 +1049,8 @@ def nakit_yatirma_kontrol_raporu():
     dh_query = db_session.query(func.sum(DigerHarcama.Tutar)).join(Kategori, DigerHarcama.Kategori_ID == Kategori.Kategori_ID).filter(
         DigerHarcama.Sube_ID == sube_id,
         DigerHarcama.Donem == donem,
-        DigerHarcama.Gunluk_Harcama == 1
+        DigerHarcama.Gunluk_Harcama == 1,
+        func.trim(Kategori.Kategori_Adi) != 'Harcama e-Fatura'
     )
     if not show_gizli:
         dh_query = dh_query.filter(Kategori.Gizli == 0)

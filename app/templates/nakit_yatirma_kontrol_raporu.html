@@ -460,21 +460,21 @@
         <div class="summary-cards">
             <div class="summary-card">
                 <div class="sc-label">Kalan Nakit Bakiye</div>
-                <div class="sc-value">₺{{ '{:,.0f}'.format(kalan_nakit_bakiye).replace(',', '.') }}</div>
+                <div class="sc-value">₺{{ '{:,.2f}'.format(kalan_nakit_bakiye).replace(',', 'X').replace('.', ',').replace('X', '.') }}</div>
                 <div style="font-size: 0.7rem; color: rgba(255,255,255,0.5); margin-top: 4px;">(Nakit Geliri - G.Harcama)</div>
             </div>
             <div class="summary-card">
                 <div class="sc-label">Bankaya Yatan Toplam</div>
-                <div class="sc-value">₺{{ '{:,.0f}'.format(bankaya_yatan_toplam).replace(',', '.') }}</div>
+                <div class="sc-value">₺{{ '{:,.2f}'.format(bankaya_yatan_toplam).replace(',', 'X').replace('.', ',').replace('X', '.') }}</div>
             </div>
             <div class="summary-card">
                 <div class="sc-label">Nakit Girişi Toplam</div>
-                <div class="sc-value">₺{{ '{:,.0f}'.format(nakit_giris_toplam).replace(',', '.') }}</div>
+                <div class="sc-value">₺{{ '{:,.2f}'.format(nakit_giris_toplam).replace(',', 'X').replace('.', ',').replace('X', '.') }}</div>
             </div>
             <div class="summary-card">
                 <div class="sc-label">Fark (Bakiye)</div>
                 <div class="sc-value {{ 'danger' if fark != 0 else '' }}">
-                    {% if fark > 0 %}+{% endif %}₺{{ '{:,.0f}'.format(fark).replace(',', '.') }}
+                    {% if fark > 0 %}+{% endif %}₺{{ '{:,.2f}'.format(fark).replace(',', 'X').replace('.', ',').replace('X', '.') }}
                 </div>
             </div>
         </div>
@@ -586,21 +586,21 @@
                 <tr>
                     <td width="25%" align="center" bgcolor="#f8fafc" style="padding: 14px 10px; background-color: #f8fafc; border-right: 1px solid #e2e8f0; text-align: center;">
                         <div style="font-size: 11px; font-weight: bold; color: #475569; text-transform: uppercase; margin-bottom: 4px;">Kalan Nakit Bakiye</div>
-                        <div style="font-size: 18px; font-weight: 800; color: #0284c7;">₺{{ '{:,.0f}'.format(kalan_nakit_bakiye).replace(',', '.') }}</div>
+                        <div style="font-size: 18px; font-weight: 800; color: #0284c7;">₺{{ '{:,.2f}'.format(kalan_nakit_bakiye).replace(',', 'X').replace('.', ',').replace('X', '.') }}</div>
                         <div style="font-size: 10px; color: #64748b; margin-top: 3px;">(Nakit Geliri - G.Harcama)</div>
                     </td>
                     <td width="25%" align="center" bgcolor="#f8fafc" style="padding: 14px 10px; background-color: #f8fafc; border-right: 1px solid #e2e8f0; text-align: center;">
                         <div style="font-size: 11px; font-weight: bold; color: #475569; text-transform: uppercase; margin-bottom: 4px;">Bankaya Yatan Toplam</div>
-                        <div style="font-size: 18px; font-weight: 800; color: #0f172a;">₺{{ '{:,.0f}'.format(bankaya_yatan_toplam).replace(',', '.') }}</div>
+                        <div style="font-size: 18px; font-weight: 800; color: #0f172a;">₺{{ '{:,.2f}'.format(bankaya_yatan_toplam).replace(',', 'X').replace('.', ',').replace('X', '.') }}</div>
                     </td>
                     <td width="25%" align="center" bgcolor="#f8fafc" style="padding: 14px 10px; background-color: #f8fafc; border-right: 1px solid #e2e8f0; text-align: center;">
                         <div style="font-size: 11px; font-weight: bold; color: #475569; text-transform: uppercase; margin-bottom: 4px;">Nakit Girişi Toplam</div>
-                        <div style="font-size: 18px; font-weight: 800; color: #0f172a;">₺{{ '{:,.0f}'.format(nakit_giris_toplam).replace(',', '.') }}</div>
+                        <div style="font-size: 18px; font-weight: 800; color: #0f172a;">₺{{ '{:,.2f}'.format(nakit_giris_toplam).replace(',', 'X').replace('.', ',').replace('X', '.') }}</div>
                     </td>
                     <td width="25%" align="center" bgcolor="#f8fafc" style="padding: 14px 10px; background-color: #f8fafc; text-align: center;">
                         <div style="font-size: 11px; font-weight: bold; color: #475569; text-transform: uppercase; margin-bottom: 4px;">Fark (Bakiye)</div>
                         <div style="font-size: 18px; font-weight: 800; color: {{ '#dc2626' if fark != 0 else '#16a34a' }};">
-                            {% if fark > 0 %}+{% endif %}₺{{ '{:,.0f}'.format(fark).replace(',', '.') }}
+                            {% if fark > 0 %}+{% endif %}₺{{ '{:,.2f}'.format(fark).replace(',', 'X').replace('.', ',').replace('X', '.') }}
                         </div>
                     </td>
                 </tr>
