@@ -322,7 +322,7 @@
         <div class="control-bar">
             <button class="btn-icon" title="Yazdır" onclick="window.print()">🖨️</button>
             <button class="btn-icon" title="İndir" onclick="exportTableToCSV()">⬇️</button>
-            <button class="btn-icon" data-permission="Mail Gönder" title="Mail Gönder" onclick="openReportMailModal({ tableId: 'posTable' })">✉️</button>
+            <button class="btn-icon" data-permission="Mail Gönder" title="Mail Gönder" onclick="openPosReportMail()">✉️</button>
             <select class="donem-select"
                 onchange="window.location.href='/pos-kontrol-dashboard?sube_id={{ secili_sube_id }}&donem=' + this.value">
                 {% for d in donem_listesi %}
@@ -492,6 +492,187 @@
         a.download = 'pos_kontrol_{{ secili_donem }}.csv';
         a.click();
         URL.revokeObjectURL(url);
+    }
+
+    // =========================================================================
+    // POS Kontrol Dashboard - Özel Mail Gönder (Özet + Yalnızca Uyumsuzlar)
+    // =========================================================================
+    function getPosUnmatchedRows() {
+        const rows = [];
+        document.querySelectorAll('#posTable tbody tr.fail-row').forEach(tr => {
+            const cells = tr.querySelectorAll('td');
+            if (cells.length >= 4) {
+                rows.push({
+                    durum: '✕',
+                    tarih: cells[1].textContent.trim(),
+                    gelirPos: cells[2].textContent.trim(),
+                    posHareketleri: cells[3].textContent.trim()
+                });
+            }
+        });
+        return rows;
+    }
+
+    function getPosReportMailHtml() {
+        const unmatched = getPosUnmatchedRows();
+        let rowsHtml = '';
+
+        if (unmatched.length === 0) {
+            rowsHtml = `
+                <tr>
+                    <td colspan="4" bgcolor="#f0fdf4" style="text-align: center; padding: 16px; color: #166534; font-weight: bold; font-size: 13px; background-color: #f0fdf4;">
+                        ✓ Tüm gösterilen günler uyumludur (Uyumsuz kayıt bulunmamaktadır).
+                    </td>
+                </tr>
+            `;
+        } else {
+            unmatched.forEach(item => {
+                rowsHtml += `
+                    <tr bgcolor="#ffffff" style="background-color: #ffffff; border-bottom: 1px solid #fee2e2;">
+                        <td bgcolor="#ffffff" align="center" style="padding: 10px 14px; text-align: center; color: #dc2626; font-weight: 800; font-size: 15px; background-color: #ffffff;">
+                            ${item.durum}
+                        </td>
+                        <td bgcolor="#ffffff" style="padding: 10px 14px; color: #1e293b; font-size: 13px; font-weight: 600; background-color: #ffffff;">
+                            ${item.tarih}
+                        </td>
+                        <td bgcolor="#ffffff" align="right" style="padding: 10px 14px; text-align: right; color: #0284c7; font-weight: 700; font-size: 13px; background-color: #ffffff;">
+                            ${item.gelirPos} ₺
+                        </td>
+                        <td bgcolor="#ffffff" align="right" style="padding: 10px 14px; text-align: right; color: #d97706; font-weight: 700; font-size: 13px; background-color: #ffffff;">
+                            ${item.posHareketleri} ₺
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        return `
+            <!-- 1. ÖZET BİLGİLER TABLOSU -->
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: separate; margin-bottom: 22px; border: 2px solid #2563eb; border-radius: 8px; overflow: hidden; background-color: #ffffff;">
+                <tr>
+                    <td colspan="4" bgcolor="#eff6ff" style="padding: 12px 18px; background-color: #eff6ff; border-bottom: 2px solid #bfdbfe; text-align: center;">
+                        <span style="font-size: 15px; font-weight: bold; color: #1e3a8a;">
+                            📊 POS Kontrol Özeti (Şube: {{ sube_adi }} &nbsp;|&nbsp; Dönem: {{ secili_donem // 100 + 2000 }} / {{ "%02d" % (secili_donem % 100) }})
+                        </span>
+                    </td>
+                </tr>
+                <tr>
+                    <td width="25%" align="center" bgcolor="#f8fafc" style="padding: 14px 10px; background-color: #f8fafc; border-right: 1px solid #e2e8f0; text-align: center;">
+                        <div style="font-size: 11px; font-weight: bold; color: #475569; text-transform: uppercase; margin-bottom: 4px;">📅 Toplam Gün</div>
+                        <div style="font-size: 20px; font-weight: 800; color: #1e40af;">{{ dashboard_data.summary.total }}</div>
+                    </td>
+                    <td width="25%" align="center" bgcolor="#f8fafc" style="padding: 14px 10px; background-color: #f8fafc; border-right: 1px solid #e2e8f0; text-align: center;">
+                        <div style="font-size: 11px; font-weight: bold; color: #166534; text-transform: uppercase; margin-bottom: 4px;">✓ Uyumlu</div>
+                        <div style="font-size: 20px; font-weight: 800; color: #15803d;">{{ dashboard_data.summary.ok }}</div>
+                    </td>
+                    <td width="25%" align="center" bgcolor="#f8fafc" style="padding: 14px 10px; background-color: #f8fafc; border-right: 1px solid #e2e8f0; text-align: center;">
+                        <div style="font-size: 11px; font-weight: bold; color: #991b1b; text-transform: uppercase; margin-bottom: 4px;">✕ Uyumsuz</div>
+                        <div style="font-size: 20px; font-weight: 800; color: #dc2626;">{{ dashboard_data.summary.fail }}</div>
+                    </td>
+                    <td width="25%" align="center" bgcolor="#f8fafc" style="padding: 14px 10px; background-color: #f8fafc; text-align: center;">
+                        <div style="font-size: 11px; font-weight: bold; color: #1e40af; text-transform: uppercase; margin-bottom: 4px;">% Başarı Oranı</div>
+                        <div style="font-size: 20px; font-weight: 800; color: #2563eb;">{{ dashboard_data.summary.success_rate }}</div>
+                    </td>
+                </tr>
+            </table>
+
+            <!-- 2. UYUMSUZ KAYITLAR BAŞLIĞI VE TABLOSU -->
+            <div style="margin-bottom: 12px; font-size: 15px; font-weight: bold; color: #991b1b; border-left: 4px solid #dc2626; padding-left: 10px;">
+                ⚠️ Yalnızca Uyumsuz Günler (${unmatched.length} Gün)
+            </div>
+
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; margin-bottom: 20px; border: 2px solid #dc2626; border-radius: 8px; overflow: hidden; background-color: #ffffff;">
+                <thead>
+                    <tr bgcolor="#fef2f2" style="background-color: #fef2f2; border-bottom: 2px solid #fecaca;">
+                        <th align="center" bgcolor="#fef2f2" style="width: 60px; padding: 10px 14px; text-align: center; font-size: 11px; color: #991b1b; font-weight: bold;">DURUM</th>
+                        <th align="left" bgcolor="#fef2f2" style="padding: 10px 14px; text-align: left; font-size: 11px; color: #991b1b; font-weight: bold;">TARİH</th>
+                        <th align="right" bgcolor="#fef2f2" style="padding: 10px 14px; text-align: right; font-size: 11px; color: #991b1b; font-weight: bold;">GELİR POS</th>
+                        <th align="right" bgcolor="#fef2f2" style="padding: 10px 14px; text-align: right; font-size: 11px; color: #991b1b; font-weight: bold;">POS HAREKETLERİ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rowsHtml}
+                </tbody>
+            </table>
+        `;
+    }
+
+    function parseTurkishDecimal(str) {
+        if (!str) return 0;
+        // e.g. "1.250,50" -> 1250.50
+        const cleaned = str.replace(/[^0-9,.-]/g, '').replace(/\./g, '').replace(',', '.');
+        const num = parseFloat(cleaned);
+        return isNaN(num) ? 0 : num;
+    }
+
+    function getPosReportExcelBase64() {
+        if (typeof XLSX === 'undefined') return null;
+
+        const wb = XLSX.utils.book_new();
+
+        // 1. Özet Sayfası
+        const summaryData = [
+            ['POS KONTROL DASHBOARD - ÖZET'],
+            ['Şube:', '{{ sube_adi }}'],
+            ['Dönem:', '{{ secili_donem // 100 + 2000 }} / {{ "%02d" % (secili_donem % 100) }}'],
+            ['Rapor Tarihi:', new Date().toLocaleString('tr-TR')],
+            [],
+            ['Metrik', 'Değer'],
+            ['Toplam Gün', {{ dashboard_data.summary.total }}],
+            ['Uyumlu Gün Sayısı', {{ dashboard_data.summary.ok }}],
+            ['Uyumsuz Gün Sayısı', {{ dashboard_data.summary.fail }}],
+            ['Başarı Oranı', '{{ dashboard_data.summary.success_rate }}']
+        ];
+        const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+        XLSX.utils.book_append_sheet(wb, wsSummary, 'Özet');
+
+        // 2. Yalnızca Uyumsuz Kayıtlar Sayfası
+        const unmatched = getPosUnmatchedRows();
+        const wsData = [
+            ['Durum', 'Tarih', 'GELİR POS', 'Pos Hareketleri']
+        ];
+
+        unmatched.forEach(item => {
+            wsData.push([
+                'Uyumsuz',
+                item.tarih,
+                parseTurkishDecimal(item.gelirPos),
+                parseTurkishDecimal(item.posHareketleri)
+            ]);
+        });
+
+        if (unmatched.length === 0) {
+            wsData.push(['Uyumlu', '-', 0, 0]);
+        }
+
+        const wsUnmatched = XLSX.utils.aoa_to_sheet(wsData);
+
+        // Format decimal columns as number with 2 decimal places (#.##0,00)
+        const range = XLSX.utils.decode_range(wsUnmatched['!ref']);
+        for (let R = 1; R <= range.e.r; ++R) {
+            // Col 2: GELİR POS, Col 3: Pos Hareketleri
+            for (let C = 2; C <= 3; ++C) {
+                const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+                const cell = wsUnmatched[cellRef];
+                if (cell && typeof cell.v === 'number') {
+                    cell.t = 'n';
+                    cell.z = '#,##0.00';
+                }
+            }
+        }
+
+        XLSX.utils.book_append_sheet(wb, wsUnmatched, 'Uyumsuz Kayıtlar');
+
+        return XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+    }
+
+    function openPosReportMail() {
+        openReportMailModal({
+            title: 'POS Kontrol Dashboard',
+            filename: 'POS_Kontrol_{{ secili_sube_id }}_{{ secili_donem }}.xlsx',
+            getHtml: getPosReportMailHtml,
+            getExcelBase64: getPosReportExcelBase64
+        });
     }
 </script>
 {% endblock %}

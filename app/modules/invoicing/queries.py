@@ -2207,12 +2207,17 @@ def get_pos_kontrol_dashboard_data(db: Session, sube_id: int, donem: int):
             kk_odeme_map[key] -= 1
 
     # 4. Generate Daily Response
+    today = date.today()
     results = []
     curr = start_date
     ok_count = 0
     fail_count = 0
     
     while curr <= end_date:
+        # Tarihi bugun ve ileri tarihler gosterilmez, uyumlu sayilmaz
+        if curr >= today:
+            break
+
         g_pos = gelir_map.get(curr, Decimal('0'))
         p_data = pos_h_map.get(curr, {
             'islem': Decimal('0'),
@@ -2226,12 +2231,15 @@ def get_pos_kontrol_dashboard_data(db: Session, sube_id: int, donem: int):
         o_val = p_data['matched_odeme']
         
         # Bank fees for the NEXT day (as per legacy logic, fees might be logged differently)
-        # Actually legacy logic used: next_day = date + timedelta(days=1)
         next_day = curr + timedelta(days=1)
         o_kesinti = kesinti_odeme_map.get(next_day, Decimal('0'))
         
         # Kontrol POS: Gelir POS == POS Hareketleri
-        k_pos = "OK" if abs(g_pos - p_data['islem']) < Decimal('0.05') else "FAIL"
+        # Kural: GELİR POS ve Pos Hareketleri 2si de sıfırsa bunları uyumsuz say
+        if g_pos == Decimal('0') and p_data['islem'] == Decimal('0'):
+            k_pos = "FAIL"
+        else:
+            k_pos = "OK" if abs(g_pos - p_data['islem']) < Decimal('0.05') else "FAIL"
         
         # Kontrol Kesinti: POS Kesinti == Odeme Kesinti
         k_kesinti = "OK" if abs(p_data['kesinti'] - o_kesinti) < Decimal('0.05') else "FAIL"
@@ -2255,12 +2263,13 @@ def get_pos_kontrol_dashboard_data(db: Session, sube_id: int, donem: int):
         })
         curr += timedelta(days=1)
 
-    success_rate = (ok_count / len(results)) * 100 if results else 0
+    total_days = len(results)
+    success_rate = (ok_count / total_days * 100) if total_days > 0 else 0
     
     return {
         'data': results,
         'summary': {
-            'total': len(results),
+            'total': total_days,
             'ok': ok_count,
             'fail': fail_count,
             'success_rate': f"{success_rate:.1f}%"
