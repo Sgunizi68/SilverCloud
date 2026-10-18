@@ -311,7 +311,7 @@
             <div class="no-print d-flex gap-2">
                 <button class="donem-select" onclick="window.print()">🖨️ Yazdır</button>
                 <button class="donem-select" onclick="exportToExcel()">📊 Excel İndir</button>
-                <button class="donem-select" data-permission="Mail Gönder" onclick="openReportMailModal({ tableSelector: '.ceki-table' })">✉️ Mail Gönder</button>
+                <button class="donem-select" data-permission="Mail Gönder" onclick="openYemekCekiReportMail()">✉️ Mail Gönder</button>
             </div>
         </div>
         <div class="table-responsive">
@@ -440,6 +440,218 @@
             raw: true
         });
         XLSX.writeFile(wb, `Yemek_Ceki_Dashboard_{{ secili_donem }}.xlsx`);
+    }
+
+    // =========================================================================
+    // Yemek Çeki Kontrol Dashboard - Özel Mail Gönder
+    // (Ekrana birebir görsel format: Üst Özet Kartları + Renkli Platform Başlıkları)
+    // =========================================================================
+    function parseTurkishDecimal(str) {
+        if (!str) return 0;
+        const cleaned = str.replace(/[^0-9,.-]/g, '').replace(/\./g, '').replace(',', '.');
+        const num = parseFloat(cleaned);
+        return isNaN(num) ? 0 : num;
+    }
+
+    function getYemekCekiReportMailHtml() {
+        // 1. ÖZET KARTLAR (Ekrandaki kart renkleriyle birebir)
+        const summaryCardsHtml = `
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: separate; margin-bottom: 22px;">
+                <tr>
+                    <td width="24%" align="center" bgcolor="#0284c7" style="padding: 14px 10px; border-radius: 8px; background-color: #0284c7; text-align: center; color: #ffffff;">
+                        <div style="font-size: 11px; font-weight: 700; color: #e0f2fe; text-transform: uppercase; margin-bottom: 4px;">📊 Aylık Toplam Gelir</div>
+                        <div style="font-size: 18px; font-weight: 800; color: #ffffff;">{{ "{:,.2f}".format(dashboard_data.stats.total_gelir).replace(',', 'X').replace('.', ',').replace('X', '.') }} ₺</div>
+                    </td>
+                    <td width="2%"></td>
+                    <td width="23%" align="center" bgcolor="#2563eb" style="padding: 14px 10px; border-radius: 8px; background-color: #2563eb; text-align: center; color: #ffffff;">
+                        <div style="font-size: 11px; font-weight: 700; color: #dbeafe; text-transform: uppercase; margin-bottom: 4px;">💰 Dönem Tutar Toplamı</div>
+                        <div style="font-size: 18px; font-weight: 800; color: #ffffff;">{{ "{:,.2f}".format(dashboard_data.stats.total_donem_tutar).replace(',', 'X').replace('.', ',').replace('X', '.') }} ₺</div>
+                    </td>
+                    <td width="2%"></td>
+                    <td width="23%" align="center" bgcolor="#e11d48" style="padding: 14px 10px; border-radius: 8px; background-color: #e11d48; text-align: center; color: #ffffff;">
+                        <div style="font-size: 11px; font-weight: 700; color: #ffe4e6; text-transform: uppercase; margin-bottom: 4px;">⚖️ Fark</div>
+                        <div style="font-size: 18px; font-weight: 800; color: #ffffff;">{{ "{:,.2f}".format(dashboard_data.stats.total_fark).replace(',', 'X').replace('.', ',').replace('X', '.') }} ₺</div>
+                    </td>
+                    <td width="2%"></td>
+                    <td width="24%" align="center" bgcolor="#d97706" style="padding: 14px 10px; border-radius: 8px; background-color: #d97706; text-align: center; color: #ffffff;">
+                        <div style="font-size: 11px; font-weight: 700; color: #fef3c7; text-transform: uppercase; margin-bottom: 4px;">📝 Kontrol Edilen Kayıt</div>
+                        <div style="font-size: 18px; font-weight: 800; color: #ffffff;">{{ dashboard_data.stats.kontrol_edilen_kayit }}</div>
+                    </td>
+                </tr>
+            </table>
+        `;
+
+        // 2. TABLO İÇERİĞİ
+        let tableRowsHtml = '';
+        const rows = document.querySelectorAll('.ceki-table tbody tr');
+
+        rows.forEach(tr => {
+            const isPlatformHeader = tr.classList.contains('platform-header-row');
+            const cells = tr.querySelectorAll('td');
+
+            if (isPlatformHeader) {
+                // Platform başlık / Genel toplam satırı (Mor / Lacivert zemin)
+                const isGenelToplam = cells[0].textContent.includes('GENEL TOPLAM');
+                const bg = isGenelToplam ? '#1e293b' : '#5b21b6';
+                const label = cells[0].textContent.trim();
+                const aylikGelir = cells[1] ? cells[1].textContent.trim() : '';
+                const donemTutar = cells[2] ? cells[2].textContent.trim() : '';
+                const fark = cells[3] ? cells[3].textContent.trim() : '';
+
+                tableRowsHtml += `
+                    <tr bgcolor="${bg}" style="background-color: ${bg}; color: #ffffff;">
+                        <td bgcolor="${bg}" style="padding: 10px 14px; font-weight: 800; font-size: 13px; color: #ffffff !important; text-align: left; background-color: ${bg};">
+                            ${label}
+                        </td>
+                        <td colspan="3" bgcolor="${bg}" style="padding: 10px 14px; font-size: 12px; color: #ffffff !important; text-align: left; background-color: ${bg};">
+                            ${aylikGelir}
+                        </td>
+                        <td colspan="3" bgcolor="${bg}" style="padding: 10px 14px; font-size: 12px; color: #ffffff !important; text-align: left; background-color: ${bg};">
+                            ${donemTutar}
+                        </td>
+                        <td colspan="2" bgcolor="${bg}" style="padding: 10px 14px; font-size: 12px; color: #ffffff !important; text-align: left; background-color: ${bg};">
+                            ${fark}
+                        </td>
+                        <td colspan="3" bgcolor="${bg}" style="padding: 10px 14px; background-color: ${bg};"></td>
+                    </tr>
+                `;
+            } else if (cells.length >= 12) {
+                // Standart detay satırı
+                const gelirTutar = cells[0].textContent.trim();
+                const ilkTarih = cells[1].textContent.trim();
+                const sonTarih = cells[2].textContent.trim();
+                const tutar = cells[3].textContent.trim();
+                const oncekiDonem = cells[4].textContent.trim();
+                const sonrakiDonem = cells[5].textContent.trim();
+                const donemTutar = cells[6].textContent.trim();
+                const faturaDurumu = cells[7].textContent.trim();
+                const faturaTarihi = cells[8].textContent.trim();
+                const odemeTarihi = cells[9].textContent.trim();
+                const odemeTutari = cells[10].textContent.trim();
+                const isChecked = cells[11].querySelector('.active') !== null;
+
+                const faturaBg = faturaDurumu.includes('KESİLDİ') ? '#16a34a' : '#d97706';
+                const checkHtml = isChecked
+                    ? `<span style="display:inline-block; width:18px; height:18px; border-radius:4px; background-color:#16a34a; color:#ffffff; font-size:12px; font-weight:bold; line-height:18px; text-align:center;">✓</span>`
+                    : `<span style="display:inline-block; width:18px; height:18px; border-radius:4px; border:1px solid #cbd5e1; background-color:#ffffff;"></span>`;
+
+                tableRowsHtml += `
+                    <tr bgcolor="#ffffff" style="background-color: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                        <td bgcolor="#ffffff" style="padding: 8px 10px; text-align: left; color: #2563eb; font-weight: 700; font-size: 12px; background-color: #ffffff;">
+                            ${gelirTutar}
+                        </td>
+                        <td bgcolor="#ffffff" align="center" style="padding: 8px 10px; text-align: center; color: #475569; font-size: 12px; background-color: #ffffff;">
+                            ${ilkTarih}
+                        </td>
+                        <td bgcolor="#ffffff" align="center" style="padding: 8px 10px; text-align: center; color: #475569; font-size: 12px; background-color: #ffffff;">
+                            ${sonTarih}
+                        </td>
+                        <td bgcolor="#ffffff" align="right" style="padding: 8px 10px; text-align: right; color: #1e293b; font-weight: 600; font-size: 12px; background-color: #ffffff;">
+                            ${tutar}
+                        </td>
+                        <td bgcolor="#ffffff" align="right" style="padding: 8px 10px; text-align: right; color: ${oncekiDonem !== '0,00' ? '#dc2626' : '#64748b'}; font-weight: ${oncekiDonem !== '0,00' ? 'bold' : 'normal'}; font-size: 12px; background-color: #ffffff;">
+                            ${oncekiDonem}
+                        </td>
+                        <td bgcolor="#ffffff" align="right" style="padding: 8px 10px; text-align: right; color: ${sonrakiDonem !== '0,00' ? '#dc2626' : '#64748b'}; font-weight: ${sonrakiDonem !== '0,00' ? 'bold' : 'normal'}; font-size: 12px; background-color: #ffffff;">
+                            ${sonrakiDonem}
+                        </td>
+                        <td bgcolor="#ffffff" align="right" style="padding: 8px 10px; text-align: right; color: #15803d; font-weight: 700; font-size: 12px; background-color: #ffffff;">
+                            ${donemTutar}
+                        </td>
+                        <td bgcolor="#ffffff" align="center" style="padding: 8px 10px; text-align: center; background-color: #ffffff;">
+                            <span style="display:inline-block; padding: 2px 8px; border-radius: 12px; background-color: ${faturaBg}; color: #ffffff; font-size: 10px; font-weight: 700;">
+                                ${faturaDurumu}
+                            </span>
+                        </td>
+                        <td bgcolor="#ffffff" align="center" style="padding: 8px 10px; text-align: center; color: #475569; font-size: 12px; background-color: #ffffff;">
+                            ${faturaTarihi}
+                        </td>
+                        <td bgcolor="#ffffff" align="center" style="padding: 8px 10px; text-align: center; color: #475569; font-size: 12px; background-color: #ffffff;">
+                            ${odemeTarihi}
+                        </td>
+                        <td bgcolor="#ffffff" align="right" style="padding: 8px 10px; text-align: right; color: #1e293b; font-weight: 600; font-size: 12px; background-color: #ffffff;">
+                            ${odemeTutari}
+                        </td>
+                        <td bgcolor="#ffffff" align="center" style="padding: 8px 10px; text-align: center; background-color: #ffffff;">
+                            ${checkHtml}
+                        </td>
+                    </tr>
+                `;
+            }
+        });
+
+        return `
+            <!-- 1. ÜST ÖZET KARTLAR -->
+            ${summaryCardsHtml}
+
+            <!-- 2. ANA TABLO KARTI (Ekran Tasarımıyla Birebir) -->
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; margin-bottom: 24px; border: 2px solid #455a64; border-radius: 8px; overflow: hidden; background-color: #ffffff; box-shadow: 0 2px 10px rgba(0,0,0,0.06);">
+                <tr>
+                    <th colspan="12" bgcolor="#1a2340" style="background-color: #1a2340; color: #ffffff; padding: 14px 18px; text-align: center; font-size: 15px; font-weight: 700; letter-spacing: 0.5px;">
+                        📋 Yemek Çeki Kategorileri Detay Raporu (Şube: {{ sube_adi }} &nbsp;|&nbsp; Dönem: {{ secili_donem // 100 + 2000 }} / {{ "%02d" % (secili_donem % 100) }})
+                    </th>
+                </tr>
+                <thead>
+                    <tr bgcolor="#455a64" style="background-color: #455a64; border-bottom: 2px solid #37474f;">
+                        <th align="left" bgcolor="#455a64" style="padding: 9px 8px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase;">Gelir Tutar</th>
+                        <th align="center" bgcolor="#455a64" style="padding: 9px 8px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: center; text-transform: uppercase;">İlk Tarih</th>
+                        <th align="center" bgcolor="#455a64" style="padding: 9px 8px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: center; text-transform: uppercase;">Son Tarih</th>
+                        <th align="right" bgcolor="#455a64" style="padding: 9px 8px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: right; text-transform: uppercase;">Tutar</th>
+                        <th align="right" bgcolor="#455a64" style="padding: 9px 8px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: right; text-transform: uppercase;">Önceki Dönem</th>
+                        <th align="right" bgcolor="#455a64" style="padding: 9px 8px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: right; text-transform: uppercase;">Sonraki Dönem</th>
+                        <th align="right" bgcolor="#455a64" style="padding: 9px 8px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: right; text-transform: uppercase;">Dönem Tutar</th>
+                        <th align="center" bgcolor="#455a64" style="padding: 9px 8px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: center; text-transform: uppercase;">Fatura</th>
+                        <th align="center" bgcolor="#455a64" style="padding: 9px 8px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: center; text-transform: uppercase;">Fatura Tarihi</th>
+                        <th align="center" bgcolor="#455a64" style="padding: 9px 8px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: center; text-transform: uppercase;">Ödeme Tarihi</th>
+                        <th align="right" bgcolor="#455a64" style="padding: 9px 8px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: right; text-transform: uppercase;">Ödeme Tutarı</th>
+                        <th align="center" bgcolor="#455a64" style="padding: 9px 8px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: center; text-transform: uppercase;">✓</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${tableRowsHtml}
+                </tbody>
+            </table>
+        `;
+    }
+
+    function getYemekCekiReportExcelBase64() {
+        if (typeof XLSX === 'undefined') return null;
+
+        const table = document.querySelector('.ceki-table');
+        if (!table) return null;
+
+        const wb = XLSX.utils.book_new();
+
+        // 1. Özet Sayfası
+        const summaryData = [
+            ['YEMEK ÇEKİ KONTROL DASHBOARD - ÖZET'],
+            ['Şube:', '{{ sube_adi }}'],
+            ['Dönem:', '{{ secili_donem // 100 + 2000 }} / {{ "%02d" % (secili_donem % 100) }}'],
+            ['Rapor Tarihi:', new Date().toLocaleString('tr-TR')],
+            [],
+            ['Metrik', 'Değer'],
+            ['Aylık Toplam Gelir', parseTurkishDecimal("{{ '{:,.2f}'.format(dashboard_data.stats.total_gelir) }}")],
+            ['Dönem Tutar Toplamı', parseTurkishDecimal("{{ '{:,.2f}'.format(dashboard_data.stats.total_donem_tutar) }}")],
+            ['Fark', parseTurkishDecimal("{{ '{:,.2f}'.format(dashboard_data.stats.total_fark) }}")],
+            ['Kontrol Edilen Kayıt', {{ dashboard_data.stats.kontrol_edilen_kayit }}]
+        ];
+        const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+        XLSX.utils.book_append_sheet(wb, wsSummary, 'Özet');
+
+        // 2. Detay Sayfası
+        const wsDetail = XLSX.utils.table_to_sheet(table);
+        XLSX.utils.book_append_sheet(wb, wsDetail, 'Yemek Çeki Detay');
+
+        return XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+    }
+
+    function openYemekCekiReportMail() {
+        openReportMailModal({
+            title: 'Yemek Çeki Kontrol Dashboard',
+            filename: 'Yemek_Ceki_Kontrol_{{ secili_sube_id }}_{{ secili_donem }}.xlsx',
+            getHtml: getYemekCekiReportMailHtml,
+            getExcelBase64: getYemekCekiReportExcelBase64
+        });
     }
 </script>
 {% endblock %}
