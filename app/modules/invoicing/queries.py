@@ -2331,7 +2331,17 @@ def get_online_kontrol_dashboard_data(db: Session, sube_id: int, donem: int):
                 B2BEkstre.Aciklama.ilike('%Virman%')
             )
         ).order_by(B2BEkstre.Tarih)
-        virman_records = db.scalars(stmt_virman).all()
+        virman_records_raw = db.scalars(stmt_virman).all()
+        # Tekrar eden kayıtlarda (Açıklama ve Alacak tutarı aynı olan) bir kaydı al, diğerlerini göz ardı et
+        seen_virman = set()
+        virman_records = []
+        for r in virman_records_raw:
+            key = ((r.Aciklama or '').strip().lower(), round(Decimal(str(r.Alacak)), 2))
+            if key in seen_virman:
+                continue
+            seen_virman.add(key)
+            virman_records.append(r)
+
         toplam_virman = sum((abs(r.Alacak) for r in virman_records), Decimal('0'))
         
         # Calculate Detail Rows
