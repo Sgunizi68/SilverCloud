@@ -320,7 +320,7 @@
             <button class="btn-download" onclick="exportToExcel()">
                 <i class="fas fa-file-excel"></i> EXCEL
             </button>
-            <button class="btn-download" data-permission="Mail Gönder" onclick="openReportMailModal({ tableSelector: '.legacy-table' })" style="background: #2563eb;">
+            <button class="btn-download" data-permission="Mail Gönder" onclick="openOzetReportMail()" style="background: #2563eb;">
                 <i class="fas fa-envelope"></i> MAİL
             </button>
             <select class="form-select-sm" id="branchSelect" onchange="updateFilters()">
@@ -490,37 +490,287 @@
     </div>
     {% endif %}
 </div>
+
+{# OZT data object - must be inside content block where Jinja set-variables are in scope #}
+<script>
+const OZT = {
+    sube:              "{{ subeler | selectattr('Sube_ID', 'equalto', secili_sube_id) | map(attribute='Sube_Adi') | first | default('') }}",
+    donem:             "{{ secili_donem }}",
+    robotpos:          {{ robotpos }},
+    toplam:            {{ toplam }},
+    nakit:             {{ nakit }},
+    gh_efatura:        {{ gh_efatura }},
+    gh_diger:          {{ gh_diger }},
+    kalan_nakit:       {{ kalan_nakit }},
+    nakit_girisi:      {{ nakit_girisi }},
+    bankaya_yatan:     {{ bankaya_yatan }},
+    gelir_pos:         {{ gelir_pos }},
+    pos_hareket:       {{ pos_hareket }},
+    online_gelir:      {{ online_gelir }},
+    online_virman:     {{ online_virman }},
+    yemek_ceki_aylik:  {{ yemek_ceki_aylik }},
+    yemek_ceki_toplam: {{ yemek_ceki_toplam }},
+    gelir_fark:        {{ gelir_fark }},
+    nakit_fark:        {{ nakit_fark }},
+    kk_fark:           {{ kk_fark }},
+    online_fark:       {{ online_fark }},
+    yemek_ceki_fark:   {{ yemek_ceki_fark }},
+    total_fark:        {{ total_fark }},
+};
+</script>
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
 <script>
+    // ─── Filters ───────────────────────────────────────────────────────────────
     function updateFilters() {
         const sube_id = document.getElementById('branchSelect').value;
-        const donem = document.getElementById('donemSelect').value;
+        const donem   = document.getElementById('donemSelect').value;
         window.location.href = `/ozet-kontrol-raporu?sube_id=${sube_id}&donem=${donem}`;
     }
 
-    function exportToExcel() {
-        const rows = [["KALEM", "TUTAR"]];
-        document.querySelectorAll('.legacy-table tr').forEach(tr => {
-            const label = tr.querySelector('.label-cell')?.innerText;
-            const val = tr.querySelector('.value-cell')?.innerText;
-            if (label && val) rows.push([label, val]);
-        });
-        
-        rows.push([]);
-        rows.push(["HESAPLAMA", "FARK"]);
-        document.querySelectorAll('.calc-box').forEach(box => {
-            const title = box.querySelector('.calc-title')?.innerText;
-            const val = box.querySelector('.calc-amount')?.innerText;
-            if (title && val) rows.push([title, val]);
-        });
+    // ─── Helpers ───────────────────────────────────────────────────────────────
+    function fmtTL(v) {
+        return new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v) + ' ₺';
+    }
+    function badgeHtml(v) {
+        const ok   = Math.abs(v) <= 10;
+        const bg   = ok ? '#d1fae5' : '#fee2e2';
+        const clr  = ok ? '#065f46' : '#991b1b';
+        const lbl  = ok ? 'Uyumlu'  : 'Uyumsuz';
+        return `<span style="font-size:11px;padding:3px 10px;border-radius:20px;font-weight:700;display:inline-block;margin-top:4px;background:${bg};color:${clr};">${lbl}</span>`;
+    }
+    function amtColor(v) {
+        return v > 1 ? '#10b981' : (v < -1 ? '#ef4444' : '#1e293b');
+    }
 
-        const ws = XLSX.utils.aoa_to_sheet(rows);
+    // ─── Excel Export ──────────────────────────────────────────────────────────
+    function exportToExcel() {
+        if (typeof XLSX === 'undefined') { alert('Excel kütüphanesi yüklenemedi.'); return; }
+
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Rapor");
-        XLSX.writeFile(wb, "Ozet_Kontrol_Raporu.xlsx");
+
+        // Sheet 1: Veritabanı Verileri
+        const dbData = [
+            ['ÖZET KONTROL RAPORU'],
+            ['Şube:', OZT.sube],
+            ['Dönem:', OZT.donem],
+            ['Rapor Tarihi:', new Date().toLocaleString('tr-TR')],
+            [],
+            ['KALEM', 'TUTAR (₺)'],
+            ['Robotpos Tutar (Sistem)',    OZT.robotpos],
+            ['Toplam Satış Gelirleri',     OZT.toplam],
+            ['Nakit Gelir',               OZT.nakit],
+            ['Günlük Harcama (e-Fatura)', -OZT.gh_efatura],
+            ['Günlük Harcama (Diğer)',    -OZT.gh_diger],
+            ['Kalan Nakit Bakiyesi',       OZT.kalan_nakit],
+            [],
+            ['Nakit Girişi Toplam',        OZT.nakit_girisi],
+            ['Bankaya Yatan Toplam',       OZT.bankaya_yatan],
+            ['Gelir POS (Kredi Kartı)',    OZT.gelir_pos],
+            ['POS Hareketleri (Banka)',    OZT.pos_hareket],
+            ['Online Gelir Toplam',        OZT.online_gelir],
+            ['Online Virman (B2B)',         OZT.online_virman],
+            ['Yemek Çeki Aylık Gelir',     OZT.yemek_ceki_aylik],
+            ['Yemek Çeki Dönem Toplamı',   OZT.yemek_ceki_toplam],
+        ];
+        const ws1 = XLSX.utils.aoa_to_sheet(dbData);
+        ws1['!cols'] = [{ wch: 32 }, { wch: 18 }];
+        // Format numeric cells
+        const numFmt = '#,##0.00';
+        for (let r = 6; r <= 20; r++) {
+            const cell = ws1[XLSX.utils.encode_cell({ r, c: 1 })];
+            if (cell && typeof cell.v === 'number') { cell.t = 'n'; cell.z = numFmt; }
+        }
+        XLSX.utils.book_append_sheet(wb, ws1, 'Veriler');
+
+        // Sheet 2: Hesaplamalar
+        const calcRows = [
+            ['HESAPLAMA', 'FARK (₺)', 'DURUM'],
+            ['Gelir Farkı (Satışlar - Robotpos)',          OZT.gelir_fark,      Math.abs(OZT.gelir_fark)      <= 10 ? 'Uyumlu' : 'Uyumsuz'],
+            ['Nakit Farkı (Bankaya Yatan - Kalan Nakit)',  OZT.nakit_fark,      Math.abs(OZT.nakit_fark)      <= 10 ? 'Uyumlu' : 'Uyumsuz'],
+            ['Kredi Kartı Farkı (POS Takas - Gelir POS)', OZT.kk_fark,         Math.abs(OZT.kk_fark)         <= 10 ? 'Uyumlu' : 'Uyumsuz'],
+            ['Online Gelir Farkı (Virmanlar - Online)',    OZT.online_fark,     Math.abs(OZT.online_fark)     <= 10 ? 'Uyumlu' : 'Uyumsuz'],
+            ['Yemek Çeki Farkı (Dönem - Aylık)',          OZT.yemek_ceki_fark, Math.abs(OZT.yemek_ceki_fark) <= 10 ? 'Uyumlu' : 'Uyumsuz'],
+            [],
+            ['TOPLAM FARK',                               OZT.total_fark,      Math.abs(OZT.total_fark)      <= 10 ? 'Uyumlu' : 'Uyumsuz'],
+        ];
+        const ws2 = XLSX.utils.aoa_to_sheet(calcRows);
+        ws2['!cols'] = [{ wch: 45 }, { wch: 16 }, { wch: 12 }];
+        for (let r = 1; r <= 7; r++) {
+            const cell = ws2[XLSX.utils.encode_cell({ r, c: 1 })];
+            if (cell && typeof cell.v === 'number') { cell.t = 'n'; cell.z = numFmt; }
+        }
+        XLSX.utils.book_append_sheet(wb, ws2, 'Hesaplamalar');
+
+        const ts = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        XLSX.writeFile(wb, `Ozet_Kontrol_Raporu_{{ secili_sube_id }}_{{ secili_donem }}_${ts}.xlsx`);
+    }
+
+    // ─── Mail HTML Body ────────────────────────────────────────────────────────
+    function getOzetMailHtml() {
+        // DB data rows
+        const dbRows = [
+            { label: 'Robotpos Tutar (Sistem)',    val: OZT.robotpos,        color: '#1e293b', prefix: '' },
+            { label: 'Toplam Satış Gelirleri',     val: OZT.toplam,          color: '#1e293b', prefix: '' },
+            { label: 'Nakit Gelir',               val: OZT.nakit,           color: '#1e293b', prefix: '' },
+            { label: 'Günlük Harcama (e-Fatura)', val: OZT.gh_efatura,      color: '#ef4444', prefix: '- ' },
+            { label: 'Günlük Harcama (Diğer)',    val: OZT.gh_diger,        color: '#ef4444', prefix: '- ' },
+            { label: 'Kalan Nakit Bakiyesi',       val: OZT.kalan_nakit,     color: '#2563eb', prefix: '', bold: true, sep: true },
+            { label: 'Nakit Girişi Toplam',        val: OZT.nakit_girisi,    color: '#1e293b', prefix: '' },
+            { label: 'Bankaya Yatan Toplam',       val: OZT.bankaya_yatan,   color: '#1e293b', prefix: '' },
+            { label: 'Gelir POS (Kredi Kartı)',    val: OZT.gelir_pos,       color: '#1e293b', prefix: '' },
+            { label: 'POS Hareketleri (Banka)',    val: OZT.pos_hareket,     color: '#1e293b', prefix: '' },
+            { label: 'Online Gelir Toplam',        val: OZT.online_gelir,    color: '#1e293b', prefix: '' },
+            { label: 'Online Virman (B2B)',         val: OZT.online_virman,   color: '#1e293b', prefix: '' },
+            { label: 'Yemek Çeki Aylık Gelir',     val: OZT.yemek_ceki_aylik,  color: '#1e293b', prefix: '' },
+            { label: 'Yemek Çeki Dönem Toplamı',   val: OZT.yemek_ceki_toplam, color: '#1e293b', prefix: '' },
+        ];
+
+        const dbRowsHtml = dbRows.map((r, i) => {
+            const bg     = r.sep ? '#eff6ff' : (i % 2 === 0 ? '#ffffff' : '#f8fafc');
+            const border = r.sep ? 'border-top: 2px solid #bfdbfe;' : '';
+            const fw     = r.bold ? '800' : '600';
+            return `
+            <tr>
+                <td bgcolor="${bg}" style="padding: 9px 16px; font-size: 13px; font-weight: ${fw}; color: #475569; background-color: ${bg}; ${border} border-bottom: 1px solid #f1f5f9;">${r.label}</td>
+                <td align="right" bgcolor="${bg}" style="padding: 9px 16px; font-size: 13px; font-weight: ${fw}; color: ${r.color}; text-align: right; background-color: ${bg}; ${border} border-bottom: 1px solid #f1f5f9;">${r.prefix}${fmtTL(r.val)}</td>
+            </tr>`;
+        }).join('');
+
+        // Calc boxes
+        const calcs = [
+            { title: 'TOPLAM FARK',        formula: '∑ Tüm Farklar',                      val: OZT.total_fark,      highlight: true },
+            { title: 'Gelir Farkı',        formula: 'Satışlar - Robotpos',                  val: OZT.gelir_fark },
+            { title: 'Nakit Farkı',        formula: 'Bankaya Yatan - Kalan Nakit',           val: OZT.nakit_fark },
+            { title: 'Kredi Kartı Farkı',  formula: 'POS Takas - Gelir POS',                val: OZT.kk_fark },
+            { title: 'Online Gelir Farkı', formula: 'Virmanlar - Online Gelir',              val: OZT.online_fark },
+            { title: 'Yemek Çeki Farkı',   formula: 'Dönem Toplam - Aylık Gelir',            val: OZT.yemek_ceki_fark },
+        ];
+
+        const calcRowsHtml = calcs.map(c => {
+            const bg  = c.highlight ? '#eff6ff' : '#f8fafc';
+            const bdr = c.highlight ? 'border-left: 5px solid #2563eb;' : 'border-left: 4px solid #e2e8f0;';
+            const clr = amtColor(c.val);
+            return `
+            <tr>
+                <td bgcolor="${bg}" style="padding: 12px 16px; background-color: ${bg}; ${bdr} border-bottom: 1px solid #e2e8f0;">
+                    <div style="font-size: 13px; font-weight: 700; color: #1e293b;">${c.title}</div>
+                    <div style="font-size: 11px; color: #64748b; font-style: italic; margin-top: 2px;">${c.formula}</div>
+                    ${badgeHtml(c.val)}
+                </td>
+                <td align="right" bgcolor="${bg}" style="padding: 12px 16px; font-size: 16px; font-weight: 800; color: ${clr}; text-align: right; background-color: ${bg}; ${bdr} border-bottom: 1px solid #e2e8f0;">${fmtTL(c.val)}</td>
+            </tr>`;
+        }).join('');
+
+        return `
+            <!-- BAŞLIK -->
+            <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                   style="width:100%;border-collapse:separate;margin-bottom:22px;border:2px solid #2563eb;border-radius:8px;overflow:hidden;background-color:#ffffff;">
+                <tr>
+                    <td colspan="4" bgcolor="#eff6ff"
+                        style="padding:14px 20px;background-color:#eff6ff;border-bottom:2px solid #bfdbfe;text-align:center;">
+                        <span style="font-size:16px;font-weight:bold;color:#1e3a8a;">
+                            📊 Özet Kontrol Raporu &nbsp;|&nbsp; Şube: ${OZT.sube} &nbsp;|&nbsp; Dönem: ${OZT.donem}
+                        </span>
+                    </td>
+                </tr>
+            </table>
+
+            <!-- VERİTABANI VERİLERİ -->
+            <div style="margin-bottom:10px;font-size:14px;font-weight:bold;color:#1e3a8a;border-left:4px solid #2563eb;padding-left:10px;">🏦 Veritabanı Verileri</div>
+            <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                   style="width:100%;border-collapse:collapse;margin-bottom:24px;border:1px solid #e0e6ef;border-radius:8px;overflow:hidden;background-color:#ffffff;">
+                <thead>
+                    <tr bgcolor="#1a2340" style="background-color:#1a2340;">
+                        <th align="left"  style="padding:10px 16px;color:white;font-size:11px;font-weight:bold;text-transform:uppercase;">KALEM</th>
+                        <th align="right" style="padding:10px 16px;color:white;font-size:11px;font-weight:bold;text-align:right;text-transform:uppercase;">TUTAR</th>
+                    </tr>
+                </thead>
+                <tbody>${dbRowsHtml}</tbody>
+            </table>
+
+            <!-- OTOMATİK HESAPLAMALAR -->
+            <div style="margin-bottom:10px;font-size:14px;font-weight:bold;color:#7f1d1d;border-left:4px solid #ef4444;padding-left:10px;">🧮 Otomatik Hesaplamalar</div>
+            <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                   style="width:100%;border-collapse:collapse;margin-bottom:10px;border:1px solid #e0e6ef;border-radius:8px;overflow:hidden;background-color:#ffffff;">
+                <thead>
+                    <tr bgcolor="#7f1d1d" style="background-color:#7f1d1d;">
+                        <th align="left"  style="padding:10px 16px;color:white;font-size:11px;font-weight:bold;text-transform:uppercase;">HESAPLAMA</th>
+                        <th align="right" style="padding:10px 16px;color:white;font-size:11px;font-weight:bold;text-align:right;text-transform:uppercase;">FARK</th>
+                    </tr>
+                </thead>
+                <tbody>${calcRowsHtml}</tbody>
+            </table>
+        `;
+    }
+
+    // ─── Mail Excel Attachment ─────────────────────────────────────────────────
+    function getOzetMailExcel() {
+        if (typeof XLSX === 'undefined') return null;
+        const wb = XLSX.utils.book_new();
+        const numFmt = '#,##0.00';
+
+        const dbData = [
+            ['ÖZET KONTROL RAPORU'],
+            ['Şube:', OZT.sube],
+            ['Dönem:', OZT.donem],
+            ['Rapor Tarihi:', new Date().toLocaleString('tr-TR')],
+            [],
+            ['KALEM', 'TUTAR (₺)'],
+            ['Robotpos Tutar (Sistem)',    OZT.robotpos],
+            ['Toplam Satış Gelirleri',     OZT.toplam],
+            ['Nakit Gelir',               OZT.nakit],
+            ['Günlük Harcama (e-Fatura)', -OZT.gh_efatura],
+            ['Günlük Harcama (Diğer)',    -OZT.gh_diger],
+            ['Kalan Nakit Bakiyesi',       OZT.kalan_nakit],
+            [],
+            ['Nakit Girişi Toplam',        OZT.nakit_girisi],
+            ['Bankaya Yatan Toplam',       OZT.bankaya_yatan],
+            ['Gelir POS (Kredi Kartı)',    OZT.gelir_pos],
+            ['POS Hareketleri (Banka)',    OZT.pos_hareket],
+            ['Online Gelir Toplam',        OZT.online_gelir],
+            ['Online Virman (B2B)',         OZT.online_virman],
+            ['Yemek Çeki Aylık Gelir',     OZT.yemek_ceki_aylik],
+            ['Yemek Çeki Dönem Toplamı',   OZT.yemek_ceki_toplam],
+        ];
+        const ws1 = XLSX.utils.aoa_to_sheet(dbData);
+        ws1['!cols'] = [{ wch: 32 }, { wch: 18 }];
+        for (let r = 6; r <= 20; r++) {
+            const cell = ws1[XLSX.utils.encode_cell({ r, c: 1 })];
+            if (cell && typeof cell.v === 'number') { cell.t = 'n'; cell.z = numFmt; }
+        }
+        XLSX.utils.book_append_sheet(wb, ws1, 'Veriler');
+
+        const calcRows = [
+            ['HESAPLAMA', 'FARK (₺)', 'DURUM'],
+            ['Gelir Farkı (Satışlar - Robotpos)',          OZT.gelir_fark,      Math.abs(OZT.gelir_fark)      <= 10 ? 'Uyumlu' : 'Uyumsuz'],
+            ['Nakit Farkı (Bankaya Yatan - Kalan Nakit)',  OZT.nakit_fark,      Math.abs(OZT.nakit_fark)      <= 10 ? 'Uyumlu' : 'Uyumsuz'],
+            ['Kredi Kartı Farkı (POS Takas - Gelir POS)', OZT.kk_fark,         Math.abs(OZT.kk_fark)         <= 10 ? 'Uyumlu' : 'Uyumsuz'],
+            ['Online Gelir Farkı (Virmanlar - Online)',    OZT.online_fark,     Math.abs(OZT.online_fark)     <= 10 ? 'Uyumlu' : 'Uyumsuz'],
+            ['Yemek Çeki Farkı (Dönem - Aylık)',          OZT.yemek_ceki_fark, Math.abs(OZT.yemek_ceki_fark) <= 10 ? 'Uyumlu' : 'Uyumsuz'],
+            [],
+            ['TOPLAM FARK',                               OZT.total_fark,      Math.abs(OZT.total_fark)      <= 10 ? 'Uyumlu' : 'Uyumsuz'],
+        ];
+        const ws2 = XLSX.utils.aoa_to_sheet(calcRows);
+        ws2['!cols'] = [{ wch: 45 }, { wch: 16 }, { wch: 12 }];
+        for (let r = 1; r <= 7; r++) {
+            const cell = ws2[XLSX.utils.encode_cell({ r, c: 1 })];
+            if (cell && typeof cell.v === 'number') { cell.t = 'n'; cell.z = numFmt; }
+        }
+        XLSX.utils.book_append_sheet(wb, ws2, 'Hesaplamalar');
+
+        return XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+    }
+
+    // ─── Open Mail Modal ───────────────────────────────────────────────────────
+    function openOzetReportMail() {
+        openReportMailModal({
+            title: 'Özet Kontrol Raporu',
+            filename: `Ozet_Kontrol_Raporu_{{ secili_sube_id }}_{{ secili_donem }}.xlsx`,
+            getHtml: getOzetMailHtml,
+            getExcelBase64: getOzetMailExcel
+        });
     }
 </script>
 {% endblock %}
