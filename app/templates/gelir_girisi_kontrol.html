@@ -105,7 +105,7 @@ table.pivot tbody tr:hover td { background: #f8fafc !important; }
       <button class="btn-act btn-update" id="btnUpdateGelir" onclick="updateIncome()" {% if not pivot %}disabled{% endif %}>🔄 Gelir Güncelle</button>
       <button class="btn-act btn-excel" onclick="exportExcel()">📥 Excel</button>
       <button class="btn-act btn-print" onclick="window.print()">🖨️ Yazdır</button>
-      <button class="btn-act" data-permission="Mail Gönder" onclick="openReportMailModal({ tableId: 'pivotTable' })" style="background:#e0f2fe; color:#0369a1; border-color:#bae6fd;">✉️ Mail Gönder</button>
+      <button class="btn-act" data-permission="Mail Gönder" onclick="openGelirKontrolReportMail()" style="background:#e0f2fe; color:#0369a1; border-color:#bae6fd;">✉️ Mail Gönder</button>
     </div>
   </div>
 
@@ -376,6 +376,271 @@ async function updateIncome() {
         btn.disabled = false;
         btn.innerHTML = '🔄 Gelir Güncelle';
     }
+}
+
+// ─── Gelir Girişi Kontrol Mail Gönderimi (Yalnızca Fark != 0 Olan Günler) ───
+const GELIR_SUBE = "{{ subeler | selectattr('Sube_ID', 'equalto', secili_sube_id) | map(attribute='Sube_Adi') | first | default('') }}";
+const GELIR_DONEM = "{{ secili_donem }}";
+
+{% if pivot and pivot.categories %}
+const PIVOT_RAW = {
+    days: {{ pivot.days | tojson }},
+    categories: {{ pivot.categories | tojson }},
+    data: {{ pivot.data | tojson }},
+    dayTotals: {{ pivot.day_totals | tojson }},
+    rowTotals: {{ pivot.row_totals | tojson }},
+    grand: {{ pivot.grand | tojson }},
+    manualRobotpos: {{ pivot.manual_robotpos | tojson }},
+    manualDiff: {{ pivot.manual_diff | tojson }},
+    totalManual: {{ pivot.total_manual }},
+    totalManualDiff: {{ pivot.total_manual_diff }}
+};
+{% else %}
+const PIVOT_RAW = null;
+{% endif %}
+
+function fmtCur(n) {
+    return new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n || 0);
+}
+
+function getDiffDays() {
+    if (!PIVOT_RAW || !PIVOT_RAW.days) return [];
+    // Yalnızca günlük toplamda veya herhangi bir kategorisinde Fark sıfırdan farklı (Math.abs > 0.005) olan günler
+    return PIVOT_RAW.days.filter(d => {
+        const dt = PIVOT_RAW.dayTotals[d];
+        if (dt && Math.abs(dt.f) > 0.005) return true;
+        // Ayrıca herhangi bir kategoride fark varsa da kontrol et
+        for (const cat of PIVOT_RAW.categories) {
+            const cell = PIVOT_RAW.data[cat.id] && PIVOT_RAW.data[cat.id][d];
+            if (cell && Math.abs(cell.f) > 0.005) return true;
+        }
+        return false;
+    });
+}
+
+function getGelirKontrolMailHtml() {
+    if (!PIVOT_RAW) {
+        return '<p style="padding:15px; color:#64748b;">Görüntülenecek veri bulunamadı.</p>';
+    }
+
+    const diffDays = getDiffDays();
+
+    let daysHeaderHtml = '';
+    let subHeaderHtml = '';
+    diffDays.forEach((d, idx) => {
+        const bg = (idx % 2 === 0) ? '#dbeafe' : '#f1f5f9';
+        const color = (idx % 2 === 0) ? '#1d4ed8' : '#1e40af';
+        daysHeaderHtml += `<th colspan="3" bgcolor="${bg}" style="padding:7px 8px; font-size:12px; font-weight:700; color:${color}; text-align:center; border:1px solid #cbd5e1; background-color:${bg};">${d}. Gün</th>`;
+        subHeaderHtml += `
+            <th bgcolor="${bg}" style="padding:5px 6px; font-size:10px; font-weight:600; color:#475569; text-align:right; border:1px solid #cbd5e1; background-color:${bg};">Robotpos</th>
+            <th bgcolor="${bg}" style="padding:5px 6px; font-size:10px; font-weight:600; color:#475569; text-align:right; border:1px solid #cbd5e1; background-color:${bg};">Gelir</th>
+            <th bgcolor="${bg}" style="padding:5px 6px; font-size:10px; font-weight:600; color:#475569; text-align:right; border:1px solid #cbd5e1; background-color:${bg};">Fark</th>
+        `;
+    });
+
+    let catRowsHtml = '';
+    PIVOT_RAW.categories.forEach((cat, rIdx) => {
+        const rowBg = (rIdx % 2 === 0) ? '#ffffff' : '#f8fafc';
+        let cellsHtml = '';
+        let rowHasDiff = false;
+
+        diffDays.forEach(d => {
+            const cell = (PIVOT_RAW.data[cat.id] && PIVOT_RAW.data[cat.id][d]) || { r: 0, g: 0, f: 0 };
+            if (Math.abs(cell.f) > 0.005) rowHasDiff = true;
+            
+            let farkHtml = '-';
+            if (Math.abs(cell.f) > 0.005) {
+                const fColor = cell.f < 0 ? '#dc2626' : '#16a34a';
+                const fSign = cell.f > 0 ? '+' : '';
+                farkHtml = `<span style="color:${fColor}; font-weight:700;">${fSign}${fmtCur(cell.f)}</span>`;
+            }
+
+            cellsHtml += `
+                <td align="right" style="padding:6px 8px; font-size:11px; border:1px solid #e2e8f0; text-align:right;">${cell.r !== 0 ? fmtCur(cell.r) : '-'}</td>
+                <td align="right" style="padding:6px 8px; font-size:11px; border:1px solid #e2e8f0; text-align:right;">${cell.g !== 0 ? fmtCur(cell.g) : '-'}</td>
+                <td align="right" style="padding:6px 8px; font-size:11px; border:1px solid #e2e8f0; text-align:right;">${farkHtml}</td>
+            `;
+        });
+
+        // Satır toplamı
+        const rt = PIVOT_RAW.rowTotals[cat.id] || { r: 0, g: 0, f: 0 };
+        let rtFarkHtml = '<span style="color:#64748b;">0.00</span>';
+        if (Math.abs(rt.f) > 0.005) {
+            const fColor = rt.f < 0 ? '#dc2626' : '#16a34a';
+            const fSign = rt.f > 0 ? '+' : '';
+            rtFarkHtml = `<span style="color:${fColor}; font-weight:700;">${fSign}${fmtCur(rt.f)}</span>`;
+        }
+
+        catRowsHtml += `
+            <tr bgcolor="${rowBg}" style="background-color:${rowBg};">
+                <td style="padding:6px 10px; font-size:11px; font-weight:600; color:#1e293b; border:1px solid #e2e8f0; text-align:left;">${cat.name}</td>
+                ${cellsHtml}
+                <td align="right" bgcolor="#eff6ff" style="padding:6px 8px; font-size:11px; font-weight:700; border:1px solid #cbd5e1; text-align:right; background-color:#eff6ff;">${fmtCur(rt.r)}</td>
+                <td align="right" bgcolor="#f0fdf4" style="padding:6px 8px; font-size:11px; font-weight:700; border:1px solid #cbd5e1; text-align:right; background-color:#f0fdf4;">${fmtCur(rt.g)}</td>
+                <td align="right" bgcolor="#fefce8" style="padding:6px 8px; font-size:11px; font-weight:700; border:1px solid #cbd5e1; text-align:right; background-color:#fefce8;">${rtFarkHtml}</td>
+            </tr>
+        `;
+    });
+
+    // Günlük toplam satırı (Footer)
+    let footerCellsHtml = '';
+    diffDays.forEach(d => {
+        const dt = PIVOT_RAW.dayTotals[d] || { r: 0, g: 0, f: 0 };
+        let dtFarkHtml = '-';
+        if (Math.abs(dt.f) > 0.005) {
+            const fColor = dt.f < 0 ? '#fca5a5' : '#86efac';
+            const fSign = dt.f > 0 ? '+' : '';
+            dtFarkHtml = `<span style="color:${fColor}; font-weight:700;">${fSign}${fmtCur(dt.f)}</span>`;
+        }
+        footerCellsHtml += `
+            <td align="right" style="padding:7px 8px; font-size:11px; font-weight:700; border:1px solid #334155; text-align:right;">${fmtCur(dt.r)}</td>
+            <td align="right" style="padding:7px 8px; font-size:11px; font-weight:700; border:1px solid #334155; text-align:right;">${fmtCur(dt.g)}</td>
+            <td align="right" style="padding:7px 8px; font-size:11px; font-weight:700; border:1px solid #334155; text-align:right;">${dtFarkHtml}</td>
+        `;
+    });
+
+    const grand = PIVOT_RAW.grand || { r: 0, g: 0, f: 0 };
+    let grandFarkHtml = '<span style="color:#94a3b8;">0.00</span>';
+    if (Math.abs(grand.f) > 0.005) {
+        const fColor = grand.f < 0 ? '#fca5a5' : '#86efac';
+        const fSign = grand.f > 0 ? '+' : '';
+        grandFarkHtml = `<span style="color:${fColor}; font-weight:700;">${fSign}${fmtCur(grand.f)}</span>`;
+    }
+
+    if (diffDays.length === 0) {
+        return `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; padding: 10px;">
+                <div style="padding: 14px 20px; background-color: #f0fdf4; border: 2px solid #86efac; border-radius: 8px; margin-bottom: 16px; text-align: center;">
+                    <span style="font-size: 15px; font-weight: bold; color: #166534;">
+                        ✅ Tebrikler! Seçilen dönemde (${GELIR_DONEM}) Farkı olan herhangi bir gün bulunmamaktadır.
+                    </span>
+                    <div style="font-size: 12px; color: #15803d; margin-top: 5px;">Şube: ${GELIR_SUBE}</div>
+                </div>
+            </div>
+        `;
+    }
+
+    return `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; padding: 5px;">
+            <!-- Bilgi Başlığı -->
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%; border-collapse:separate; margin-bottom:16px; border:2px solid #2563eb; border-radius:8px; overflow:hidden; background-color:#ffffff;">
+                <tr>
+                    <td bgcolor="#eff6ff" style="padding:12px 18px; background-color:#eff6ff; border-bottom:1px solid #bfdbfe; text-align:center;">
+                        <span style="font-size:15px; font-weight:bold; color:#1e3a8a;">
+                            ⚖️ Gelir Girişi Kontrol Raporu &nbsp;|&nbsp; Şube: ${GELIR_SUBE} &nbsp;|&nbsp; Dönem: ${GELIR_DONEM}
+                        </span>
+                        <div style="font-size:12px; color:#3b82f6; font-weight:600; margin-top:4px;">
+                            ℹ️ Bu e-posta yalnızca <u>Farkı Sıfırdan Farklı Olan Günleri</u> (${diffDays.map(d => d + '. Gün').join(', ')}) içermektedir.
+                        </div>
+                    </td>
+                </tr>
+            </table>
+
+            <!-- Tablo -->
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%; border-collapse:collapse; margin-bottom:16px; border:1px solid #cbd5e1; font-size:11px;">
+                <thead>
+                    <tr>
+                        <th rowspan="2" bgcolor="#f1f5f9" style="padding:8px 10px; font-size:12px; font-weight:700; color:#334155; text-align:left; border:1px solid #cbd5e1; background-color:#f1f5f9; min-width:140px;">Kategori</th>
+                        ${daysHeaderHtml}
+                        <th colspan="3" bgcolor="#dbeafe" style="padding:8px 10px; font-size:12px; font-weight:700; color:#1e40af; text-align:center; border:1px solid #cbd5e1; background-color:#dbeafe;">TOPLAM</th>
+                    </tr>
+                    <tr>
+                        ${subHeaderHtml}
+                        <th bgcolor="#eff6ff" style="padding:5px 6px; font-size:10px; font-weight:700; color:#1e40af; text-align:right; border:1px solid #cbd5e1; background-color:#eff6ff;">Robotpos</th>
+                        <th bgcolor="#f0fdf4" style="padding:5px 6px; font-size:10px; font-weight:700; color:#166534; text-align:right; border:1px solid #cbd5e1; background-color:#f0fdf4;">Gelir</th>
+                        <th bgcolor="#fefce8" style="padding:5px 6px; font-size:10px; font-weight:700; color:#854d0e; text-align:right; border:1px solid #cbd5e1; background-color:#fefce8;">Fark</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${catRowsHtml}
+                </tbody>
+                <tfoot>
+                    <tr bgcolor="#1e293b" style="background-color:#1e293b; color:#ffffff;">
+                        <td style="padding:7px 10px; font-size:11px; font-weight:700; border:1px solid #334155; text-align:left; color:#ffffff;">TOPLAM</td>
+                        ${footerCellsHtml}
+                        <td align="right" style="padding:7px 8px; font-size:11px; font-weight:700; border:1px solid #334155; text-align:right; color:#ffffff;">${fmtCur(grand.r)}</td>
+                        <td align="right" style="padding:7px 8px; font-size:11px; font-weight:700; border:1px solid #334155; text-align:right; color:#ffffff;">${fmtCur(grand.g)}</td>
+                        <td align="right" style="padding:7px 8px; font-size:11px; font-weight:700; border:1px solid #334155; text-align:right; color:#ffffff;">${grandFarkHtml}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    `;
+}
+
+function getGelirKontrolMailExcel() {
+    if (typeof XLSX === 'undefined' || !PIVOT_RAW) return null;
+    const wb = XLSX.utils.book_new();
+    const diffDays = getDiffDays();
+
+    // Sayfa 1: Fark Olan Günler (Özet Mesaj İçeriğiyle Birebir Uyumlu)
+    const headerRow1 = ['Kategori'];
+    const headerRow2 = [''];
+    diffDays.forEach(d => {
+        headerRow1.push(`${d}. Gün`, '', '');
+        headerRow2.push('Robotpos', 'Gelir', 'Fark');
+    });
+    headerRow1.push('TOPLAM', '', '');
+    headerRow2.push('Robotpos', 'Gelir', 'Fark');
+
+    const aoaDiff = [
+        ['GELİR GİRİŞİ KONTROL RAPORU (FARK OLAN GÜNLER)'],
+        ['Şube:', GELIR_SUBE],
+        ['Dönem:', GELIR_DONEM],
+        ['Rapor Tarihi:', new Date().toLocaleString('tr-TR')],
+        [],
+        headerRow1,
+        headerRow2
+    ];
+
+    PIVOT_RAW.categories.forEach(cat => {
+        const row = [cat.name];
+        diffDays.forEach(d => {
+            const cell = (PIVOT_RAW.data[cat.id] && PIVOT_RAW.data[cat.id][d]) || { r: 0, g: 0, f: 0 };
+            row.push(cell.r, cell.g, cell.f);
+        });
+        const rt = PIVOT_RAW.rowTotals[cat.id] || { r: 0, g: 0, f: 0 };
+        row.push(rt.r, rt.g, rt.f);
+        aoaDiff.push(row);
+    });
+
+    const totRow = ['TOPLAM'];
+    diffDays.forEach(d => {
+        const dt = PIVOT_RAW.dayTotals[d] || { r: 0, g: 0, f: 0 };
+        totRow.push(dt.r, dt.g, dt.f);
+    });
+    const g = PIVOT_RAW.grand || { r: 0, g: 0, f: 0 };
+    totRow.push(g.r, g.g, g.f);
+    aoaDiff.push(totRow);
+
+    const wsDiff = XLSX.utils.aoa_to_sheet(aoaDiff);
+    // Sayı formatları
+    const numFmt = '#,##0.00';
+    for (let r = 7; r < aoaDiff.length; r++) {
+        for (let c = 1; c < headerRow1.length; c++) {
+            const cell = wsDiff[XLSX.utils.encode_cell({ r, c })];
+            if (cell && typeof cell.v === 'number') { cell.t = 'n'; cell.z = numFmt; }
+        }
+    }
+    XLSX.utils.book_append_sheet(wb, wsDiff, 'Fark Olan Günler');
+
+    // Sayfa 2: Tüm Dönem (Ekranda gözüken tam pivot tablosu)
+    const tbl = document.getElementById('pivotTable');
+    if (tbl) {
+        const wsAll = XLSX.utils.table_to_sheet(tbl);
+        XLSX.utils.book_append_sheet(wb, wsAll, 'Tüm Dönem (Tam Tablo)');
+    }
+
+    return XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+}
+
+function openGelirKontrolReportMail() {
+    openReportMailModal({
+        title: 'Gelir Girişi Kontrol Raporu',
+        filename: `Gelir_Girisi_Kontrol_${GELIR_DONEM}.xlsx`,
+        getHtml: getGelirKontrolMailHtml,
+        getExcelBase64: getGelirKontrolMailExcel
+    });
 }
 </script>
 {% endblock %}
