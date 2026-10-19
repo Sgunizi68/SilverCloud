@@ -8,79 +8,226 @@
 
 {% block extra_style %}
 <style>
-    .page-container {
-        padding: 20px;
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.95);
+        --glass-border: rgba(255, 255, 255, 0.3);
+        --accent-color: #667eea;
+        --text-dark: #2d3748;
+        --text-gray: #718096;
     }
 
-    .card-glass {
-        background: rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(8px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        border-radius: 16px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+    .main-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        padding: 24px;
+        margin-bottom: 24px;
     }
 
-    .action-btn {
-        padding: 8px 16px;
-        border: 1px solid #e5e7eb;
-        border-radius: 10px;
-        background: white;
-        font-size: 13px;
-        font-weight: 600;
-        color: #374151;
-        cursor: pointer;
-        display: inline-flex;
+    .page-header {
+        display: flex;
+        justify-content: space-between;
         align-items: center;
-        gap: 6px;
+        margin-bottom: 24px;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+
+    .page-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-dark);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .action-bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .search-container {
+        position: relative;
+        min-width: 250px;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 10px 16px 10px 40px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        outline: none;
         transition: all 0.2s;
-        text-decoration: none;
+        font-size: 0.9rem;
+        background: white;
     }
 
-    .action-btn:hover {
-        background: #f9fafb;
-        border-color: #d1d5db;
+    .search-input:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
 
-    .action-btn.primary {
-        background: #2563eb;
+    .search-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-gray);
+        font-size: 13px;
+    }
+
+    .btn-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        color: var(--text-dark);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.95rem;
+    }
+
+    .btn-icon:hover {
+        background: #f7fafc;
+        border-color: #cbd5e0;
+    }
+
+    .btn-new {
+        background: var(--accent-color);
         color: white;
-        border-color: #2563eb;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        transition: transform 0.2s, background 0.2s;
+        font-size: 0.9rem;
     }
 
-    .action-btn.primary:hover {
-        background: #1d4ed8;
+    .btn-new:hover {
+        background: #5a67d8;
+        transform: translateY(-1px);
     }
 
-    .table-container table {
+    .filter-checkbox-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 0.88rem;
+        font-weight: 500;
+        color: #475569;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .filter-checkbox-wrapper input {
+        cursor: pointer;
+        width: 16px;
+        height: 16px;
+    }
+
+    /* Table styles matching Calisanlar & Avans Talepleri */
+    .table-container {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        background: #ffffff;
+    }
+
+    .data-table {
         width: 100%;
         border-collapse: collapse;
     }
 
-    .table-container th {
-        background: #fdfdfd;
-        color: #6b7280;
-        font-size: 11px;
-        font-weight: 600;
+    .data-table thead tr {
+        background: #1e293b;
+    }
+
+    .data-table th {
+        background: #1e293b;
+        color: #ffffff;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
         padding: 12px 16px;
         text-align: left;
-        border-bottom: 1px solid #e5e7eb;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+        border-bottom: 2px solid #0f172a;
     }
 
-    .table-container td {
+    .data-table td {
         padding: 12px 16px;
-        color: #374151;
-        font-size: 13px;
-        border-bottom: 1px solid #e5e7eb;
+        color: #1e293b;
+        font-size: 0.88rem;
+        border-bottom: 1px solid #e2e8f0;
+        vertical-align: middle;
     }
 
-    .table-container tr:last-child td {
-        border-bottom: none;
+    .data-table tbody tr:nth-child(even) td {
+        background-color: #f8fafc;
     }
 
-    .table-container tr:hover {
-        background-color: #f9fafb;
+    .data-table tbody tr:hover td {
+        background-color: #eff6ff !important;
+    }
+
+    .btn-row-action {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-edit {
+        background: #ebf4ff;
+        color: #3182ce;
+    }
+
+    .btn-edit:hover {
+        background: #bee3f8;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .status-badge.active {
+        background: #dcfce7;
+        color: #15803d;
+    }
+
+    .status-badge.inactive {
+        background: #fee2e2;
+        color: #b91c1c;
     }
 
     .color-swatch {
@@ -95,132 +242,163 @@
     .color-dot {
         width: 20px;
         height: 20px;
-        border-radius: 4px;
+        border-radius: 6px;
         display: inline-block;
-        border: 1px solid rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(0, 0, 0, 0.15);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         flex-shrink: 0;
     }
 
-    .status-icon {
-        color: #10b981;
-        font-size: 16px;
-    }
-
-    .status-inactive {
-        color: #d1d5db;
-        font-size: 16px;
-    }
-
-    .edit-btn {
-        padding: 6px 8px;
-        background: transparent;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        cursor: pointer;
-        color: #6b7280;
-        transition: all 0.2s;
-    }
-
-    .edit-btn:hover {
-        background: #f3f4f6;
-        color: #2563eb;
-        border-color: #2563eb;
-    }
-
-    .secim-adi-link {
-        font-weight: 600;
-        color: inherit;
-        text-decoration: none;
-    }
-
-    .secim-adi-link:hover {
-        color: #2563eb;
+    .secim-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 700;
+        font-size: 0.9rem;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="page-container">
-    <!-- Header -->
-    <div class="card-glass"
-        style="padding: 15px 25px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <div
-                style="width: 40px; height: 40px; border-radius: 10px; background: #f8fafc; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; color: #64748b;">
-                <i class="fas fa-list-check"></i>
+<div class="main-card">
+    <div class="page-header">
+        <h2 class="page-title">
+            <span>⏰ Puantaj Seçim Yönetimi</span>
+        </h2>
+
+        <div class="action-bar">
+            <!-- Print Button -->
+            <button class="btn-icon" onclick="window.print()" title="Yazdır">
+                <i class="fas fa-print"></i>
+            </button>
+
+            <!-- Excel Button -->
+            <button class="btn-icon" onclick="exportSecimlerExcel()" title="Excel İndir" style="color: #16a34a;">
+                <i class="fas fa-file-excel"></i>
+            </button>
+
+            <!-- Mail Button -->
+            <button class="btn-icon" data-permission="Mail Gönder" onclick="openSecimlerReportMail()" title="Mail Gönder" style="color: #3b82f6;">
+                <i class="fas fa-envelope"></i>
+            </button>
+
+            <!-- Search Area -->
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="search-input" placeholder="Seçim Ara (Ad, Renk Kodu, ID)" id="secim-search">
             </div>
-            <div>
-                <h1 style="margin: 0; font-size: 18px; font-weight: 700; color: #1e293b;">Puantaj Seçim Yönetimi</h1>
-                <p style="margin: 0; font-size: 12px; color: #64748b;">{{ secimler | length }} seçim tanımlandı</p>
-            </div>
-        </div>
-        <div>
-            <button class="action-btn primary" onclick="openAddSecimModal()">
-                <i class="fas fa-plus"></i> Yeni Seçim
+
+            <!-- Active Filter Checkbox -->
+            <label class="filter-checkbox-wrapper">
+                <input type="checkbox" id="filter-active" checked>
+                <span>Sadece Aktifleri Göster</span>
+            </label>
+
+            <!-- New Attendance Selection Button -->
+            <button class="btn-new" onclick="openAddSecimModal()">
+                <i class="fas fa-plus"></i>
+                Yeni Seçim
             </button>
         </div>
     </div>
 
-    <!-- Table -->
-    <div class="card-glass" style="padding: 0; overflow: hidden;">
-        <div class="table-container">
-            <table id="secim-table">
-                <thead>
-                    <tr>
-                        <th style="width: 70px;">ID</th>
-                        <th>SEÇİM ADI</th>
-                        <th style="width: 120px;">DEĞERİ</th>
-                        <th style="width: 200px;">RENK</th>
-                        <th style="width: 100px; text-align: center;">AKTİF</th>
-                        <th style="width: 90px; text-align: center;">İŞLEMLER</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for secim in secimler %}
-                    <tr>
-                        <td style="color: #9ca3af; font-size: 12px;">{{ secim.Secim_ID }}</td>
-                        <td>
-                            <span class="secim-adi-link" style="color: {{ secim.Renk_Kodu }};">{{ secim.Secim }}</span>
-                        </td>
-                        <td>{{ "%.1f" | format(secim.Degeri) }}</td>
-                        <td>
-                            <div class="color-swatch">
-                                <span class="color-dot" style="background: {{ secim.Renk_Kodu }};"></span>
-                                {{ secim.Renk_Kodu }}
-                            </div>
-                        </td>
-                        <td style="text-align: center;">
-                            {% if secim.Aktif_Pasif %}
-                            <i class="far fa-check-circle status-icon"></i>
-                            {% else %}
-                            <i class="far fa-circle status-inactive"></i>
-                            {% endif %}
-                        </td>
-                        <td style="text-align: center;">
-                            <button class="edit-btn" title="Düzenle" data-secim='{{ secim | tojson | safe }}'
-                                onclick='openEditSecimModal(JSON.parse(this.getAttribute("data-secim")))'>
-                                <i class="fas fa-pencil-alt"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="6" style="text-align: center; padding: 40px; color: #94a3b8;">
-                            <i class="fas fa-clipboard-list"
-                                style="font-size: 32px; display: block; margin-bottom: 12px; opacity: 0.5;"></i>
-                            Kayıtlı seçim bulunamadı.
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+    <!-- Table Container -->
+    <div class="table-responsive table-container">
+        <table class="data-table" id="secim-table">
+            <thead>
+                <tr>
+                    <th style="width: 80px;">ID</th>
+                    <th>SEÇİM ADI</th>
+                    <th style="width: 140px; text-align: center;">DEĞERİ</th>
+                    <th style="width: 220px;">RENK</th>
+                    <th style="width: 110px; text-align: center;">DURUM</th>
+                    <th style="width: 90px; text-align: center;">İŞLEMLER</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for secim in secimler %}
+                <tr data-id="{{ secim.Secim_ID }}" data-secim="{{ secim.Secim | lower }}" data-renk="{{ secim.Renk_Kodu | lower }}" data-aktif="{{ 'true' if secim.Aktif_Pasif else 'false' }}">
+                    <td style="font-family: monospace; font-weight: 600; color: #64748b;">#{{ secim.Secim_ID }}</td>
+                    <td>
+                        <span class="secim-badge" style="color: {{ secim.Renk_Kodu }};">
+                            <i class="fas fa-circle" style="font-size: 9px;"></i>
+                            {{ secim.Secim }}
+                        </span>
+                    </td>
+                    <td style="text-align: center; font-weight: 700; color: #0f172a; font-size: 0.95rem;">
+                        {{ "%.1f" | format(secim.Degeri) }}
+                    </td>
+                    <td>
+                        <div class="color-swatch">
+                            <span class="color-dot" style="background: {{ secim.Renk_Kodu }};"></span>
+                            <span style="color: #475569;">{{ secim.Renk_Kodu }}</span>
+                        </div>
+                    </td>
+                    <td style="text-align: center;">
+                        {% if secim.Aktif_Pasif %}
+                        <span class="status-badge active"><i class="fas fa-check-circle"></i> Aktif</span>
+                        {% else %}
+                        <span class="status-badge inactive"><i class="fas fa-times-circle"></i> Pasif</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center;">
+                        <button class="btn-row-action btn-edit" title="Düzenle" data-secim='{{ secim | tojson | safe }}'
+                            onclick='openEditSecimModal(JSON.parse(this.getAttribute("data-secim")))'>
+                            <i class="fas fa-pencil-alt"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr class="no-data-row">
+                    <td colspan="6" style="text-align: center; padding: 40px; color: #94a3b8;">
+                        <i class="fas fa-clipboard-list" style="font-size: 32px; display: block; margin-bottom: 12px; opacity: 0.5;"></i>
+                        Kayıtlı seçim bulunamadı.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
+    const SECIMLER_DATA = {{ secimler | tojson }};
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const searchInput = document.getElementById('secim-search');
+        const activeCheckbox = document.getElementById('filter-active');
+
+        function filterTable() {
+            const term = searchInput ? searchInput.value.toLowerCase().trim() : '';
+            const showOnlyActive = activeCheckbox ? activeCheckbox.checked : false;
+            const rows = document.querySelectorAll('#secim-table tbody tr:not(.no-data-row)');
+
+            rows.forEach(row => {
+                const id = row.getAttribute('data-id') || '';
+                const secim = row.getAttribute('data-secim') || '';
+                const renk = row.getAttribute('data-renk') || '';
+                const isAktif = row.getAttribute('data-aktif') === 'true';
+
+                const matchesSearch = !term || id.includes(term) || secim.includes(term) || renk.includes(term);
+                const matchesActive = !showOnlyActive || isAktif;
+
+                if (matchesSearch && matchesActive) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        if (searchInput) searchInput.addEventListener('keyup', filterTable);
+        if (activeCheckbox) activeCheckbox.addEventListener('change', filterTable);
+
+        // Initial run
+        filterTable();
+    });
+
     function openAddSecimModal() {
         const content = `
             <form id="secimForm">
@@ -242,8 +420,9 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>
-                        <input type="checkbox" name="Aktif_Pasif" checked> Aktif
+                    <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; user-select: none;">
+                        <input type="checkbox" name="Aktif_Pasif" checked style="width: 16px; height: 16px;">
+                        <span>Aktif Seçim</span>
                     </label>
                 </div>
                 <div class="modal-footer">
@@ -285,8 +464,9 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>
-                        <input type="checkbox" name="Aktif_Pasif" ${secim.Aktif_Pasif ? 'checked' : ''}> Aktif
+                    <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; user-select: none;">
+                        <input type="checkbox" name="Aktif_Pasif" ${secim.Aktif_Pasif ? 'checked' : ''} style="width: 16px; height: 16px;">
+                        <span>Aktif Seçim</span>
                     </label>
                 </div>
                 <div class="modal-footer">
@@ -362,6 +542,136 @@
         } catch (err) {
             showToast('Bağlantı hatası.', 'error');
         }
+    }
+
+    // ─── Puantaj Seçimler Excel & Mail Raporlama ───
+    function getSecimlerReportMailHtml() {
+        const totalCount = SECIMLER_DATA.length;
+        const activeCount = SECIMLER_DATA.filter(s => s.Aktif_Pasif).length;
+
+        let rowsHtml = '';
+        SECIMLER_DATA.forEach(s => {
+            const statusBg = s.Aktif_Pasif ? '#dcfce7' : '#fee2e2';
+            const statusColor = s.Aktif_Pasif ? '#15803d' : '#b91c1c';
+            const statusText = s.Aktif_Pasif ? 'Aktif' : 'Pasif';
+
+            rowsHtml += `
+                <tr>
+                    <td style="padding: 10px 14px; font-family: monospace; color: #64748b; border-bottom: 1px solid #e2e8f0;">#${s.Secim_ID}</td>
+                    <td style="padding: 10px 14px; font-weight: 700; color: ${s.Renk_Kodu}; border-bottom: 1px solid #e2e8f0;">${s.Secim}</td>
+                    <td align="center" style="padding: 10px 14px; font-weight: 600; color: #0f172a; text-align: center; border-bottom: 1px solid #e2e8f0;">${parseFloat(s.Degeri).toFixed(1)}</td>
+                    <td style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0;">
+                        <span style="display: inline-block; width: 14px; height: 14px; background: ${s.Renk_Kodu}; border: 1px solid #cbd5e1; border-radius: 3px; vertical-align: middle; margin-right: 6px;"></span>
+                        <span style="font-family: monospace; color: #475569;">${s.Renk_Kodu}</span>
+                    </td>
+                    <td align="center" style="padding: 10px 14px; text-align: center; border-bottom: 1px solid #e2e8f0;">
+                        <span style="display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; background: ${statusBg}; color: ${statusColor};">
+                            ${statusText}
+                        </span>
+                    </td>
+                </tr>
+            `;
+        });
+
+        return `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 800px; margin: 0 auto; color: #1e293b;">
+                <div style="background: #ffffff; border: 2px solid #6366f1; border-radius: 10px; overflow: hidden; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.08);">
+                    <div style="background: #eef2ff; border-bottom: 2px solid #c7d2fe; padding: 12px 20px; text-align: center; font-size: 16px; font-weight: 800; color: #3730a3;">
+                        ⏰ Puantaj Seçim Yönetimi Raporu
+                    </div>
+                    <div style="display: table; width: 100%; background: #f8fafc;">
+                        <div style="display: table-cell; width: 50%; padding: 16px; text-align: center; border-right: 1px solid #e2e8f0;">
+                            <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Toplam Seçim Sayısı</div>
+                            <div style="font-size: 22px; font-weight: 800; color: #312e81;">${totalCount} Tanım</div>
+                        </div>
+                        <div style="display: table-cell; width: 50%; padding: 16px; text-align: center;">
+                            <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Aktif Seçim Sayısı</div>
+                            <div style="font-size: 22px; font-weight: 800; color: #15803d;">${activeCount} Tanım</div>
+                        </div>
+                    </div>
+                </div>
+
+                <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; background: #ffffff;">
+                    <thead>
+                        <tr bgcolor="#1e293b">
+                            <th align="left" style="color: #ffffff; padding: 12px 14px; font-size: 12px; font-weight: 700; text-transform: uppercase; width: 80px;">ID</th>
+                            <th align="left" style="color: #ffffff; padding: 12px 14px; font-size: 12px; font-weight: 700; text-transform: uppercase;">SEÇİM ADI</th>
+                            <th align="center" style="color: #ffffff; padding: 12px 14px; font-size: 12px; font-weight: 700; text-transform: uppercase; width: 100px; text-align: center;">DEĞERİ</th>
+                            <th align="left" style="color: #ffffff; padding: 12px 14px; font-size: 12px; font-weight: 700; text-transform: uppercase; width: 140px;">RENK</th>
+                            <th align="center" style="color: #ffffff; padding: 12px 14px; font-size: 12px; font-weight: 700; text-transform: uppercase; width: 100px; text-align: center;">DURUM</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    function buildSecimlerWorkbook() {
+        if (typeof XLSX === 'undefined') return null;
+
+        const wb = XLSX.utils.book_new();
+        const totalCount = SECIMLER_DATA.length;
+        const activeCount = SECIMLER_DATA.filter(s => s.Aktif_Pasif).length;
+
+        const headers = ['ID', 'SEÇİM ADI', 'DEĞERİ', 'RENK KODU', 'DURUM'];
+        const sheetData = [
+            ['PUANTAJ SEÇİM YÖNETİMİ RAPORU'],
+            ['Toplam Seçim:', totalCount],
+            ['Aktif Seçim:', activeCount],
+            ['Rapor Tarihi:', new Date().toLocaleString('tr-TR')],
+            [],
+            headers
+        ];
+
+        SECIMLER_DATA.forEach(s => {
+            sheetData.push([
+                s.Secim_ID,
+                s.Secim,
+                parseFloat(s.Degeri) || 0,
+                s.Renk_Kodu,
+                s.Aktif_Pasif ? 'Aktif' : 'Pasif'
+            ]);
+        });
+
+        const ws = XLSX.utils.aoa_to_sheet(sheetData);
+
+        ws['!cols'] = [
+            { wch: 10 }, // ID
+            { wch: 28 }, // SEÇİM ADI
+            { wch: 12 }, // DEĞERİ
+            { wch: 16 }, // RENK KODU
+            { wch: 14 }  // DURUM
+        ];
+
+        XLSX.utils.book_append_sheet(wb, ws, 'Puantaj Secimler');
+        return wb;
+    }
+
+    function exportSecimlerExcel() {
+        const wb = buildSecimlerWorkbook();
+        if (!wb) {
+            alert('Excel kütüphanesi yüklenemedi.');
+            return;
+        }
+        XLSX.writeFile(wb, `Puantaj_Secim_Yonetimi_${new Date().toISOString().split('T')[0]}.xlsx`);
+    }
+
+    function getSecimlerReportExcelBase64() {
+        const wb = buildSecimlerWorkbook();
+        if (!wb) return null;
+        return XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+    }
+
+    function openSecimlerReportMail() {
+        openReportMailModal({
+            title: 'Puantaj Seçim Yönetimi Raporu',
+            filename: `Puantaj_Secim_Yonetimi_${new Date().toISOString().split('T')[0]}.xlsx`,
+            getHtml: getSecimlerReportMailHtml,
+            getExcelBase64: getSecimlerReportExcelBase64
+        });
     }
 </script>
 {% endblock %}
