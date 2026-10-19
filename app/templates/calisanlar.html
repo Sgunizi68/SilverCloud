@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% set sube_name = subeler | selectattr("Sube_ID", "equalto", current_sube_id) | map(attribute="Sube_Adi") | first or 'Tümü' %}
+
 {% block title %}Çalışan Yönetimi - SilverCloud{% endblock %}
 
 {% block acc_calisan %}active{% endblock %}
@@ -8,231 +10,404 @@
 
 {% block extra_style %}
 <style>
-    .hr-page-container {
-        padding: 20px;
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.95);
+        --glass-border: rgba(255, 255, 255, 0.3);
+        --accent-color: #667eea;
+        --text-dark: #2d3748;
+        --text-gray: #718096;
     }
 
-    .card-glass {
-        background: rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(8px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        border-radius: 16px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
-        transition: transform 0.2s ease;
+    .main-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        padding: 24px;
+        margin-bottom: 24px;
     }
 
-    .action-btn {
-        padding: 8px 16px;
-        border: 1px solid #e5e7eb;
-        border-radius: 10px;
-        background: white;
-        font-size: 13px;
-        font-weight: 600;
-        color: #374151;
-        cursor: pointer;
-        display: inline-flex;
+    .page-header {
+        display: flex;
+        justify-content: space-between;
         align-items: center;
-        gap: 6px;
-        transition: all 0.2s;
+        margin-bottom: 24px;
+        gap: 16px;
+        flex-wrap: wrap;
     }
 
-    .action-btn:hover {
-        background: #f9fafb;
-        border-color: #d1d5db;
+    .page-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-dark);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
     }
 
-    .action-btn.primary {
-        background: #2563eb;
-        color: white;
-        border-color: #2563eb;
+    .action-bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
     }
 
-    .action-btn.primary:hover {
-        background: #1d4ed8;
+    .search-container {
+        position: relative;
+        min-width: 250px;
     }
 
     .search-input {
-        padding: 8px 12px;
-        border: 1px solid #e5e7eb;
-        border-radius: 10px;
-        width: 250px;
-        font-size: 13px;
+        width: 100%;
+        padding: 10px 16px 10px 40px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
         outline: none;
+        transition: all 0.2s;
+        font-size: 0.9rem;
         background: white;
     }
 
     .search-input:focus {
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
 
+    .search-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-gray);
+        font-size: 13px;
+    }
+
+    .btn-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        color: var(--text-dark);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.95rem;
+    }
+
+    .btn-icon:hover {
+        background: #f7fafc;
+        border-color: #cbd5e0;
+    }
+
+    .btn-new {
+        background: var(--accent-color);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        transition: transform 0.2s, background 0.2s;
+        font-size: 0.9rem;
+    }
+
+    .btn-new:hover {
+        background: #5a67d8;
+        transform: translateY(-1px);
+    }
+
+    .filter-checkbox-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 0.88rem;
+        font-weight: 500;
+        color: #475569;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .filter-checkbox-wrapper input {
+        cursor: pointer;
+        width: 16px;
+        height: 16px;
+    }
+
+    /* Summary Header & Cards (Avans Talepleri ile birebir) */
+    .summary-banner {
+        background: #ffffff;
+        border: 2px solid #6366f1;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.08);
+    }
+
+    .summary-banner-title {
+        background: #eef2ff;
+        border-bottom: 2px solid #c7d2fe;
+        padding: 12px 20px;
+        text-align: center;
+        font-size: 15px;
+        font-weight: 700;
+        color: #3730a3;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .summary-cards-grid {
+        display: grid;
+        grid-template-columns: {% if can_view_salary %}1fr 1fr 1fr{% else %}1fr 1fr{% endif %};
+        background: #f8fafc;
+    }
+
+    .summary-stat-box {
+        padding: 16px;
+        text-align: center;
+    }
+
+    .summary-stat-box:not(:last-child) {
+        border-right: 1px solid #e2e8f0;
+    }
+
+    .summary-stat-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 5px;
+    }
+
+    .summary-stat-val {
+        font-size: 22px;
+        font-weight: 800;
+    }
+
+    .stat-total { color: #312e81; }
+    .stat-active { color: #15803d; }
+    .stat-salary { color: #0284c7; }
+
+    /* Table styles matching Avans Talepleri */
     .table-container {
-        margin-top: 20px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        background: #ffffff;
     }
 
-    .table-container table {
+    .data-table {
         width: 100%;
         border-collapse: collapse;
     }
 
-    .table-container th {
-        background: #fdfdfd;
-        color: #6b7280;
-        font-size: 11px;
-        font-weight: 600;
+    .data-table thead tr {
+        background: #1e293b;
+    }
+
+    .data-table th {
+        background: #1e293b;
+        color: #ffffff;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
         padding: 12px 16px;
         text-align: left;
-        border-bottom: 1px solid #e5e7eb;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+        border-bottom: 2px solid #0f172a;
     }
 
-    .table-container td {
+    .data-table td {
         padding: 12px 16px;
-        color: #374151;
-        font-size: 13px;
-        border-bottom: 1px solid #e5e7eb;
+        color: #1e293b;
+        font-size: 0.88rem;
+        border-bottom: 1px solid #e2e8f0;
+        vertical-align: middle;
     }
 
-    .table-container tr:last-child td {
-        border-bottom: none;
+    .data-table tbody tr:nth-child(even) td {
+        background-color: #f8fafc;
     }
 
-    .table-container tr:hover {
-        background-color: #f9fafb;
+    .data-table tbody tr:hover td {
+        background-color: #eff6ff !important;
     }
 
-    .status-icon {
-        color: #10b981;
-        font-size: 16px;
+    .data-table tfoot tr {
+        background: #f1f5f9;
+        font-weight: bold;
     }
 
-    .status-inactive {
-        color: #ef4444;
-        font-size: 16px;
+    .data-table tfoot td {
+        padding: 14px 16px;
+        border-top: 2px solid #cbd5e1;
+        font-size: 0.95rem;
     }
 
-    .edit-btn {
-        padding: 6px;
-        background: transparent;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
+    .btn-row-action {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        border: 1px solid transparent;
         cursor: pointer;
-        color: #6b7280;
         transition: all 0.2s;
     }
 
-    .edit-btn:hover {
-        background: #f3f4f6;
-        color: #2563eb;
-        border-color: #2563eb;
+    .btn-edit {
+        background: #ebf4ff;
+        color: #3182ce;
     }
 
-    .net-maas {
-        text-align: right;
-        font-weight: 500;
-        color: #111827;
+    .btn-edit:hover {
+        background: #bee3f8;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .status-badge.active {
+        background: #dcfce7;
+        color: #15803d;
+    }
+
+    .status-badge.inactive {
+        background: #fee2e2;
+        color: #b91c1c;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="hr-page-container">
-    <!-- Header Bar -->
-    <div class="card-glass"
-        style="padding: 15px 25px; margin-bottom: 25px; display: flex; flex-direction: row; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <div
-                style="width: 40px; height: 40px; border-radius: 10px; background: #f8fafc; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: center; color: #64748b;">
-                <i class="fas fa-id-card"></i>
-            </div>
-            <div>
-                <h1 style="margin: 0; font-size: 18px; font-weight: 700; color: #1e293b;">
-                    Çalışan Yönetimi (Şube: {{ subeler | selectattr("Sube_ID", "equalto", current_sube_id) |
-                    map(attribute="Sube_Adi") | first or 'Tümü' }})
-                </h1>
-            </div>
-        </div>
+{% set sube_name = subeler | selectattr("Sube_ID", "equalto", current_sube_id) | map(attribute="Sube_Adi") | first or 'Tümü' %}
+{% set total_count = calisanlar | length %}
+{% set active_count = calisanlar | selectattr("Aktif_Pasif", "equalto", true) | list | length %}
+{% set total_net_maas = calisanlar | sum(attribute='Net_Maas') %}
 
-        <div style="display: flex; align-items: center; gap: 15px;">
-            <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: #475569; cursor: pointer;">
-                <input type="checkbox" id="filter-active" checked>
-                Sadece Aktifleri Göster
-            </label>
-            <div style="position: relative;">
-                <i class="fas fa-search"
-                    style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 12px;"></i>
-                <input type="text" class="search-input" style="padding-left: 35px;"
-                    placeholder="Çalışan Ara (Ad, Soyad, TC)" id="calisan-search">
+<div class="main-card">
+    <div class="page-header">
+        <h2 class="page-title">
+            <span>👔 Çalışan Yönetimi (Şube: {{ sube_name }})</span>
+        </h2>
+
+        <div class="action-bar">
+            <!-- Print Button -->
+            <button class="btn-icon" onclick="window.print()" title="Yazdır">
+                <i class="fas fa-print"></i>
+            </button>
+
+            <!-- Excel Button -->
+            <button class="btn-icon" onclick="exportCalisanlarExcel()" title="Excel İndir" style="color: #16a34a;">
+                <i class="fas fa-file-excel"></i>
+            </button>
+
+            <!-- Mail Button -->
+            <button class="btn-icon" data-permission="Mail Gönder" onclick="openCalisanlarReportMail()" title="Mail Gönder" style="color: #3b82f6;">
+                <i class="fas fa-envelope"></i>
+            </button>
+
+            <!-- Search Area -->
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="search-input" placeholder="Çalışan Ara (Ad, Soyad, TC)" id="calisan-search">
             </div>
+
+            <!-- Active Filter Checkbox -->
+            <label class="filter-checkbox-wrapper">
+                <input type="checkbox" id="filter-active" checked>
+                <span>Sadece Aktifleri Göster</span>
+            </label>
+
+            <!-- New Employee Button -->
             {% if can_add %}
-            <button class="action-btn primary" onclick="openAddCalisanModal()">
-                <i class="fas fa-plus"></i> Yeni Çalışan
+            <button class="btn-new" onclick="openAddCalisanModal()">
+                <i class="fas fa-plus"></i>
+                Yeni Çalışan
             </button>
             {% endif %}
         </div>
     </div>
 
-    <!-- Table Card -->
-    <div class="card-glass" style="padding: 0; overflow: hidden;">
-        <div class="table-container" style="margin-top: 0;">
-            <table id="calisanlar-table">
-                <thead>
-                    <tr>
-                        <th style="width: 150px;">TC NO</th>
-                        <th>ADI SOYADI</th>
-                        {% if can_view_salary %}
-                        <th style="text-align: right;">NET MAAŞ</th>
+    <!-- Table Container -->
+    <div class="table-responsive table-container">
+        <table class="data-table" id="calisanlar-table">
+            <thead>
+                <tr>
+                    <th style="width: 140px;">TC NO</th>
+                    <th>ADI SOYADI</th>
+                    {% if can_view_salary %}
+                    <th style="text-align: right; width: 140px;">NET MAAŞ</th>
+                    {% endif %}
+                    <th style="width: 130px;">SİGORTA GİRİŞ</th>
+                    <th style="width: 130px;">SİGORTA ÇIKIŞ</th>
+                    <th style="width: 100px; text-align: center;">DURUM</th>
+                    <th style="width: 90px; text-align: center;">İŞLEMLER</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for calisan in calisanlar %}
+                <tr data-tc="{{ calisan.TC_No }}" data-aktif="{{ 'true' if calisan.Aktif_Pasif else 'false' }}" data-cikis="{{ calisan.Sigorta_Cikis or '' }}" data-maas="{{ calisan.Net_Maas }}">
+                    <td style="font-family: monospace; font-weight: 600; color: #334155;">{{ calisan.TC_No }}</td>
+                    <td style="font-weight: 600; color: #0f172a;">{{ calisan.Adi }} {{ calisan.Soyadi }}</td>
+                    {% if can_view_salary %}
+                    <td style="text-align: right; font-weight: 700; color: #15803d; font-size: 0.95rem;">
+                        {{ "{:,.2f}".format(calisan.Net_Maas).replace(",", "X").replace(".", ",").replace("X", ".") }} ₺
+                    </td>
+                    {% endif %}
+                    <td style="color: #64748b;">{{ calisan.Sigorta_Giris or '-' }}</td>
+                    <td style="color: #64748b;">{{ calisan.Sigorta_Cikis if calisan.Sigorta_Cikis != '2099-01-01' else '-' }}</td>
+                    <td style="text-align: center;">
+                        {% if calisan.Aktif_Pasif %}
+                        <span class="status-badge active"><i class="fas fa-check-circle"></i> Aktif</span>
+                        {% else %}
+                        <span class="status-badge inactive"><i class="fas fa-times-circle"></i> Pasif</span>
                         {% endif %}
-                        <th>SİGORTA GİRİŞ</th>
-                        <th>SİGORTA ÇIKIŞ</th>
-                        <th style="width: 80px; text-align: center;">AKTİF</th>
-                        <th style="width: 80px; text-align: center;">İŞLEMLER</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for calisan in calisanlar %}
-                    <tr data-aktif="{{ 'true' if calisan.Aktif_Pasif else 'false' }}" data-cikis="{{ calisan.Sigorta_Cikis or '' }}">
-                        <td style="font-family: monospace; font-weight: 600;">{{ calisan.TC_No }}</td>
-                        <td style="font-weight: 500;">{{ calisan.Adi }} {{ calisan.Soyadi }}</td>
-                        {% if can_view_salary %}
-                        <td class="net-maas">
-                            {{ "{:,.2f}".format(calisan.Net_Maas).replace(",", "X").replace(".", ",").replace("X", ".")
-                            }}
-                        </td>
+                    </td>
+                    <td style="text-align: center;">
+                        {% if can_edit %}
+                        <button class="btn-row-action btn-edit" title="Düzenle" data-calisan='{{ calisan | tojson | safe }}'
+                            onclick='openEditCalisanModal(JSON.parse(this.getAttribute("data-calisan")))'>
+                            <i class="fas fa-pencil-alt"></i>
+                        </button>
+                        {% else %}
+                        <span style="color: #94a3b8;">-</span>
                         {% endif %}
-                        <td>{{ calisan.Sigorta_Giris or '-' }}</td>
-                        <td>{{ calisan.Sigorta_Cikis or '-' }}</td>
-                        <td style="text-align: center;">
-                            {% if calisan.Aktif_Pasif %}
-                            <i class="far fa-check-circle status-icon"></i>
-                            {% else %}
-                            <i class="far fa-minus-square status-inactive"></i>
-                            {% endif %}
-                        </td>
-                        <td style="text-align: center;">
-                            {% if can_edit %}
-                            <button class="edit-btn" title="Düzenle" data-calisan='{{ calisan | tojson | safe }}'
-                                onclick='openEditCalisanModal(JSON.parse(this.getAttribute("data-calisan")))'>
-                                <i class="fas fa-pencil-alt"></i>
-                            </button>
-                            {% else %}
-                            -
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr class="no-data-row">
-                        <td colspan="7" style="text-align: center; padding: 40px; color: #94a3b8;">
-                            <i class="fas fa-users-slash"
-                                style="font-size: 32px; display: block; margin-bottom: 12px; opacity: 0.5;"></i>
-                            Bu şubede kayıtlı çalışan bulunamadı.
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr class="no-data-row">
+                    <td colspan="{% if can_view_salary %}7{% else %}6{% endif %}" style="text-align: center; padding: 40px; color: #94a3b8;">
+                        <i class="fas fa-users-slash" style="font-size: 32px; display: block; margin-bottom: 12px; opacity: 0.5;"></i>
+                        Bu şubede kayıtlı çalışan bulunamadı.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 {% endblock %}
@@ -251,6 +426,8 @@
             const rows = document.querySelectorAll('#calisanlar-table tbody tr:not(.no-data-row)');
             
             const today = new Date().toISOString().split('T')[0];
+            let visibleCount = 0;
+            let visibleSalary = 0;
 
             rows.forEach(row => {
                 if (row.cells.length < 2) return;
@@ -259,6 +436,7 @@
                 
                 const isAktif = row.getAttribute('data-aktif') === 'true';
                 const cikisTarihi = row.getAttribute('data-cikis');
+                const maas = parseFloat(row.getAttribute('data-maas')) || 0;
 
                 // Search logic
                 const matchesSearch = tc.includes(term) || name.includes(term);
@@ -266,16 +444,18 @@
                 // Active logic
                 let matchesActive = true;
                 if (showOnlyActive) {
-                    // Aktif_Pasif == True AND (Sigorta_Cikis is empty OR Sigorta_Cikis > today)
                     matchesActive = isAktif && (!cikisTarihi || cikisTarihi > today);
                 }
 
                 if (matchesSearch && matchesActive) {
                     row.style.display = '';
+                    visibleCount++;
+                    visibleSalary += maas;
                 } else {
                     row.style.display = 'none';
                 }
             });
+
         }
 
         if (searchInput) searchInput.addEventListener('keyup', filterTable);
@@ -446,5 +626,243 @@
         }
         return obj;
     };
+
+    // ─── Çalışanlar Excel & Mail Raporlama (Avans Talepleri ile Uyumlu) ───
+    const CALISANLAR_DATA = {{ calisanlar | tojson }};
+    const CALISAN_SUBE = {{ (sube_name if sube_name is defined else (subeler | selectattr("Sube_ID", "equalto", current_sube_id) | map(attribute="Sube_Adi") | first or 'Tümü')) | tojson }};
+
+    function fmtTL(val) {
+        return new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val || 0) + ' ₺';
+    }
+
+    function getCalisanlarReportMailHtml() {
+        const totalCount = CALISANLAR_DATA.length;
+        const activeCount = CALISANLAR_DATA.filter(c => c.Aktif_Pasif).length;
+        const totalNetMaas = CALISANLAR_DATA.reduce((sum, c) => sum + (parseFloat(c.Net_Maas) || 0), 0);
+
+        let rowsHtml = '';
+        if (totalCount === 0) {
+            rowsHtml = `
+                <tr>
+                    <td colspan="${canViewSalary ? 6 : 5}" align="center" bgcolor="#ffffff" style="padding: 24px; text-align: center; color: #64748b; font-size: 13px; border-bottom: 1px solid #e2e8f0;">
+                        Bu şubede kayıtlı çalışan bulunamadı.
+                    </td>
+                </tr>
+            `;
+        } else {
+            rowsHtml = CALISANLAR_DATA.map((c, idx) => {
+                const bg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
+                const statusBadge = c.Aktif_Pasif 
+                    ? `<span style="background-color: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">Aktif</span>`
+                    : `<span style="background-color: #fee2e2; color: #b91c1c; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">Pasif</span>`;
+                
+                const salaryCell = canViewSalary ? `
+                    <td align="right" bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; font-weight: 700; color: #15803d; text-align: right; border-bottom: 1px solid #e2e8f0;">
+                        ${fmtTL(c.Net_Maas)}
+                    </td>
+                ` : '';
+
+                return `
+                    <tr bgcolor="${bg}" style="background-color: ${bg};">
+                        <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; font-family: monospace; color: #334155; border-bottom: 1px solid #e2e8f0;">
+                            ${c.TC_No}
+                        </td>
+                        <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; font-weight: 600; color: #0f172a; border-bottom: 1px solid #e2e8f0;">
+                            ${c.Adi} ${c.Soyadi}
+                        </td>
+                        ${salaryCell}
+                        <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; color: #64748b; border-bottom: 1px solid #e2e8f0;">
+                            ${c.Sigorta_Giris || '-'}
+                        </td>
+                        <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; color: #64748b; border-bottom: 1px solid #e2e8f0;">
+                            ${c.Sigorta_Cikis !== '2099-01-01' ? (c.Sigorta_Cikis || '-') : '-'}
+                        </td>
+                        <td align="center" bgcolor="${bg}" style="padding: 10px 14px; text-align: center; border-bottom: 1px solid #e2e8f0;">
+                            ${statusBadge}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        const salaryStatBox = canViewSalary ? `
+            <td width="33%" align="center" bgcolor="#f8fafc" style="padding: 14px 10px; background-color: #f8fafc; text-align: center;">
+                <div style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Toplam Net Maaş</div>
+                <div style="font-size: 20px; font-weight: 800; color: #0284c7;">${fmtTL(totalNetMaas)}</div>
+            </td>
+        ` : '';
+
+        return `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; max-width: 850px; margin: 0 auto;">
+                <!-- 1. BAŞLIK VE KART BÖLÜMÜ -->
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: separate; margin-bottom: 18px; border: 2px solid #6366f1; border-radius: 8px; overflow: hidden; background-color: #ffffff;">
+                    <tr>
+                        <td colspan="${canViewSalary ? 3 : 2}" bgcolor="#eef2ff" style="padding: 12px 18px; background-color: #eef2ff; border-bottom: 2px solid #c7d2fe; text-align: center;">
+                            <span style="font-size: 16px; font-weight: bold; color: #3730a3;">
+                                👔 Çalışan Listesi &nbsp;|&nbsp; Şube: ${CALISAN_SUBE}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td width="${canViewSalary ? '33%' : '50%'}" align="center" bgcolor="#f8fafc" style="padding: 14px 10px; background-color: #f8fafc; border-right: 1px solid #e2e8f0; text-align: center;">
+                            <div style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Toplam Çalışan</div>
+                            <div style="font-size: 20px; font-weight: 800; color: #312e81;">${totalCount} Kişi</div>
+                        </td>
+                        <td width="${canViewSalary ? '34%' : '50%'}" align="center" bgcolor="#f8fafc" style="padding: 14px 10px; background-color: #f8fafc; ${canViewSalary ? 'border-right: 1px solid #e2e8f0;' : ''} text-align: center;">
+                            <div style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Aktif Çalışan</div>
+                            <div style="font-size: 20px; font-weight: 800; color: #15803d;">${activeCount} Kişi</div>
+                        </td>
+                        ${salaryStatBox}
+                    </tr>
+                </table>
+
+                <!-- 2. ÇALIŞANLAR TABLOSU -->
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; margin-bottom: 16px; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; background-color: #ffffff;">
+                    <thead>
+                        <tr bgcolor="#1e293b" style="background-color: #1e293b;">
+                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a;">TC NO</th>
+                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a;">ADI SOYADI</th>
+                            ${canViewSalary ? `<th align="right" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: right; text-transform: uppercase; border-bottom: 2px solid #0f172a;">NET MAAŞ</th>` : ''}
+                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a;">SİGORTA GİRİŞ</th>
+                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a;">SİGORTA ÇIKIŞ</th>
+                            <th align="center" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: center; text-transform: uppercase; border-bottom: 2px solid #0f172a;">DURUM</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml}
+                    </tbody>
+                    ${totalCount > 0 ? `
+                    <tfoot>
+                        <tr bgcolor="#f1f5f9" style="background-color: #f1f5f9; font-weight: bold;">
+                            <td colspan="2" bgcolor="#f1f5f9" style="padding: 12px 14px; font-size: 13px; font-weight: 800; color: #0f172a; border-top: 2px solid #cbd5e1;">
+                                GENEL TOPLAM (${totalCount} Çalışan)
+                            </td>
+                            ${canViewSalary ? `
+                            <td align="right" bgcolor="#f1f5f9" style="padding: 12px 14px; font-size: 14px; font-weight: 800; color: #15803d; text-align: right; border-top: 2px solid #cbd5e1;">
+                                ${fmtTL(totalNetMaas)}
+                            </td>
+                            <td colspan="3" bgcolor="#f1f5f9" style="padding: 12px 14px; border-top: 2px solid #cbd5e1;"></td>
+                            ` : `<td colspan="3" bgcolor="#f1f5f9" style="padding: 12px 14px; border-top: 2px solid #cbd5e1;"></td>`}
+                        </tr>
+                    </tfoot>
+                    ` : ''}
+                </table>
+            </div>
+        `;
+    }
+
+    function buildCalisanlarWorkbook() {
+        if (typeof XLSX === 'undefined') return null;
+
+        const wb = XLSX.utils.book_new();
+        const totalCount = CALISANLAR_DATA.length;
+        const activeCount = CALISANLAR_DATA.filter(c => c.Aktif_Pasif).length;
+        const totalNetMaas = CALISANLAR_DATA.reduce((sum, c) => sum + (parseFloat(c.Net_Maas) || 0), 0);
+
+        const headers = ['TC NO', 'ADI SOYADI'];
+        if (canViewSalary) headers.push('NET MAAŞ');
+        headers.push('SİGORTA GİRİŞ', 'SİGORTA ÇIKIŞ', 'DURUM');
+
+        const sheetData = [
+            ['ÇALIŞAN YÖNETİMİ RAPORU'],
+            ['Şube:', CALISAN_SUBE],
+            ['Toplam Çalışan:', totalCount],
+            ['Aktif Çalışan:', activeCount],
+            ['Rapor Tarihi:', new Date().toLocaleString('tr-TR')]
+        ];
+
+        if (canViewSalary) {
+            sheetData.push(['Toplam Net Maaş:', totalNetMaas]);
+        }
+        sheetData.push([]);
+        sheetData.push(headers);
+
+        CALISANLAR_DATA.forEach(c => {
+            const row = [
+                c.TC_No,
+                `${c.Adi} ${c.Soyadi}`
+            ];
+            if (canViewSalary) {
+                row.push(parseFloat(c.Net_Maas) || 0);
+            }
+            row.push(
+                c.Sigorta_Giris || '',
+                c.Sigorta_Cikis !== '2099-01-01' ? (c.Sigorta_Cikis || '') : '',
+                c.Aktif_Pasif ? 'Aktif' : 'Pasif'
+            );
+            sheetData.push(row);
+        });
+
+        // Toplam Satırı
+        if (totalCount > 0) {
+            const totRow = ['TOPLAM', `${totalCount} Çalışan`];
+            if (canViewSalary) {
+                totRow.push(totalNetMaas);
+                totRow.push('', '', '');
+            } else {
+                totRow.push('', '', '');
+            }
+            sheetData.push(totRow);
+        }
+
+        const ws = XLSX.utils.aoa_to_sheet(sheetData);
+
+        // Kolon genişlikleri
+        const colWidths = [
+            { wch: 16 }, // TC NO
+            { wch: 28 }  // ADI SOYADI
+        ];
+        if (canViewSalary) colWidths.push({ wch: 16 }); // NET MAAŞ
+        colWidths.push({ wch: 16 }, { wch: 16 }, { wch: 12 }); // GİRİŞ, ÇIKIŞ, DURUM
+        ws['!cols'] = colWidths;
+
+        // Sayı formatları
+        if (canViewSalary) {
+            const numFmt = '#,##0.00';
+            const headerRowIdx = canViewSalary ? 7 : 6;
+            const startRow = headerRowIdx + 1;
+            const endRow = startRow + totalCount + (totalCount > 0 ? 1 : 0);
+            for (let r = startRow; r < endRow; r++) {
+                const cellRef = XLSX.utils.encode_cell({ r: r, c: 2 });
+                if (ws[cellRef] && typeof ws[cellRef].v === 'number') {
+                    ws[cellRef].t = 'n';
+                    ws[cellRef].z = numFmt;
+                }
+            }
+            // Başlıktaki maaş hücresi (Satır 6, Kolon 1 -> r:5, c:1)
+            const summarySalaryRef = XLSX.utils.encode_cell({ r: 5, c: 1 });
+            if (ws[summarySalaryRef] && typeof ws[summarySalaryRef].v === 'number') {
+                ws[summarySalaryRef].t = 'n';
+                ws[summarySalaryRef].z = numFmt;
+            }
+        }
+
+        XLSX.utils.book_append_sheet(wb, ws, 'Çalışanlar');
+        return wb;
+    }
+
+    function exportCalisanlarExcel() {
+        const wb = buildCalisanlarWorkbook();
+        if (!wb) {
+            alert('Excel kütüphanesi yüklenemedi.');
+            return;
+        }
+        XLSX.writeFile(wb, `Calisanlar_${CALISAN_SUBE.replace(/[^a-zA-Z0-9_\-]/g, '_')}.xlsx`);
+    }
+
+    function getCalisanlarReportExcelBase64() {
+        const wb = buildCalisanlarWorkbook();
+        if (!wb) return null;
+        return XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+    }
+
+    function openCalisanlarReportMail() {
+        openReportMailModal({
+            title: `Çalışan Yönetimi (Şube: ${CALISAN_SUBE})`,
+            filename: `Calisanlar_${CALISAN_SUBE.replace(/[^a-zA-Z0-9_\-]/g, '_')}.xlsx`,
+            getHtml: getCalisanlarReportMailHtml,
+            getExcelBase64: getCalisanlarReportExcelBase64
+        });
+    }
 </script>
 {% endblock %}
