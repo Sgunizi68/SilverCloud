@@ -122,38 +122,122 @@
         transform: translateY(-1px);
     }
 
-    /* Table styles */
+    /* Summary Header & Cards */
+    .summary-banner {
+        background: #ffffff;
+        border: 2px solid #6366f1;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.08);
+    }
+
+    .summary-banner-title {
+        background: #eef2ff;
+        border-bottom: 2px solid #c7d2fe;
+        padding: 12px 20px;
+        text-align: center;
+        font-size: 15px;
+        font-weight: 700;
+        color: #3730a3;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .summary-cards-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        background: #f8fafc;
+    }
+
+    .summary-stat-box {
+        padding: 16px;
+        text-align: center;
+    }
+
+    .summary-stat-box:first-child {
+        border-right: 1px solid #e2e8f0;
+    }
+
+    .summary-stat-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 5px;
+    }
+
+    .summary-stat-val {
+        font-size: 22px;
+        font-weight: 800;
+    }
+
+    .stat-count {
+        color: #312e81;
+    }
+
+    .stat-amount {
+        color: #15803d;
+    }
+
+    /* Table styles matching modern mail theme */
+    .table-container {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        background: #ffffff;
+    }
+
     .data-table {
         width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
+        border-collapse: collapse;
+    }
+
+    .data-table thead tr {
+        background: #1e293b;
     }
 
     .data-table th {
-        background: #f8fafc;
-        color: var(--text-gray);
+        background: #1e293b;
+        color: #ffffff;
         font-size: 0.75rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.05em;
         padding: 12px 16px;
         text-align: left;
-        border-bottom: 2px solid #edf2f7;
+        border-bottom: 2px solid #0f172a;
     }
 
     .data-table td {
-        padding: 16px;
-        color: var(--text-dark);
-        font-size: 0.9rem;
-        border-bottom: 1px solid #edf2f7;
+        padding: 12px 16px;
+        color: #1e293b;
+        font-size: 0.88rem;
+        border-bottom: 1px solid #e2e8f0;
+        vertical-align: middle;
     }
 
-    .data-table tr:last-child td {
-        border-bottom: none;
+    .data-table tbody tr:nth-child(even) td {
+        background-color: #f8fafc;
     }
 
-    .data-table tr:hover td {
-        background-color: #f7fafc;
+    .data-table tbody tr:hover td {
+        background-color: #eff6ff !important;
+    }
+
+    .data-table tfoot tr {
+        background: #f1f5f9;
+        font-weight: bold;
+    }
+
+    .data-table tfoot td {
+        padding: 14px 16px;
+        border-top: 2px solid #cbd5e1;
+        font-size: 0.95rem;
     }
 
     .actions-cell {
@@ -247,9 +331,14 @@
                 <i class="fas fa-print"></i>
             </button>
 
+            <!-- Excel Button -->
+            <button class="btn-icon" onclick="exportAvansExcel()" title="Excel İndir" style="color: #16a34a;">
+                <i class="fas fa-file-excel"></i>
+            </button>
+
             <!-- Mail Button -->
-            <button class="btn-icon" data-permission="Mail Gönder" onclick="openReportMailModal({ title: 'Avans Talepleri', filename: 'Avans_Talepleri_{{ donem }}.xlsx', tableId: 'avansTable' })" title="Mail Gönder">
-                <i class="fas fa-envelope" style="color: #3b82f6;"></i>
+            <button class="btn-icon" data-permission="Mail Gönder" onclick="openAvansReportMail()" title="Mail Gönder" style="color: #3b82f6;">
+                <i class="fas fa-envelope"></i>
             </button>
 
             <!-- Search Area -->
@@ -275,32 +364,54 @@
         </div>
     </div>
 
-    <div class="table-responsive">
+    <!-- Summary Banner & Cards matching Mail Format -->
+    {% set total_avans_tutar = avanslar | sum(attribute='Tutar') %}
+    {% set total_avans_count = avanslar | length %}
+    <div class="summary-banner">
+        <div class="summary-banner-title">
+            <span>💵 Avans Talepleri &nbsp;|&nbsp; Şube: {{ sube_adi }} &nbsp;|&nbsp; Dönem: {{ donem }}</span>
+        </div>
+        <div class="summary-cards-grid">
+            <div class="summary-stat-box">
+                <div class="summary-stat-label">Toplam Talep Sayısı</div>
+                <div class="summary-stat-val stat-count" id="statCount">{{ total_avans_count }} Adet</div>
+            </div>
+            <div class="summary-stat-box">
+                <div class="summary-stat-label">Toplam Avans Tutarı</div>
+                <div class="summary-stat-val stat-amount" id="statAmount">
+                    {{ "{:,.2f}".format(total_avans_tutar).replace(',', 'X').replace('.', ',').replace('X', '.') }} ₺
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-responsive table-container">
         <table class="data-table" id="avansTable">
             <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>DÖNEM</th>
+                    <th style="width: 70px;">ID</th>
+                    <th style="width: 90px;">DÖNEM</th>
                     <th>ÇALIŞAN</th>
-                    <th style="text-align: right;">TUTAR</th>
+                    <th style="text-align: right; width: 140px;">TUTAR</th>
                     <th>AÇIKLAMA</th>
-                    <th>KAYIT TARİHİ</th>
-                    <th style="text-align: right;">İŞLEMLER</th>
+                    <th style="width: 120px;">KAYIT TARİHİ</th>
+                    <th style="text-align: right; width: 110px;">İŞLEMLER</th>
                 </tr>
             </thead>
             <tbody>
                 {% for a in avanslar %}
                 <tr data-id="{{ a.Avans_ID }}" data-tc="{{ a.TC_No }}">
-                    <td>{{ a.Avans_ID }}</td>
-                    <td>{{ a.Donem }}</td>
+                    <td style="color: #64748b; font-weight: 500;">#{{ a.Avans_ID }}</td>
+                    <td><span style="background: #e2e8f0; color: #334155; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">{{ a.Donem }}</span></td>
                     <td>
-                        <div style="font-weight: 600;">{{ a.Calisan_Ad_Soyad }}</div>
-                        <div style="font-size: 0.75rem; color: var(--text-gray);">{{ a.TC_No }}</div>
+                        <div style="font-weight: 600; color: #0f172a;">{{ a.Calisan_Ad_Soyad }}</div>
+                        <div style="font-size: 0.75rem; color: #64748b;">{{ a.TC_No }}</div>
                     </td>
-                    <td style="text-align: right; font-weight: 700;">{{ "{:,.2f}".format(a.Tutar).replace(',',
-                        'X').replace('.', ',').replace('X', '.') }} ₺</td>
-                    <td>{{ a.Aciklama }}</td>
-                    <td>{{ a.Kayit_Tarihi }}</td>
+                    <td style="text-align: right; font-weight: 700; color: #15803d; font-size: 0.95rem;">
+                        {{ "{:,.2f}".format(a.Tutar).replace(',', 'X').replace('.', ',').replace('X', '.') }} ₺
+                    </td>
+                    <td style="color: #475569;">{{ a.Aciklama }}</td>
+                    <td style="color: #64748b; font-size: 0.82rem;">{{ a.Kayit_Tarihi }}</td>
                     <td>
                         {% if is_current_donem %}
                         <div class="actions-cell">
@@ -329,6 +440,19 @@
                 </tr>
                 {% endif %}
             </tbody>
+            {% if avanslar %}
+            <tfoot>
+                <tr id="avansTotalRow">
+                    <td colspan="3" id="totalCountFooter" style="font-weight: 800; color: #0f172a;">
+                        GENEL TOPLAM ({{ total_avans_count }} Talep)
+                    </td>
+                    <td id="totalAmountFooter" style="text-align: right; font-weight: 800; color: #15803d; font-size: 1rem;">
+                        {{ "{:,.2f}".format(total_avans_tutar).replace(',', 'X').replace('.', ',').replace('X', '.') }} ₺
+                    </td>
+                    <td colspan="3"></td>
+                </tr>
+            </tfoot>
+            {% endif %}
         </table>
     </div>
 </div>
@@ -448,6 +572,49 @@
         }
     }
 
+    let AVANS_DATA = {{ avanslar | tojson }};
+    const AVANS_SUBE = {{ sube_adi | tojson }};
+    const AVANS_DONEM = {{ donem | tojson }};
+
+    function fmtTL(val) {
+        return new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val || 0) + ' ₺';
+    }
+
+    function updateSummaryTotals() {
+        const totalTutar = AVANS_DATA.reduce((sum, a) => sum + (parseFloat(a.Tutar) || 0), 0);
+        const count = AVANS_DATA.length;
+
+        // Banner Kartları
+        const statCountEl = document.getElementById('statCount');
+        const statAmountEl = document.getElementById('statAmount');
+        if (statCountEl) statCountEl.textContent = `${count} Adet`;
+        if (statAmountEl) statAmountEl.textContent = fmtTL(totalTutar);
+
+        // Tablo Alt Toplam (Footer)
+        const footerCountEl = document.getElementById('totalCountFooter');
+        const footerAmountEl = document.getElementById('totalAmountFooter');
+        const footerRowEl = document.getElementById('avansTotalRow');
+
+        if (count === 0) {
+            if (footerRowEl) footerRowEl.style.display = 'none';
+            // Boş mesajı ekle (eğer yoksa)
+            const tbody = document.querySelector('#avansTable tbody');
+            if (tbody && !tbody.querySelector('.empty-row')) {
+                tbody.innerHTML = `
+                    <tr class="empty-row">
+                        <td colspan="7" style="text-align: center; color: var(--text-gray); padding: 40px;">
+                            Bu dönem ve şube için avans talebi bulunamadı.
+                        </td>
+                    </tr>
+                `;
+            }
+        } else {
+            if (footerRowEl) footerRowEl.style.display = '';
+            if (footerCountEl) footerCountEl.textContent = `GENEL TOPLAM (${count} Talep)`;
+            if (footerAmountEl) footerAmountEl.textContent = fmtTL(totalTutar);
+        }
+    }
+
     async function handleDeleteAvans(id) {
         if (!confirm('Bu avans talebini silmek istediğinizden emin misiniz?')) return;
 
@@ -455,7 +622,12 @@
             const res = await fetch(`/api/v1/avans-istekler/${id}`, { method: 'DELETE' });
             if (res.status === 204 || res.ok) {
                 showToast('Talep silindi');
-                document.querySelector(`tr[data-id="${id}"]`).remove();
+                // DOM'dan satırı sil
+                document.querySelector(`tr[data-id="${id}"]`)?.remove();
+                // Veri listesinden sil
+                AVANS_DATA = AVANS_DATA.filter(a => String(a.Avans_ID) !== String(id));
+                // Ekrandaki ve e-posta/excel hazırlıklarındaki toplamları dinamik güncelle
+                updateSummaryTotals();
             } else {
                 showToast('Silme işlemi başarısız', 'error');
             }
@@ -468,5 +640,193 @@
     document.getElementById('branch-select')?.addEventListener('change', function (e) {
         window.location.href = `/avans-talepleri?sube_id=${e.target.value}&donem=${DONEM}`;
     });
+
+    function getAvansReportMailHtml() {
+        const totalTutar = AVANS_DATA.reduce((sum, a) => sum + (parseFloat(a.Tutar) || 0), 0);
+        const count = AVANS_DATA.length;
+
+        let rowsHtml = '';
+        if (count === 0) {
+            rowsHtml = `
+                <tr>
+                    <td colspan="4" align="center" bgcolor="#ffffff" style="padding: 24px; text-align: center; color: #64748b; font-size: 13px; border-bottom: 1px solid #e2e8f0;">
+                        Bu dönem ve şube için avans talebi bulunamadı.
+                    </td>
+                </tr>
+            `;
+        } else {
+            rowsHtml = AVANS_DATA.map((a, idx) => {
+                const bg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
+                const tcHtml = a.TC_No ? `<div style="font-size: 11px; color: #64748b; margin-top: 2px;">${a.TC_No}</div>` : '';
+                return `
+                    <tr bgcolor="${bg}" style="background-color: ${bg};">
+                        <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; color: #1e293b; border-bottom: 1px solid #e2e8f0;">
+                            ${a.Donem}
+                        </td>
+                        <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; color: #1e293b; border-bottom: 1px solid #e2e8f0;">
+                            <div style="font-weight: 600; color: #0f172a;">${a.Calisan_Ad_Soyad}</div>
+                            ${tcHtml}
+                        </td>
+                        <td align="right" bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; font-weight: 700; color: #15803d; text-align: right; border-bottom: 1px solid #e2e8f0;">
+                            ${fmtTL(a.Tutar)}
+                        </td>
+                        <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; color: #475569; border-bottom: 1px solid #e2e8f0;">
+                            ${a.Aciklama || '-'}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        return `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; max-width: 800px; margin: 0 auto;">
+                <!-- 1. BAŞLIK VE KART BÖLÜMÜ -->
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: separate; margin-bottom: 18px; border: 2px solid #6366f1; border-radius: 8px; overflow: hidden; background-color: #ffffff;">
+                    <tr>
+                        <td colspan="2" bgcolor="#eef2ff" style="padding: 12px 18px; background-color: #eef2ff; border-bottom: 2px solid #c7d2fe; text-align: center;">
+                            <span style="font-size: 16px; font-weight: bold; color: #3730a3;">
+                                💵 Avans Talepleri &nbsp;|&nbsp; Şube: ${AVANS_SUBE} &nbsp;|&nbsp; Dönem: ${AVANS_DONEM}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td width="50%" align="center" bgcolor="#f8fafc" style="padding: 14px 10px; background-color: #f8fafc; border-right: 1px solid #e2e8f0; text-align: center;">
+                            <div style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Toplam Talep Sayısı</div>
+                            <div style="font-size: 20px; font-weight: 800; color: #312e81;">${count} Adet</div>
+                        </td>
+                        <td width="50%" align="center" bgcolor="#f8fafc" style="padding: 14px 10px; background-color: #f8fafc; text-align: center;">
+                            <div style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Toplam Avans Tutarı</div>
+                            <div style="font-size: 20px; font-weight: 800; color: #15803d;">${fmtTL(totalTutar)}</div>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- 2. AVANS TALEPLERİ TABLOSU -->
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; margin-bottom: 16px; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; background-color: #ffffff;">
+                    <thead>
+                        <tr bgcolor="#1e293b" style="background-color: #1e293b;">
+                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a;">DÖNEM</th>
+                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a;">ÇALIŞAN</th>
+                            <th align="right" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: right; text-transform: uppercase; border-bottom: 2px solid #0f172a;">TUTAR</th>
+                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a;">AÇIKLAMA</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml}
+                    </tbody>
+                    ${count > 0 ? `
+                    <tfoot>
+                        <tr bgcolor="#f1f5f9" style="background-color: #f1f5f9; font-weight: bold;">
+                            <td colspan="2" bgcolor="#f1f5f9" style="padding: 12px 14px; font-size: 13px; font-weight: 800; color: #0f172a; border-top: 2px solid #cbd5e1;">
+                                GENEL TOPLAM (${count} Talep)
+                            </td>
+                            <td align="right" bgcolor="#f1f5f9" style="padding: 12px 14px; font-size: 14px; font-weight: 800; color: #15803d; text-align: right; border-top: 2px solid #cbd5e1;">
+                                ${fmtTL(totalTutar)}
+                            </td>
+                            <td bgcolor="#f1f5f9" style="padding: 12px 14px; border-top: 2px solid #cbd5e1;"></td>
+                        </tr>
+                    </tfoot>
+                    ` : ''}
+                </table>
+            </div>
+        `;
+    }
+
+    function buildAvansWorkbook() {
+        if (typeof XLSX === 'undefined') return null;
+
+        const wb = XLSX.utils.book_new();
+        const totalTutar = AVANS_DATA.reduce((sum, a) => sum + (parseFloat(a.Tutar) || 0), 0);
+        const count = AVANS_DATA.length;
+
+        const sheetData = [
+            ['AVANS TALEPLERİ RAPORU'],
+            ['Şube:', AVANS_SUBE],
+            ['Dönem:', AVANS_DONEM],
+            ['Toplam Talep Sayısı:', count],
+            ['Toplam Tutar:', totalTutar],
+            ['Rapor Tarihi:', new Date().toLocaleString('tr-TR')],
+            [],
+            ['DÖNEM', 'ÇALIŞAN', 'TC NO', 'TUTAR', 'AÇIKLAMA']
+        ];
+
+        AVANS_DATA.forEach(a => {
+            sheetData.push([
+                a.Donem,
+                a.Calisan_Ad_Soyad,
+                a.TC_No || '',
+                parseFloat(a.Tutar) || 0,
+                a.Aciklama === '-' ? '' : (a.Aciklama || '')
+            ]);
+        });
+
+        // Toplam Satırı
+        if (count > 0) {
+            sheetData.push([
+                'TOPLAM',
+                `${count} Talep`,
+                '',
+                totalTutar,
+                ''
+            ]);
+        }
+
+        const ws = XLSX.utils.aoa_to_sheet(sheetData);
+
+        // Kolon genişlikleri
+        ws['!cols'] = [
+            { wch: 12 }, // DÖNEM
+            { wch: 28 }, // ÇALIŞAN
+            { wch: 16 }, // TC NO
+            { wch: 16 }, // TUTAR
+            { wch: 35 }  // AÇIKLAMA
+        ];
+
+        // Tutar kolonuna format uygulama (#,##0.00)
+        const numFmt = '#,##0.00';
+        // Header satırı 8. satır (0-indexed: 7). Veri satırları 8'den başlar.
+        const startRow = 8;
+        const endRow = startRow + count + (count > 0 ? 1 : 0);
+        for (let r = startRow; r < endRow; r++) {
+            const cellRef = XLSX.utils.encode_cell({ r: r, c: 3 });
+            if (ws[cellRef] && typeof ws[cellRef].v === 'number') {
+                ws[cellRef].t = 'n';
+                ws[cellRef].z = numFmt;
+            }
+        }
+        // Başlıkta toplam tutar satırı (Satır 5, Kolon 1 - 0-indexed: r:4, c:1)
+        const summaryTutarRef = XLSX.utils.encode_cell({ r: 4, c: 1 });
+        if (ws[summaryTutarRef] && typeof ws[summaryTutarRef].v === 'number') {
+            ws[summaryTutarRef].t = 'n';
+            ws[summaryTutarRef].z = numFmt;
+        }
+
+        XLSX.utils.book_append_sheet(wb, ws, 'Avans Talepleri');
+        return wb;
+    }
+
+    function exportAvansExcel() {
+        const wb = buildAvansWorkbook();
+        if (!wb) {
+            alert('Excel kütüphanesi yüklenemedi.');
+            return;
+        }
+        XLSX.writeFile(wb, `Avans_Talepleri_${AVANS_DONEM}.xlsx`);
+    }
+
+    function getAvansReportExcelBase64() {
+        const wb = buildAvansWorkbook();
+        if (!wb) return null;
+        return XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+    }
+
+    function openAvansReportMail() {
+        openReportMailModal({
+            title: `Avans Talepleri (Şube: ${AVANS_SUBE}, Dönem: ${AVANS_DONEM})`,
+            filename: `Avans_Talepleri_${AVANS_DONEM}.xlsx`,
+            getHtml: getAvansReportMailHtml,
+            getExcelBase64: getAvansReportExcelBase64
+        });
+    }
 </script>
 {% endblock %}
