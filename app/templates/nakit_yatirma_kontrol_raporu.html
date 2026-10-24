@@ -285,6 +285,33 @@
             color: #fca5a5;
         }
 
+        .summary-card .sc-value.val-pos {
+            color: #4ade80;
+        }
+
+        .summary-card .sc-value.val-neg {
+            color: #f87171;
+        }
+
+        .summary-card .sc-sub {
+            font-size: 0.72rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 3px;
+            font-style: italic;
+        }
+
+        .summary-card .status-badge {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 700;
+            display: inline-block;
+            margin-top: 5px;
+        }
+
+        .summary-card .status-ok { background: rgba(34, 197, 94, 0.25); color: #86efac; border: 1px solid rgba(134, 239, 172, 0.4); }
+        .summary-card .status-warn { background: rgba(239, 68, 68, 0.25); color: #fca5a5; border: 1px solid rgba(252, 165, 165, 0.4); }
+
         .btn-icon {
             background: none;
             border: 1px solid rgba(255, 255, 255, 0.3);
@@ -473,8 +500,16 @@
             </div>
             <div class="summary-card">
                 <div class="sc-label">Fark (Bakiye)</div>
-                <div class="sc-value {{ 'danger' if fark != 0 else '' }}">
+                <div class="sc-value {% if fark > 1 %}val-pos{% elif fark < -1 %}val-neg{% else %}val-neutral{% endif %}">
                     {% if fark > 0 %}+{% endif %}₺{{ '{:,.2f}'.format(fark).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                </div>
+                <div class="sc-sub">(Bankaya Yatan - Kalan Nakit)</div>
+                <div>
+                    {% if (fark|abs) <= 10 %}
+                        <span class="status-badge status-ok">Uyumlu</span>
+                    {% else %}
+                        <span class="status-badge status-warn">Uyumsuz</span>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -599,8 +634,16 @@
                     </td>
                     <td width="25%" align="center" bgcolor="#f8fafc" style="padding: 14px 10px; background-color: #f8fafc; text-align: center;">
                         <div style="font-size: 11px; font-weight: bold; color: #475569; text-transform: uppercase; margin-bottom: 4px;">Fark (Bakiye)</div>
-                        <div style="font-size: 18px; font-weight: 800; color: {{ '#dc2626' if fark != 0 else '#16a34a' }};">
+                        <div style="font-size: 18px; font-weight: 800; color: {{ '#16a34a' if fark > 1 else ('#dc2626' if fark < -1 else '#475569') }};">
                             {% if fark > 0 %}+{% endif %}₺{{ '{:,.2f}'.format(fark).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                        </div>
+                        <div style="font-size: 10px; color: #64748b; margin-top: 3px;">(Bankaya Yatan - Kalan Nakit)</div>
+                        <div style="margin-top: 5px;">
+                            {% if (fark|abs) <= 10 %}
+                                <span style="font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: bold; background-color: #d1fae5; color: #065f46; display: inline-block;">Uyumlu</span>
+                            {% else %}
+                                <span style="font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: bold; background-color: #fef3c7; color: #92400e; display: inline-block;">Uyumsuz</span>
+                            {% endif %}
                         </div>
                     </td>
                 </tr>
@@ -664,15 +707,15 @@
             ['Dönem:', '{{ secili_donem }}'],
             ['Rapor Tarihi:', new Date().toLocaleString('tr-TR')],
             [],
-            ['Metrik', 'Değer'],
-            ['Kalan Nakit Bakiye (Nakit Geliri - G.Harcama)', '{{ kalan_nakit_bakiye }}'],
-            ['Bankaya Yatan Toplam', '{{ bankaya_yatan_toplam }}'],
-            ['Nakit Girişi Toplam', '{{ nakit_giris_toplam }}'],
-            ['Fark (Bakiye)', '{{ fark }}'],
-            ['Eşleşen Kayıt Sayısı', '{{ eslesen }}'],
-            ['Bankaya Yatan Eşleşmeyen Sayısı', '{{ bankaya_yatan_eslesmeyen }}'],
-            ['Nakit Girişi Eşleşmeyen Sayısı', '{{ nakit_giris_eslesmeyen }}'],
-            ['Eşleşme Oranı', '%{{ esleme_orani }}']
+            ['Metrik', 'Değer', 'Durum'],
+            ['Kalan Nakit Bakiye (Nakit Geliri - G.Harcama)', '{{ kalan_nakit_bakiye }}', ''],
+            ['Bankaya Yatan Toplam', '{{ bankaya_yatan_toplam }}', ''],
+            ['Nakit Girişi Toplam', '{{ nakit_giris_toplam }}', ''],
+            ['Fark (Bakiye) (Bankaya Yatan - Kalan Nakit)', '{{ fark }}', Math.abs(Number('{{ fark }}') || 0) <= 10 ? 'Uyumlu' : 'Uyumsuz'],
+            ['Eşleşen Kayıt Sayısı', '{{ eslesen }}', ''],
+            ['Bankaya Yatan Eşleşmeyen Sayısı', '{{ bankaya_yatan_eslesmeyen }}', ''],
+            ['Nakit Girişi Eşleşmeyen Sayısı', '{{ nakit_giris_eslesmeyen }}', ''],
+            ['Eşleşme Oranı', '%{{ esleme_orani }}', '']
         ];
         const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
         XLSX.utils.book_append_sheet(wb, wsSummary, 'Özet Bilgiler');
