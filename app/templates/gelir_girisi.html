@@ -640,22 +640,38 @@
                     <td class="frozen-col">Harcama-eFatura</td>
                     {% set ef_total = namespace(val=0) %}
                     {% for g in gunler %}
-                    {% set ef_val = harcama_data.get(g, {}).get('efatura', 0.0) %}
+                    {% set ef_val = harcama_data.get('efatura', {}).get(g, 0.0) if harcama_data.get('efatura') is mapping else harcama_data.get(g, {}).get('efatura', 0.0) %}
                     {% set ef_total.val = ef_total.val + ef_val %}
                     <td class="text-right" data-gun="{{ g }}">{{ '%.2f' | format(ef_val) if ef_val else '0.00' }}</td>
                     {% endfor %}
                     <td class="text-right" style="font-weight: 600;">{{ '%.2f' | format(ef_total.val) }}</td>
                 </tr>
+                {% set diger_tipler = harcama_data.get('diger_tipler', {}) %}
+                {% set rendered_types = namespace(count=0) %}
+                {% for tip, tip_data in diger_tipler.items() %}
+                    {% if tip_data.total != 0 %}
+                    {% set rendered_types.count = rendered_types.count + 1 %}
+                    <tr class="row-harcama-diger" data-tip="{{ tip }}">
+                        <td class="frozen-col">Harcama-Diğer - {{ tip }}</td>
+                        {% set tip_subtotal = namespace(val=0) %}
+                        {% for g in gunler %}
+                        {% set dg_val = tip_data.days.get(g, 0.0) %}
+                        {% set tip_subtotal.val = tip_subtotal.val + dg_val %}
+                        <td class="text-right" data-gun="{{ g }}" data-tip="{{ tip }}">{{ '%.2f' | format(dg_val) if dg_val else '0.00' }}</td>
+                        {% endfor %}
+                        <td class="text-right" style="font-weight: 600;">{{ '%.2f' | format(tip_subtotal.val) }}</td>
+                    </tr>
+                    {% endif %}
+                {% endfor %}
+                {% if rendered_types.count == 0 %}
                 <tr class="row-harcama-diger">
                     <td class="frozen-col">Harcama-Diğer</td>
-                    {% set dg_total = namespace(val=0) %}
                     {% for g in gunler %}
-                    {% set dg_val = harcama_data.get(g, {}).get('diger', 0.0) %}
-                    {% set dg_total.val = dg_total.val + dg_val %}
-                    <td class="text-right" data-gun="{{ g }}">{{ '%.2f' | format(dg_val) if dg_val else '0.00' }}</td>
+                    <td class="text-right" data-gun="{{ g }}">0.00</td>
                     {% endfor %}
-                    <td class="text-right" style="font-weight: 600;">{{ '%.2f' | format(dg_total.val) }}</td>
+                    <td class="text-right" style="font-weight: 600;">0.00</td>
                 </tr>
+                {% endif %}
             </tbody>
         </table>
     </div>
@@ -858,9 +874,12 @@
 
         // Eksik / Fazla Günlük (Satış - Harcamalar)
         const efCol = document.querySelector(`.row-harcama-efatura td[data-gun="${g}"]`);
-        const dgCol = document.querySelector(`.row-harcama-diger td[data-gun="${g}"]`);
         const efVal = efCol ? parseFloat(unformatMoney(efCol.innerText)) || 0 : 0;
-        const dgVal = dgCol ? parseFloat(unformatMoney(dgCol.innerText)) || 0 : 0;
+        
+        let dgVal = 0;
+        document.querySelectorAll(`.row-harcama-diger td[data-gun="${g}"]`).forEach(td => {
+            dgVal += parseFloat(unformatMoney(td.innerText)) || 0;
+        });
 
         const gunlukHarcamaTop = efVal + dgVal;
         const fark = gunlukSatis - gunlukHarcamaTop;

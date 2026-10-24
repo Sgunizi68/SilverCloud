@@ -1603,6 +1603,7 @@ def get_gunluk_harcamalar_by_donem(db: Session, sube_id: int, year: int, month: 
     Belirli döneme ait Gunluk_Harcama (eFatura ve DigerHarcama) tablo değerlerini çeker.
     "FİŞ / FATURA" gösterimi (read-only) için kullanılır.
     Kategorisi 'Harcama e-Fatura' olan kayıtlar Harcama-Diğer toplamı dışında tutulur.
+    DigerHarcama kayıtları Harcama_Tipi'ne göre gruplanır.
     """
     from app.models import DigerHarcama, EFatura, Kategori
     from sqlalchemy import extract, or_, func
@@ -1627,22 +1628,38 @@ def get_gunluk_harcamalar_by_donem(db: Session, sube_id: int, year: int, month: 
         EFatura.Gunluk_Harcama == True
     ).all()
     
-    harcama_data = {}
+    harcama_data = {
+        'efatura': {},          # gun -> tutar
+        'diger_tipler': {},     # tip -> { gun -> tutar, 'total': toplam_tutar }
+        'diger_toplam': 0.0     # genel toplam
+    }
     
     for h in diger_harcamalar:
         # Kategorisi 'Harcama e-Fatura' olan kayıtları hesaplama dışında tut
         if h.kategori and h.kategori.Kategori_Adi and h.kategori.Kategori_Adi.strip() == 'Harcama e-Fatura':
             continue
         gun = h.Belge_Tarihi.day
-        if gun not in harcama_data:
-            harcama_data[gun] = {'efatura': 0.0, 'diger': 0.0}
-        harcama_data[gun]['diger'] += float(h.Tutar) if h.Tutar else 0.0
+        tip = (h.Harcama_Tipi or 'Belirtilmemiş').strip()
+        tutar = float(h.Tutar) if h.Tutar else 0.0
+        
+        if tip not in harcama_data['diger_tipler']:
+            harcama_data['diger_tipler'][tip] = {'days': {}, 'total': 0.0}
+        
+        harcama_data['diger_tipler'][tip]['days'][gun] = harcama_data['diger_tipler'][tip]['days'].get(gun, 0.0) + tutar
+        harcama_data['diger_tipler'][tip]['total'] += tutar
+        harcama_data['diger_toplam'] += tutar
         
     for e in efaturalar:
         gun = e.Fatura_Tarihi.day
-        if gun not in harcama_data:
-            harcama_data[gun] = {'efatura': 0.0, 'diger': 0.0}
-        harcama_data[gun]['efatura'] += float(e.Tutar) if e.Tutar else 0.0
+        tutar = float(e.Tutar) if e.Tutar else 0.0
+        harcama_data['efatura'][gun] = harcama_data['efatura'].get(gun, 0.0) + tutar
+        
+    # Backward compatibility helper for harcama_data.get(g, {}).get('efatura') or get('diger')
+    # We populate integer keys gun -> {'efatura': X, 'diger': Y}
+    for g in range(1, 32):
+        ef_val = harcama_data['efatura'].get(g, 0.0)
+        dg_val = sum(t_data['days'].get(g, 0.0) for t_data in harcama_data['diger_tipler'].values())
+        harcama_data[g] = {'efatura': ef_val, 'diger': dg_val}
         
     return harcama_data
 
