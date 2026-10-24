@@ -1058,6 +1058,7 @@ def nakit_yatirma_kontrol_raporu():
         DigerHarcama.Sube_ID == sube_id,
         DigerHarcama.Donem == donem,
         DigerHarcama.Gunluk_Harcama == 1,
+        DigerHarcama.Harcama_Tipi == 'Nakit',
         func.trim(Kategori.Kategori_Adi) != 'Harcama e-Fatura'
     )
     if not show_gizli:

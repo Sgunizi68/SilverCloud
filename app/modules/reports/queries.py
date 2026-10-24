@@ -736,11 +736,12 @@ def get_ozet_kontrol_raporu(db, sube_id: int, donem: int, show_gizli: bool = Fal
         {"sube_id": sube_id, "year": year, "month": month}
     ).scalar() or 0.0
 
-    # 4. Gunluk Harcama Diger
+    # 4. Gunluk Harcama Diger (Yanlızca 'Nakit' Harcama Tipi)
     dh_sql = text(f"""
         SELECT IFNULL(SUM(dh.Tutar), 0) FROM Diger_Harcama dh
         JOIN Kategori k ON dh.Kategori_ID = k.Kategori_ID
         WHERE dh.Sube_ID = :sube_id AND dh.Donem = :donem AND dh.Gunluk_Harcama = 1
+          AND dh.Harcama_Tipi = 'Nakit'
           AND TRIM(k.Kategori_Adi) != 'Harcama e-Fatura'
         {gizli_filter}
     """)
@@ -937,11 +938,14 @@ def get_nakit_akis_gelir_raporu(start_date: str, end_date: str, sube_id: int):
             {"sube_id": sube_id, "date": date_str}
         ).scalar() or 0.0
         
-        # Daily Expenses (Other)
+        # Daily Expenses (Other) - Yanlızca 'Nakit' Harcama Tipi
         expenses_other = db.execute(
             text("""
-            SELECT IFNULL(SUM(Tutar), 0) FROM Diger_Harcama 
-            WHERE Sube_ID = :sube_id AND Belge_Tarihi = :date AND Gunluk_Harcama = 1
+            SELECT IFNULL(SUM(dh.Tutar), 0) FROM Diger_Harcama dh
+            JOIN Kategori k ON dh.Kategori_ID = k.Kategori_ID
+            WHERE dh.Sube_ID = :sube_id AND dh.Belge_Tarihi = :date AND dh.Gunluk_Harcama = 1
+              AND dh.Harcama_Tipi = 'Nakit'
+              AND TRIM(k.Kategori_Adi) != 'Harcama e-Fatura'
             """),
             {"sube_id": sube_id, "date": date_str}
         ).scalar() or 0.0
