@@ -1570,7 +1570,7 @@ def bulk_create_default_harcamalar():
         from app.models.models import Kategori, Sube
         valid_kat_ids = set(db.scalars(select(Kategori.Kategori_ID)).all())
         valid_sube_ids = set(db.scalars(select(Sube.Sube_ID)).all())
-        valid_harcama_tipleri = {'Nakit', 'Banka Ödeme', 'Kredi Kartı'}
+        valid_harcama_tipleri = {'Nakit', 'Banka Ödeme', 'Kredi Kartı', 'Y. Kartı'}
 
         validated_records = []
         for idx, row in enumerate(payload):
@@ -1635,7 +1635,7 @@ def bulk_create_default_harcamalar():
             harcama_tipi = row.get("Harcama_Tipi")
             if harcama_tipi not in valid_harcama_tipleri:
                 db.close()
-                return jsonify({"error": f"Satır {row_num}: Harcama Tipi 'Nakit', 'Banka Ödeme' veya 'Kredi Kartı' olmalıdır."}), 400
+                return jsonify({"error": f"Satır {row_num}: Harcama Tipi 'Nakit', 'Banka Ödeme', 'Kredi Kartı' veya 'Y. Kartı' olmalıdır."}), 400
 
             # Kategori ID
             try:

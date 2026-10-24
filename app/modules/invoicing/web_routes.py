@@ -399,15 +399,23 @@ def diger_harcamalar():
     _today = _date.today()
     current_donem = int(str(_today.year)[-2:] + str(_today.month).zfill(2))
 
-    # If donem not provided in query string, default to current period
+    # If donem not provided in query string, default to current period.
+    # If donem is 'all' or empty, donem becomes None (all periods).
     donem_str = request.args.get('donem', None)
     if donem_str is not None:
-        try:
-            donem = int(donem_str)
-        except ValueError:
-            donem = current_donem
+        if donem_str.lower() in ('all', 'tumu', 'tümü', ''):
+            donem = None
+            secili_donem = 'all'
+        else:
+            try:
+                donem = int(donem_str)
+                secili_donem = str(donem)
+            except ValueError:
+                donem = current_donem
+                secili_donem = str(current_donem)
     else:
         donem = current_donem
+        secili_donem = str(current_donem)
 
     # Fetch distinct donem list from DB (all branches), sorted descending (newest first)
     try:
@@ -422,8 +430,8 @@ def diger_harcamalar():
     if current_donem not in donem_listesi:
         donem_listesi = [current_donem] + donem_listesi
 
-    # Ensure selected donem is in the list
-    if donem not in donem_listesi:
+    # Ensure selected donem is in the list (if it's a numeric donem)
+    if donem is not None and donem not in donem_listesi:
         donem_listesi = sorted([donem] + donem_listesi, reverse=True)
     
     # Fetch harcamalar server-side
@@ -473,7 +481,7 @@ def diger_harcamalar():
         secili_sube_id=sube_id,
         kategori_map=kategori_map,
         donem_listesi=donem_listesi,
-        secili_donem=donem,
+        secili_donem=secili_donem,
         current_donem=current_donem,
         has_match_permission=has_match_permission,
         can_add_defaults=can_add_defaults

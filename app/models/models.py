@@ -288,7 +288,7 @@ class DigerHarcama(db.Model):
     Tutar = Column(DECIMAL(15, 2), nullable=False)
     Kategori_ID = Column(Integer, ForeignKey("Kategori.Kategori_ID"), nullable=False, index=True)
     Harcama_Tipi = Column(
-        Enum('Nakit', 'Banka Ödeme', 'Kredi Kartı'),
+        Enum('Nakit', 'Banka Ödeme', 'Kredi Kartı', 'Y. Kartı'),
         nullable=False
     )
     Gunluk_Harcama = Column(Boolean, default=False)
@@ -317,7 +317,7 @@ class DigerHarcamaDefault(db.Model):
     Tutar = Column(DECIMAL(15, 2), nullable=False)
     Kategori_ID = Column(Integer, ForeignKey("Kategori.Kategori_ID"), nullable=False, index=True)
     Harcama_Tipi = Column(
-        Enum('Nakit', 'Banka Ödeme', 'Kredi Kartı'),
+        Enum('Nakit', 'Banka Ödeme', 'Kredi Kartı', 'Y. Kartı'),
         nullable=False
     )
     Gunluk_Harcama = Column(Boolean, default=False, nullable=False)

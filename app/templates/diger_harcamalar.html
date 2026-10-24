@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% set sube_display = (subeler | selectattr("Sube_ID", "equalto", secili_sube_id) | map(attribute="Sube_Adi") | first or 'Tümü') %}
+
 {% block title %}Diğer Harcamalar - SilverCloud{% endblock %}
 {% block nav_diger_harcamalar %}active{% endblock %}
 {% block acc_fatura_harcama %}active{% endblock %}
@@ -7,209 +9,333 @@
 
 {% block extra_style %}
 <style>
-    .ref-page-container {
-        padding: 20px;
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.95);
+        --glass-border: rgba(255, 255, 255, 0.3);
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --accent-color: #667eea;
+        --text-dark: #2d3748;
+        --text-gray: #718096;
     }
 
-    .card-glass {
-        background: rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(8px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
+    .main-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
         border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-        margin-bottom: 20px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        padding: 24px;
+        margin-bottom: 24px;
     }
 
-    .header-bar {
+    .page-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 15px 20px;
+        margin-bottom: 24px;
+        gap: 16px;
         flex-wrap: wrap;
-        gap: 15px;
     }
 
-    .header-title {
-        font-size: 16px;
+    .page-title {
+        font-size: 1.25rem;
         font-weight: 700;
-        color: #1e293b;
+        color: var(--text-dark);
         margin: 0;
-    }
-
-    .header-actions {
         display: flex;
         align-items: center;
         gap: 10px;
     }
 
-    .action-btn {
-        padding: 8px 14px;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        background: white;
-        font-size: 13px;
-        font-weight: 500;
-        color: #475569;
-        cursor: pointer;
-        display: inline-flex;
+    .action-bar {
+        display: flex;
         align-items: center;
-        gap: 6px;
-        transition: all 0.2s;
+        gap: 12px;
+        flex-wrap: wrap;
     }
 
-    .action-btn:hover {
-        background: #f8fafc;
-        border-color: #cbd5e1;
-        color: #334155;
-    }
-
-    .action-btn.primary {
-        background: #3b82f6;
-        color: white;
-        border-color: #3b82f6;
-        font-weight: 600;
-    }
-
-    .action-btn.primary:hover {
-        background: #2563eb;
-    }
-
-    .toolbar-input {
-        padding: 8px 12px;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        font-size: 13px;
-        outline: none;
-        background: white;
-        color: #475569;
-    }
-
-    .toolbar-input:focus {
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+    .search-container {
+        position: relative;
+        min-width: 220px;
     }
 
     .search-input {
-        width: 180px;
+        width: 100%;
+        padding: 10px 16px 10px 40px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        outline: none;
+        transition: all 0.2s;
+        font-size: 0.9rem;
+        background: white;
     }
 
-    .type-select {
-        width: 120px;
+    .search-input:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
 
-    .donem-select {
-        width: 160px;
+    .search-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-gray);
+        font-size: 13px;
     }
 
-    /* Table styling */
-    .ref-table-wrapper {
-        padding: 0;
+    .control-select {
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        font-size: 0.9rem;
+        outline: none;
+        min-width: 130px;
+        color: #334155;
+    }
+
+    .control-select:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .btn-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        color: var(--text-dark);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.95rem;
+    }
+
+    .btn-icon:hover {
+        background: #f7fafc;
+        border-color: #cbd5e0;
+    }
+
+    .btn-new {
+        background: var(--accent-color);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        transition: transform 0.2s, background 0.2s;
+        font-size: 0.9rem;
+    }
+
+    .btn-new:hover {
+        background: #5a67d8;
+        transform: translateY(-1px);
+    }
+
+    .btn-warning-action {
+        background: #f59e0b;
+        color: white;
+        border: none;
+        padding: 10px 18px;
+        border-radius: 8px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        transition: transform 0.2s, background 0.2s;
+        font-size: 0.9rem;
+    }
+
+    .btn-warning-action:hover {
+        background: #d97706;
+        transform: translateY(-1px);
+    }
+
+    /* Summary Header & Cards (Avans Talepleri ile birebir) */
+    .summary-banner {
+        background: #ffffff;
+        border: 2px solid #6366f1;
+        border-radius: 10px;
         overflow: hidden;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.08);
     }
 
-    .ref-table {
+    .summary-banner-title {
+        background: #eef2ff;
+        border-bottom: 2px solid #c7d2fe;
+        padding: 12px 20px;
+        text-align: center;
+        font-size: 15px;
+        font-weight: 700;
+        color: #3730a3;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .summary-cards-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        background: #f8fafc;
+    }
+
+    .summary-stat-box {
+        padding: 16px;
+        text-align: center;
+    }
+
+    .summary-stat-box:first-child {
+        border-right: 1px solid #e2e8f0;
+    }
+
+    .summary-stat-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 5px;
+    }
+
+    .summary-stat-val {
+        font-size: 22px;
+        font-weight: 800;
+    }
+
+    .stat-count {
+        color: #312e81;
+    }
+
+    .stat-amount {
+        color: #15803d;
+    }
+
+    /* Table styles matching Avans Talepleri */
+    .table-container {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        background: #ffffff;
+    }
+
+    .data-table {
         width: 100%;
         border-collapse: collapse;
     }
 
-    .ref-table th {
-        background: #fdfdfd;
-        color: #64748b;
-        font-size: 11px;
-        font-weight: 600;
-        padding: 12px 20px;
-        text-align: left;
-        border-bottom: 1px solid #e2e8f0;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+    .data-table thead tr {
+        background: #1e293b;
     }
 
-    .ref-table td {
-        padding: 10px 20px;
-        color: #475569;
-        font-size: 13px;
+    .data-table th {
+        background: #1e293b;
+        color: #ffffff;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 12px 16px;
+        text-align: left;
+        border-bottom: 2px solid #0f172a;
+    }
+
+    .data-table td {
+        padding: 12px 16px;
+        color: #1e293b;
+        font-size: 0.88rem;
         border-bottom: 1px solid #e2e8f0;
         vertical-align: middle;
     }
 
-    .ref-table tr:last-child td {
-        border-bottom: none;
-    }
-
-    .ref-table tr:hover {
+    .data-table tbody tr:nth-child(even) td {
         background-color: #f8fafc;
     }
 
-    .cell-bold {
-        color: #334155;
-        font-weight: 500;
+    .data-table tbody tr:hover td {
+        background-color: #eff6ff !important;
     }
 
-    .cell-muted {
-        color: #64748b;
+    .data-table tfoot tr {
+        background: #f1f5f9;
+        font-weight: bold;
     }
 
-    .text-right {
-        text-align: right !important;
+    .data-table tfoot td {
+        padding: 14px 16px;
+        border-top: 2px solid #cbd5e1;
+        font-size: 0.95rem;
     }
 
-    .text-center {
-        text-align: center !important;
-    }
-
-    .action-icons {
+    .actions-cell {
         display: flex;
         gap: 6px;
         justify-content: flex-end;
     }
 
-    .icon-btn {
-        width: 28px;
-        height: 28px;
+    .btn-row-action {
+        width: 32px;
+        height: 32px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        background: transparent;
-        border: 1px solid #e2e8f0;
         border-radius: 6px;
+        border: 1px solid transparent;
         cursor: pointer;
         transition: all 0.2s;
-        color: #64748b;
+        text-decoration: none;
     }
 
-    .icon-btn.edit:hover {
-        background: #eff6ff;
-        border-color: #bfdbfe;
-        color: #3b82f6;
+    .btn-edit {
+        background: #ebf4ff;
+        color: #3182ce;
     }
 
-    .icon-btn.match:hover {
+    .btn-edit:hover {
+        background: #bee3f8;
+    }
+
+    .btn-match {
         background: #f0fdf4;
-        border-color: #bbf7d0;
-        color: #10b981;
+        color: #16a34a;
+        border: 1px solid #bbf7d0;
     }
 
-    .icon-btn.delete {
-        color: #ef4444;
-        border-color: #fca5a5;
+    .btn-match:hover {
+        background: #dcfce7;
     }
 
-    .icon-btn.delete:hover {
-        background: #fef2f2;
-        border-color: #f87171;
+    .btn-delete {
+        background: #fff5f5;
+        color: #e53e3e;
+    }
+
+    .btn-delete:hover {
+        background: #fed7d7;
     }
 
     .checkbox-icon {
         color: #10b981;
-        font-size: 14px;
+        font-size: 15px;
     }
 
     .checkbox-empty {
         display: inline-block;
-        width: 12px;
-        height: 12px;
+        width: 14px;
+        height: 14px;
         border: 1px solid #cbd5e1;
-        border-radius: 2px;
+        border-radius: 3px;
     }
 
     .image-link {
@@ -217,12 +343,17 @@
         text-decoration: none;
         display: inline-flex;
         align-items: center;
-        gap: 4px;
+        gap: 5px;
         font-size: 12px;
+        font-weight: 500;
+        background: #eff6ff;
+        padding: 4px 10px;
+        border-radius: 6px;
+        border: 1px solid #dbeafe;
     }
 
     .image-link:hover {
-        text-decoration: underline;
+        background: #dbeafe;
     }
 
     /* Modal form styling */
@@ -322,147 +453,192 @@
         height: 34px;
         border-radius: 4px;
     }
-
-    .action-btn.warning {
-        background: #f59e0b;
-        color: white;
-        border-color: #d97706;
-        font-weight: 600;
-    }
-
-    .action-btn.warning:hover {
-        background: #d97706;
-    }
 </style>
 
 {% endblock %}
 
 {% block content %}
-<div class="ref-page-container">
+{% set sube_name = '' %}
+{% for s in subeler %}
+{% if s.Sube_ID == secili_sube_id %}
+{% set sube_name = s.Sube_Adi %}
+{% endif %}
+{% endfor %}
+{% set sube_display = sube_name or 'Tümü' %}
+{% set total_harcama_count = harcamalar | length %}
+{% set total_harcama_tutar = harcamalar | sum(attribute='Tutar') %}
 
-    <!-- Header -->
-    <div class="card-glass header-bar">
-        {% set sube_name = '' %}
-        {% for s in subeler %}
-        {% if s.Sube_ID == secili_sube_id %}
-        {% set sube_name = s.Sube_Adi %}
-        {% endif %}
-        {% endfor %}
-        <h1 class="header-title">Diğer Harcamalar (Şube: {{ sube_name or 'Tümü' }})</h1>
+<div class="main-card">
+    <div class="page-header">
+        <h2 class="page-title">
+            <span>📑 Diğer Harcamalar (Şube: {{ sube_display }}, Dönem: {{ 'Tümü' if secili_donem == 'all' else secili_donem }})</span>
+        </h2>
 
-        <div class="header-actions">
-            <!-- Print -->
-            <button class="action-btn" onclick="printData()" title="Yazdır">
+        <div class="action-bar">
+            <!-- Print Button -->
+            <button class="btn-icon" onclick="printData()" title="Yazdır">
                 <i class="fas fa-print"></i>
             </button>
-            <!-- Export -->
-            <button class="action-btn" onclick="exportToExcel()" title="Excel'e Aktar">
-                <i class="fas fa-download"></i>
+
+            <!-- Excel Button -->
+            <button class="btn-icon" onclick="exportToExcel()" title="Excel İndir" style="color: #16a34a;">
+                <i class="fas fa-file-excel"></i>
             </button>
-            <!-- Mail Gönder -->
-            <button class="action-btn" data-permission="Mail Gönder" onclick="openReportMailModal({ tableId: 'dataTable' })" title="Mail Gönder">
-                <i class="fas fa-envelope" style="color: #3b82f6;"></i> Mail Gönder
+
+            <!-- Mail Button -->
+            <button class="btn-icon" data-permission="Mail Gönder" onclick="openReportMailModalCustom()" title="Mail Gönder" style="color: #3b82f6;">
+                <i class="fas fa-envelope"></i>
             </button>
-            <!-- Search -->
-            <input type="text" class="toolbar-input search-input" placeholder="Alıcı/Belge No ara..." id="searchInput">
+
+            <!-- Search Area -->
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="search-input" placeholder="Alıcı veya Belge No ara..." id="searchInput">
+            </div>
+
             <!-- Type Filter -->
-            <select class="toolbar-input type-select" id="filterTip">
+            <select class="control-select" id="filterTip">
                 <option value="">Tüm Tipler</option>
                 <option value="Nakit">Nakit</option>
                 <option value="Banka Ödeme">Banka Ödeme</option>
                 <option value="Kredi Kartı">Kredi Kartı</option>
+                <option value="Y. Kartı">Y. Kartı</option>
             </select>
-            <!-- Donem Dropdown -->
-            <select class="toolbar-input donem-select" id="filterDonem" onchange="onDonemChange(this.value)">
+
+            <!-- Period Select -->
+            <select class="control-select" id="filterDonem" onchange="onDonemChange(this.value)">
+                <option value="all" {% if secili_donem == 'all' %}selected{% endif %}>Tüm Dönemler</option>
                 {% for d in donem_listesi %}
-                <option value="{{ d }}" {% if d==secili_donem %}selected{% endif %}>
+                <option value="{{ d }}" {% if (d|string) == (secili_donem|string) %}selected{% endif %}>
                     {{ d }} &ndash;
                     {%- set yy = (d // 100) %}
                     {%- set mm = (d % 100) %}
-                    {%- set ay_adlari = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas',
-                    'Ara'] %}
-                    {{ ay_adlari[mm - 1] if mm >= 1 and mm <= 12 else '' }} {{ 2000 + yy }} </option>
-                        {% endfor %}
+                    {%- set ay_adlari = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'] %}
+                    {{ ay_adlari[mm - 1] if mm >= 1 and mm <= 12 else '' }} {{ 2000 + yy }}
+                </option>
+                {% endfor %}
             </select>
+
             {% if can_add_defaults %}
-            <!-- Default Harcamaları Ekle (Yetki 73) -->
-            <button class="action-btn warning" onclick="openDefaultModal()" title="Aybaşı Default Harcamaları Ekle">
+            <!-- Default Harcamaları Ekle Button -->
+            <button class="btn-warning-action" onclick="openDefaultModal()" title="Aybaşı Default Harcamaları Ekle">
                 <i class="fas fa-magic"></i> Default Harcamaları Ekle
             </button>
             {% endif %}
-            <!-- New -->
-            <button class="action-btn primary" onclick="openAddModal()">
-                <i class="fas fa-plus"></i> Yeni Harcama
+
+            <!-- New Expense Button -->
+            <button class="btn-new" onclick="openAddModal()">
+                <i class="fas fa-plus"></i>
+                Yeni Harcama
             </button>
         </div>
     </div>
 
+    <!-- Summary Banner & Cards matching Avans Talepleri -->
+    <div class="summary-banner">
+        <div class="summary-banner-title">
+            <span>📑 Diğer Harcamalar &nbsp;|&nbsp; Şube: {{ sube_display }} &nbsp;|&nbsp; Dönem: {{ 'Tümü' if secili_donem == 'all' else secili_donem }}</span>
+        </div>
+        <div class="summary-cards-grid">
+            <div class="summary-stat-box">
+                <div class="summary-stat-label">Toplam Harcama Sayısı</div>
+                <div class="summary-stat-val stat-count" id="statHarcamaCount">{{ total_harcama_count }} Adet</div>
+            </div>
+            <div class="summary-stat-box">
+                <div class="summary-stat-label">Toplam Harcama Tutarı</div>
+                <div class="summary-stat-val stat-amount" id="statHarcamaAmount">
+                    {{ "{:,.2f}".format(total_harcama_tutar).replace(',', 'X').replace('.', ',').replace('X', '.') }} ₺
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <!-- Table -->
-    <div class="card-glass ref-table-wrapper">
-        <table class="ref-table" id="dataTable">
+    <!-- Table Container -->
+    <div class="table-responsive table-container">
+        <table class="data-table" id="dataTable">
             <thead>
                 <tr>
                     <th>ALICI ADI</th>
                     <th>BELGE NO</th>
                     <th>BELGE TARİHİ</th>
-                    <th class="text-right">TUTAR</th>
+                    <th style="text-align: right; width: 140px;">TUTAR</th>
                     <th>KATEGORİ</th>
                     <th>TİP</th>
-                    <th class="text-center">GÜNLÜK</th>
-                    <th class="text-center">RESİM</th>
-                    <th class="text-right hide-on-print">İŞLEMLER</th>
+                    <th style="text-align: center; width: 80px;">GÜNLÜK</th>
+                    <th style="text-align: center; width: 140px;">RESİM</th>
+                    <th style="text-align: right; width: 130px;" class="hide-on-print">İŞLEMLER</th>
                 </tr>
             </thead>
             <tbody id="tableBody">
                 {% for item in harcamalar %}
                 <tr data-alici="{{ item.Alici_Adi|lower }}" data-belgeno="{{ item.Belge_Numarasi|lower }}"
-                    data-tip="{{ item.Harcama_Tipi }}" data-donem="{{ item.Donem }}">
-                    <td class="cell-bold">{{ item.Alici_Adi }}</td>
-                    <td class="cell-muted">{{ item.Belge_Numarasi }}</td>
-                    <td class="cell-muted">{{ item.Belge_Tarihi }}</td>
-                    <td class="text-right cell-bold">₺{{ '{:,.2f}'.format(item.Tutar) }}</td>
-                    <td class="cell-muted">{{ kategori_map.get(item.Kategori_ID, '') }}</td>
-                    <td class="cell-muted">{{ item.Harcama_Tipi }}</td>
-                    <td class="text-center">
+                    data-tip="{{ item.Harcama_Tipi }}" data-donem="{{ item.Donem }}" data-tutar="{{ item.Tutar }}">
+                    <td style="font-weight: 600; color: #0f172a;">{{ item.Alici_Adi }}</td>
+                    <td style="font-family: monospace; color: #64748b;">{{ item.Belge_Numarasi or '-' }}</td>
+                    <td style="color: #64748b; font-size: 0.85rem;">{{ item.Belge_Tarihi }}</td>
+                    <td style="text-align: right; font-weight: 700; color: #15803d; font-size: 0.95rem;">
+                        {{ "{:,.2f}".format(item.Tutar).replace(',', 'X').replace('.', ',').replace('X', '.') }} ₺
+                    </td>
+                    <td style="color: #475569;">{{ kategori_map.get(item.Kategori_ID, '') }}</td>
+                    <td>
+                        <span style="background: #f1f5f9; color: #334155; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">
+                            {{ item.Harcama_Tipi }}
+                        </span>
+                    </td>
+                    <td style="text-align: center;">
                         {% if item.Gunluk_Harcama %}
-                        <i class="fas fa-check-square checkbox-icon"></i>
+                        <i class="fas fa-check-circle" style="color: #16a34a; font-size: 16px;"></i>
                         {% else %}
                         <span class="checkbox-empty"></span>
                         {% endif %}
                     </td>
-                    <td class="text-center">
+                    <td style="text-align: center;">
                         {% if item.has_imaj and item.Imaj_Adi %}
                         <a href="#" class="image-link" data-imaj-id="{{ item.Harcama_ID }}"
                             onclick="viewImageDeferred('{{ item.Harcama_ID }}', '{{ item.Imaj_Adi }}', this); return false;">
-                            <i class="fas fa-download"></i> {{ item.Imaj_Adi }}
+                            <i class="fas fa-image"></i> {{ item.Imaj_Adi | truncate(15) }}
                         </a>
+                        {% else %}
+                        <span style="color: #cbd5e1;">-</span>
                         {% endif %}
                     </td>
-                    <td class="text-right hide-on-print">
-                        <div class="action-icons">
+                    <td class="hide-on-print">
+                        <div class="actions-cell">
                             {% if has_match_permission %}
-                            <button class="icon-btn match" onclick='openMatchModal({{ item | tojson | safe }})'
+                            <button class="btn-row-action btn-match" onclick='openMatchModal({{ item | tojson | safe }})'
                                 title="e-Fatura Eşleştir"><i class="fas fa-link"></i></button>
                             {% endif %}
-                            <button class="icon-btn edit" onclick='openEditModal({{ item | tojson | safe }})'
-                                title="Düzenle"><i class="fas fa-pen"></i></button>
-                            <button class="icon-btn delete" onclick="deleteRecord({{ item.Harcama_ID }})" title="Sil"><i
+                            <button class="btn-row-action btn-edit" onclick='openEditModal({{ item | tojson | safe }})'
+                                title="Düzenle"><i class="fas fa-pencil-alt"></i></button>
+                            <button class="btn-row-action btn-delete" onclick="deleteRecord({{ item.Harcama_ID }})" title="Sil"><i
                                     class="fas fa-trash-alt"></i></button>
                         </div>
                     </td>
                 </tr>
                 {% else %}
-                <tr>
-                    <td colspan="9" class="text-center cell-muted" style="padding: 40px;">
+                <tr class="empty-row">
+                    <td colspan="9" style="text-align: center; color: var(--text-gray); padding: 40px;">
+                        <i class="fas fa-receipt" style="font-size: 32px; display: block; margin-bottom: 12px; opacity: 0.4;"></i>
                         Kayıt bulunamadı.
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
+            {% if harcamalar %}
+            <tfoot>
+                <tr id="harcamalarTotalRow">
+                    <td colspan="3" id="footerHarcamaCount" style="font-weight: 800; color: #0f172a;">
+                        GENEL TOPLAM (<span id="footerVisibleCount">{{ total_harcama_count }}</span> Harcama)
+                    </td>
+                    <td id="footerHarcamaAmount" style="text-align: right; font-weight: 800; color: #15803d; font-size: 1rem;">
+                        {{ "{:,.2f}".format(total_harcama_tutar).replace(',', 'X').replace('.', ',').replace('X', '.') }} ₺
+                    </td>
+                    <td colspan="5"></td>
+                </tr>
+            </tfoot>
+            {% endif %}
         </table>
     </div>
-
 </div>
 
 <!-- Image Viewer Overlay -->
@@ -527,9 +703,16 @@
         window.location.href = '/diger-harcamalar?' + params.toString();
     }
 
+    function fmtTL(val) {
+        return new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val || 0) + ' ₺';
+    }
+
     function applyClientFilter() {
-        const search = document.getElementById('searchInput').value.toLowerCase();
-        const tip = document.getElementById('filterTip').value;
+        const search = document.getElementById('searchInput') ? document.getElementById('searchInput').value.toLowerCase().trim() : '';
+        const tip = document.getElementById('filterTip') ? document.getElementById('filterTip').value : '';
+
+        let visibleCount = 0;
+        let visibleAmount = 0;
 
         document.querySelectorAll('#tableBody tr[data-alici]').forEach(row => {
             let visible = true;
@@ -542,7 +725,27 @@
                 visible = visible && (row.getAttribute('data-tip') === tip);
             }
             row.style.display = visible ? '' : 'none';
+
+            if (visible) {
+                visibleCount++;
+                visibleAmount += parseFloat(row.getAttribute('data-tutar')) || 0;
+            }
         });
+
+        // Banner Kartlarını güncelle
+        const statCountEl = document.getElementById('statHarcamaCount');
+        const statAmountEl = document.getElementById('statHarcamaAmount');
+        if (statCountEl) statCountEl.textContent = `${visibleCount} Adet`;
+        if (statAmountEl) statAmountEl.textContent = fmtTL(visibleAmount);
+
+        // Tablo Dip Toplamını güncelle
+        const footerCountSpan = document.getElementById('footerVisibleCount');
+        const footerAmountEl = document.getElementById('footerHarcamaAmount');
+        const footerRowEl = document.getElementById('harcamalarTotalRow');
+
+        if (footerCountSpan) footerCountSpan.textContent = visibleCount;
+        if (footerAmountEl) footerAmountEl.textContent = fmtTL(visibleAmount);
+        if (footerRowEl) footerRowEl.style.display = (visibleCount === 0) ? 'none' : '';
     }
 
     function viewImage(base64, filename) {
@@ -685,6 +888,7 @@
                             <option value="Nakit" ${item && item.Harcama_Tipi === 'Nakit' ? 'selected' : ''}>Nakit</option>
                             <option value="Banka Ödeme" ${item && item.Harcama_Tipi === 'Banka Ödeme' ? 'selected' : ''}>Banka Ödeme</option>
                             <option value="Kredi Kartı" ${item && item.Harcama_Tipi === 'Kredi Kartı' ? 'selected' : ''}>Kredi Kartı</option>
+                            <option value="Y. Kartı" ${item && item.Harcama_Tipi === 'Y. Kartı' ? 'selected' : ''}>Y. Kartı</option>
                         </select>
                     </div>
                     <div class="col-6 form-group">
@@ -804,12 +1008,205 @@
         }
     }
 
+    const HARCAMALAR_DATA = {{ harcamalar | tojson | safe }};
+    const CURRENT_SUBE_ADI = {{ (sube_display if sube_display is defined else (subeler | selectattr("Sube_ID", "equalto", secili_sube_id) | map(attribute="Sube_Adi") | first or 'Tümü')) | tojson | safe }};
+    const CURRENT_DONEM_STR = {{ ('Tümü' if secili_donem == 'all' else secili_donem|string) | tojson | safe }};
+
+    function getHarcamalarReportMailHtml() {
+        const totalCount = HARCAMALAR_DATA.length;
+        const totalTutar = HARCAMALAR_DATA.reduce((sum, h) => sum + (parseFloat(h.Tutar) || 0), 0);
+
+        let rowsHtml = '';
+        if (totalCount === 0) {
+            rowsHtml = `
+                <tr>
+                    <td colspan="6" align="center" bgcolor="#ffffff" style="padding: 24px; text-align: center; color: #64748b; font-size: 13px; border-bottom: 1px solid #e2e8f0;">
+                        Bu dönem ve şube için harcama kaydı bulunamadı.
+                    </td>
+                </tr>
+            `;
+        } else {
+            rowsHtml = HARCAMALAR_DATA.map((h, idx) => {
+                const bg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
+                const katName = kategorilerMap[h.Kategori_ID] || '-';
+                return `
+                    <tr bgcolor="${bg}" style="background-color: ${bg};">
+                        <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; color: #0f172a; font-weight: 600; border-bottom: 1px solid #e2e8f0;">
+                            ${h.Alici_Adi}
+                        </td>
+                        <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 12px; font-family: monospace; color: #64748b; border-bottom: 1px solid #e2e8f0;">
+                            ${h.Belge_Numarasi || '-'}
+                        </td>
+                        <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 12px; color: #64748b; border-bottom: 1px solid #e2e8f0;">
+                            ${h.Belge_Tarihi || '-'}
+                        </td>
+                        <td align="right" bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; font-weight: 700; color: #15803d; text-align: right; border-bottom: 1px solid #e2e8f0;">
+                            ${fmtTL(h.Tutar)}
+                        </td>
+                        <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; color: #475569; border-bottom: 1px solid #e2e8f0;">
+                            ${katName}
+                        </td>
+                        <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 12px; color: #334155; border-bottom: 1px solid #e2e8f0;">
+                            ${h.Harcama_Tipi || '-'}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        return `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; max-width: 850px; margin: 0 auto;">
+                <!-- 1. BAŞLIK VE KART BÖLÜMÜ -->
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: separate; margin-bottom: 18px; border: 2px solid #6366f1; border-radius: 8px; overflow: hidden; background-color: #ffffff;">
+                    <tr>
+                        <td colspan="2" bgcolor="#eef2ff" style="padding: 12px 18px; background-color: #eef2ff; border-bottom: 2px solid #c7d2fe; text-align: center;">
+                            <span style="font-size: 16px; font-weight: bold; color: #3730a3;">
+                                📑 Diğer Harcamalar &nbsp;|&nbsp; Şube: ${CURRENT_SUBE_ADI} &nbsp;|&nbsp; Dönem: ${CURRENT_DONEM_STR}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td width="50%" align="center" bgcolor="#f8fafc" style="padding: 14px 10px; background-color: #f8fafc; border-right: 1px solid #e2e8f0; text-align: center;">
+                            <div style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Toplam Harcama Sayısı</div>
+                            <div style="font-size: 20px; font-weight: 800; color: #312e81;">${totalCount} Adet</div>
+                        </td>
+                        <td width="50%" align="center" bgcolor="#f8fafc" style="padding: 14px 10px; background-color: #f8fafc; text-align: center;">
+                            <div style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Toplam Harcama Tutarı</div>
+                            <div style="font-size: 20px; font-weight: 800; color: #15803d;">${fmtTL(totalTutar)}</div>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- 2. HARCAMALAR TABLOSU -->
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; margin-bottom: 16px; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; background-color: #ffffff;">
+                    <thead>
+                        <tr bgcolor="#1e293b" style="background-color: #1e293b;">
+                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a;">ALICI ADI</th>
+                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a;">BELGE NO</th>
+                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a;">BELGE TARİHİ</th>
+                            <th align="right" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: right; text-transform: uppercase; border-bottom: 2px solid #0f172a;">TUTAR</th>
+                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a;">KATEGORİ</th>
+                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a;">TİP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml}
+                    </tbody>
+                    ${totalCount > 0 ? `
+                    <tfoot>
+                        <tr bgcolor="#f1f5f9" style="background-color: #f1f5f9; font-weight: bold;">
+                            <td colspan="3" bgcolor="#f1f5f9" style="padding: 12px 14px; font-size: 13px; font-weight: 800; color: #0f172a; border-top: 2px solid #cbd5e1;">
+                                GENEL TOPLAM (${totalCount} Harcama)
+                            </td>
+                            <td align="right" bgcolor="#f1f5f9" style="padding: 12px 14px; font-size: 14px; font-weight: 800; color: #15803d; text-align: right; border-top: 2px solid #cbd5e1;">
+                                ${fmtTL(totalTutar)}
+                            </td>
+                            <td colspan="2" bgcolor="#f1f5f9" style="padding: 12px 14px; border-top: 2px solid #cbd5e1;"></td>
+                        </tr>
+                    </tfoot>
+                    ` : ''}
+                </table>
+            </div>
+        `;
+    }
+
+    function buildHarcamalarWorkbook() {
+        if (typeof XLSX === 'undefined') return null;
+
+        const wb = XLSX.utils.book_new();
+        const totalCount = HARCAMALAR_DATA.length;
+        const totalTutar = HARCAMALAR_DATA.reduce((sum, h) => sum + (parseFloat(h.Tutar) || 0), 0);
+
+        const sheetData = [
+            ['DİĞER HARCAMALAR RAPORU'],
+            ['Şube:', CURRENT_SUBE_ADI],
+            ['Dönem:', CURRENT_DONEM_STR],
+            ['Toplam Harcama Sayısı:', totalCount],
+            ['Toplam Tutar:', totalTutar],
+            ['Rapor Tarihi:', new Date().toLocaleString('tr-TR')],
+            [],
+            ['ALICI ADI', 'BELGE NO', 'BELGE TARİHİ', 'TUTAR', 'KATEGORİ', 'TİP', 'GÜNLÜK', 'DÖNEM']
+        ];
+
+        HARCAMALAR_DATA.forEach(h => {
+            sheetData.push([
+                h.Alici_Adi || '',
+                h.Belge_Numarasi || '',
+                h.Belge_Tarihi || '',
+                parseFloat(h.Tutar) || 0,
+                kategorilerMap[h.Kategori_ID] || '',
+                h.Harcama_Tipi || '',
+                h.Gunluk_Harcama ? 'Evet' : 'Hayır',
+                h.Donem || ''
+            ]);
+        });
+
+        if (totalCount > 0) {
+            sheetData.push([
+                'TOPLAM',
+                `${totalCount} Harcama`,
+                '',
+                totalTutar,
+                '', '', '', ''
+            ]);
+        }
+
+        const ws = XLSX.utils.aoa_to_sheet(sheetData);
+
+        ws['!cols'] = [
+            { wch: 30 }, // ALICI ADI
+            { wch: 18 }, // BELGE NO
+            { wch: 14 }, // BELGE TARİHİ
+            { wch: 16 }, // TUTAR
+            { wch: 25 }, // KATEGORİ
+            { wch: 16 }, // TİP
+            { wch: 12 }, // GÜNLÜK
+            { wch: 12 }  // DÖNEM
+        ];
+
+        // Format Tutar
+        const numFmt = '#,##0.00';
+        const startRow = 8;
+        const endRow = startRow + totalCount + (totalCount > 0 ? 1 : 0);
+        for (let r = startRow; r < endRow; r++) {
+            const cellRef = XLSX.utils.encode_cell({ r: r, c: 3 });
+            if (ws[cellRef] && typeof ws[cellRef].v === 'number') {
+                ws[cellRef].t = 'n';
+                ws[cellRef].z = numFmt;
+            }
+        }
+        const summaryTutarRef = XLSX.utils.encode_cell({ r: 4, c: 1 });
+        if (ws[summaryTutarRef] && typeof ws[summaryTutarRef].v === 'number') {
+            ws[summaryTutarRef].t = 'n';
+            ws[summaryTutarRef].z = numFmt;
+        }
+
+        XLSX.utils.book_append_sheet(wb, ws, 'Diğer Harcamalar');
+        return wb;
+    }
+
     function exportToExcel() {
-        const table = document.getElementById('dataTable');
-        const clone = table.cloneNode(true);
-        clone.querySelectorAll('th:last-child, td:last-child').forEach(el => el.remove());
-        const wb = XLSX.utils.table_to_book(clone, { sheet: "Diğer Harcamalar" });
-        XLSX.writeFile(wb, "Diger_Harcamalar.xlsx");
+        const wb = buildHarcamalarWorkbook();
+        if (!wb) {
+            alert('Excel kütüphanesi yüklenemedi.');
+            return;
+        }
+        XLSX.writeFile(wb, `Diger_Harcamalar_${CURRENT_SUBE_ADI.replace(/[^a-zA-Z0-9_\-]/g, '_')}_${CURRENT_DONEM_STR}.xlsx`);
+    }
+
+    function getHarcamalarReportExcelBase64() {
+        const wb = buildHarcamalarWorkbook();
+        if (!wb) return null;
+        return XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+    }
+
+    function openReportMailModalCustom() {
+        openReportMailModal({
+            title: `Diğer Harcamalar (Şube: ${CURRENT_SUBE_ADI}, Dönem: ${CURRENT_DONEM_STR})`,
+            filename: `Diger_Harcamalar_${CURRENT_SUBE_ADI.replace(/[^a-zA-Z0-9_\-]/g, '_')}_${CURRENT_DONEM_STR}.xlsx`,
+            getHtml: getHarcamalarReportMailHtml,
+            getExcelBase64: getHarcamalarReportExcelBase64
+        });
     }
 
     let currentHarcamaId = null;
@@ -1072,7 +1469,10 @@
 
     function renderDefaultModalContent() {
         const todayStr = new Date().toISOString().split('T')[0];
-        const activeDonem = document.getElementById('filterDonem') ? document.getElementById('filterDonem').value : '{{ secili_donem }}';
+        let activeDonem = document.getElementById('filterDonem') ? document.getElementById('filterDonem').value : '{{ secili_donem }}';
+        if (!activeDonem || activeDonem === 'all') {
+            activeDonem = '{{ current_donem }}';
+        }
 
         // Subeler options template
         const subeOptionsHtml = (selectedId) => {
@@ -1102,6 +1502,7 @@
             const isNakit = rec.Harcama_Tipi === 'Nakit' ? 'selected' : '';
             const isBanka = rec.Harcama_Tipi === 'Banka Ödeme' ? 'selected' : '';
             const isKredi = rec.Harcama_Tipi === 'Kredi Kartı' ? 'selected' : '';
+            const isYemek = rec.Harcama_Tipi === 'Y. Kartı' ? 'selected' : '';
             const isGunlukChecked = rec.Gunluk_Harcama ? 'checked' : '';
 
             rowsHtml += `
@@ -1128,6 +1529,7 @@
                             <option value="Nakit" ${isNakit}>Nakit</option>
                             <option value="Banka Ödeme" ${isBanka}>Banka Ödeme</option>
                             <option value="Kredi Kartı" ${isKredi}>Kredi Kartı</option>
+                            <option value="Y. Kartı" ${isYemek}>Y. Kartı</option>
                         </select>
                     </td>
                     <td style="min-width: 110px;">
