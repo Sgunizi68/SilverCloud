@@ -32,6 +32,33 @@ def get_kullanici_by_username(db: Session, username: str) -> Optional[Kullanici]
     return db.scalars(stmt).unique().first()
 
 
+def get_kullanici_by_username_or_email(db: Session, identifier: str) -> Optional[Kullanici]:
+    """
+    Get a user by username or email address (case-insensitive).
+    """
+    stmt = (
+        select(Kullanici)
+        .where(
+            (Kullanici.Kullanici_Adi.ilike(identifier)) |
+            (Kullanici.Email.ilike(identifier))
+        )
+        .options(joinedload(Kullanici.kullanici_rolleri))
+    )
+    return db.scalars(stmt).unique().first()
+
+
+def update_user_password(db: Session, kullanici_id: int, new_password_hash: str) -> bool:
+    """
+    Update password hash for a user.
+    """
+    user = db.get(Kullanici, kullanici_id)
+    if not user:
+        return False
+    user.Password = new_password_hash
+    db.commit()
+    return True
+
+
 def get_kullanici_by_id(db: Session, kullanici_id: int) -> Optional[Kullanici]:
     """
     Get a user by ID.

@@ -64,6 +64,111 @@ def login():
     return render_template("login.html", error=error)
 
 
+@web_auth_bp.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    """
+    Şifre Sıfırlama:
+    Kullanıcı adı veya e-posta girildiğinde yeni güvenli şifre üretir,
+    kullanıcının şifresini günceller ve yeni şifreyi kullanıcının e-posta adresine gönderir.
+    """
+    error = None
+    message = None
+    
+    if request.method == "POST":
+        identifier = request.form.get("username_or_email", "").strip()
+        if not identifier:
+            error = "Lütfen kullanıcı adı veya e-posta adresinizi giriniz."
+            return render_template("login.html", error=error, show_forgot_modal=True)
+            
+        db_session = get_db_session()
+        user = queries.get_kullanici_by_username_or_email(db_session, identifier)
+        
+        if not user:
+            db_session.close()
+            error = "Bu kullanıcı adı veya e-posta adresine ait hesap bulunamadı."
+            return render_template("login.html", error=error, show_forgot_modal=True)
+            
+        if not user.Email or "@" not in user.Email:
+            db_session.close()
+            error = f"'{user.Kullanici_Adi}' kullanıcısına tanımlı geçerli bir e-posta adresi bulunmuyor. Lütfen sistem yöneticiniz ile iletişime geçiniz."
+            return render_template("login.html", error=error, show_forgot_modal=True)
+            
+        # Yeni rastgele şifre üret
+        import secrets
+        import string
+        letters = string.ascii_letters
+        digits = string.digits
+        # 8 karakterlik güçlü şifre (harf ve rakam kombinasyonu)
+        new_password = "".join(secrets.choice(letters + digits) for _ in range(8))
+        new_hash = security.get_password_hash(new_password)
+        
+        # Veritabanında güncelle
+        queries.update_user_password(db_session, user.Kullanici_ID, new_hash)
+        recipient_email = user.Email
+        user_name = user.Adi_Soyadi or user.Kullanici_Adi
+        db_session.close()
+        
+        # E-posta içeriği
+        from app.common.mail import send_email
+        subject = "SilverCloud - Yeni Şifreniz"
+        text_body = f"""Merhaba {user_name},
+
+SilverCloud hesabınız için yeni şifreniz başarıyla oluşturuldu.
+
+Kullanıcı Adı: {user.Kullanici_Adi}
+Yeni Şifre: {new_password}
+
+Güvenliğiniz için sisteme giriş yaptıktan sonra şifrenizi değiştirmenizi tavsiye ederiz.
+
+Saygılarımızla,
+SilverCloud Ekibi
+"""
+        html_body = f"""
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 500px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background: #ffffff;">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; padding: 25px 20px; text-align: center;">
+                <h2 style="margin: 0; font-size: 22px;">SilverCloud</h2>
+                <p style="margin: 6px 0 0; font-size: 14px; opacity: 0.9;">Şifre Sıfırlama Bildirimi</p>
+            </div>
+            <div style="padding: 25px 20px; color: #334155;">
+                <p style="font-size: 15px; margin-top: 0;">Merhaba <strong>{user_name}</strong>,</p>
+                <p style="font-size: 14px; line-height: 1.5;">Hesabınız için şifre sıfırlama talebinde bulunuldu. Yeni giriş bilgileriniz aşağıdadır:</p>
+                <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 15px; margin: 20px 0; text-align: center;">
+                    <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">KULLANICI ADI</div>
+                    <div style="font-size: 16px; font-weight: bold; color: #1e293b; margin-bottom: 12px;">{user.Kullanici_Adi}</div>
+                    <div style="font-size: 12px; color: #64748b; margin-bottom: 4px;">YENİ ŞİFRENİZ</div>
+                    <div style="font-size: 22px; font-weight: 800; font-family: monospace; color: #4338ca; letter-spacing: 2px;">{new_password}</div>
+                </div>
+                <p style="font-size: 13px; color: #64748b; line-height: 1.5;">Giriş yaptıktan sonra şifrenizi hatırlayabileceğiniz yeni bir şifre ile güncellemenizi öneririz.</p>
+            </div>
+            <div style="background: #f1f5f9; padding: 12px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0;">
+                SilverCloud &copy; Tüm Hakları Saklıdır.
+            </div>
+        </div>
+        """
+        
+        email_sent = send_email(to=recipient_email, subject=subject, body=text_body, html=html_body)
+        
+        # Masked email for security display (e.g., a***n@domain.com)
+        parts = recipient_email.split("@")
+        masked_email = recipient_email
+        if len(parts) == 2:
+            name_part, domain_part = parts
+            if len(name_part) > 2:
+                masked_email = f"{name_part[0]}***{name_part[-1]}@{domain_part}"
+            else:
+                masked_email = f"{name_part[0]}*@{domain_part}"
+                
+        if email_sent:
+            message = f"Yeni şifreniz '{masked_email}' adresine gönderildi. Lütfen e-postanızı kontrol ediniz."
+            return render_template("login.html", message=message)
+        else:
+            error = f"Şifreniz güncellendi ancak '{masked_email}' adresine e-posta gönderilirken bir sorun oluştu. Lütfen SMTP ayarlarını kontrol ediniz."
+            return render_template("login.html", error=error)
+            
+    return redirect(url_for('web_auth.login'))
+
+
+
 @web_auth_bp.route("/dashboard")
 @login_required
 @permission_required("Dashboard Ekranı Görüntüleme")
