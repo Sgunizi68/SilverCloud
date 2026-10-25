@@ -252,12 +252,13 @@
             top: 100%;
             right: 0;
             background: white;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            border-radius: 5px;
-            min-width: 150px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+            border-radius: 8px;
+            min-width: 170px;
             display: none;
             z-index: 1000;
-            padding: 8px 0;
+            padding: 6px 0;
+            border: 1px solid #e2e8f0;
         }
 
         .profile-dropdown.show {
@@ -268,23 +269,41 @@
             margin: 0;
         }
 
-        .profile-dropdown button {
+        .profile-dropdown button,
+        .profile-dropdown a {
             width: 100%;
             text-align: left;
-            padding: 10px 15px;
+            padding: 10px 16px;
             background: none;
             border: none;
             cursor: pointer;
-            color: #333;
-            transition: background 0.2s;
+            color: #334155;
+            transition: all 0.2s;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+            font-size: 13.5px;
+            font-weight: 500;
+            text-decoration: none;
+            box-sizing: border-box;
+            font-family: inherit;
         }
 
-        .profile-dropdown button:hover {
-            background: #f5f5f5;
-            color: #e74c3c;
+        .profile-dropdown button:hover,
+        .profile-dropdown a:hover {
+            background: #f1f5f9;
+            color: #2563eb;
+        }
+
+        .profile-dropdown .logout-item:hover {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .profile-dropdown-divider {
+            height: 1px;
+            background: #e2e8f0;
+            margin: 4px 0;
         }
 
         /* Main Content */
@@ -1038,8 +1057,12 @@
                         <div style="font-weight: 500;">{{ user.Kullanici_Adi if user else 'Misafir' }}</div>
                         <div style="font-size: 12px;">▼</div>
                         <div class="profile-dropdown" id="profileDropdown">
+                            <button type="button" onclick="openChangePasswordModal()">
+                                🔑 Şifre Değiştir
+                            </button>
+                            <div class="profile-dropdown-divider"></div>
                             <form action="/logout" method="POST">
-                                <button type="submit">🚪 Çıkış Yap</button>
+                                <button type="submit" class="logout-item">🚪 Çıkış Yap</button>
                             </form>
                         </div>
                     </div>
@@ -1371,6 +1394,140 @@
                 btnSend.innerHTML = originalBtnHtml;
             }
         };
+        // ==========================================
+        // ŞİFRE DEĞİŞTİRME MODAL SİSTEMİ
+        // ==========================================
+        window.openChangePasswordModal = function() {
+            const dropdown = document.getElementById('profileDropdown');
+            if (dropdown) dropdown.classList.remove('show');
+
+            const contentHtml = `
+                <form id="changePasswordForm" onsubmit="submitChangePassword(event)" style="font-family: inherit;">
+                    <div id="changePasswordError" style="display:none; background:#fee2e2; color:#991b1b; border:1px solid #f87171; padding:10px 14px; border-radius:6px; font-size:13px; margin-bottom:15px;"></div>
+                    <div id="changePasswordSuccess" style="display:none; background:#dcfce7; color:#166534; border:1px solid #86efac; padding:10px 14px; border-radius:6px; font-size:13px; margin-bottom:15px;"></div>
+
+                    <div style="margin-bottom: 14px;">
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 5px;">Mevcut Şifre</label>
+                        <input type="password" id="currentPasswordInput" name="current_password" required
+                               style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; box-sizing: border-box;"
+                               placeholder="Mevcut şifrenizi giriniz">
+                    </div>
+
+                    <div style="margin-bottom: 14px;">
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 5px;">Yeni Şifre</label>
+                        <input type="password" id="newPasswordInput" name="new_password" required minlength="4"
+                               style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; box-sizing: border-box;"
+                               placeholder="En az 4 karakter">
+                    </div>
+
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 5px;">Yeni Şifre (Tekrar)</label>
+                        <input type="password" id="confirmPasswordInput" name="confirm_password" required minlength="4"
+                               style="width: 100%; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; box-sizing: border-box;"
+                               placeholder="Yeni şifrenizi tekrar giriniz">
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+                        <button type="button" onclick="hideModal()" 
+                                style="padding: 8px 16px; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">
+                            İptal
+                        </button>
+                        <button type="submit" id="btnSubmitChangePassword"
+                                style="padding: 8px 18px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                            <i class="fas fa-key"></i> Şifreyi Güncelle
+                        </button>
+                    </div>
+                </form>
+            `;
+
+            showModal('🔑 Şifre Değiştir', contentHtml);
+            setTimeout(() => {
+                const inp = document.getElementById('currentPasswordInput');
+                if (inp) inp.focus();
+            }, 150);
+        };
+
+        window.submitChangePassword = async function(e) {
+            e.preventDefault();
+            const errDiv = document.getElementById('changePasswordError');
+            const succDiv = document.getElementById('changePasswordSuccess');
+            const btnSubmit = document.getElementById('btnSubmitChangePassword');
+
+            if (errDiv) errDiv.style.display = 'none';
+            if (succDiv) succDiv.style.display = 'none';
+
+            const curPass = document.getElementById('currentPasswordInput').value.trim();
+            const newPass = document.getElementById('newPasswordInput').value.trim();
+            const confPass = document.getElementById('confirmPasswordInput').value.trim();
+
+            if (!curPass || !newPass || !confPass) {
+                if (errDiv) {
+                    errDiv.textContent = 'Lütfen tüm alanları doldurunuz.';
+                    errDiv.style.display = 'block';
+                }
+                return;
+            }
+
+            if (newPass !== confPass) {
+                if (errDiv) {
+                    errDiv.textContent = 'Yeni şifreler birbiriyle uyuşmuyor.';
+                    errDiv.style.display = 'block';
+                }
+                return;
+            }
+
+            if (newPass.length < 4) {
+                if (errDiv) {
+                    errDiv.textContent = 'Yeni şifreniz en az 4 karakter olmalıdır.';
+                    errDiv.style.display = 'block';
+                }
+                return;
+            }
+
+            btnSubmit.disabled = true;
+            const originalBtnHtml = btnSubmit.innerHTML;
+            btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Güncelleniyor...';
+
+            try {
+                const formData = new FormData();
+                formData.append('current_password', curPass);
+                formData.append('new_password', newPass);
+                formData.append('confirm_password', confPass);
+
+                const response = await fetch('/change-password', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    if (succDiv) {
+                        succDiv.textContent = data.message || 'Şifreniz başarıyla güncellendi.';
+                        succDiv.style.display = 'block';
+                    }
+                    showToast('Şifreniz başarıyla değiştirildi.', 'success');
+                    setTimeout(() => {
+                        hideModal();
+                    }, 1200);
+                } else {
+                    if (errDiv) {
+                        errDiv.textContent = data.message || 'Şifre güncellenemedi.';
+                        errDiv.style.display = 'block';
+                    }
+                }
+            } catch (err) {
+                console.error('Password change error:', err);
+                if (errDiv) {
+                    errDiv.textContent = 'İşlem sırasında bir hata oluştu: ' + (err.message || err);
+                    errDiv.style.display = 'block';
+                }
+            } finally {
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = originalBtnHtml;
+            }
+        };
+
         document.addEventListener('DOMContentLoaded', () => {
             // Profile Dropdown Toggle
             const userProfileBtn = document.getElementById('userProfileBtn');

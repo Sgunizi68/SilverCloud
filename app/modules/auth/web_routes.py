@@ -259,6 +259,48 @@ def logout():
     return redirect(url_for('web_auth.login'))
 
 
+@web_auth_bp.route("/change-password", methods=["POST"])
+@login_required
+def change_password():
+    """
+    Şifre Değiştirme Endpoint'i:
+    Kullanıcının mevcut şifresini doğrular, yeni şifreyi bcrypt ile hash'leyip günceller.
+    """
+    from flask import jsonify
+    
+    current_password = request.form.get("current_password", "").strip()
+    new_password = request.form.get("new_password", "").strip()
+    confirm_password = request.form.get("confirm_password", "").strip()
+    
+    if not current_password or not new_password or not confirm_password:
+        return jsonify({"success": False, "message": "Lütfen tüm alanları doldurunuz."}), 400
+        
+    if new_password != confirm_password:
+        return jsonify({"success": False, "message": "Yeni şifreler birbiriyle eşleşmiyor."}), 400
+        
+    if len(new_password) < 4:
+        return jsonify({"success": False, "message": "Yeni şifre en az 4 karakter olmalıdır."}), 400
+        
+    db_session = get_db_session()
+    user = queries.get_kullanici_by_id(db_session, session['user_id'])
+    
+    if not user:
+        db_session.close()
+        return jsonify({"success": False, "message": "Kullanıcı bulunamadı."}), 404
+        
+    # Mevcut şifreyi kontrol et
+    if not security.verify_password(current_password, user.Password):
+        db_session.close()
+        return jsonify({"success": False, "message": "Mevcut şifreniz hatalı."}), 400
+        
+    # Yeni şifreyi hash'le ve kaydet
+    new_hash = security.get_password_hash(new_password)
+    queries.update_user_password(db_session, user.Kullanici_ID, new_hash)
+    db_session.close()
+    
+    return jsonify({"success": True, "message": "Şifreniz başarıyla değiştirildi."})
+
+
 @web_auth_bp.route("/")
 def index():
     """
@@ -267,3 +309,4 @@ def index():
     if 'user_id' in session:
         return redirect(url_for('web_auth.dashboard'))
     return redirect(url_for('web_auth.login'))
+
