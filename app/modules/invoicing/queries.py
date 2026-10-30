@@ -2665,8 +2665,9 @@ def get_yemek_ceki_kontrol_dashboard_data(db: Session, sube_id: int, donem: int)
                 if best_odeme:
                     odeme_info = {'tarih': best_odeme.Tarih, 'tutar': best_odeme.Tutar}
                 else:
-                    # 3b. Group match: Check if multiple checks share the same date/period (e.g. same Son_Tarih)
+                    # 3b. Group match: Check if multiple checks share the same date OR close invoice/check dates (+/- 3 days)
                     # and a single combined payment was made
+                    # First check exact same Son_Tarih
                     same_date_cekler = [c for c in cekler if c.Son_Tarih == cek.Son_Tarih]
                     if len(same_date_cekler) > 1:
                         group_total_tutar = sum(c.Tutar for c in same_date_cekler)
@@ -2679,10 +2680,7 @@ def get_yemek_ceki_kontrol_dashboard_data(db: Session, sube_id: int, donem: int)
                                         if not best_group_odeme or abs(o.Tutar - group_expected_odeme) < abs(best_group_odeme.Tutar - group_expected_odeme):
                                             best_group_odeme = o
                         if best_group_odeme:
-                            # Distribute payment amount proportionately
-                            # Ensure sum of distributed parts exactly equals the payment amount
                             proportional_share = (cek.Tutar / group_total_tutar * best_group_odeme.Tutar).quantize(Decimal('0.01'))
-                            # If this is the last check in the group, allocate the exact remainder to prevent 1 cent rounding difference
                             if cek.ID == same_date_cekler[-1].ID:
                                 other_shares = sum(
                                     (c.Tutar / group_total_tutar * best_group_odeme.Tutar).quantize(Decimal('0.01'))
@@ -2690,6 +2688,48 @@ def get_yemek_ceki_kontrol_dashboard_data(db: Session, sube_id: int, donem: int)
                                 )
                                 proportional_share = best_group_odeme.Tutar - other_shares
                             odeme_info = {'tarih': best_group_odeme.Tarih, 'tutar': proportional_share}
+
+                    # If not matched yet, check candidate partner checks in the same category within +/- 3 days (invoice date or check date)
+                    if not odeme_info:
+                        for other_c in cekler:
+                            if other_c.ID == cek.ID:
+                                continue
+                            
+                            # Check date closeness: invoice dates within 3 days OR Son_Tarih within 3 days
+                            is_close_date = False
+                            if abs((other_c.Son_Tarih - cek.Son_Tarih).days) <= 3:
+                                is_close_date = True
+                            elif fat_match:
+                                # find other check's invoice
+                                other_fat = None
+                                for f in all_fat_matches:
+                                    if abs(f.Tutar - other_c.Tutar) <= 2.0 and f.Fatura_Tarihi <= other_c.Son_Tarih + timedelta(days=95):
+                                        if not other_fat or abs(f.Tutar - other_c.Tutar) < abs(other_fat.Tutar - other_c.Tutar):
+                                            other_fat = f
+                                if other_fat and abs((other_fat.Fatura_Tarihi - fat_match.Fatura_Tarihi).days) <= 3:
+                                    is_close_date = True
+
+                            if is_close_date:
+                                pair_total_tutar = cek.Tutar + other_c.Tutar
+                                pair_expected_odeme = pair_total_tutar * coeff
+                                min_limit_tarih = min(cek.Son_Tarih, other_c.Son_Tarih)
+                                max_limit_tarih = max(cek.Son_Tarih, other_c.Son_Tarih) + timedelta(days=120)
+                                best_pair_odeme = None
+                                for o in all_odeme_matches:
+                                    if o.Kategori_ID == pay_kat_id:
+                                        if o.Tarih >= min_limit_tarih and o.Tarih <= max_limit_tarih:
+                                            if abs(o.Tutar - pair_expected_odeme) <= 1.0:
+                                                if not best_pair_odeme or abs(o.Tutar - pair_expected_odeme) < abs(best_pair_odeme.Tutar - pair_expected_odeme):
+                                                    best_pair_odeme = o
+                                if best_pair_odeme:
+                                    # Proportionally distribute payment
+                                    if cek.ID < other_c.ID:
+                                        proportional_share = (cek.Tutar / pair_total_tutar * best_pair_odeme.Tutar).quantize(Decimal('0.01'))
+                                    else:
+                                        other_share = (other_c.Tutar / pair_total_tutar * best_pair_odeme.Tutar).quantize(Decimal('0.01'))
+                                        proportional_share = best_pair_odeme.Tutar - other_share
+                                    odeme_info = {'tarih': best_pair_odeme.Tarih, 'tutar': proportional_share}
+                                    break
 
             # 4. Gelir Tutar Check (Range: Ilk_Tarih to Son_Tarih)
             gelir_tutar = get_gelir_sum(kat.Kategori_ID, cek.Ilk_Tarih, cek.Son_Tarih)
@@ -2744,6 +2784,21 @@ def get_yemek_ceki_kontrol_dashboard_data(db: Session, sube_id: int, donem: int)
 
     total_fark = total_donem_tutar - total_gelir
 
+    # Ödeme günlerine göre toplam tutarlar
+    odeme_gunleri_map = {}
+    for group in results:
+        kat_adi = group[0]['label']
+        for row in group[1:]:
+            ot = row.get('odeme_tarihi')
+            tutar = row.get('odeme_tutari') or Decimal('0')
+            if ot and tutar > Decimal('0'):
+                if ot not in odeme_gunleri_map:
+                    odeme_gunleri_map[ot] = {'tarih': ot, 'toplam': Decimal('0'), 'platformlar': {}}
+                odeme_gunleri_map[ot]['toplam'] += tutar
+                odeme_gunleri_map[ot]['platformlar'][kat_adi] = odeme_gunleri_map[ot]['platformlar'].get(kat_adi, Decimal('0')) + tutar
+
+    odeme_gunleri = [odeme_gunleri_map[k] for k in sorted(odeme_gunleri_map.keys())]
+
     return {
         'platforms': results,
         'stats': {
@@ -2751,7 +2806,8 @@ def get_yemek_ceki_kontrol_dashboard_data(db: Session, sube_id: int, donem: int)
             'total_donem_tutar': total_donem_tutar,
             'total_fark': total_fark,
             'kontrol_kayit': kontrol_edilen_kayit
-        }
+        },
+        'odeme_gunleri': odeme_gunleri
     }
 
 

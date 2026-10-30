@@ -276,31 +276,6 @@
         </div>
     </div>
 
-    <!-- Stats -->
-    <div class="stat-grid">
-        <div class="stat-card card-gelir">
-            <div class="stat-label">📊 Aylık Toplam Gelir</div>
-            <div class="stat-value">{{ "{:,.2f}".format(dashboard_data.stats.total_gelir).replace(',', 'X').replace('.',
-                ',').replace('X', '.') }}</div>
-        </div>
-        <div class="stat-card card-donem">
-            <div class="stat-label">💰 Dönem Tutar Toplamı</div>
-            <div class="stat-value">{{ "{:,.2f}".format(dashboard_data.stats.total_donem_tutar).replace(',',
-                'X').replace('.', ',').replace('X', '.') }}</div>
-        </div>
-        <div class="stat-card card-fark">
-            <div class="stat-label">⚖️ Fark</div>
-            <div class="stat-value">
-                {{ "{:,.2f}".format(dashboard_data.stats.total_fark).replace(',', 'X').replace('.', ',').replace('X',
-                '.') }}
-            </div>
-        </div>
-        <div class="stat-card card-kayit">
-            <div class="stat-label">📝 Kontrol Edilen Kayıt</div>
-            <div class="stat-value">{{ dashboard_data.stats.kontrol_edilen_kayit }}</div>
-        </div>
-    </div>
-
     <!-- Table Card -->
     <div class="table-card">
         <div class="table-card-header">
@@ -428,17 +403,84 @@
             </table>
         </div>
     </div>
+
+    <!-- Ödeme Günlerine Göre Toplamlar -->
+    <div class="table-card" style="margin-top: 2rem;">
+        <div class="table-card-header" style="background: #f8fafc;">
+            <div class="header-title" style="display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-calendar-check" style="color: #2563eb;"></i>
+                <span>Ödeme Günlerine Göre Toplam Tutar</span>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="ceki-table odeme-gunleri-table">
+                <thead>
+                    <tr style="background: #334155;">
+                        <th style="text-align: center; width: 160px;">Ödeme Tarihi</th>
+                        <th style="text-align: left; padding-left: 1.5rem;">Platform / Dağılım Detayı</th>
+                        <th style="text-align: right; padding-right: 1.5rem; width: 220px;">Toplam Ödeme Tutarı</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if dashboard_data.odeme_gunleri %}
+                    {% set genel_odeme_toplam = namespace(val=0) %}
+                    {% for item in dashboard_data.odeme_gunleri %}
+                    {% set genel_odeme_toplam.val = genel_odeme_toplam.val + item.toplam %}
+                    <tr>
+                        <td style="font-weight: 700; color: #1e293b; font-size: 0.9rem;">
+                            {{ item.tarih.strftime('%d.%m.%Y') }}
+                        </td>
+                        <td style="text-align: left; padding-left: 1.5rem;">
+                            <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                                {% for plat_ad, plat_tut in item.platformlar.items() %}
+                                <span style="background: #f1f5f9; border: 1px solid #e2e8f0; padding: 4px 10px; border-radius: 6px; font-size: 0.78rem;">
+                                    <strong>{{ plat_ad }}:</strong> {{ "{:,.2f}".format(plat_tut).replace(',', 'X').replace('.', ',').replace('X', '.') }} ₺
+                                </span>
+                                {% endfor %}
+                            </div>
+                        </td>
+                        <td class="num-cell" style="padding-right: 1.5rem; font-size: 0.95rem; font-weight: 800; color: #0f766e;">
+                            {{ "{:,.2f}".format(item.toplam).replace(',', 'X').replace('.', ',').replace('X', '.') }} ₺
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    <tr style="background: #1e293b; color: #ffffff; font-weight: 800;">
+                        <td style="color: #ffffff; text-align: center; padding: 10px;">TOPLAM ÖDEME</td>
+                        <td style="color: #94a3b8; text-align: left; padding-left: 1.5rem; font-size: 0.8rem;">
+                            {{ dashboard_data.odeme_gunleri|length }} farklı ödeme gününde tahsil edilen toplam tutar
+                        </td>
+                        <td class="num-cell" style="color: #34d399; padding-right: 1.5rem; font-size: 1.05rem;">
+                            {{ "{:,.2f}".format(genel_odeme_toplam.val).replace(',', 'X').replace('.', ',').replace('X', '.') }} ₺
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="3" style="text-align: center; padding: 20px; color: #64748b;">
+                            Bu döneme ait eşleşen ödeme kaydı bulunamadı.
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
     function exportToExcel() {
-        const table = document.querySelector('.ceki-table');
-        const wb = XLSX.utils.table_to_book(table, {
-            sheet: "Yemek Ceki Raporu",
-            raw: true
-        });
+        const wb = XLSX.utils.book_new();
+        const mainTable = document.querySelector('.ceki-table');
+        if (mainTable) {
+            const wsMain = XLSX.utils.table_to_sheet(mainTable);
+            XLSX.utils.book_append_sheet(wb, wsMain, "Yemek Çeki Detay");
+        }
+        const odemeTable = document.querySelector('.odeme-gunleri-table');
+        if (odemeTable) {
+            const wsOdeme = XLSX.utils.table_to_sheet(odemeTable);
+            XLSX.utils.book_append_sheet(wb, wsOdeme, "Ödeme Günleri Toplam");
+        }
         XLSX.writeFile(wb, `Yemek_Ceki_Dashboard_{{ secili_donem }}.xlsx`);
     }
 
@@ -580,11 +622,56 @@
             }
         });
 
-        return `
-            <!-- 1. ÜST ÖZET KARTLAR -->
-            ${summaryCardsHtml}
+        // 3. ÖDEME GÜNLERİ TABLOSU
+        let odemeTableHtml = '';
+        const odemeTableEl = document.querySelector('.odeme-gunleri-table');
+        if (odemeTableEl) {
+            let odemeRowsHtml = '';
+            odemeTableEl.querySelectorAll('tbody tr').forEach(tr => {
+                const tds = tr.querySelectorAll('td');
+                if (tds.length === 3) {
+                    const isTotal = tr.style.background.includes('rgb(30, 41, 59)') || tr.textContent.includes('TOPLAM ÖDEME');
+                    const bg = isTotal ? '#1e293b' : '#ffffff';
+                    const textColor = isTotal ? '#ffffff' : '#1e293b';
+                    odemeRowsHtml += `
+                        <tr bgcolor="${bg}" style="background-color: ${bg}; border-bottom: 1px solid #e2e8f0;">
+                            <td bgcolor="${bg}" align="center" style="padding: 9px 10px; font-weight: 700; color: ${textColor}; font-size: 12px; background-color: ${bg}; text-align: center;">
+                                ${tds[0].textContent.trim()}
+                            </td>
+                            <td bgcolor="${bg}" style="padding: 9px 12px; font-size: 12px; color: ${isTotal ? '#94a3b8' : '#334155'}; background-color: ${bg}; text-align: left;">
+                                ${tds[1].textContent.trim().replace(/\s+/g, ' ')}
+                            </td>
+                            <td bgcolor="${bg}" align="right" style="padding: 9px 12px; font-weight: 800; color: ${isTotal ? '#34d399' : '#0f766e'}; font-size: 13px; background-color: ${bg}; text-align: right;">
+                                ${tds[2].textContent.trim()}
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
 
-            <!-- 2. ANA TABLO KARTI (Ekran Tasarımıyla Birebir) -->
+            odemeTableHtml = `
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; margin-top: 20px; border: 2px solid #334155; border-radius: 8px; overflow: hidden; background-color: #ffffff;">
+                    <tr>
+                        <th colspan="3" bgcolor="#334155" style="background-color: #334155; color: #ffffff; padding: 10px 14px; text-align: left; font-size: 13px; font-weight: 700;">
+                            📅 Ödeme Günlerine Göre Toplam Tutar
+                        </th>
+                    </tr>
+                    <thead>
+                        <tr bgcolor="#475569" style="background-color: #475569;">
+                            <th align="center" bgcolor="#475569" style="padding: 8px 10px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: center; width: 140px;">Ödeme Tarihi</th>
+                            <th align="left" bgcolor="#475569" style="padding: 8px 12px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left;">Platform Detayı</th>
+                            <th align="right" bgcolor="#475569" style="padding: 8px 12px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: right; width: 200px;">Toplam Ödeme Tutarı</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${odemeRowsHtml}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        return `
+            <!-- ANA TABLO KARTI -->
             <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; margin-bottom: 24px; border: 2px solid #455a64; border-radius: 8px; overflow: hidden; background-color: #ffffff; box-shadow: 0 2px 10px rgba(0,0,0,0.06);">
                 <tr>
                     <th colspan="12" bgcolor="#1a2340" style="background-color: #1a2340; color: #ffffff; padding: 14px 18px; text-align: center; font-size: 15px; font-weight: 700; letter-spacing: 0.5px;">
@@ -611,6 +698,9 @@
                     ${tableRowsHtml}
                 </tbody>
             </table>
+
+            <!-- ÖDEME GÜNLERİ TABLOSU -->
+            ${odemeTableHtml}
         `;
     }
 
@@ -622,25 +712,16 @@
 
         const wb = XLSX.utils.book_new();
 
-        // 1. Özet Sayfası
-        const summaryData = [
-            ['YEMEK ÇEKİ KONTROL DASHBOARD - ÖZET'],
-            ['Şube:', '{{ sube_adi }}'],
-            ['Dönem:', '{{ secili_donem // 100 + 2000 }} / {{ "%02d" % (secili_donem % 100) }}'],
-            ['Rapor Tarihi:', new Date().toLocaleString('tr-TR')],
-            [],
-            ['Metrik', 'Değer'],
-            ['Aylık Toplam Gelir', parseTurkishDecimal("{{ '{:,.2f}'.format(dashboard_data.stats.total_gelir) }}")],
-            ['Dönem Tutar Toplamı', parseTurkishDecimal("{{ '{:,.2f}'.format(dashboard_data.stats.total_donem_tutar) }}")],
-            ['Fark', parseTurkishDecimal("{{ '{:,.2f}'.format(dashboard_data.stats.total_fark) }}")],
-            ['Kontrol Edilen Kayıt', {{ dashboard_data.stats.kontrol_edilen_kayit }}]
-        ];
-        const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
-        XLSX.utils.book_append_sheet(wb, wsSummary, 'Özet');
-
-        // 2. Detay Sayfası
+        // 1. Detay Sayfası
         const wsDetail = XLSX.utils.table_to_sheet(table);
         XLSX.utils.book_append_sheet(wb, wsDetail, 'Yemek Çeki Detay');
+
+        // 2. Ödeme Günleri Sayfası
+        const odemeTable = document.querySelector('.odeme-gunleri-table');
+        if (odemeTable) {
+            const wsOdeme = XLSX.utils.table_to_sheet(odemeTable);
+            XLSX.utils.book_append_sheet(wb, wsOdeme, 'Ödeme Günleri Toplam');
+        }
 
         return XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
     }
