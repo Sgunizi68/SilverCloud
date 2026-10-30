@@ -464,6 +464,73 @@
             </table>
         </div>
     </div>
+
+    <!-- Gelecek / Beklenen Ödemeler -->
+    {% if dashboard_data.gelecek_odeme_gunleri %}
+    <div class="table-card" style="margin-top: 2rem;">
+        <div class="table-card-header" style="background: #fffbeb;">
+            <div class="header-title" style="display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-clock" style="color: #d97706;"></i>
+                <span style="color: #92400e;">Gelecek / Beklenen Ödemeler</span>
+                <span style="font-size: 0.75rem; background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; border: 1px solid #fcd34d; font-weight: 600;">
+                    Fatura tarihi + 1 ay baz alınmıştır
+                </span>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="ceki-table gelecek-odeme-table">
+                <thead>
+                    <tr style="background: #92400e;">
+                        <th style="text-align: center; width: 160px;">Beklenen Ödeme Tarihi</th>
+                        <th style="text-align: left; padding-left: 1.5rem;">Platform / Dağılım Detayı</th>
+                        <th style="text-align: right; padding-right: 1.5rem; width: 220px;">Beklenen Tutar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set genel_gelecek_toplam = namespace(val=0) %}
+                    {% for item in dashboard_data.gelecek_odeme_gunleri %}
+                    {% set genel_gelecek_toplam.val = genel_gelecek_toplam.val + item.toplam %}
+                    <tr style="{{ 'background: #fff7ed;' if item.gecikti else '' }}">
+                        <td style="font-weight: 700; font-size: 0.9rem; text-align: center;">
+                            {% if item.gecikti %}
+                            <span style="color: #dc2626; font-weight: 800;">
+                                {{ item.tarih.strftime('%d.%m.%Y') }}
+                            </span>
+                            <span style="display: block; font-size: 0.7rem; color: #dc2626; font-weight: 600;">⚠ Gecikmiş</span>
+                            {% else %}
+                            <span style="color: #1e293b;">
+                                {{ item.tarih.strftime('%d.%m.%Y') }}
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td style="text-align: left; padding-left: 1.5rem;">
+                            <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                                {% for plat_ad, plat_tut in item.platformlar.items() %}
+                                <span style="background: #fef3c7; border: 1px solid #fcd34d; padding: 4px 10px; border-radius: 6px; font-size: 0.78rem;">
+                                    <strong>{{ plat_ad }}:</strong> {{ "{:,.2f}".format(plat_tut).replace(',', 'X').replace('.', ',').replace('X', '.') }} ₺
+                                </span>
+                                {% endfor %}
+                            </div>
+                        </td>
+                        <td class="num-cell" style="padding-right: 1.5rem; font-size: 0.95rem; font-weight: 800; color: #d97706;">
+                            {{ "{:,.2f}".format(item.toplam).replace(',', 'X').replace('.', ',').replace('X', '.') }} ₺
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    <tr style="background: #92400e; color: #ffffff; font-weight: 800;">
+                        <td style="color: #fef3c7; text-align: center; padding: 10px;">TOPLAM BEKLENEN</td>
+                        <td style="color: #fed7aa; text-align: left; padding-left: 1.5rem; font-size: 0.8rem;">
+                            {{ dashboard_data.gelecek_odeme_gunleri|length }} beklenen ödeme tarihinde öngörülen toplam tutar
+                        </td>
+                        <td class="num-cell" style="color: #fef3c7; padding-right: 1.5rem; font-size: 1.05rem;">
+                            {{ "{:,.2f}".format(genel_gelecek_toplam.val).replace(',', 'X').replace('.', ',').replace('X', '.') }} ₺
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
 

@@ -2784,7 +2784,7 @@ def get_yemek_ceki_kontrol_dashboard_data(db: Session, sube_id: int, donem: int)
 
     total_fark = total_donem_tutar - total_gelir
 
-    # Ödeme günlerine göre toplam tutarlar
+    # Ödeme günlerine göre toplam tutarlar (tahsil edilmiş ödemeler)
     odeme_gunleri_map = {}
     for group in results:
         kat_adi = group[0]['label']
@@ -2799,6 +2799,62 @@ def get_yemek_ceki_kontrol_dashboard_data(db: Session, sube_id: int, donem: int)
 
     odeme_gunleri = [odeme_gunleri_map[k] for k in sorted(odeme_gunleri_map.keys())]
 
+    # Gelecek ödemeler: ödenmemiş çekler için beklenen ödeme tarihi (son_tarih + 1 ay)
+    # Eğer beklenen tarih geçmişse, yarın olarak göster
+    today = date.today()
+    tomorrow = today + timedelta(days=1)
+
+    def add_one_month(d):
+        """Bir ay ekle (ay sonu uyumu)"""
+        m = d.month + 1
+        y = d.year + (m - 1) // 12
+        m = ((m - 1) % 12) + 1
+        import calendar as _cal
+        last = _cal.monthrange(y, m)[1]
+        return date(y, m, min(d.day, last))
+
+    gelecek_map = {}
+    for group in results:
+        kat_adi = group[0]['label']
+        for row in group[1:]:
+            # Başlık satırlarını (is_total_row) atla
+            if row.get('is_total_row'):
+                continue
+            # Zaten ödeme yapılmış satırları atla
+            if row.get('odeme_tarihi'):
+                continue
+            row_tutar = row.get('tutar') or Decimal('0')
+            if row_tutar <= Decimal('0'):
+                continue
+
+            # Beklenen ödeme tarihini hesapla: önce fatura tarihi, yoksa son_tarih kullan
+            fat_tarih = row.get('fatura_tarihi')
+            son_tarih = row.get('son_tarih')
+            baz_tarih = fat_tarih or son_tarih
+
+            if baz_tarih:
+                beklenen = add_one_month(baz_tarih)
+            else:
+                beklenen = tomorrow
+
+            # Geçmiş tarihse yarın göster
+            gosterim_tarih = beklenen if beklenen > today else tomorrow
+            # Ödeme tutarını katsayıyla hesapla
+            beklenen_odeme = (row_tutar * coeff).quantize(Decimal('0.01'))
+
+            gecikti = beklenen < today
+            key = gosterim_tarih
+            if key not in gelecek_map:
+                gelecek_map[key] = {'tarih': key, 'toplam': Decimal('0'), 'platformlar': {}, 'gecikti': gecikti}
+            gelecek_map[key]['toplam'] += beklenen_odeme
+            gelecek_map[key]['platformlar'][kat_adi] = gelecek_map[key]['platformlar'].get(kat_adi, Decimal('0')) + beklenen_odeme
+            # Eğer en az bir kalem gecikti ise tüm grubu gecikmiş işaretle
+            if gecikti:
+                gelecek_map[key]['gecikti'] = True
+
+
+    gelecek_odeme_gunleri = [gelecek_map[k] for k in sorted(gelecek_map.keys())]
+
     return {
         'platforms': results,
         'stats': {
@@ -2807,7 +2863,8 @@ def get_yemek_ceki_kontrol_dashboard_data(db: Session, sube_id: int, donem: int)
             'total_fark': total_fark,
             'kontrol_kayit': kontrol_edilen_kayit
         },
-        'odeme_gunleri': odeme_gunleri
+        'odeme_gunleri': odeme_gunleri,
+        'gelecek_odeme_gunleri': gelecek_odeme_gunleri
     }
 
 
