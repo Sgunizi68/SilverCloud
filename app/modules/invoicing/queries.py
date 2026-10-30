@@ -2655,6 +2655,7 @@ def get_yemek_ceki_kontrol_dashboard_data(db: Session, sube_id: int, donem: int)
             if pay_kat_id:
                 limit_date_odeme = cek.Son_Tarih + timedelta(days=120)
                 best_odeme = None
+                # 3a. First check for direct 1-to-1 match
                 for o in all_odeme_matches:
                     if o.Kategori_ID == pay_kat_id:
                         if o.Tarih >= cek.Son_Tarih and o.Tarih <= limit_date_odeme:
@@ -2663,6 +2664,32 @@ def get_yemek_ceki_kontrol_dashboard_data(db: Session, sube_id: int, donem: int)
                                     best_odeme = o
                 if best_odeme:
                     odeme_info = {'tarih': best_odeme.Tarih, 'tutar': best_odeme.Tutar}
+                else:
+                    # 3b. Group match: Check if multiple checks share the same date/period (e.g. same Son_Tarih)
+                    # and a single combined payment was made
+                    same_date_cekler = [c for c in cekler if c.Son_Tarih == cek.Son_Tarih]
+                    if len(same_date_cekler) > 1:
+                        group_total_tutar = sum(c.Tutar for c in same_date_cekler)
+                        group_expected_odeme = group_total_tutar * coeff
+                        best_group_odeme = None
+                        for o in all_odeme_matches:
+                            if o.Kategori_ID == pay_kat_id:
+                                if o.Tarih >= cek.Son_Tarih and o.Tarih <= limit_date_odeme:
+                                    if abs(o.Tutar - group_expected_odeme) <= 1.0:
+                                        if not best_group_odeme or abs(o.Tutar - group_expected_odeme) < abs(best_group_odeme.Tutar - group_expected_odeme):
+                                            best_group_odeme = o
+                        if best_group_odeme:
+                            # Distribute payment amount proportionately
+                            # Ensure sum of distributed parts exactly equals the payment amount
+                            proportional_share = (cek.Tutar / group_total_tutar * best_group_odeme.Tutar).quantize(Decimal('0.01'))
+                            # If this is the last check in the group, allocate the exact remainder to prevent 1 cent rounding difference
+                            if cek.ID == same_date_cekler[-1].ID:
+                                other_shares = sum(
+                                    (c.Tutar / group_total_tutar * best_group_odeme.Tutar).quantize(Decimal('0.01'))
+                                    for c in same_date_cekler[:-1]
+                                )
+                                proportional_share = best_group_odeme.Tutar - other_shares
+                            odeme_info = {'tarih': best_group_odeme.Tarih, 'tutar': proportional_share}
 
             # 4. Gelir Tutar Check (Range: Ilk_Tarih to Son_Tarih)
             gelir_tutar = get_gelir_sum(kat.Kategori_ID, cek.Ilk_Tarih, cek.Son_Tarih)
