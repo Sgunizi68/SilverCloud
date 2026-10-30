@@ -353,11 +353,14 @@
 
         if (!period || !sube_id) return;
 
-        // Update title
+        // Update title with Branch and Period (e.g., Dashboard Raporu - Brandium - Ekim 2026)
         const branchName = branchEl.options[branchEl.selectedIndex].text;
-        document.getElementById('dashboard-title').textContent = `Dashboard Raporu - ${branchName}`;
-
         const [yStr, mStr] = period.split('-');
+        const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+        const monthIndex = parseInt(mStr, 10) - 1;
+        const monthName = monthNames[monthIndex] || mStr;
+        document.getElementById('dashboard-title').textContent = `Dashboard Raporu - ${branchName} - ${monthName} ${yStr}`;
+
         const donem = parseInt(yStr.substring(2) + mStr);
 
         try {
@@ -524,8 +527,10 @@
         const wb = XLSX.utils.book_new();
         const rows = [];
 
+        const branchEl = document.getElementById('branch-select');
+        const branchName = branchEl ? branchEl.options[branchEl.selectedIndex]?.text : '';
         rows.push(["DÖNEM", document.getElementById('period-dropdown').value]);
-        rows.push(["ŞUBE", document.getElementById('dashboard-title').textContent.split(' - ')[1]]);
+        rows.push(["ŞUBE", branchName]);
         rows.push([]);
 
         rows.push(["GELİRLER", "Tutar"]);
@@ -581,8 +586,10 @@
                 if (!lastFetchedData) return null;
                 const wb = XLSX.utils.book_new();
                 const rows = [];
+                const branchEl = document.getElementById('branch-select');
+                const branchName = branchEl ? branchEl.options[branchEl.selectedIndex]?.text : '';
                 rows.push(["DÖNEM", document.getElementById('period-dropdown').value]);
-                rows.push(["ŞUBE", document.getElementById('dashboard-title').textContent.split(' - ')[1] || '']);
+                rows.push(["ŞUBE", branchName]);
                 rows.push([]);
                 rows.push(["GELİRLER", "Tutar"]);
                 lastFetchedData.gelirler.forEach(it => rows.push([it.label, it.amount]));
