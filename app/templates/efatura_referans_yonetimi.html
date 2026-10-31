@@ -2,268 +2,276 @@
 
 {% block title %}e-Fatura Referans Yönetimi - SilverCloud{% endblock %}
 
-/* Nav active block */
 {% block acc_sistem_tablolari %}active{% endblock %}
 {% block acc_sistem_tablolari_content %}open{% endblock %}
 
 {% block extra_style %}
 <style>
-    .ref-page-container {
-        padding: 20px;
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.95);
+        --glass-border: rgba(255, 255, 255, 0.3);
+        --accent-color: #667eea;
+        --text-dark: #2d3748;
+        --text-gray: #718096;
     }
 
-    .card-glass {
-        background: rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(8px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
+    .main-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
         border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-        margin-bottom: 20px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        padding: 24px;
+        margin-bottom: 24px;
     }
 
-    .header-bar {
+    .page-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 15px 25px;
+        margin-bottom: 24px;
+        gap: 16px;
         flex-wrap: wrap;
-        gap: 15px;
     }
 
-    .header-title-wrapper {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-
-    .header-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
-        background: #3b82f6;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 18px;
-    }
-
-    .header-title {
-        font-size: 18px;
-        font-weight: 800;
-        color: #111827;
+    .page-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-dark);
         margin: 0;
-    }
-
-    .header-subtitle {
-        margin: 0;
-        font-size: 12px;
-        color: #64748b;
-        font-weight: 500;
-    }
-
-    .header-actions {
         display: flex;
         align-items: center;
         gap: 10px;
     }
 
-    .action-btn {
-        padding: 8px 16px;
-        border: 1px solid #e5e7eb;
-        border-radius: 10px;
-        background: white;
-        font-size: 13px;
-        font-weight: 600;
-        color: #374151;
-        cursor: pointer;
-        display: inline-flex;
+    .action-bar {
+        display: flex;
         align-items: center;
-        gap: 8px;
-        transition: all 0.2s;
-    }
-    
-    .action-btn i {
-        color: #3b82f6;
+        gap: 12px;
+        flex-wrap: wrap;
     }
 
-    .action-btn:hover {
-        background: #f9fafb;
-        border-color: #d1d5db;
-    }
-
-    .action-btn.primary {
-        background: #3b82f6;
-        color: white;
-        border-color: #3b82f6;
-    }
-
-    .action-btn.primary i {
-        color: white;
-    }
-
-    .action-btn.primary:hover {
-        background: #2563eb;
+    .search-container {
+        position: relative;
+        min-width: 250px;
     }
 
     .search-input {
-        padding: 8px 12px;
-        border: 1px solid #e5e7eb;
-        border-radius: 10px;
-        width: 220px;
-        font-size: 13px;
+        width: 100%;
+        padding: 10px 16px 10px 40px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
         outline: none;
+        transition: all 0.2s;
+        font-size: 0.9rem;
         background: white;
     }
 
     .search-input:focus {
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
 
-    /* Table styling matching reference image */
-    .ref-table-wrapper {
-        padding: 0;
+    .search-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-gray);
+        font-size: 13px;
+    }
+
+    .btn-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        color: var(--text-dark);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.95rem;
+    }
+
+    .btn-icon:hover {
+        background: #f7fafc;
+        border-color: #cbd5e0;
+    }
+
+    .btn-new {
+        background: var(--accent-color);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        transition: transform 0.2s, background 0.2s;
+        font-size: 0.9rem;
+    }
+
+    .btn-new:hover {
+        background: #5a67d8;
+        transform: translateY(-1px);
+    }
+
+    /* Table styles matching Calisan Yonetimi */
+    .table-container {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
         overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        background: #ffffff;
     }
 
-    .ref-table {
+    .data-table {
         width: 100%;
         border-collapse: collapse;
     }
 
-    .ref-table th {
-        background: #fdfdfd;
-        color: #6b7280;
-        font-size: 11px;
-        font-weight: 600;
-        padding: 12px 20px;
-        text-align: left;
-        border-bottom: 1px solid #e5e7eb;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+    .data-table thead tr {
+        background: #1e293b;
     }
 
-    .ref-table td {
-        padding: 8px 20px;
-        color: #374151;
-        font-size: 13px;
-        border-bottom: 1px solid #e5e7eb;
+    .data-table th {
+        background: #1e293b;
+        color: #ffffff;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 12px 16px;
+        text-align: left;
+        border-bottom: 2px solid #0f172a;
+    }
+
+    .data-table td {
+        padding: 12px 16px;
+        color: #1e293b;
+        font-size: 0.88rem;
+        border-bottom: 1px solid #e2e8f0;
         vertical-align: middle;
     }
 
-    .ref-table tr:hover {
-        background-color: #f9fafb;
+    .data-table tbody tr:nth-child(even) td {
+        background-color: #f8fafc;
     }
 
-    .alici-name {
-        color: #2563eb;
-        font-weight: 600;
+    .data-table tbody tr:hover td {
+        background-color: #eff6ff !important;
     }
 
-    .kategori-name {
-        color: #64748b;
-        font-size: 12px;
-    }
-
-    .action-icons {
-        display: flex;
-        gap: 6px;
-        justify-content: center;
-    }
-
-    .icon-btn {
+    .btn-row-action {
         width: 32px;
         height: 32px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        background: white;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
+        border-radius: 6px;
+        border: 1px solid transparent;
         cursor: pointer;
         transition: all 0.2s;
-        color: #64748b;
     }
 
-    .icon-btn:hover {
-        background: #f1f5f9;
-        color: #2563eb;
-        border-color: #cbd5e1;
+    .btn-edit {
+        background: #ebf4ff;
+        color: #3182ce;
     }
 
-    .icon-btn.delete {
+    .btn-edit:hover {
+        background: #bee3f8;
+    }
+
+    .btn-delete {
+        background: #fee2e2;
         color: #ef4444;
     }
 
-    .icon-btn.delete:hover {
-        background: #fef2f2;
-        border-color: #fecaca;
-        color: #dc2626;
+    .btn-delete:hover {
+        background: #fecaca;
     }
-</style>
+
+    .category-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        background: #eef2ff;
+        color: #4338ca;
+        border: 1px solid #c7d2fe;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="ref-page-container">
+<div class="main-card">
+    <div class="page-header">
+        <h2 class="page-title">
+            <span>📑 e-Fatura Referans Yönetimi</span>
+        </h2>
 
-    <!-- Header -->
-    <div class="card-glass header-bar">
-        <div class="header-title-wrapper">
-            <div class="header-icon">
-                <i class="fas fa-file-invoice"></i>
-            </div>
-            <div>
-                <h1 class="header-title">e-Fatura Referans Yönetimi</h1>
-                <p class="header-subtitle">Alıcı Bazlı Otomatik Kategori Eşleşmeleri</p>
-            </div>
-        </div>
+        <div class="action-bar">
+            <!-- Print Button -->
+            <button class="btn-icon" onclick="window.print()" title="Yazdır">
+                <i class="fas fa-print"></i>
+            </button>
 
-        <div class="header-actions">
-            <!-- Search -->
-            <input type="text" class="search-input" placeholder="Referans ara..." id="ref-search">
-            <!-- Print -->
-            <button class="action-btn" onclick="printReferanslar()" title="Yazdır">
-                <i class="fas fa-print"></i> Yazdır
+            <!-- Excel Button -->
+            <button class="btn-icon" onclick="exportReferanslarExcel()" title="Excel İndir" style="color: #16a34a;">
+                <i class="fas fa-file-excel"></i>
             </button>
-            <!-- Export -->
-            <button class="action-btn" onclick="exportReferanslarToExcel()" title="Excel'e Aktar">
-                <i class="fas fa-file-excel"></i> Excel
+
+            <!-- Mail Button -->
+            <button class="btn-icon" data-permission="Mail Gönder" onclick="openReferanslarReportMail()" title="Mail Gönder" style="color: #3b82f6;">
+                <i class="fas fa-envelope"></i>
             </button>
-            <!-- Mail Gönder -->
-            <button class="action-btn" data-permission="Mail Gönder" onclick="openReportMailModal({ tableId: 'referanslar-table' })" title="Mail Gönder">
-                <i class="fas fa-envelope" style="color: #3b82f6;"></i> Mail Gönder
-            </button>
-            <!-- New -->
-            <button class="action-btn primary" onclick="openAddModal()">
-                <i class="fas fa-plus"></i> Yeni Referans
+
+            <!-- Search Area -->
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="search-input" placeholder="Referans Ara (Alıcı, Kategori)" id="ref-search">
+            </div>
+
+            <!-- New Reference Button -->
+            <button class="btn-new" onclick="openAddModal()">
+                <i class="fas fa-plus"></i>
+                Yeni Referans
             </button>
         </div>
     </div>
 
-    <!-- Table -->
-    <div class="card-glass ref-table-wrapper">
-        <table class="ref-table" id="referanslar-table">
+    <!-- Table Container -->
+    <div class="table-responsive table-container">
+        <table class="data-table" id="referanslar-table">
             <thead>
                 <tr>
                     <th>ALICI ÜNVANI</th>
-                    <th style="width: 25%;">KATEGORİ</th>
+                    <th style="width: 35%;">KATEGORİ</th>
                     <th style="width: 100px; text-align: center;" class="hide-on-print">İŞLEMLER</th>
                 </tr>
             </thead>
             <tbody id="referanslar-tbody">
                 {% for r in referanslar %}
-                <tr>
-                    <td class="alici-name">{{ r.Alici_Unvani }}</td>
-                    <td class="kategori-name">{{ r.Kategori_Adi }}</td>
-                    <td class="hide-on-print">
-                        <div class="action-icons">
-                            <button class="icon-btn edit" title="Düzenle"
+                <tr data-unvan="{{ (r.Alici_Unvani or '') | lower }}" data-kat="{{ (r.Kategori_Adi or '') | lower }}">
+                    <td style="font-weight: 600; color: #0f172a;">{{ r.Alici_Unvani }}</td>
+                    <td>
+                        <span class="category-badge">{{ r.Kategori_Adi }}</span>
+                    </td>
+                    <td style="text-align: center;" class="hide-on-print">
+                        <div style="display: flex; gap: 6px; justify-content: center; align-items: center;">
+                            <button class="btn-row-action btn-edit" title="Düzenle"
                                 onclick="openEditModal(`{{ r.Alici_Unvani | escape }}`, {{ r.Kategori_ID }})">
-                                <i class="fas fa-pen"></i>
+                                <i class="fas fa-pencil-alt"></i>
                             </button>
-                            <button class="icon-btn delete" title="Sil"
+                            <button class="btn-row-action btn-delete" title="Sil"
                                 onclick="deleteReferans(`{{ r.Alici_Unvani | escape }}`)">
                                 <i class="fas fa-trash-alt"></i>
                             </button>
@@ -271,8 +279,9 @@
                     </td>
                 </tr>
                 {% else %}
-                <tr>
+                <tr class="no-data-row">
                     <td colspan="3" style="text-align: center; padding: 40px; color: #94a3b8;">
+                        <i class="fas fa-file-invoice" style="font-size: 32px; display: block; margin-bottom: 12px; opacity: 0.5;"></i>
                         Rehberde henüz referans bulunmuyor.
                     </td>
                 </tr>
@@ -280,29 +289,24 @@
             </tbody>
         </table>
     </div>
-
 </div>
-
-<!-- Data for Dropdown -->
-<script>
-    const KATEGORILER = {{ kategoriler | tojson | safe }};
-</script>
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
+    const KATEGORILER = {{ kategoriler | tojson | safe }};
+    const REFERANSLAR_DATA = {{ referanslar | tojson | safe }};
+
     // --- Search Logic ---
     document.addEventListener('DOMContentLoaded', () => {
         const searchInput = document.getElementById('ref-search');
         if (searchInput) {
-            searchInput.addEventListener('input', function () {
-                const term = this.value.toLowerCase();
-                document.querySelectorAll('#referanslar-tbody tr').forEach(row => {
-                    if (row.cells.length === 1) return; // Empty state row
-                    const unvan = row.cells[0].textContent.toLowerCase();
-                    const kategori = row.cells[1].textContent.toLowerCase();
-                    if (unvan.includes(term) || kategori.includes(term)) {
+            searchInput.addEventListener('keyup', function () {
+                const term = this.value.toLowerCase().trim();
+                document.querySelectorAll('#referanslar-tbody tr:not(.no-data-row)').forEach(row => {
+                    const unvan = row.getAttribute('data-unvan') || '';
+                    const kat = row.getAttribute('data-kat') || '';
+                    if (term === '' || unvan.includes(term) || kat.includes(term)) {
                         row.style.display = '';
                     } else {
                         row.style.display = 'none';
@@ -320,39 +324,32 @@
             katOpts += `<option value="${k.Kategori_ID}" ${sel}>${k.Kategori_Adi}</option>`;
         });
 
-        // If editing, Title is readonly.
         const titleField = isEdit
-            ? `<input type="text" id="Alici_Unvani" class="form-control" value="${currentUnvan}" readonly style="background:#f3f4f6; cursor:not-allowed;">`
-            : `<input type="text" id="Alici_Unvani" class="form-control" placeholder="Örn: ABC A.Ş." required>`;
+            ? `<input type="text" id="Alici_Unvani" value="${currentUnvan}" readonly style="background: #f8fafc; font-weight: 600;">`
+            : `<input type="text" id="Alici_Unvani" placeholder="Örn: ABC A.Ş." required>`;
 
         return `
             <form id="refForm" data-mode="${isEdit ? 'edit' : 'add'}" data-original="${currentUnvan}">
-                <style>
-                    .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 15px; }
-                    .form-group label { font-size: 13px; font-weight: 600; color: #475569; }
-                    .form-control { padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; outline: none; }
-                    .form-control:focus { border-color: #3b82f6; }
-                </style>
                 <div class="form-group">
                     <label for="Alici_Unvani">Alıcı Ünvanı *</label>
                     ${titleField}
                 </div>
                 <div class="form-group">
                     <label for="Kategori_ID">Kategori *</label>
-                    <select id="Kategori_ID" class="form-control" required>
+                    <select id="Kategori_ID" required>
                         ${katOpts}
                     </select>
                 </div>
-                <div class="modal-footer" style="margin-top: 25px;">
+                <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="hideModal()">İptal</button>
-                    <button type="submit" class="btn btn-primary" style="background:#3b82f6; color:white; border:none;">Kaydet</button>
+                    <button type="submit" class="btn btn-primary">${isEdit ? 'Güncelle' : 'Kaydet'}</button>
                 </div>
             </form>
         `;
     }
 
     function openAddModal() {
-        showModal('Yeni e-Fatura Referansı', referansFormHtml(false));
+        showModal('Yeni e-Fatura Referansı Ekle', referansFormHtml(false));
         document.getElementById('refForm').addEventListener('submit', handleFormSubmit);
     }
 
@@ -392,7 +389,6 @@
                 }
             } catch { showToast('Bağlantı hatası.', 'error'); }
         } else {
-            // Edit
             try {
                 const safeUrlParam = encodeURIComponent(originalUnvan);
                 const res = await fetch(`/api/v1/efatura-referans-yonetimi/${safeUrlParam}`, {
@@ -413,7 +409,7 @@
     }
 
     async function deleteReferans(unvan) {
-        if (!confirm(`'${unvan}' kaydını tamamen silmek istediğinize emin misiniz?`)) return;
+        if (!confirm(`'${unvan}' referans kaydını silmek istediğinize emin misiniz?`)) return;
         try {
             const safeUrlParam = encodeURIComponent(unvan);
             const res = await fetch(`/api/v1/efatura-referans-yonetimi/${safeUrlParam}`, { method: 'DELETE' });
@@ -427,43 +423,127 @@
         } catch { showToast('Bağlantı hatası.', 'error'); }
     }
 
-    // --- Export & Print ---
-    function exportReferanslarToExcel() {
-        const table = document.getElementById('referanslar-table');
-        const wb = XLSX.utils.table_to_book(table, { sheet: "e-Fatura Referans" });
-        XLSX.writeFile(wb, "e-Fatura_Referanslari.xlsx");
+    // ─── Referanslar Excel & Mail Raporlama ───
+    function getReferanslarReportMailHtml() {
+        const totalCount = REFERANSLAR_DATA.length;
+
+        let rowsHtml = '';
+        if (totalCount === 0) {
+            rowsHtml = `
+                <tr>
+                    <td colspan="2" align="center" bgcolor="#ffffff" style="padding: 24px; text-align: center; color: #64748b; font-size: 13px; border-bottom: 1px solid #e2e8f0;">
+                        Rehberde henüz referans bulunmuyor.
+                    </td>
+                </tr>
+            `;
+        } else {
+            rowsHtml = REFERANSLAR_DATA.map((r, idx) => {
+                const bg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
+                return `
+                    <tr bgcolor="${bg}" style="background-color: ${bg};">
+                        <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; font-weight: 600; color: #0f172a; border-bottom: 1px solid #e2e8f0;">
+                            ${r.Alici_Unvani}
+                        </td>
+                        <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; color: #4338ca; border-bottom: 1px solid #e2e8f0;">
+                            <span style="background-color: #eef2ff; color: #4338ca; padding: 3px 8px; border-radius: 6px; font-size: 12px; font-weight: 600;">
+                                ${r.Kategori_Adi}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        return `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; max-width: 800px; margin: 0 auto;">
+                <!-- 1. BAŞLIK VE KART BÖLÜMÜ -->
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: separate; margin-bottom: 18px; border: 2px solid #6366f1; border-radius: 8px; overflow: hidden; background-color: #ffffff;">
+                    <tr>
+                        <td bgcolor="#eef2ff" style="padding: 12px 18px; background-color: #eef2ff; border-bottom: 2px solid #c7d2fe; text-align: center;">
+                            <span style="font-size: 16px; font-weight: bold; color: #3730a3;">
+                                📑 e-Fatura Referans Listesi Raporu
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="center" bgcolor="#f8fafc" style="padding: 14px 10px; background-color: #f8fafc; text-align: center;">
+                            <div style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Toplam Tanımlı Referans</div>
+                            <div style="font-size: 20px; font-weight: 800; color: #312e81;">${totalCount} Kayıt</div>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- 2. REFERANSLAR TABLOSU -->
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; margin-bottom: 16px; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; background-color: #ffffff;">
+                    <thead>
+                        <tr bgcolor="#1e293b" style="background-color: #1e293b;">
+                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a;">ALICI ÜNVANI</th>
+                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a; width: 40%;">KATEGORİ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml}
+                    </tbody>
+                </table>
+            </div>
+        `;
     }
 
-    function printReferanslar() {
-        const table = document.getElementById('referanslar-table');
-        if (!table) return;
-        const clone = table.cloneNode(true);
-        // Remove 'İŞLEMLER'
-        clone.querySelectorAll('th:last-child, td:last-child').forEach(el => el.remove());
+    function buildReferanslarWorkbook() {
+        if (typeof XLSX === 'undefined') return null;
 
-        const now = new Date().toLocaleString('tr-TR');
-        const html = `<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">
-            <title>e-Fatura Referans Listesi</title>
-            <style>
-            body{font-family:Arial,sans-serif;padding:20mm;color:#111}
-            h1{font-size:20px;margin:0 0 4px}
-            p{font-size:12px;color:#666;border-bottom:1px solid #ccc;padding-bottom:10px;margin-bottom:16px}
-            table{width:100%;border-collapse:collapse}
-            th{background:#f3f4f6;font-size:11px;text-transform:uppercase;padding:10px 12px;text-align:left;border:1px solid #ddd}
-            td{padding:10px 12px;font-size:13px;border:1px solid #eee}
-            tr:nth-child(even){background:#fafafa}
-            </style>
-            </head><body>
-            <h1>SilverCloud - e-Fatura Referans Listesi</h1>
-            <p>Rapor Tarihi: ${now}</p>
-            ${clone.outerHTML}
-            </body></html>`;
-        const win = window.open('', '_blank', 'width=900,height=700');
-        win.document.write(html);
-        win.document.close();
-        win.focus();
-        win.print();
-        win.onafterprint = () => win.close();
+        const wb = XLSX.utils.book_new();
+        const totalCount = REFERANSLAR_DATA.length;
+
+        const headers = ['ALICI ÜNVANI', 'KATEGORİ'];
+
+        const sheetData = [
+            ['e-FATURA REFERANS LİSTESİ'],
+            ['Toplam Referans:', totalCount],
+            ['Rapor Tarihi:', new Date().toLocaleString('tr-TR')],
+            [],
+            headers
+        ];
+
+        REFERANSLAR_DATA.forEach(r => {
+            sheetData.push([
+                r.Alici_Unvani || '',
+                r.Kategori_Adi || ''
+            ]);
+        });
+
+        const ws = XLSX.utils.aoa_to_sheet(sheetData);
+        ws['!cols'] = [
+            { wch: 45 },
+            { wch: 30 }
+        ];
+
+        XLSX.utils.book_append_sheet(wb, ws, 'e-Fatura Referans');
+        return wb;
+    }
+
+    function exportReferanslarExcel() {
+        const wb = buildReferanslarWorkbook();
+        if (!wb) {
+            alert('Excel kütüphanesi yüklenemedi.');
+            return;
+        }
+        XLSX.writeFile(wb, 'e-Fatura_Referanslari.xlsx');
+    }
+
+    function getReferanslarReportExcelBase64() {
+        const wb = buildReferanslarWorkbook();
+        if (!wb) return null;
+        return XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+    }
+
+    function openReferanslarReportMail() {
+        openReportMailModal({
+            title: 'e-Fatura Referans Listesi',
+            filename: 'e-Fatura_Referanslari.xlsx',
+            getHtml: getReferanslarReportMailHtml,
+            getExcelBase64: getReferanslarReportExcelBase64
+        });
     }
 </script>
-{% endblock %}
+{% endblock %}

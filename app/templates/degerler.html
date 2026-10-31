@@ -2,284 +2,435 @@
 
 {% block title %}Değer Yönetimi - SilverCloud{% endblock %}
 
-/* Nav active block */
 {% block acc_sistem_tablolari %}active{% endblock %}
 {% block acc_sistem_tablolari_content %}open{% endblock %}
 
 {% block extra_style %}
 <style>
-    .deger-page-container {
-        padding: 20px;
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.95);
+        --glass-border: rgba(255, 255, 255, 0.3);
+        --accent-color: #667eea;
+        --text-dark: #2d3748;
+        --text-gray: #718096;
     }
 
-    .card-glass {
-        background: rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(8px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        border-radius: 16px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
-        transition: transform 0.2s ease;
+    .main-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        padding: 24px;
+        margin-bottom: 24px;
     }
 
-    .action-btn {
-        padding: 8px 16px;
-        border: 1px solid #e5e7eb;
-        border-radius: 10px;
-        background: white;
-        font-size: 13px;
-        font-weight: 600;
-        color: #374151;
-        cursor: pointer;
-        display: inline-flex;
+    .page-header {
+        display: flex;
+        justify-content: space-between;
         align-items: center;
-        gap: 6px;
-        transition: all 0.2s;
+        margin-bottom: 24px;
+        gap: 16px;
+        flex-wrap: wrap;
     }
 
-    .action-btn:hover {
-        background: #f9fafb;
-        border-color: #d1d5db;
+    .page-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-dark);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
     }
 
-    .action-btn.primary {
-        background: #6366f1;
-        color: white;
-        border-color: #6366f1;
+    .action-bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
     }
 
-    .action-btn.primary:hover {
-        background: #4f46e5;
+    .search-container {
+        position: relative;
+        min-width: 250px;
     }
 
     .search-input {
-        padding: 8px 12px;
-        border: 1px solid #e5e7eb;
-        border-radius: 10px;
-        width: 200px;
-        font-size: 13px;
+        width: 100%;
+        padding: 10px 16px 10px 40px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
         outline: none;
+        transition: all 0.2s;
+        font-size: 0.9rem;
         background: white;
     }
 
     .search-input:focus {
-        border-color: #6366f1;
-        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
 
-    .table-container table {
+    .search-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-gray);
+        font-size: 13px;
+    }
+
+    .btn-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        color: var(--text-dark);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.95rem;
+    }
+
+    .btn-icon:hover {
+        background: #f7fafc;
+        border-color: #cbd5e0;
+    }
+
+    .btn-new {
+        background: var(--accent-color);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        transition: transform 0.2s, background 0.2s;
+        font-size: 0.9rem;
+    }
+
+    .btn-new:hover {
+        background: #5a67d8;
+        transform: translateY(-1px);
+    }
+
+    .filter-checkbox-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 0.88rem;
+        font-weight: 500;
+        color: #475569;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .filter-checkbox-wrapper input {
+        cursor: pointer;
+        width: 16px;
+        height: 16px;
+    }
+
+    /* Table styles matching Calisan Yonetimi */
+    .table-container {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        background: #ffffff;
+    }
+
+    .data-table {
         width: 100%;
         border-collapse: collapse;
     }
 
-    .table-container th {
-        background: #fdfdfd;
-        color: #6b7280;
-        font-size: 11px;
-        font-weight: 600;
+    .data-table thead tr {
+        background: #1e293b;
+    }
+
+    .data-table th {
+        background: #1e293b;
+        color: #ffffff;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
         padding: 12px 16px;
         text-align: left;
-        border-bottom: 1px solid #e5e7eb;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+        border-bottom: 2px solid #0f172a;
     }
 
-    .table-container td {
+    .data-table td {
         padding: 12px 16px;
-        color: #374151;
-        font-size: 13px;
-        border-bottom: 1px solid #e5e7eb;
+        color: #1e293b;
+        font-size: 0.88rem;
+        border-bottom: 1px solid #e2e8f0;
+        vertical-align: middle;
     }
 
-    .table-container tr:last-child td {
-        border-bottom: none;
+    .data-table tbody tr:nth-child(even) td {
+        background-color: #f8fafc;
     }
 
-    .table-container tr:hover {
-        background-color: #f9fafb;
+    .data-table tbody tr:hover td {
+        background-color: #eff6ff !important;
     }
 
-    .deger-name {
-        color: #4f46e5;
-        font-weight: 600;
+    .btn-row-action {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: all 0.2s;
     }
 
-    .deger-value {
-        font-family: monospace;
-        font-size: 14px;
-        color: #059669;
+    .btn-edit {
+        background: #ebf4ff;
+        color: #3182ce;
+    }
+
+    .btn-edit:hover {
+        background: #bee3f8;
+    }
+
+    .btn-delete {
+        background: #fee2e2;
+        color: #ef4444;
+    }
+
+    .btn-delete:hover {
+        background: #fecaca;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11px;
         font-weight: 700;
     }
 
-    .aciklama-cell {
-        max-width: 400px;
-        color: #6b7280;
-        font-size: 12px;
-        line-height: 1.5;
+    .status-badge.active {
+        background: #dcfce7;
+        color: #15803d;
     }
 
-    .edit-btn {
-        padding: 5px 10px;
-        background: transparent;
-        border: 1px solid #e5e7eb;
-        border-radius: 6px;
-        cursor: pointer;
-        color: #6b7280;
-        transition: all 0.15s;
+    .status-badge.inactive {
+        background: #fee2e2;
+        color: #b91c1c;
     }
 
-    .edit-btn:hover {
-        background: #f3f4f6;
-        color: #374151;
-        border-color: #d1d5db;
-    }
-
-    .delete-btn {
-        padding: 5px 10px;
-        background: transparent;
-        border: 1px solid #fecaca;
-        border-radius: 6px;
-        cursor: pointer;
-        color: #ef4444;
-        transition: all 0.15s;
-    }
-
-    .delete-btn:hover {
-        background: #fef2f2;
-    }
-
-    .actions-wrapper {
-        display: flex;
-        gap: 6px;
-        justify-content: center;
-        align-items: center;
+    .deger-num {
+        font-family: monospace;
+        font-weight: 700;
+        color: #0f766e;
+        font-size: 0.95rem;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="deger-page-container">
-    <!-- Dashboard-style Header Bar -->
-    <div class="card-glass"
-        style="padding: 15px 25px; margin-bottom: 25px; display: flex; flex-direction: row; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <div
-                style="width: 40px; height: 40px; border-radius: 10px; background: #6366f1; display: flex; align-items: center; justify-content: center; color: white;">
-                <i class="fas fa-tags"></i>
-            </div>
-            <div>
-                <h1 style="margin: 0; font-size: 18px; font-weight: 800; color: #111827;">Değer Yönetimi</h1>
-                <p style="margin: 0; font-size: 12px; color: #6b21a8; font-weight: 500;">Çarpan ve Oran Değerleri</p>
-            </div>
-        </div>
+<div class="main-card">
+    <div class="page-header">
+        <h2 class="page-title">
+            <span>🏷️ Değer Yönetimi</span>
+        </h2>
 
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <input type="text" class="search-input" placeholder="Değer ara..." id="deger-search">
-            <button class="action-btn" onclick="printDegerler()">
-                <i class="fas fa-print" style="color: #6366f1;"></i> Yazdır
+        <div class="action-bar">
+            <!-- Print Button -->
+            <button class="btn-icon" onclick="window.print()" title="Yazdır">
+                <i class="fas fa-print"></i>
             </button>
-            <button class="action-btn" onclick="exportDegerlerToExcel()">
-                <i class="fas fa-file-excel" style="color: #10b981;"></i> Excel
+
+            <!-- Excel Button -->
+            <button class="btn-icon" onclick="exportDegerlerExcel()" title="Excel İndir" style="color: #16a34a;">
+                <i class="fas fa-file-excel"></i>
             </button>
-            <button class="action-btn" data-permission="Mail Gönder" onclick="openReportMailModal({ tableId: 'degerler-table' })" title="Mail Gönder">
-                <i class="fas fa-envelope" style="color: #3b82f6;"></i> Mail
+
+            <!-- Mail Button -->
+            <button class="btn-icon" data-permission="Mail Gönder" onclick="openDegerlerReportMail()" title="Mail Gönder" style="color: #3b82f6;">
+                <i class="fas fa-envelope"></i>
             </button>
-            <button class="action-btn primary" onclick="openAddDegerModal()">
-                <i class="fas fa-plus"></i> Yeni Değer
+
+            <!-- Search Area -->
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="search-input" placeholder="Değer Ara (Ad, Açıklama)" id="deger-search">
+            </div>
+
+            <!-- Active / Valid Filter Checkbox -->
+            <label class="filter-checkbox-wrapper">
+                <input type="checkbox" id="filter-active" checked>
+                <span>Sadece Geçerlileri Göster</span>
+            </label>
+
+            <!-- New Value Button -->
+            <button class="btn-new" onclick="openAddDegerModal()">
+                <i class="fas fa-plus"></i>
+                Yeni Değer
             </button>
         </div>
     </div>
 
-    <!-- Table Card -->
-    <div class="card-glass" style="padding: 0; overflow: hidden;">
-        <div class="table-container">
-            <table id="degerler-table">
-                <thead>
-                    <tr>
-                        <th style="width: 60px;">ID</th>
-                        <th>DEĞER ADI</th>
-                        <th style="width: 130px;">BAŞLANGIÇ TARİHİ</th>
-                        <th style="width: 130px;">BİTİŞ TARİHİ</th>
-                        <th style="width: 120px; text-align: right;">DEĞER</th>
-                        <th>AÇIKLAMA</th>
-                        <th style="width: 120px; text-align: center;" class="hide-on-print">İŞLEMLER</th>
-                    </tr>
-                </thead>
-                <tbody id="degerler-tbody">
-                    {% for d in degerler %}
-                    <tr>
-                        <td>{{ d.Deger_ID }}</td>
-                        <td class="deger-name">{{ d.Deger_Adi }}</td>
-                        <td>{{ d.Gecerli_Baslangic_Tarih }}</td>
-                        <td>{{ d.Gecerli_Bitis_Tarih }}</td>
-                        <td style="text-align: right;" class="deger-value">{{ "%.4f"|format(d.Deger) }}</td>
-                        <td class="aciklama-cell">{{ d.Deger_Aciklama }}</td>
-                        <td style="text-align: center;" class="hide-on-print">
-                            <div class="actions-wrapper">
-                                <button class="edit-btn" title="Düzenle" data-deger='{{ d | tojson | safe }}'
-                                    onclick='openEditDegerModal(JSON.parse(this.getAttribute("data-deger")))'>✏️</button>
-                                <button class="delete-btn" title="Sil" onclick="deleteDeger({{ d.Deger_ID }})">🗑️</button>
-                            </div>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="7" style="text-align: center; padding: 40px; color: #6b7280;">
-                            <i class="fas fa-inbox"
-                                style="font-size: 28px; display: block; margin-bottom: 8px; color: #d1d5db;"></i>
-                            Kayıtlı değer bulunamadı.
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+    <!-- Table Container -->
+    <div class="table-responsive table-container">
+        <table class="data-table" id="degerler-table">
+            <thead>
+                <tr>
+                    <th style="width: 70px;">ID</th>
+                    <th>DEĞER ADI</th>
+                    <th style="width: 130px;">BAŞLANGIÇ TARİHİ</th>
+                    <th style="width: 130px;">BİTİŞ TARİHİ</th>
+                    <th style="width: 120px; text-align: right;">DEĞER</th>
+                    <th>AÇIKLAMA</th>
+                    <th style="width: 110px; text-align: center;">DURUM</th>
+                    <th style="width: 100px; text-align: center;" class="hide-on-print">İŞLEMLER</th>
+                </tr>
+            </thead>
+            <tbody id="degerler-tbody">
+                {% for d in degerler %}
+                <tr data-id="{{ d.Deger_ID }}"
+                    data-name="{{ d.Deger_Adi | lower }}"
+                    data-desc="{{ d.Deger_Aciklama | lower }}"
+                    data-start="{{ d.Gecerli_Baslangic_Tarih }}"
+                    data-end="{{ d.Gecerli_Bitis_Tarih }}">
+                    <td style="font-family: monospace; font-weight: 600; color: #334155;">{{ d.Deger_ID }}</td>
+                    <td style="font-weight: 600; color: #0f172a;">{{ d.Deger_Adi }}</td>
+                    <td style="color: #64748b;">{{ d.Gecerli_Baslangic_Tarih or '-' }}</td>
+                    <td style="color: #64748b;">{{ d.Gecerli_Bitis_Tarih if d.Gecerli_Bitis_Tarih != '2100-01-01' else '-' }}</td>
+                    <td style="text-align: right;" class="deger-num">{{ "%.4f"|format(d.Deger) }}</td>
+                    <td style="color: #64748b; font-size: 0.85rem; max-width: 300px;">{{ d.Deger_Aciklama or '-' }}</td>
+                    <td style="text-align: center;">
+                        <span class="status-badge active status-cell">
+                            <i class="fas fa-check-circle"></i> Geçerli
+                        </span>
+                    </td>
+                    <td style="text-align: center;" class="hide-on-print">
+                        <div style="display: flex; gap: 6px; justify-content: center; align-items: center;">
+                            <button class="btn-row-action btn-edit" title="Düzenle" data-deger='{{ d | tojson | safe }}'
+                                onclick='openEditDegerModal(JSON.parse(this.getAttribute("data-deger")))'>
+                                <i class="fas fa-pencil-alt"></i>
+                            </button>
+                            <button class="btn-row-action btn-delete" title="Sil" onclick="deleteDeger({{ d.Deger_ID }})">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr class="no-data-row">
+                    <td colspan="8" style="text-align: center; padding: 40px; color: #94a3b8;">
+                        <i class="fas fa-tags" style="font-size: 32px; display: block; margin-bottom: 12px; opacity: 0.5;"></i>
+                        Kayıtlı değer bulunamadı.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    // --- Search ---
+    const DEGERLER_DATA = {{ degerler | tojson }};
+
     document.addEventListener('DOMContentLoaded', () => {
         const searchInput = document.getElementById('deger-search');
-        if (searchInput) {
-            searchInput.addEventListener('keyup', function () {
-                const term = this.value.toLowerCase();
-                document.querySelectorAll('#degerler-tbody tr').forEach(row => {
-                    if (row.cells.length === 1) return;
-                    const text = Array.from(row.cells).map(c => c.textContent.toLowerCase()).join(' ');
-                    row.style.display = text.includes(term) ? '' : 'none';
-                });
+        const activeCheckbox = document.getElementById('filter-active');
+
+        function filterTable() {
+            const term = searchInput ? searchInput.value.toLowerCase().trim() : '';
+            const showOnlyValid = activeCheckbox ? activeCheckbox.checked : false;
+            const rows = document.querySelectorAll('#degerler-table tbody tr:not(.no-data-row)');
+
+            const today = new Date().toISOString().split('T')[0];
+
+            rows.forEach(row => {
+                const name = row.getAttribute('data-name') || '';
+                const desc = row.getAttribute('data-desc') || '';
+                const id = row.getAttribute('data-id') || '';
+                const start = row.getAttribute('data-start') || '';
+                const end = row.getAttribute('data-end') || '';
+
+                const matchesSearch = term === '' || name.includes(term) || desc.includes(term) || id.includes(term);
+
+                // Validity check: start <= today && (!end || end >= today)
+                const isValid = (!start || start <= today) && (!end || end >= today);
+
+                // Update badge visually
+                const statusCell = row.querySelector('.status-cell');
+                if (statusCell) {
+                    if (isValid) {
+                        statusCell.className = 'status-badge active status-cell';
+                        statusCell.innerHTML = '<i class="fas fa-check-circle"></i> Geçerli';
+                    } else {
+                        statusCell.className = 'status-badge inactive status-cell';
+                        statusCell.innerHTML = '<i class="fas fa-times-circle"></i> Süresi Dolmuş';
+                    }
+                }
+
+                const matchesValid = !showOnlyValid || isValid;
+
+                if (matchesSearch && matchesValid) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
             });
         }
+
+        if (searchInput) searchInput.addEventListener('keyup', filterTable);
+        if (activeCheckbox) activeCheckbox.addEventListener('change', filterTable);
+
+        // Initial run
+        filterTable();
     });
 
     // --- Form helpers ---
     function degerFormHtml(d = {}) {
         return `
             <form id="degerForm">
-                <input type="hidden" id="Deger_ID" name="Deger_ID" value="${d.Deger_ID || ''}">
+                <input type="hidden" name="Deger_ID" value="${d.Deger_ID || ''}">
                 <div class="form-group">
-                    <label for="Deger_Adi">Değer Adı *</label>
-                    <input type="text" id="Deger_Adi" name="Deger_Adi" value="${d.Deger_Adi || ''}" required>
+                    <label>Değer Adı *</label>
+                    <input type="text" name="Deger_Adi" value="${d.Deger_Adi || ''}" required>
                 </div>
                 <div class="form-group">
-                    <label for="Deger">Değer *</label>
-                    <input type="number" step="0.0001" id="Deger" name="Deger" value="${d.Deger !== undefined ? d.Deger : ''}" required>
+                    <label>Değer *</label>
+                    <input type="number" step="0.0001" name="Deger" value="${d.Deger !== undefined ? d.Deger : ''}" required>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label>Başlangıç Tarihi *</label>
+                        <input type="date" name="Gecerli_Baslangic_Tarih" value="${d.Gecerli_Baslangic_Tarih || ''}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Bitiş Tarihi</label>
+                        <input type="date" name="Gecerli_Bitis_Tarih" value="${d.Gecerli_Bitis_Tarih || '2100-01-01'}">
+                    </div>
                 </div>
                 <div class="form-group">
-                    <label for="Gecerli_Baslangic_Tarih">Başlangıç Tarihi *</label>
-                    <input type="date" id="Gecerli_Baslangic_Tarih" name="Gecerli_Baslangic_Tarih"
-                        value="${d.Gecerli_Baslangic_Tarih || ''}" required>
-                </div>
-                <div class="form-group">
-                    <label for="Gecerli_Bitis_Tarih">Bitiş Tarihi</label>
-                    <input type="date" id="Gecerli_Bitis_Tarih" name="Gecerli_Bitis_Tarih"
-                        value="${d.Gecerli_Bitis_Tarih || '2100-01-01'}">
-                </div>
-                <div class="form-group">
-                    <label for="Deger_Aciklama">Açıklama</label>
-                    <textarea id="Deger_Aciklama" name="Deger_Aciklama">${d.Deger_Aciklama || ''}</textarea>
+                    <label>Açıklama</label>
+                    <textarea name="Deger_Aciklama" rows="3">${d.Deger_Aciklama || ''}</textarea>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="hideModal()">İptal</button>
@@ -301,78 +452,252 @@
 
     async function handleAddDeger(e) {
         e.preventDefault();
+        const formData = new FormData(e.target);
         const data = {
-            Deger_Adi: document.getElementById('Deger_Adi').value,
-            Deger: parseFloat(document.getElementById('Deger').value),
-            Gecerli_Baslangic_Tarih: document.getElementById('Gecerli_Baslangic_Tarih').value,
-            Gecerli_Bitis_Tarih: document.getElementById('Gecerli_Bitis_Tarih').value || '2100-01-01',
-            Deger_Aciklama: document.getElementById('Deger_Aciklama').value,
+            Deger_Adi: formData.get('Deger_Adi'),
+            Deger: parseFloat(formData.get('Deger')),
+            Gecerli_Baslangic_Tarih: formData.get('Gecerli_Baslangic_Tarih'),
+            Gecerli_Bitis_Tarih: formData.get('Gecerli_Bitis_Tarih') || '2100-01-01',
+            Deger_Aciklama: formData.get('Deger_Aciklama'),
         };
         try {
             const res = await fetch('/api/v1/degerler', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
             });
-            if (res.ok) { showToast('Değer başarıyla eklendi.'); hideModal(); setTimeout(() => location.reload(), 900); }
-            else { const err = await res.json(); showToast(err.error || 'Eklenirken hata oluştu.', 'error'); }
-        } catch { showToast('Bağlantı hatası.', 'error'); }
+            if (res.ok) {
+                showToast('Değer başarıyla eklendi.');
+                hideModal();
+                setTimeout(() => location.reload(), 900);
+            } else {
+                const err = await res.json();
+                showToast(err.error || 'Eklenirken hata oluştu.', 'error');
+            }
+        } catch {
+            showToast('Bağlantı hatası.', 'error');
+        }
     }
 
     async function handleEditDeger(e) {
         e.preventDefault();
-        const id = document.getElementById('Deger_ID').value;
+        const formData = new FormData(e.target);
+        const id = formData.get('Deger_ID');
         const data = {
-            Deger_Adi: document.getElementById('Deger_Adi').value,
-            Deger: parseFloat(document.getElementById('Deger').value),
-            Gecerli_Baslangic_Tarih: document.getElementById('Gecerli_Baslangic_Tarih').value,
-            Gecerli_Bitis_Tarih: document.getElementById('Gecerli_Bitis_Tarih').value || '2100-01-01',
-            Deger_Aciklama: document.getElementById('Deger_Aciklama').value,
+            Deger_Adi: formData.get('Deger_Adi'),
+            Deger: parseFloat(formData.get('Deger')),
+            Gecerli_Baslangic_Tarih: formData.get('Gecerli_Baslangic_Tarih'),
+            Gecerli_Bitis_Tarih: formData.get('Gecerli_Bitis_Tarih') || '2100-01-01',
+            Deger_Aciklama: formData.get('Deger_Aciklama'),
         };
         try {
             const res = await fetch(`/api/v1/degerler/${id}`, {
-                method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
             });
-            if (res.ok) { showToast('Değer başarıyla güncellendi.'); hideModal(); setTimeout(() => location.reload(), 900); }
-            else { const err = await res.json(); showToast(err.error || 'Güncellenirken hata oluştu.', 'error'); }
-        } catch { showToast('Bağlantı hatası.', 'error'); }
+            if (res.ok) {
+                showToast('Değer başarıyla güncellendi.');
+                hideModal();
+                setTimeout(() => location.reload(), 900);
+            } else {
+                const err = await res.json();
+                showToast(err.error || 'Güncellenirken hata oluştu.', 'error');
+            }
+        } catch {
+            showToast('Bağlantı hatası.', 'error');
+        }
     }
 
     async function deleteDeger(id) {
         if (!confirm('Bu değeri silmek istediğinize emin misiniz?')) return;
         try {
             const res = await fetch(`/api/v1/degerler/${id}`, { method: 'DELETE' });
-            if (res.ok || res.status === 204) { showToast('Değer silindi.'); setTimeout(() => location.reload(), 900); }
-            else { showToast('Silinirken hata oluştu.', 'error'); }
-        } catch { showToast('Bağlantı hatası.', 'error'); }
+            if (res.ok || res.status === 204) {
+                showToast('Değer silindi.');
+                setTimeout(() => location.reload(), 900);
+            } else {
+                showToast('Silinirken hata oluştu.', 'error');
+            }
+        } catch {
+            showToast('Bağlantı hatası.', 'error');
+        }
     }
 
-    // --- Excel Export ---
-    function exportDegerlerToExcel() {
-        const table = document.getElementById('degerler-table');
-        const wb = XLSX.utils.table_to_book(table, { sheet: "Değer Listesi" });
-        XLSX.writeFile(wb, "Deger_Listesi.xlsx");
+    // ─── Değerler Excel & Mail Raporlama ───
+    function getDegerlerReportMailHtml() {
+        const totalCount = DEGERLER_DATA.length;
+        const today = new Date().toISOString().split('T')[0];
+        const validCount = DEGERLER_DATA.filter(d => (!d.Gecerli_Baslangic_Tarih || d.Gecerli_Baslangic_Tarih <= today) && (!d.Gecerli_Bitis_Tarih || d.Gecerli_Bitis_Tarih >= today)).length;
+
+        let rowsHtml = '';
+        if (totalCount === 0) {
+            rowsHtml = `
+                <tr>
+                    <td colspan="6" align="center" bgcolor="#ffffff" style="padding: 24px; text-align: center; color: #64748b; font-size: 13px; border-bottom: 1px solid #e2e8f0;">
+                        Kayıtlı değer bulunamadı.
+                    </td>
+                </tr>
+            `;
+        } else {
+            rowsHtml = DEGERLER_DATA.map((d, idx) => {
+                const bg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
+                const isValid = (!d.Gecerli_Baslangic_Tarih || d.Gecerli_Baslangic_Tarih <= today) && (!d.Gecerli_Bitis_Tarih || d.Gecerli_Bitis_Tarih >= today);
+                const statusBadge = isValid
+                    ? `<span style="background-color: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">Geçerli</span>`
+                    : `<span style="background-color: #fee2e2; color: #b91c1c; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">Süresi Dolmuş</span>`;
+
+                return `
+                    <tr bgcolor="${bg}" style="background-color: ${bg};">
+                        <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; font-family: monospace; color: #334155; border-bottom: 1px solid #e2e8f0;">
+                            ${d.Deger_ID}
+                        </td>
+                        <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; font-weight: 600; color: #0f172a; border-bottom: 1px solid #e2e8f0;">
+                            ${d.Deger_Adi}
+                        </td>
+                        <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; color: #64748b; border-bottom: 1px solid #e2e8f0;">
+                            ${d.Gecerli_Baslangic_Tarih || '-'}
+                        </td>
+                        <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; color: #64748b; border-bottom: 1px solid #e2e8f0;">
+                            ${d.Gecerli_Bitis_Tarih !== '2100-01-01' ? (d.Gecerli_Bitis_Tarih || '-') : '-'}
+                        </td>
+                        <td align="right" bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; font-family: monospace; font-weight: 700; color: #0f766e; text-align: right; border-bottom: 1px solid #e2e8f0;">
+                            ${Number(d.Deger).toFixed(4)}
+                        </td>
+                        <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; color: #64748b; border-bottom: 1px solid #e2e8f0;">
+                            ${d.Deger_Aciklama || '-'}
+                        </td>
+                        <td align="center" bgcolor="${bg}" style="padding: 10px 14px; text-align: center; border-bottom: 1px solid #e2e8f0;">
+                            ${statusBadge}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        return `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; max-width: 850px; margin: 0 auto;">
+                <!-- 1. BAŞLIK VE KART BÖLÜMÜ -->
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: separate; margin-bottom: 18px; border: 2px solid #6366f1; border-radius: 8px; overflow: hidden; background-color: #ffffff;">
+                    <tr>
+                        <td colspan="2" bgcolor="#eef2ff" style="padding: 12px 18px; background-color: #eef2ff; border-bottom: 2px solid #c7d2fe; text-align: center;">
+                            <span style="font-size: 16px; font-weight: bold; color: #3730a3;">
+                                🏷️ Değer Yönetimi Raporu
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td width="50%" align="center" bgcolor="#f8fafc" style="padding: 14px 10px; background-color: #f8fafc; border-right: 1px solid #e2e8f0; text-align: center;">
+                            <div style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Toplam Değer</div>
+                            <div style="font-size: 20px; font-weight: 800; color: #312e81;">${totalCount} Kayıt</div>
+                        </td>
+                        <td width="50%" align="center" bgcolor="#f8fafc" style="padding: 14px 10px; background-color: #f8fafc; text-align: center;">
+                            <div style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Geçerli Değer</div>
+                            <div style="font-size: 20px; font-weight: 800; color: #15803d;">${validCount} Kayıt</div>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- 2. DEĞERLER TABLOSU -->
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; margin-bottom: 16px; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; background-color: #ffffff;">
+                    <thead>
+                        <tr bgcolor="#1e293b" style="background-color: #1e293b;">
+                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a; width: 60px;">ID</th>
+                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a;">DEĞER ADI</th>
+                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a;">BAŞLANGIÇ</th>
+                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a;">BİTİŞ</th>
+                            <th align="right" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: right; text-transform: uppercase; border-bottom: 2px solid #0f172a;">DEĞER</th>
+                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a;">AÇIKLAMA</th>
+                            <th align="center" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: center; text-transform: uppercase; border-bottom: 2px solid #0f172a; width: 100px;">DURUM</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml}
+                    </tbody>
+                </table>
+            </div>
+        `;
     }
 
-    // --- Print ---
-    function printDegerler() {
-        const table = document.getElementById('degerler-table');
-        if (!table) return;
-        const clone = table.cloneNode(true);
-        clone.querySelectorAll('th:last-child, td:last-child').forEach(el => el.remove());
-        const now = new Date().toLocaleString('tr-TR');
-        const html = `<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">
-            <title>Değer Yönetimi Raporu</title>
-            <style>body{font-family:Arial,sans-serif;padding:20mm;color:#111}
-            h1{font-size:20px;margin:0 0 4px}p{font-size:12px;color:#666;border-bottom:1px solid #ccc;padding-bottom:10px;margin-bottom:16px}
-            table{width:100%;border-collapse:collapse}th{background:#f3f4f6;font-size:11px;text-transform:uppercase;padding:10px 12px;text-align:left;border:1px solid #ddd}
-            td{padding:10px 12px;font-size:13px;border:1px solid #eee}tr:nth-child(even){background:#fafafa}</style>
-            </head><body><h1>SilverCloud - Değer Yönetimi Raporu</h1><p>Rapor Tarihi: ${now}</p>${clone.outerHTML}</body></html>`;
-        const win = window.open('', '_blank', 'width=900,height=700');
-        win.document.write(html);
-        win.document.close();
-        win.focus();
-        win.print();
-        win.onafterprint = () => win.close();
+    function buildDegerlerWorkbook() {
+        if (typeof XLSX === 'undefined') return null;
+
+        const wb = XLSX.utils.book_new();
+        const totalCount = DEGERLER_DATA.length;
+        const today = new Date().toISOString().split('T')[0];
+        const validCount = DEGERLER_DATA.filter(d => (!d.Gecerli_Baslangic_Tarih || d.Gecerli_Baslangic_Tarih <= today) && (!d.Gecerli_Bitis_Tarih || d.Gecerli_Bitis_Tarih >= today)).length;
+
+        const headers = ['ID', 'DEĞER ADI', 'BAŞLANGIÇ TARİHİ', 'BİTİŞ TARİHİ', 'DEĞER', 'AÇIKLAMA', 'DURUM'];
+
+        const sheetData = [
+            ['DEĞER YÖNETİMİ RAPORU'],
+            ['Toplam Değer:', totalCount],
+            ['Geçerli Değer:', validCount],
+            ['Rapor Tarihi:', new Date().toLocaleString('tr-TR')],
+            [],
+            headers
+        ];
+
+        DEGERLER_DATA.forEach(d => {
+            const isValid = (!d.Gecerli_Baslangic_Tarih || d.Gecerli_Baslangic_Tarih <= today) && (!d.Gecerli_Bitis_Tarih || d.Gecerli_Bitis_Tarih >= today);
+            sheetData.push([
+                d.Deger_ID,
+                d.Deger_Adi,
+                d.Gecerli_Baslangic_Tarih || '',
+                d.Gecerli_Bitis_Tarih !== '2100-01-01' ? (d.Gecerli_Bitis_Tarih || '') : '',
+                parseFloat(d.Deger) || 0,
+                d.Deger_Aciklama || '',
+                isValid ? 'Geçerli' : 'Süresi Dolmuş'
+            ]);
+        });
+
+        const ws = XLSX.utils.aoa_to_sheet(sheetData);
+        ws['!cols'] = [
+            { wch: 8 },
+            { wch: 25 },
+            { wch: 16 },
+            { wch: 16 },
+            { wch: 14 },
+            { wch: 35 },
+            { wch: 14 }
+        ];
+
+        // Format number column
+        const numFmt = '#,##0.0000';
+        for (let r = 6; r < 6 + totalCount; r++) {
+            const cellRef = XLSX.utils.encode_cell({ r: r, c: 4 });
+            if (ws[cellRef] && typeof ws[cellRef].v === 'number') {
+                ws[cellRef].t = 'n';
+                ws[cellRef].z = numFmt;
+            }
+        }
+
+        XLSX.utils.book_append_sheet(wb, ws, 'Değerler');
+        return wb;
+    }
+
+    function exportDegerlerExcel() {
+        const wb = buildDegerlerWorkbook();
+        if (!wb) {
+            alert('Excel kütüphanesi yüklenemedi.');
+            return;
+        }
+        XLSX.writeFile(wb, 'Deger_Listesi.xlsx');
+    }
+
+    function getDegerlerReportExcelBase64() {
+        const wb = buildDegerlerWorkbook();
+        if (!wb) return null;
+        return XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+    }
+
+    function openDegerlerReportMail() {
+        openReportMailModal({
+            title: 'Değer Yönetimi Raporu',
+            filename: 'Deger_Listesi.xlsx',
+            getHtml: getDegerlerReportMailHtml,
+            getExcelBase64: getDegerlerReportExcelBase64
+        });
     }
 </script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-{% endblock %}
+{% endblock %}
