@@ -41,6 +41,7 @@
             background: rgba(0, 0, 0, 0.05);
         }
 
+        .durum-select,
         .donem-select,
         .sube-select {
             border: 1px solid #d1d9e8;
@@ -51,6 +52,10 @@
             font-weight: 600;
             background: #f8fafd;
             cursor: pointer;
+        }
+
+        .durum-select {
+            min-width: 140px;
         }
 
         .sube-select {
@@ -323,6 +328,11 @@
             <button class="btn-icon" title="Yazdır" onclick="window.print()">🖨️</button>
             <button class="btn-icon" title="İndir" onclick="exportTableToCSV()">⬇️</button>
             <button class="btn-icon" data-permission="Mail Gönder" title="Mail Gönder" onclick="openPosReportMail()">✉️</button>
+            <select class="durum-select" id="durumFilter" onchange="filterPosTable()">
+                <option value="ALL">Durum: Tümü</option>
+                <option value="OK">✓ Uyumlu</option>
+                <option value="FAIL">✕ Uyumsuz</option>
+            </select>
             <select class="donem-select"
                 onchange="window.location.href='/pos-kontrol-dashboard?sube_id={{ secili_sube_id }}&donem=' + this.value">
                 {% for d in donem_listesi %}
@@ -339,34 +349,6 @@
                 {% endfor %}
             </select>
         </div>
-    </div>
-
-    <!-- Stats -->
-    <div class="stats-row">
-        <div class="stat-card blue">
-            <div class="stat-label">📅 Toplam Gün</div>
-            <div class="stat-value">{{ dashboard_data.summary.total }}</div>
-        </div>
-        <div class="stat-card green">
-            <div class="stat-label">✓ Uyumlu</div>
-            <div class="stat-value">{{ dashboard_data.summary.ok }}</div>
-        </div>
-        <div class="stat-card red">
-            <div class="stat-label">✕ Uyumsuz</div>
-            <div class="stat-value">{{ dashboard_data.summary.fail }}</div>
-        </div>
-        <div class="stat-card blue">
-            <div class="stat-label">% Başarı Oranı</div>
-            <div class="stat-value">{{ dashboard_data.summary.success_rate }}</div>
-        </div>
-    </div>
-
-    <!-- Legend -->
-    <div class="aciklama-bar">
-        <strong>Açıklama</strong>
-        <span class="legend-item"><span class="legend-dot green"></span> Tüm kontroller başarılı (Gelir POS = POS
-            Hareketleri ve Kesinti uyumlu)</span>
-        <span class="legend-item"><span class="legend-dot red"></span> Uyumsuzluk var (tutarlar eşleşmiyor)</span>
     </div>
 
     <!-- Main Panel -->
@@ -472,12 +454,29 @@
 </div>
 
 <script>
+    function filterPosTable() {
+        const selected = document.getElementById('durumFilter').value;
+        const rows = document.querySelectorAll('#posTable tbody tr');
+        rows.forEach(tr => {
+            if (tr.cells.length <= 1) return; // empty row
+            const isOk = tr.classList.contains('ok-row');
+            if (selected === 'ALL') {
+                tr.style.display = '';
+            } else if (selected === 'OK') {
+                tr.style.display = isOk ? '' : 'none';
+            } else if (selected === 'FAIL') {
+                tr.style.display = !isOk ? '' : 'none';
+            }
+        });
+    }
+
     function exportTableToCSV() {
         const rows = [];
         const headers = Array.from(document.querySelectorAll('#posTable thead th')).map(th => th.textContent.trim());
         rows.push(headers);
 
         document.querySelectorAll('#posTable tbody tr').forEach(tr => {
+            if (tr.style.display === 'none') return;
             const cells = tr.querySelectorAll('td');
             if (cells.length > 3) {
                 rows.push(Array.from(cells).map(td => '"' + td.textContent.trim().replace(/"/g, '""') + '"'));
