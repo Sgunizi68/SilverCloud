@@ -307,11 +307,6 @@ def puantaj_girisi():
     employees = []
     for emp in employee_data:
         tc       = emp.TC_No
-        
-        # Exclude employees without records in this month if viewing past history
-        if not is_current_period and tc not in puantaj_map:
-            continue
-            
         emp_days = puantaj_map.get(tc, {})
         total    = sum(d["Degeri"] for d in emp_days.values())
 
@@ -367,6 +362,7 @@ def puantaj_girisi():
         cikis_secim_id=cikis_secim_id or 0,
         cikis_days_json=json.dumps({emp['TC_No']: emp['Cikis_Day'] for emp in employees}),
         giris_dates_json=json.dumps({emp['TC_No']: emp['Sigorta_Giris'] for emp in employees}),
+        cikis_dates_json=json.dumps({emp['TC_No']: emp['Sigorta_Cikis'] for emp in employees}),
     )
 
 @web_hr_bp.route("/avans-talepleri", methods=["GET"])
