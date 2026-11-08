@@ -2261,7 +2261,8 @@ def get_pos_kontrol_dashboard_data(db: Session, sube_id: int, donem: int):
         # Kontrol Kesinti: POS Kesinti == Odeme Kesinti
         k_kesinti = "OK" if abs(p_data['kesinti'] - o_kesinti) < Decimal('0.05') else "FAIL"
         
-        if k_pos == "OK" and k_kesinti == "OK":
+        # Durumun uyumlu olup olmadığı KTR POS (Gelir POS == POS Hareketleri)
+        if k_pos == "OK":
             ok_count += 1
         else:
             fail_count += 1

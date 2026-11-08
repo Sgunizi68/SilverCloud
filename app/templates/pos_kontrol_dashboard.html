@@ -352,8 +352,11 @@
     </div>
 
     <!-- Main Panel -->
+    {% set ay_adlari = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"] %}
+    {% set donem_yil = secili_donem // 100 + 2000 %}
+    {% set donem_ay = secili_donem % 100 %}
     <div class="pos-panel">
-        <div class="pos-panel-header">POS Kontrol Verileri</div>
+        <div class="pos-panel-header">POS Kontrol Verileri - {{ ay_adlari[donem_ay] if (donem_ay >= 1 and donem_ay <= 12) else donem_ay }} {{ donem_yil }}</div>
         <div style="overflow-x: auto;">
             <table class="pos-table" id="posTable">
                 <thead>
@@ -367,13 +370,12 @@
                         <th style="text-align:right;">ÖDEME</th>
                         <th style="text-align:right;">ÖDEME KESİNTİ</th>
                         <th style="text-align:right;">ÖDEME NET</th>
-                        <th style="text-align:center;">KTR POS</th>
                         <th style="text-align:center;">KTR KESİNTİ</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for row in dashboard_data.data %}
-                    {% set is_ok = (row.Kontrol_POS == 'OK' and row.Kontrol_Kesinti == 'OK') %}
+                    {% set is_ok = (row.Kontrol_POS == 'OK') %}
                     <tr class="{{ 'ok-row' if is_ok else 'fail-row' }}">
                         <td style="text-align:center;">
                             {% if is_ok %}
@@ -398,11 +400,6 @@
                         <td class="num-cell">{{ "{:,.2f}".format(row.Odeme_Net).replace(',', 'X').replace('.',
                             ',').replace('X', '.') }}</td>
                         <td style="text-align:center;">
-                            <span class="durum-icon {{ 'ok' if row.Kontrol_POS == 'OK' else 'fail' }}">
-                                {{ '✓' if row.Kontrol_POS == 'OK' else '✕' }}
-                            </span>
-                        </td>
-                        <td style="text-align:center;">
                             <span class="durum-icon {{ 'ok' if row.Kontrol_Kesinti == 'OK' else 'fail' }}">
                                 {{ '✓' if row.Kontrol_Kesinti == 'OK' else '✕' }}
                             </span>
@@ -410,7 +407,7 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="11" style="text-align:center; padding:2rem; color:#aaa;">Bu dönem için kayıt
+                        <td colspan="10" style="text-align:center; padding:2rem; color:#aaa;">Bu dönem için kayıt
                             bulunamadı.</td>
                     </tr>
                     {% endfor %}
