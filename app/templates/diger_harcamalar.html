@@ -650,8 +650,8 @@
     let kategorilerMap = {{ kategori_map | tojson | safe }};
     const SUBELER = [
         {% for s in subeler %}
-    { Sube_ID: { { s.Sube_ID } }, Sube_Adi: { { s.Sube_Adi | tojson } } } {% if not loop.last %}, {% endif %}
-    {% endfor %}
+        { Sube_ID: {{ s.Sube_ID }}, Sube_Adi: {{ s.Sube_Adi | tojson }} }{% if not loop.last %},{% endif %}
+        {% endfor %}
     ];
 
 
