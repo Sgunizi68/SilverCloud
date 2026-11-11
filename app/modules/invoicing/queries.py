@@ -193,6 +193,7 @@ def create_efatura_bulk(
     """
     added = 0
     skipped = 0
+    added_invoices = []
     
     for data in efatura_list:
         try:
@@ -257,12 +258,13 @@ def create_efatura_bulk(
             )
             db.add(new_efatura)
             added += 1
+            added_invoices.append(fatura_no)
         except Exception as e:
             db.rollback()
             raise e
             
     db.commit()
-    return {"added": added, "skipped": skipped}
+    return {"added": added, "skipped": skipped, "added_invoices": added_invoices}
 
 
 def get_bolunmus_faturalar(db: Session, donem: Optional[int] = None) -> List[dict]:
