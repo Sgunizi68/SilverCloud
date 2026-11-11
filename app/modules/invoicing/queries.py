@@ -335,9 +335,10 @@ def create_b2b_ekstre_bulk(
     """
     added = 0
     skipped = 0
+    added_indices = []
     
     if not ekstre_list:
-        return {"added": 0, "skipped": 0}
+        return {"added": 0, "skipped": 0, "added_indices": []}
 
     # Preparation: Collect keys for batch lookups
     all_sube_ids = set()
@@ -370,6 +371,7 @@ def create_b2b_ekstre_bulk(
         
         # Store for second pass
         processed_rows.append({
+            "index": data.get("_index"),
             "data": data,
             "tarih": tarih,
             "fis_no": fis_no,
@@ -453,6 +455,8 @@ def create_b2b_ekstre_bulk(
         # Update map to prevent duplicates within the same file too
         ekstre_map[(fis_no, tarih, sube_id, borc, alacak)] = new_ekstre
         added += 1
+        if item.get("index") is not None:
+            added_indices.append(item["index"])
 
     try:
         db.commit()
@@ -460,7 +464,7 @@ def create_b2b_ekstre_bulk(
         db.rollback()
         raise e
 
-    return {"added": added, "skipped": skipped}
+    return {"added": added, "skipped": skipped, "added_indices": added_indices}
 
 
 # ============================================================================

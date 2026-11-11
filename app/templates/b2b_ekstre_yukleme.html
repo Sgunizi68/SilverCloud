@@ -7,223 +7,386 @@
 
 {% block extra_style %}
 <style>
-    .upload-container {
-        padding: 30px;
-        max-width: 1000px;
-        margin: 0 auto;
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.95);
+        --glass-border: rgba(255, 255, 255, 0.3);
+        --accent-color: #667eea;
+        --text-dark: #2d3748;
+        --text-gray: #718096;
     }
 
-    .card-glass {
-        background: rgba(255, 255, 255, 0.9);
+    .main-card {
+        background: var(--glass-bg);
         backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.4);
-        border-radius: 16px;
-        padding: 25px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        gap: 16px;
+        flex-wrap: wrap;
     }
 
     .page-title {
-        font-size: 20px;
+        font-size: 1.25rem;
         font-weight: 700;
-        color: #1e293b;
-        margin-bottom: 25px;
+        color: var(--text-dark);
+        margin: 0;
         display: flex;
         align-items: center;
         gap: 10px;
     }
 
-    .form-group label {
-        display: block;
-        font-size: 14px;
-        font-weight: 600;
-        color: #475569;
-        margin-bottom: 8px;
-    }
-
-    .form-control {
-        width: 100%;
-        padding: 12px;
-        border: 1px solid #cbd5e1;
+    .info-banner {
+        background: #eef2ff;
+        border-left: 4px solid #6366f1;
         border-radius: 8px;
-        font-size: 14px;
-        transition: all 0.2s;
-        background: white;
-    }
-
-    .form-control:focus {
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        outline: none;
-    }
-
-    .upload-row {
-        display: flex;
-        gap: 15px;
-        align-items: flex-end;
-        margin-bottom: 20px;
-    }
-
-    .upload-row .form-group {
-        flex: 1;
-    }
-
-    .btn-upload {
-        background: #3b82f6;
-        color: white;
-        border: none;
-        padding: 12px 24px;
-        border-radius: 8px;
-        font-weight: 600;
-        font-size: 14px;
-        cursor: pointer;
+        padding: 14px 18px;
+        margin-bottom: 24px;
         display: flex;
         align-items: center;
-        gap: 8px;
-        transition: all 0.2s;
-        white-space: nowrap;
-        height: 44px;
+        justify-content: space-between;
+        gap: 16px;
+        color: #3730a3;
+        font-size: 0.88rem;
+        flex-wrap: wrap;
     }
 
-    .btn-upload:hover {
-        background: #2563eb;
-        transform: translateY(-1px);
+    .info-banner-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
     }
 
-    .btn-upload:disabled {
-        background: #94a3b8;
-        cursor: not-allowed;
-        transform: none;
+    .info-banner i {
+        font-size: 1.2rem;
+        color: #4f46e5;
     }
 
     .btn-template {
         background: white;
-        color: #334155;
-        border: 1px solid #cbd5e1;
-        padding: 8px 16px;
+        color: #4338ca;
+        border: 1px solid #c7d2fe;
+        padding: 8px 14px;
         border-radius: 6px;
-        font-size: 13px;
-        font-weight: 500;
+        font-size: 0.82rem;
+        font-weight: 600;
         cursor: pointer;
         display: inline-flex;
         align-items: center;
         gap: 6px;
         transition: all 0.2s;
+        white-space: nowrap;
     }
 
     .btn-template:hover {
-        border-color: #3b82f6;
-        color: #3b82f6;
+        background: #e0e7ff;
+        border-color: #a5b4fc;
+        transform: translateY(-1px);
     }
 
-    .info-text {
-        font-size: 12px;
-        color: #64748b;
-        margin-top: 8px;
-    }
-
-    .info-text strong {
-        color: #334155;
-    }
-
-    .result-card {
-        margin-top: 25px;
-        padding: 20px;
-        border-radius: 12px;
-        display: none;
-        border: 1px solid #e2e8f0;
-    }
-
-    .result-success {
-        background: #f0fdf4;
-        border-color: #bbf7d0;
-        color: #166534;
-    }
-
-    .result-stats {
-        display: flex;
-        gap: 30px;
-        margin-top: 15px;
-    }
-
-    .stat-item {
-        text-align: center;
-        flex: 1;
+    .upload-form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr auto;
+        gap: 16px;
+        align-items: flex-end;
         background: white;
-        padding: 15px;
+        padding: 20px;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+        margin-bottom: 24px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .form-group label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-dark);
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 14px;
         border-radius: 8px;
-        border: 1px solid rgba(0, 0, 0, 0.05);
+        border: 1px solid #cbd5e1;
+        outline: none;
+        font-size: 0.9rem;
+        background: white;
+        transition: all 0.2s;
+        box-sizing: border-box;
     }
 
-    .stat-value {
-        font-size: 24px;
+    .form-control:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .btn-new {
+        background: var(--accent-color);
+        color: white;
+        border: none;
+        padding: 10px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        cursor: pointer;
+        transition: transform 0.2s, background 0.2s;
+        font-size: 0.9rem;
+        height: 42px;
+        white-space: nowrap;
+    }
+
+    .btn-new:hover {
+        background: #5a67d8;
+        transform: translateY(-1px);
+    }
+
+    .btn-new:disabled {
+        background: #94a3b8;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    /* Summary Banner & Cards matching Üst Kategori / e-Fatura Yükleme */
+    .summary-banner {
+        background: #ffffff;
+        border: 2px solid #6366f1;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-top: 24px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.08);
+        display: none;
+    }
+
+    .summary-banner-title {
+        background: #eef2ff;
+        border-bottom: 2px solid #c7d2fe;
+        padding: 12px 20px;
+        text-align: center;
+        font-size: 15px;
         font-weight: 700;
-        display: block;
+        color: #3730a3;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
     }
 
-    .stat-label {
-        font-size: 12px;
+    .summary-cards-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        background: #f8fafc;
+    }
+
+    .summary-stat-box {
+        padding: 16px;
+        text-align: center;
+    }
+
+    .summary-stat-box:first-child {
+        border-right: 1px solid #e2e8f0;
+    }
+
+    .summary-stat-label {
+        font-size: 11px;
+        font-weight: 700;
         color: #64748b;
         text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 5px;
+    }
+
+    .summary-stat-val {
+        font-size: 24px;
+        font-weight: 800;
+    }
+
+    .stat-added {
+        color: #15803d;
+    }
+
+    .stat-skipped {
+        color: #b45309;
+    }
+
+    /* Processed Table Container */
+    .table-container {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        background: #ffffff;
+        margin-top: 20px;
+        display: none;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .data-table thead tr {
+        background: #1e293b;
+    }
+
+    .data-table th {
+        background: #1e293b;
+        color: #ffffff;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 9px 14px;
+        text-align: left;
+        border-bottom: 2px solid #0f172a;
+    }
+
+    .data-table td {
+        padding: 8px 14px;
+        color: #1e293b;
+        font-size: 0.86rem;
+        border-bottom: 1px solid #e2e8f0;
+        vertical-align: middle;
+    }
+
+    .data-table tbody tr:nth-child(even) td {
+        background-color: #f8fafc;
+    }
+
+    .data-table tbody tr:hover td {
+        background-color: #eff6ff !important;
+    }
+
+    .code-cell {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 600;
+        color: #1e293b;
+    }
+
+    @media (max-width: 768px) {
+        .upload-form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .btn-new {
+            width: 100%;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="upload-container">
-    <div class="card-glass">
-        <h1 class="page-title">
-            <i class="fas fa-file-import" style="color: #3b82f6;"></i>
-            B2B Ekstre Yükleme
-        </h1>
+<div class="main-card">
+    <div class="page-header">
+        <h2 class="page-title">
+            <span>📑 B2B Ekstre Yükleme</span>
+        </h2>
+    </div>
 
-        <form id="uploadForm">
-            <div class="form-group" style="margin-bottom: 15px;">
-                <label>Şube Seçimi *</label>
+    <!-- Info banner -->
+    <div class="info-banner">
+        <div class="info-banner-left">
+            <i class="fas fa-info-circle"></i>
+            <div>
+                Lütfen <strong>.xlsx</strong> veya <strong>.xls</strong> formatında B2B ekstre dosyasını yükleyin.
+                Gerekli temel sütunlar: <strong>Tarih</strong>, <strong>Fiş No</strong>, <strong>Borç</strong>,
+                <strong>Alacak</strong>, <strong>Açıklama</strong> (opsiyonel), <strong>Fatura No</strong> (opsiyonel).
+            </div>
+        </div>
+        <button class="btn-template" id="downloadTemplateBtn" type="button">
+            <i class="fas fa-download"></i> Örnek Şablon İndir
+        </button>
+    </div>
+
+    <!-- Upload Form -->
+    <form id="uploadForm">
+        <div class="upload-form-grid">
+            <div class="form-group">
+                <label for="Sube_ID">Şube Seçimi *</label>
                 <select id="Sube_ID" class="form-control" required>
                     {% for s in subeler %}
                     <option value="{{ s.Sube_ID }}">{{ s.Sube_Adi }}</option>
                     {% endfor %}
                 </select>
             </div>
-            <div class="form-group" style="margin-bottom: 15px;">
-                <label>Excel Dosyası (.xlsx, .xls) *</label>
-                <div class="upload-row">
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <input type="file" id="excelFile" class="form-control" accept=".xlsx,.xls" required>
-                    </div>
-                    <button type="submit" class="btn-upload" id="submitBtn">
-                        <i class="fas fa-upload"></i> Yükle
-                    </button>
-                </div>
-            </div>
-        </form>
 
-        <div style="margin-top: 10px;">
-            <button class="btn-template" id="downloadTemplateBtn">
-                <i class="fas fa-download"></i> Örnek Şablon İndir
+            <div class="form-group">
+                <label for="excelFile">Excel Dosyası (.xlsx, .xls) *</label>
+                <input type="file" id="excelFile" class="form-control" accept=".xlsx,.xls" required>
+            </div>
+
+            <button type="submit" class="btn-new" id="submitBtn">
+                <i class="fas fa-upload"></i> Dosyayı Yükle
             </button>
         </div>
+    </form>
 
-        <div id="resultCard" class="result-card result-success">
-            <h3 style="margin-top: 0; font-size: 16px;">Yükleme Tamamlandı</h3>
-            <div class="result-stats">
-                <div class="stat-item">
-                    <span class="stat-value" id="countAdded" style="color: #16a34a;">0</span>
-                    <span class="stat-label">Eklenen</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-value" id="countSkipped" style="color: #ca8a04;">0</span>
-                    <span class="stat-label">Atlanan (Mevcut)</span>
-                </div>
+    <!-- Summary Banner & Results -->
+    <div class="summary-banner" id="resultBanner">
+        <div class="summary-banner-title">
+            <span>✅ Yükleme Sonuçları</span>
+        </div>
+        <div class="summary-cards-grid">
+            <div class="summary-stat-box">
+                <div class="summary-stat-label">Başarıyla Eklenen Kayıtlar</div>
+                <div class="summary-stat-val stat-added" id="countAdded">0 Adet</div>
+            </div>
+            <div class="summary-stat-box">
+                <div class="summary-stat-label">Atlanan (Sistemde Mevcut) Kayıtlar</div>
+                <div class="summary-stat-val stat-skipped" id="countSkipped">0 Adet</div>
             </div>
         </div>
+    </div>
+
+    <!-- Processed B2B Ekstre Table -->
+    <div class="table-responsive table-container" id="previewContainer">
+        <div
+            style="padding: 12px 16px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-weight: 700; color: #1e293b; font-size: 0.92rem;">
+                <i class="fas fa-list-check" style="color: #10b981; margin-right: 6px;"></i>
+                Eklenen Ekstre Kayıtları Listesi (<span id="addedCountLabel">0</span>)
+            </span>
+        </div>
+        <table class="data-table" id="previewTable">
+            <thead>
+                <tr>
+                    <th style="width: 110px;">TARİH</th>
+                    <th style="width: 130px;">FİŞ NO</th>
+                    <th style="width: 120px;">FİŞ TÜRÜ</th>
+                    <th>AÇIKLAMA</th>
+                    <th style="width: 130px;">FATURA NO</th>
+                    <th style="width: 120px; text-align: right;">BORÇ</th>
+                    <th style="width: 120px; text-align: right;">ALACAK</th>
+                    <th style="width: 130px; text-align: right;">BAKİYE</th>
+                </tr>
+            </thead>
+            <tbody id="previewTbody">
+            </tbody>
+        </table>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
-    // Date parsing helpers (shared with fatura_yukleme)
     const parseDMYDateString = (dateStr) => {
         if (!dateStr) return '';
         if (typeof dateStr === 'number') {
@@ -265,6 +428,10 @@
         return 0;
     };
 
+    function formatTR(num) {
+        return num.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
     // Download sample template
     document.getElementById('downloadTemplateBtn').addEventListener('click', () => {
         const sampleData = [
@@ -288,15 +455,18 @@
         const submitBtn = document.getElementById('submitBtn');
         const subeId = document.getElementById('Sube_ID').value;
 
-        if (!fileInput.files[0]) return;
+        if (!fileInput.files[0]) {
+            showToast('Lütfen bir Excel dosyası seçin.', 'error');
+            return;
+        }
         if (!subeId) {
             showToast('Şube seçili değil.', 'error');
             return;
         }
 
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> İşleniyor...';
-        document.getElementById('resultCard').style.display = 'none';
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Dosya Okunuyor...';
+        document.getElementById('resultBanner').style.display = 'none';
 
         const reader = new FileReader();
         reader.onload = async (event) => {
@@ -309,7 +479,7 @@
                 if (sheetData.length === 0) {
                     showToast('Dosya boş görünüyor.', 'error');
                     submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
+                    submitBtn.innerHTML = '<i class="fas fa-upload"></i> Dosyayı Yükle';
                     return;
                 }
 
@@ -357,11 +527,9 @@
                 if (headerRowIndex === -1) {
                     showToast("'Tarih' ve 'Fiş No' sütunları bulunamadı. Lütfen sütun adlarını kontrol edin.", 'error');
                     submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
+                    submitBtn.innerHTML = '<i class="fas fa-upload"></i> Dosyayı Yükle';
                     return;
                 }
-
-                console.log("Header detected at row:", headerRowIndex, foundHeaders);
 
                 const ekstreler = [];
                 for (let i = headerRowIndex + 1; i < sheetData.length; i++) {
@@ -369,30 +537,35 @@
                     if (!row || row.length === 0) continue;
 
                     let fisNo = String(row[foundHeaders.fisNo] || "").trim();
-
                     const dateStr = parseDMYDateString(row[foundHeaders.tarih]);
                     if (!dateStr) continue;
 
+                    const borc = foundHeaders.borc !== -1 ? parseCurrencyValue(row[foundHeaders.borc]) : 0;
+                    const alacak = foundHeaders.alacak !== -1 ? parseCurrencyValue(row[foundHeaders.alacak]) : 0;
+
                     ekstreler.push({
+                        _index: ekstreler.length,
                         Sube_ID: parseInt(subeId),
                         Tarih: dateStr,
                         Fis_No: fisNo,
                         Fis_Turu: foundHeaders.fisTuru !== -1 ? String(row[foundHeaders.fisTuru] || "").trim() : null,
                         Aciklama: foundHeaders.aciklama !== -1 ? String(row[foundHeaders.aciklama] || "").trim() : null,
-                        Borc: foundHeaders.borc !== -1 ? parseCurrencyValue(row[foundHeaders.borc]) : 0,
-                        Alacak: foundHeaders.alacak !== -1 ? parseCurrencyValue(row[foundHeaders.alacak]) : 0,
+                        Borc: borc,
+                        Alacak: alacak,
                         Toplam_Bakiye: foundHeaders.bakiye !== -1 ? parseCurrencyValue(row[foundHeaders.bakiye]) : 0,
                         Fatura_No: foundHeaders.faturaNo !== -1 ? String(row[foundHeaders.faturaNo] || "").trim() || null : null,
-                        Fatura_Metni: foundHeaders.faturaMetni !== -1 ? String(row[foundHeaders.faturaMetni] || "").trim() || null : null,
+                        Fatura_Metni: foundHeaders.faturaMetni !== -1 ? String(row[foundHeaders.faturaMetni] || "").trim() || null : null
                     });
                 }
 
                 if (ekstreler.length === 0) {
-                    showToast('Geçerli veri bulunamadı. Sütun adlarını kontrol edin.', 'error');
+                    showToast('Geçerli ekstre verisi bulunamadı. Sütun adlarını kontrol edin.', 'error');
                     submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
+                    submitBtn.innerHTML = '<i class="fas fa-upload"></i> Dosyayı Yükle';
                     return;
                 }
+
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Yükleniyor...';
 
                 const response = await fetch('/api/v1/b2b-ekstreler/bulk', {
                     method: 'POST',
@@ -403,9 +576,48 @@
 
                 if (response.ok) {
                     const resData = await response.json();
-                    document.getElementById('countAdded').innerText = resData.added;
-                    document.getElementById('countSkipped').innerText = resData.skipped;
-                    document.getElementById('resultCard').style.display = 'block';
+                    const addedIndicesSet = new Set(resData.added_indices || []);
+
+                    // Filter only newly added records using exact indices
+                    const successfullyAddedList = ekstreler.filter(e => addedIndicesSet.has(e._index));
+
+                    const tbody = document.getElementById('previewTbody');
+                    if (successfullyAddedList.length > 0) {
+                        tbody.innerHTML = successfullyAddedList.map(e => `
+                            <tr>
+                                <td style="color: #64748b;">${e.Tarih || '-'}</td>
+                                <td class="code-cell">${e.Fis_No || '-'}</td>
+                                <td style="color: #475569;">${e.Fis_Turu || '-'}</td>
+                                <td style="font-weight: 500; color: #0f172a;">${e.Aciklama || '-'}</td>
+                                <td style="font-family: monospace; color: #3b82f6;">${e.Fatura_No || '-'}</td>
+                                <td style="text-align: right; color: ${e.Borc > 0 ? '#b91c1c' : '#64748b'}; font-weight: 600;">
+                                    ${e.Borc > 0 ? formatTR(e.Borc) + ' ₺' : '-'}
+                                </td>
+                                <td style="text-align: right; color: ${e.Alacak > 0 ? '#15803d' : '#64748b'}; font-weight: 600;">
+                                    ${e.Alacak > 0 ? formatTR(e.Alacak) + ' ₺' : '-'}
+                                </td>
+                                <td style="text-align: right; font-weight: 700; color: #1e293b;">
+                                    ${formatTR(e.Toplam_Bakiye)} ₺
+                                </td>
+                            </tr>
+                        `).join('');
+                    } else {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="8" style="text-align: center; color: #64748b; padding: 24px;">
+                                    <i class="fas fa-info-circle" style="margin-right: 6px;"></i>
+                                    Yeni eklenen ekstre kaydı bulunamadı (Tüm kayıtlar sistemde zaten mevcuttu).
+                                </td>
+                            </tr>
+                        `;
+                    }
+
+                    document.getElementById('addedCountLabel').innerText = `${successfullyAddedList.length} Kayıt`;
+                    document.getElementById('previewContainer').style.display = 'block';
+
+                    document.getElementById('countAdded').innerText = `${resData.added} Adet`;
+                    document.getElementById('countSkipped').innerText = `${resData.skipped} Adet`;
+                    document.getElementById('resultBanner').style.display = 'block';
                     showToast(`İşlem tamamlandı. Eklenen: ${resData.added}, Atlanan: ${resData.skipped}`);
                 } else {
                     const err = await response.json();
@@ -417,7 +629,7 @@
                 showToast('Dosya okuma hatası: ' + err.message, 'error');
             } finally {
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
+                submitBtn.innerHTML = '<i class="fas fa-upload"></i> Dosyayı Yükle';
             }
         };
         reader.readAsArrayBuffer(fileInput.files[0]);
