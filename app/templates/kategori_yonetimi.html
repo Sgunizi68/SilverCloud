@@ -8,148 +8,139 @@
 
 {% block extra_style %}
 <style>
-    .ref-page-container {
-        padding: 20px;
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.95);
+        --glass-border: rgba(255, 255, 255, 0.3);
+        --accent-color: #667eea;
+        --text-dark: #2d3748;
+        --text-gray: #718096;
     }
 
-    .card-glass {
-        background: rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(8px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
+    .main-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
         border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-        margin-bottom: 20px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        padding: 24px;
+        margin-bottom: 24px;
     }
 
-    .header-bar {
+    .page-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 15px 20px;
+        margin-bottom: 24px;
+        gap: 16px;
         flex-wrap: wrap;
-        gap: 15px;
     }
 
-    .header-title {
-        font-size: 16px;
+    .page-title {
+        font-size: 1.25rem;
         font-weight: 700;
-        color: #1e293b;
+        color: var(--text-dark);
         margin: 0;
-    }
-
-    .header-actions {
         display: flex;
         align-items: center;
         gap: 10px;
+    }
+
+    .action-bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
         flex-wrap: wrap;
     }
 
-    .action-btn {
-        padding: 8px 14px;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        background: white;
-        font-size: 13px;
-        font-weight: 500;
-        color: #475569;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        transition: all 0.2s;
-    }
-
-    .action-btn:hover {
-        background: #f8fafc;
-        border-color: #cbd5e1;
-    }
-
-    .action-btn.primary {
-        background: #3b82f6;
-        color: white;
-        border-color: #3b82f6;
-        font-weight: 600;
-    }
-
-    .action-btn.primary:hover {
-        background: #2563eb;
+    .search-container {
+        position: relative;
+        min-width: 200px;
     }
 
     .search-input {
-        padding: 8px 12px;
+        width: 100%;
+        padding: 10px 16px 10px 40px;
+        border-radius: 8px;
         border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        width: 180px;
-        font-size: 13px;
         outline: none;
+        transition: all 0.2s;
+        font-size: 0.9rem;
         background: white;
+    }
+
+    .search-input:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-gray);
+        font-size: 13px;
     }
 
     .filter-select {
-        padding: 8px 12px;
+        padding: 10px 14px;
+        border-radius: 8px;
         border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        font-size: 13px;
         outline: none;
+        font-size: 0.88rem;
+        font-weight: 500;
+        color: #475569;
         background: white;
-        color: #475569;
+        cursor: pointer;
+        transition: all 0.2s;
     }
 
-    .ref-table-wrapper {
-        padding: 0;
-        overflow: hidden;
+    .filter-select:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
 
-    .ref-table {
-        width: 100%;
-        border-collapse: collapse;
+    .btn-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        color: var(--text-dark);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.95rem;
     }
 
-    .ref-table th {
-        background: #fdfdfd;
-        color: #64748b;
-        font-size: 11px;
+    .btn-icon:hover {
+        background: #f7fafc;
+        border-color: #cbd5e0;
+    }
+
+    .btn-new {
+        background: var(--accent-color);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
         font-weight: 600;
-        padding: 12px 20px;
-        text-align: left;
-        border-bottom: 1px solid #e2e8f0;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .ref-table td {
-        padding: 12px 20px;
-        color: #475569;
-        font-size: 13px;
-        border-bottom: 1px solid #e2e8f0;
-        vertical-align: middle;
-    }
-
-    .ref-table tr:hover {
-        background-color: #f8fafc;
-    }
-
-    .status-badge {
-        display: inline-flex;
+        display: flex;
         align-items: center;
-        justify-content: center;
-        font-size: 14px;
-        cursor: help;
+        gap: 8px;
+        cursor: pointer;
+        transition: transform 0.2s, background 0.2s;
+        font-size: 0.9rem;
     }
 
-    .status-active { color: #10b981; }
-    .status-passive { color: #f43f5e; }
-
-    .gizli-badge {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 14px;
-        color: #f59e0b;
-        cursor: help;
+    .btn-new:hover {
+        background: #5a67d8;
+        transform: translateY(-1px);
     }
 
-    /* Column Redesign CSS */
+    /* Column Container & Cards (preserving layout structure) */
     .kat-columns-container {
         display: flex;
         gap: 20px;
@@ -161,17 +152,21 @@
     .kat-column {
         flex: 1;
         min-width: 320px;
-        background: rgba(255, 255, 255, 0.5);
-        border-radius: 16px;
-        border: 1px solid rgba(229, 231, 235, 0.5);
+        background: #ffffff;
+        border-radius: 12px;
+        border: 1px solid #cbd5e1;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
         display: flex;
         flex-direction: column;
         max-height: calc(100vh - 250px);
+        overflow: hidden;
     }
 
     .column-header {
-        padding: 15px 20px;
-        border-bottom: 1px solid #e5e7eb;
+        padding: 12px 16px;
+        border-bottom: 2px solid #0f172a;
+        background: #1e293b;
+        color: #ffffff;
         display: flex;
         align-items: center;
         gap: 10px;
@@ -179,56 +174,54 @@
 
     .column-header h2 {
         margin: 0;
-        font-size: 14px;
-        font-weight: 800;
+        font-size: 0.78rem;
+        font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.05em;
+        color: #ffffff;
     }
 
     .column-body {
-        padding: 10px;
+        padding: 12px;
         overflow-y: auto;
         flex: 1;
+        background: #f8fafc;
     }
 
-    /* Type-specific colors */
+    /* Type-specific top accent badges */
     .column-gelir { border-top: 4px solid #10b981; }
-    .column-gelir .column-header h2 { color: #065f46; }
-    .column-gelir .column-header i { color: #10b981; }
+    .column-gelir .column-header i { color: #34d399; }
 
     .column-gider { border-top: 4px solid #f43f5e; }
-    .column-gider .column-header h2 { color: #9f1239; }
-    .column-gider .column-header i { color: #f43f5e; }
+    .column-gider .column-header i { color: #fb7185; }
 
     .column-odeme { border-top: 4px solid #f59e0b; }
-    .column-odeme .column-header h2 { color: #92400e; }
-    .column-odeme .column-header i { color: #f59e0b; }
+    .column-odeme .column-header i { color: #fbbf24; }
 
     .column-giden-fatura { border-top: 4px solid #6366f1; }
-    .column-giden-fatura .column-header h2 { color: #4338ca; }
-    .column-giden-fatura .column-header i { color: #6366f1; }
+    .column-giden-fatura .column-header i { color: #a5b4fc; }
 
     .column-bilgi { border-top: 4px solid #64748b; }
-    .column-bilgi .column-header h2 { color: #334155; }
-    .column-bilgi .column-header i { color: #64748b; }
+    .column-bilgi .column-header i { color: #94a3b8; }
 
     .kat-card {
-        background: white;
-        border-radius: 12px;
-        padding: 10px 14px;
+        background: #ffffff;
+        border-radius: 8px;
+        padding: 8px 12px;
         margin-bottom: 8px;
-        border: 1px solid #f1f5f9;
+        border: 1px solid #e2e8f0;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        transition: all 0.2s;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+        transition: all 0.2s ease;
     }
 
     .kat-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        border-color: #e2e8f0;
+        background: #eff6ff !important;
+        border-color: #cbd5e1;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
     }
 
     .kat-info {
@@ -241,64 +234,190 @@
     }
 
     .kat-title {
-        font-size: 13px;
+        font-size: 0.86rem;
         font-weight: 600;
-        color: #1e293b;
+        color: #0f172a;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
 
     .kat-id-tag {
-        font-size: 10px;
-        color: #94a3b8;
-        font-weight: 500;
+        font-family: monospace;
+        font-size: 0.78rem;
+        color: #334155;
+        font-weight: 600;
         min-width: 25px;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 8px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .status-badge.status-active {
+        background: #dcfce7;
+        color: #15803d;
+    }
+
+    .status-badge.status-passive {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .gizli-badge {
+        display: inline-flex;
+        align-items: center;
+        color: #f59e0b;
+        font-size: 12px;
     }
 
     .action-icons {
         display: flex;
-        gap: 4px;
+        gap: 6px;
         align-items: center;
     }
 
-    .icon-btn {
+    .btn-row-action {
         width: 28px;
         height: 28px;
+        font-size: 0.82rem;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        background: white;
-        border: 1px solid #e5e7eb;
         border-radius: 6px;
+        border: 1px solid transparent;
         cursor: pointer;
         transition: all 0.2s;
-        color: #64748b;
     }
 
-    .icon-btn:hover {
-        background: #f1f5f9;
-        color: #2563eb;
-        border-color: #cbd5e1;
+    .btn-edit {
+        background: #ebf4ff;
+        color: #3182ce;
+    }
+
+    .btn-edit:hover {
+        background: #bee3f8;
+    }
+
+    /* Modal Form Styling matching ust_kategori */
+    .form-group {
+        margin-bottom: 16px;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        margin-bottom: 6px;
+    }
+
+    .form-group input,
+    .form-group select {
+        width: 100%;
+        padding: 9px 12px;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        outline: none;
+        font-size: 0.9rem;
+        background: #fff;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 24px;
+    }
+
+    .btn {
+        padding: 9px 18px;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
+    }
+
+    .btn-secondary {
+        background: #e2e8f0;
+        color: #4a5568;
+    }
+
+    .btn-secondary:hover {
+        background: #cbd5e0;
+    }
+
+    .btn-primary {
+        background: var(--accent-color);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #5a67d8;
     }
 
     /* Custom Scrollbar */
     .column-body::-webkit-scrollbar { width: 5px; }
     .column-body::-webkit-scrollbar-track { background: transparent; }
-    .column-body::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+    .column-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+    @media print {
+        .hide-on-print,
+        .page-header,
+        .action-bar {
+            display: none !important;
+        }
+
+        .main-card {
+            box-shadow: none !important;
+            border: none !important;
+            padding: 0 !important;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="ref-page-container">
-    <div class="card-glass header-bar">
-        <h1 class="header-title">Kategori Yönetimi</h1>
-        <div class="header-actions">
-            <button class="icon-btn" onclick="window.print()" title="Yazdır"><i class="fas fa-print"></i></button>
-            <button class="icon-btn" onclick="exportToExcel()" title="Excel"><i class="fas fa-download"></i></button>
-            <button class="icon-btn" data-permission="Mail Gönder" onclick="openReportMailModal({ printSelector: '.column-container' })" title="Mail Gönder"><i class="fas fa-envelope" style="color: #3b82f6;"></i></button>
+<div class="main-card">
+    <div class="page-header">
+        <h2 class="page-title">
+            <span>🏷️ Kategori Yönetimi</span>
+        </h2>
+        <div class="action-bar">
+            <!-- Print Button -->
+            <button class="btn-icon" onclick="window.print()" title="Yazdır">
+                <i class="fas fa-print"></i>
+            </button>
 
-            <input type="text" class="search-input" placeholder="Kategori ara..." id="kat-search">
+            <!-- Excel Button -->
+            <button class="btn-icon" onclick="exportToExcel()" title="Excel İndir" style="color: #16a34a;">
+                <i class="fas fa-file-excel"></i>
+            </button>
+
+            <!-- Mail Button -->
+            <button class="btn-icon" data-permission="Mail Gönder" onclick="openReportMailModal({ printSelector: '.kat-columns-container' })" title="Mail Gönder" style="color: #3b82f6;">
+                <i class="fas fa-envelope"></i>
+            </button>
+
+            <!-- Search Area -->
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="search-input" placeholder="Kategori ara..." id="kat-search">
+            </div>
 
             <select class="filter-select" id="filter-ust-kat">
                 <option value="">Tüm Üst Kategoriler</option>
@@ -316,7 +435,7 @@
                 <option value="Giden Fatura">Giden Fatura</option>
             </select>
 
-            <button class="action-btn primary" onclick="openAddModal()">
+            <button class="btn-new" onclick="openAddModal()">
                 <i class="fas fa-plus"></i> Yeni Kategori
             </button>
         </div>
@@ -339,10 +458,8 @@
                 <h2>{{ t.label }}</h2>
             </div>
             <div class="column-body">
-                {% set found = false %}
                 {% for k in kategoriler %}
                     {% if k.Tip == t.key %}
-                    {% set found = true %}
                     <div class="kat-card" data-id="{{ k.Kategori_ID }}" data-ust-kat="{{ k.UstKategori_Adi }}" data-tip="{{ k.Tip }}">
                         <div class="kat-info">
                             <span class="status-badge {{ 'status-active' if k.Aktif_Pasif else 'status-passive' }}" title="{{ 'Aktif' if k.Aktif_Pasif else 'Pasif' }}">
@@ -363,12 +480,6 @@
                     </div>
                     {% endif %}
                 {% endfor %}
-                
-                {% if not found %}
-                <div style="text-align: center; padding: 20px; color: #94a3b8; font-size: 11px;">
-                    Bu tipte kategori bulunmuyor.
-                </div>
-                {% endif %}
             </div>
         </div>
         {% endfor %}
@@ -454,9 +565,9 @@
                         <label for="Gizli" style="font-size: 14px; cursor: pointer;">Gizli</label>
                     </div>
                 </div>
-                <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; padding-top: 15px; border-top: 1px solid #e2e8f0;">
-                    <button type="button" class="action-btn" onclick="hideModal()">İptal</button>
-                    <button type="submit" class="action-btn primary">Kaydet</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="hideModal()">İptal</button>
+                    <button type="submit" class="btn btn-primary">${isEdit ? 'Güncelle' : 'Kaydet'}</button>
                 </div>
             </form>
         `;
