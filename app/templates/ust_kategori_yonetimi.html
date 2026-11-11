@@ -2,223 +2,424 @@
 
 {% block title %}Üst Kategori Yönetimi - SilverCloud{% endblock %}
 
-/* Nav active block */
 {% block acc_kategori_sistemi %}active{% endblock %}
 {% block acc_kategori_sistemi_content %}open{% endblock %}
 
 {% block extra_style %}
 <style>
-    .ref-page-container {
-        padding: 20px;
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.95);
+        --glass-border: rgba(255, 255, 255, 0.3);
+        --accent-color: #667eea;
+        --text-dark: #2d3748;
+        --text-gray: #718096;
     }
 
-    .card-glass {
-        background: rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(8px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
+    .main-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
         border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-        margin-bottom: 20px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        padding: 24px;
+        margin-bottom: 24px;
     }
 
-    .header-bar {
+    .page-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 15px 20px;
+        margin-bottom: 24px;
+        gap: 16px;
         flex-wrap: wrap;
-        gap: 15px;
     }
 
-    .header-title {
-        font-size: 16px;
+    .page-title {
+        font-size: 1.25rem;
         font-weight: 700;
-        color: #1e293b;
+        color: var(--text-dark);
         margin: 0;
-    }
-
-    .header-actions {
         display: flex;
         align-items: center;
         gap: 10px;
     }
 
-    .action-btn {
-        padding: 8px 14px;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        background: white;
-        font-size: 13px;
-        font-weight: 500;
-        color: #475569;
-        cursor: pointer;
-        display: inline-flex;
+    .action-bar {
+        display: flex;
         align-items: center;
-        gap: 6px;
-        transition: all 0.2s;
+        gap: 12px;
+        flex-wrap: wrap;
     }
 
-    .action-btn:hover {
-        background: #f8fafc;
-        border-color: #cbd5e1;
-    }
-
-    .action-btn.primary {
-        background: #3b82f6;
-        color: white;
-        border-color: #3b82f6;
-        font-weight: 600;
-    }
-
-    .action-btn.primary:hover {
-        background: #2563eb;
+    .search-container {
+        position: relative;
+        min-width: 250px;
     }
 
     .search-input {
-        padding: 8px 12px;
+        width: 100%;
+        padding: 10px 16px 10px 40px;
+        border-radius: 8px;
         border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        width: 250px;
-        font-size: 13px;
         outline: none;
+        transition: all 0.2s;
+        font-size: 0.9rem;
         background: white;
     }
 
-    .ref-table-wrapper {
-        padding: 0;
-        overflow: hidden;
+    .search-input:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
 
-    .ref-table {
+    .search-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-gray);
+        font-size: 13px;
+    }
+
+    .btn-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        color: var(--text-dark);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.95rem;
+    }
+
+    .btn-icon:hover {
+        background: #f7fafc;
+        border-color: #cbd5e0;
+    }
+
+    .btn-new {
+        background: var(--accent-color);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        transition: transform 0.2s, background 0.2s;
+        font-size: 0.9rem;
+    }
+
+    .btn-new:hover {
+        background: #5a67d8;
+        transform: translateY(-1px);
+    }
+
+    .filter-checkbox-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 0.88rem;
+        font-weight: 500;
+        color: #475569;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .filter-checkbox-wrapper input {
+        cursor: pointer;
+        width: 16px;
+        height: 16px;
+    }
+
+    /* Table styles matching Degerler / Calisan Yonetimi */
+    .table-container {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        background: #ffffff;
+    }
+
+    .data-table {
         width: 100%;
         border-collapse: collapse;
     }
 
-    .ref-table th {
-        background: #fdfdfd;
-        color: #64748b;
-        font-size: 11px;
-        font-weight: 600;
-        padding: 12px 20px;
-        text-align: left;
-        border-bottom: 1px solid #e2e8f0;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+    .data-table thead tr {
+        background: #1e293b;
     }
 
-    .ref-table td {
-        padding: 12px 20px;
-        color: #475569;
-        font-size: 13px;
+    .data-table th {
+        background: #1e293b;
+        color: #ffffff;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 9px 14px;
+        text-align: left;
+        border-bottom: 2px solid #0f172a;
+    }
+
+    .data-table td {
+        padding: 8px 14px;
+        color: #1e293b;
+        font-size: 0.86rem;
         border-bottom: 1px solid #e2e8f0;
         vertical-align: middle;
     }
 
-    .ref-table tr:hover {
+    .data-table tbody tr:nth-child(even) td {
         background-color: #f8fafc;
+    }
+
+    .data-table tbody tr:hover td {
+        background-color: #eff6ff !important;
+    }
+
+    .btn-row-action {
+        width: 28px;
+        height: 28px;
+        font-size: 0.82rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-edit {
+        background: #ebf4ff;
+        color: #3182ce;
+    }
+
+    .btn-edit:hover {
+        background: #bee3f8;
+    }
+
+    .btn-delete {
+        background: #fee2e2;
+        color: #ef4444;
+    }
+
+    .btn-delete:hover {
+        background: #fecaca;
     }
 
     .status-badge {
         display: inline-flex;
         align-items: center;
-        justify-content: center;
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-    }
-
-    .status-active {
-        color: #16a34a;
-        background: #f0fdf4;
-        border: 1px solid #bbf7d0;
-    }
-
-    .status-passive {
-        color: #dc2626;
-        background: #fef2f2;
-        border: 1px solid #fecaca;
-    }
-
-    .action-icons {
-        display: flex;
-        gap: 6px;
-        justify-content: flex-end;
-    }
-
-    .icon-btn {
-        width: 32px;
-        height: 32px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        background: white;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
+        gap: 5px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
         cursor: pointer;
-        transition: all 0.2s;
-        color: #64748b;
+        transition: transform 0.15s ease, opacity 0.15s;
     }
 
-    .icon-btn:hover {
-        background: #f8fafc;
-        color: #3b82f6;
-        border-color: #3b82f6;
+    .status-badge:hover {
+        transform: scale(1.05);
+        opacity: 0.9;
+    }
+
+    .status-badge.active {
+        background: #dcfce7;
+        color: #15803d;
+    }
+
+    .status-badge.inactive {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    /* Modal Form Styling */
+    .form-group {
+        margin-bottom: 16px;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        margin-bottom: 6px;
+    }
+
+    .form-group input {
+        width: 100%;
+        padding: 9px 12px;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        outline: none;
+        font-size: 0.9rem;
+        background: #fff;
+    }
+
+    .form-group input:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 24px;
+    }
+
+    .btn {
+        padding: 9px 18px;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
+    }
+
+    .btn-secondary {
+        background: #e2e8f0;
+        color: #4a5568;
+    }
+
+    .btn-secondary:hover {
+        background: #cbd5e0;
+    }
+
+    .btn-primary {
+        background: var(--accent-color);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #5a67d8;
+    }
+
+    @media print {
+        .hide-on-print,
+        .page-header,
+        .action-bar {
+            display: none !important;
+        }
+
+        .main-card {
+            box-shadow: none !important;
+            border: none !important;
+            padding: 0 !important;
+        }
+
+        .table-container {
+            border: 1px solid #000 !important;
+        }
+
+        .data-table th {
+            background: #f1f5f9 !important;
+            color: #000 !important;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="ref-page-container">
-    <div class="card-glass header-bar">
-        <h1 class="header-title">Üst Kategori Yönetimi</h1>
-        <div class="header-actions">
-            <!-- Icons from reference image -->
-            <button class="icon-btn" onclick="window.print()" title="Yazdır"><i class="fas fa-print"></i></button>
-            <button class="icon-btn" onclick="exportToExcel()" title="Excel"><i class="fas fa-download"></i></button>
-            <button class="icon-btn" data-permission="Mail Gönder" onclick="openReportMailModal({ tableId: 'ust-kat-table' })" title="Mail Gönder"><i class="fas fa-envelope" style="color: #3b82f6;"></i></button>
-            <input type="text" class="search-input" placeholder="Üst Kategori ara..." id="ust-kat-search">
-            <button class="action-btn primary" onclick="openAddModal()">
-                <i class="fas fa-plus"></i> Yeni Üst Kategori
+<div class="main-card">
+    <div class="page-header">
+        <h2 class="page-title">
+            <span>📁 Üst Kategori Yönetimi</span>
+        </h2>
+
+        <div class="action-bar">
+            <!-- Print Button -->
+            <button class="btn-icon" onclick="window.print()" title="Yazdır">
+                <i class="fas fa-print"></i>
+            </button>
+
+            <!-- Excel Button -->
+            <button class="btn-icon" onclick="exportUstKategorilerExcel()" title="Excel İndir" style="color: #16a34a;">
+                <i class="fas fa-file-excel"></i>
+            </button>
+
+            <!-- Mail Button -->
+            <button class="btn-icon" data-permission="Mail Gönder" onclick="openUstKategorilerReportMail()" title="Mail Gönder" style="color: #3b82f6;">
+                <i class="fas fa-envelope"></i>
+            </button>
+
+            <!-- Search Area -->
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="search-input" placeholder="Üst Kategori Ara..." id="ust-kat-search">
+            </div>
+
+            <!-- Active Filter Checkbox -->
+            <label class="filter-checkbox-wrapper">
+                <input type="checkbox" id="filter-active">
+                <span>Sadece Aktifleri Göster</span>
+            </label>
+
+            <!-- New Button -->
+            <button class="btn-new" onclick="openAddModal()">
+                <i class="fas fa-plus"></i>
+                Yeni Üst Kategori
             </button>
         </div>
     </div>
 
-    <div class="card-glass ref-table-wrapper">
-        <table class="ref-table" id="ust-kat-table">
+    <!-- Table Container -->
+    <div class="table-responsive table-container">
+        <table class="data-table" id="ust-kat-table">
             <thead>
                 <tr>
                     <th style="width: 80px;">ID</th>
                     <th>ÜST KATEGORİ ADI</th>
-                    <th style="width: 100px; text-align: center;">AKTİF</th>
-                    <th style="width: 120px; text-align: center;">İŞLEMLER</th>
+                    <th style="width: 120px; text-align: center;">DURUM</th>
+                    <th style="width: 100px; text-align: center;" class="hide-on-print">İŞLEMLER</th>
                 </tr>
             </thead>
             <tbody id="ust-kat-tbody">
                 {% for uk in ust_kategoriler %}
-                <tr data-id="{{ uk.UstKategori_ID }}">
-                    <td>{{ uk.UstKategori_ID }}</td>
-                    <td class="uk-name">{{ uk.UstKategori_Adi }}</td>
+                <tr data-id="{{ uk.UstKategori_ID }}"
+                    data-name="{{ (uk.UstKategori_Adi or '') | lower }}"
+                    data-aktif="{{ 'true' if uk.Aktif_Pasif else 'false' }}">
+                    <td style="font-family: monospace; font-weight: 600; color: #334155;">#{{ uk.UstKategori_ID }}</td>
+                    <td style="font-weight: 600; color: #0f172a;">{{ uk.UstKategori_Adi }}</td>
                     <td style="text-align: center;">
-                        <span class="status-badge {{ 'status-active' if uk.Aktif_Pasif else 'status-passive' }}">
-                            <i class="fas {{ 'fa-check' if uk.Aktif_Pasif else 'fa-times' }}"></i>
+                        <span class="status-badge {{ 'active' if uk.Aktif_Pasif else 'inactive' }}"
+                              title="Tıklayarak durumu değiştir"
+                              onclick="toggleStatus({{ uk.UstKategori_ID }}, {{ 'false' if uk.Aktif_Pasif else 'true' }})">
+                            <i class="fas {{ 'fa-check-circle' if uk.Aktif_Pasif else 'fa-times-circle' }}"></i>
+                            {{ 'Aktif' if uk.Aktif_Pasif else 'Pasif' }}
                         </span>
                     </td>
-                    <td class="hide-on-print">
-                        <div class="action-icons">
-                            <button class="icon-btn edit" title="Düzenle"
+                    <td style="text-align: center;" class="hide-on-print">
+                        <div style="display: flex; gap: 6px; justify-content: center; align-items: center;">
+                            <button class="btn-row-action btn-edit" title="Düzenle"
                                 onclick='openEditModal({{ uk | tojson | safe }})'>
-                                <i class="fas fa-pen"></i>
+                                <i class="fas fa-pencil-alt"></i>
                             </button>
-                            <button class="icon-btn delete" title="Sil" style="color: #ef4444;"
-                                onclick="deleteUstKategori({{ uk.UstKategori_ID }}, '{{ uk.UstKategori_Adi | escape }}')">
+                            <button class="btn-row-action btn-delete" title="Sil"
+                                onclick="deleteUstKategori({{ uk.UstKategori_ID }}, `{{ uk.UstKategori_Adi | escape }}`)">
                                 <i class="fas fa-trash-alt"></i>
                             </button>
                         </div>
                     </td>
                 </tr>
                 {% else %}
-                <tr>
+                <tr class="no-data-row">
                     <td colspan="4" style="text-align: center; padding: 40px; color: #94a3b8;">
+                        <i class="fas fa-folder-open" style="font-size: 32px; display: block; margin-bottom: 12px; opacity: 0.5;"></i>
                         Henüz üst kategori bulunmuyor.
                     </td>
                 </tr>
@@ -230,44 +431,62 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
+    const UST_KATEGORILER_DATA = {{ ust_kategoriler | tojson | safe }};
+
     document.addEventListener('DOMContentLoaded', () => {
         const searchInput = document.getElementById('ust-kat-search');
-        if (searchInput) {
-            searchInput.addEventListener('input', function () {
-                const term = this.value.toLowerCase();
-                document.querySelectorAll('#ust-kat-tbody tr').forEach(row => {
-                    const name = row.querySelector('.uk-name')?.textContent.toLowerCase() || '';
-                    row.style.display = name.includes(term) ? '' : 'none';
-                });
+        const activeCheckbox = document.getElementById('filter-active');
+
+        function filterTable() {
+            const term = searchInput ? searchInput.value.toLowerCase().trim() : '';
+            const showOnlyActive = activeCheckbox ? activeCheckbox.checked : false;
+            const rows = document.querySelectorAll('#ust-kat-tbody tr:not(.no-data-row)');
+
+            rows.forEach(row => {
+                const name = row.getAttribute('data-name') || '';
+                const id = row.getAttribute('data-id') || '';
+                const isAktif = row.getAttribute('data-aktif') === 'true';
+
+                const matchesSearch = term === '' || name.includes(term) || id.includes(term);
+                const matchesActive = !showOnlyActive || isAktif;
+
+                if (matchesSearch && matchesActive) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
             });
         }
+
+        if (searchInput) searchInput.addEventListener('keyup', filterTable);
+        if (activeCheckbox) activeCheckbox.addEventListener('change', filterTable);
+
+        filterTable();
     });
 
     function ustKategoriFormHtml(isEdit = false, data = {}) {
         return `
             <form id="ustKatForm" data-mode="${isEdit ? 'edit' : 'add'}" data-id="${data.UstKategori_ID || ''}">
-                <div class="form-group" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px;">
-                    <label style="font-size: 13px; font-weight: 600; color: #475569;">Üst Kategori Adı *</label>
-                    <input type="text" id="UstKategori_Adi" class="form-control" 
-                        style="padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px;"
-                        value="${data.UstKategori_Adi || ''}" required>
+                <div class="form-group">
+                    <label for="UstKategori_Adi">Üst Kategori Adı *</label>
+                    <input type="text" id="UstKategori_Adi" placeholder="Örn: Mutfak Giderleri" value="${data.UstKategori_Adi || ''}" required>
                 </div>
-                <div class="form-check" style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
-                    <input type="checkbox" id="Aktif_Pasif" ${data.Aktif_Pasif !== false ? 'checked' : ''}>
-                    <label for="Aktif_Pasif" style="font-size: 14px; cursor: pointer;">Aktif</label>
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="Aktif_Pasif" ${data.Aktif_Pasif !== false ? 'checked' : ''} style="width: 16px; height: 16px;"> Aktif Üst Kategori
+                    </label>
                 </div>
-                <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
-                    <button type="button" class="action-btn" onclick="hideModal()">İptal</button>
-                    <button type="submit" class="action-btn primary">Kaydet</button>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="hideModal()">İptal</button>
+                    <button type="submit" class="btn btn-primary">${isEdit ? 'Güncelle' : 'Kaydet'}</button>
                 </div>
             </form>
         `;
     }
 
     function openAddModal() {
-        showModal('Yeni Üst Kategori', ustKategoriFormHtml(false));
+        showModal('Yeni Üst Kategori Ekle', ustKategoriFormHtml(false));
         document.getElementById('ustKatForm').addEventListener('submit', handleFormSubmit);
     }
 
@@ -296,34 +515,182 @@
                 body: JSON.stringify(data)
             });
             if (res.ok) {
-                showToast(mode === 'add' ? 'Kayıt eklendi.' : 'Kayıt güncellendi.');
+                showToast(mode === 'add' ? 'Üst kategori başarıyla eklendi.' : 'Üst kategori güncellendi.');
                 hideModal();
-                setTimeout(() => location.reload(), 800);
+                setTimeout(() => location.reload(), 900);
             } else {
                 const err = await res.json();
-                showToast(err.error || 'İşlem başarısız.', 'error');
+                showToast(err.error || 'İşlem sırasında hata oluştu.', 'error');
             }
-        } catch { showToast('Sunucu bağlantı hatası.', 'error'); }
+        } catch { showToast('Bağlantı hatası.', 'error'); }
+    }
+
+    async function toggleStatus(id, newStatus) {
+        try {
+            const res = await fetch(`/api/v1/ust-kategoriler/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ Aktif_Pasif: newStatus })
+            });
+            if (res.ok) {
+                location.reload();
+            } else {
+                const err = await res.json();
+                showToast(err.error || 'Güncellenirken hata oluştu.', 'error');
+            }
+        } catch { showToast('Bağlantı hatası.', 'error'); }
     }
 
     async function deleteUstKategori(id, name) {
         if (!confirm(`'${name}' üst kategorisini silmek istediğinize emin misiniz?`)) return;
         try {
             const res = await fetch(`/api/v1/ust-kategoriler/${id}`, { method: 'DELETE' });
-            if (res.ok) {
+            if (res.ok || res.status === 204) {
                 showToast('Kayıt silindi.');
-                setTimeout(() => location.reload(), 800);
+                setTimeout(() => location.reload(), 900);
             } else {
                 const err = await res.json();
                 showToast(err.error || 'Silinirken hata oluştu.', 'error');
             }
-        } catch { showToast('Sunucu bağlantı hatası.', 'error'); }
+        } catch { showToast('Bağlantı hatası.', 'error'); }
     }
 
-    function exportToExcel() {
-        const table = document.getElementById('ust-kat-table');
-        const wb = XLSX.utils.table_to_book(table, { sheet: "Üst Kategoriler" });
-        XLSX.writeFile(wb, "SilverCloud_UstKategoriler.xlsx");
+    // ─── Üst Kategoriler Excel & Mail Raporlama ───
+    function getUstKategorilerReportMailHtml() {
+        const totalCount = UST_KATEGORILER_DATA.length;
+        const activeCount = UST_KATEGORILER_DATA.filter(u => u.Aktif_Pasif).length;
+
+        let rowsHtml = '';
+        if (totalCount === 0) {
+            rowsHtml = `
+                <tr>
+                    <td colspan="3" align="center" bgcolor="#ffffff" style="padding: 24px; text-align: center; color: #64748b; font-size: 13px; border-bottom: 1px solid #e2e8f0;">
+                        Henüz üst kategori bulunmuyor.
+                    </td>
+                </tr>
+            `;
+        } else {
+            rowsHtml = UST_KATEGORILER_DATA.map((u, idx) => {
+                const bg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
+                const statusBadge = u.Aktif_Pasif
+                    ? `<span style="background-color: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">Aktif</span>`
+                    : `<span style="background-color: #fee2e2; color: #b91c1c; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">Pasif</span>`;
+
+                return `
+                    <tr bgcolor="${bg}" style="background-color: ${bg};">
+                        <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; font-family: monospace; color: #334155; border-bottom: 1px solid #e2e8f0;">
+                            #${u.UstKategori_ID}
+                        </td>
+                        <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; font-weight: 600; color: #0f172a; border-bottom: 1px solid #e2e8f0;">
+                            ${u.UstKategori_Adi}
+                        </td>
+                        <td align="center" bgcolor="${bg}" style="padding: 10px 14px; text-align: center; border-bottom: 1px solid #e2e8f0;">
+                            ${statusBadge}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        return `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; max-width: 700px; margin: 0 auto;">
+                <!-- 1. BAŞLIK VE KART BÖLÜMÜ -->
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: separate; margin-bottom: 18px; border: 2px solid #6366f1; border-radius: 8px; overflow: hidden; background-color: #ffffff;">
+                    <tr>
+                        <td colspan="2" bgcolor="#eef2ff" style="padding: 12px 18px; background-color: #eef2ff; border-bottom: 2px solid #c7d2fe; text-align: center;">
+                            <span style="font-size: 16px; font-weight: bold; color: #3730a3;">
+                                📁 Üst Kategori Listesi Raporu
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td width="50%" align="center" bgcolor="#f8fafc" style="padding: 14px 10px; background-color: #f8fafc; border-right: 1px solid #e2e8f0; text-align: center;">
+                            <div style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Toplam Üst Kategori</div>
+                            <div style="font-size: 20px; font-weight: 800; color: #312e81;">${totalCount} Kayıt</div>
+                        </td>
+                        <td width="50%" align="center" bgcolor="#f8fafc" style="padding: 14px 10px; background-color: #f8fafc; text-align: center;">
+                            <div style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Aktif Üst Kategori</div>
+                            <div style="font-size: 20px; font-weight: 800; color: #15803d;">${activeCount} Kayıt</div>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- 2. TABLO -->
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; margin-bottom: 16px; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; background-color: #ffffff;">
+                    <thead>
+                        <tr bgcolor="#1e293b" style="background-color: #1e293b;">
+                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a; width: 70px;">ID</th>
+                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a;">ÜST KATEGORİ ADI</th>
+                            <th align="center" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: center; text-transform: uppercase; border-bottom: 2px solid #0f172a; width: 100px;">DURUM</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    function buildUstKategorilerWorkbook() {
+        if (typeof XLSX === 'undefined') return null;
+
+        const wb = XLSX.utils.book_new();
+        const totalCount = UST_KATEGORILER_DATA.length;
+        const activeCount = UST_KATEGORILER_DATA.filter(u => u.Aktif_Pasif).length;
+
+        const headers = ['ID', 'ÜST KATEGORİ ADI', 'DURUM'];
+
+        const sheetData = [
+            ['ÜST KATEGORİ LİSTESİ'],
+            ['Toplam Üst Kategori:', totalCount],
+            ['Aktif Üst Kategori:', activeCount],
+            ['Rapor Tarihi:', new Date().toLocaleString('tr-TR')],
+            [],
+            headers
+        ];
+
+        UST_KATEGORILER_DATA.forEach(u => {
+            sheetData.push([
+                u.UstKategori_ID || '',
+                u.UstKategori_Adi || '',
+                u.Aktif_Pasif ? 'Aktif' : 'Pasif'
+            ]);
+        });
+
+        const ws = XLSX.utils.aoa_to_sheet(sheetData);
+        ws['!cols'] = [
+            { wch: 10 },
+            { wch: 40 },
+            { wch: 15 }
+        ];
+
+        XLSX.utils.book_append_sheet(wb, ws, 'Üst Kategoriler');
+        return wb;
+    }
+
+    function exportUstKategorilerExcel() {
+        const wb = buildUstKategorilerWorkbook();
+        if (!wb) {
+            alert('Excel kütüphanesi yüklenemedi.');
+            return;
+        }
+        XLSX.writeFile(wb, 'SilverCloud_UstKategoriler.xlsx');
+    }
+
+    function getUstKategorilerReportExcelBase64() {
+        const wb = buildUstKategorilerWorkbook();
+        if (!wb) return null;
+        return XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+    }
+
+    function openUstKategorilerReportMail() {
+        openReportMailModal({
+            title: 'Üst Kategori Listesi',
+            filename: 'SilverCloud_UstKategoriler.xlsx',
+            getHtml: getUstKategorilerReportMailHtml,
+            getExcelBase64: getUstKategorilerReportExcelBase64
+        });
     }
 </script>
 {% endblock %}
