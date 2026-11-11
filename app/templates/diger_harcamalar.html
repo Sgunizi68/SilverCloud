@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
-{% set sube_display = (subeler | selectattr("Sube_ID", "equalto", secili_sube_id) | map(attribute="Sube_Adi") | first or 'Tümü') %}
+{% set sube_display = (subeler | selectattr("Sube_ID", "equalto", secili_sube_id) | map(attribute="Sube_Adi") | first or
+'Tümü') %}
 
 {% block title %}Diğer Harcamalar - SilverCloud{% endblock %}
 {% block nav_diger_harcamalar %}active{% endblock %}
@@ -246,15 +247,15 @@
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        padding: 12px 16px;
+        padding: 8px 12px;
         text-align: left;
         border-bottom: 2px solid #0f172a;
     }
 
     .data-table td {
-        padding: 12px 16px;
+        padding: 8px 12px;
         color: #1e293b;
-        font-size: 0.88rem;
+        font-size: 0.82rem;
         border-bottom: 1px solid #e2e8f0;
         vertical-align: middle;
     }
@@ -273,28 +274,29 @@
     }
 
     .data-table tfoot td {
-        padding: 14px 16px;
+        padding: 10px 12px;
         border-top: 2px solid #cbd5e1;
-        font-size: 0.95rem;
+        font-size: 0.9rem;
     }
 
     .actions-cell {
         display: flex;
-        gap: 6px;
+        gap: 4px;
         justify-content: flex-end;
     }
 
     .btn-row-action {
-        width: 32px;
-        height: 32px;
+        width: 26px;
+        height: 26px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        border-radius: 6px;
+        border-radius: 5px;
         border: 1px solid transparent;
         cursor: pointer;
         transition: all 0.2s;
         text-decoration: none;
+        font-size: 0.75rem;
     }
 
     .btn-edit {
@@ -471,7 +473,8 @@
 <div class="main-card">
     <div class="page-header">
         <h2 class="page-title">
-            <span>📑 Diğer Harcamalar (Şube: {{ sube_display }}, Dönem: {{ 'Tümü' if secili_donem == 'all' else secili_donem }})</span>
+            <span>📑 Diğer Harcamalar (Şube: {{ sube_display }}, Dönem: {{ 'Tümü' if secili_donem == 'all' else
+                secili_donem }})</span>
         </h2>
 
         <div class="action-bar">
@@ -486,7 +489,8 @@
             </button>
 
             <!-- Mail Button -->
-            <button class="btn-icon" data-permission="Mail Gönder" onclick="openReportMailModalCustom()" title="Mail Gönder" style="color: #3b82f6;">
+            <button class="btn-icon" data-permission="Mail Gönder" onclick="openReportMailModalCustom()"
+                title="Mail Gönder" style="color: #3b82f6;">
                 <i class="fas fa-envelope"></i>
             </button>
 
@@ -507,16 +511,16 @@
 
             <!-- Period Select -->
             <select class="control-select" id="filterDonem" onchange="onDonemChange(this.value)">
-                <option value="all" {% if secili_donem == 'all' %}selected{% endif %}>Tüm Dönemler</option>
+                <option value="all" {% if secili_donem=='all' %}selected{% endif %}>Tüm Dönemler</option>
                 {% for d in donem_listesi %}
-                <option value="{{ d }}" {% if (d|string) == (secili_donem|string) %}selected{% endif %}>
+                <option value="{{ d }}" {% if (d|string)==(secili_donem|string) %}selected{% endif %}>
                     {{ d }} &ndash;
                     {%- set yy = (d // 100) %}
                     {%- set mm = (d % 100) %}
-                    {%- set ay_adlari = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'] %}
-                    {{ ay_adlari[mm - 1] if mm >= 1 and mm <= 12 else '' }} {{ 2000 + yy }}
-                </option>
-                {% endfor %}
+                    {%- set ay_adlari = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas',
+                    'Ara'] %}
+                    {{ ay_adlari[mm - 1] if mm >= 1 and mm <= 12 else '' }} {{ 2000 + yy }} </option>
+                        {% endfor %}
             </select>
 
             {% if can_add_defaults %}
@@ -537,7 +541,8 @@
     <!-- Summary Banner & Cards matching Avans Talepleri -->
     <div class="summary-banner">
         <div class="summary-banner-title">
-            <span>📑 Diğer Harcamalar &nbsp;|&nbsp; Şube: {{ sube_display }} &nbsp;|&nbsp; Dönem: {{ 'Tümü' if secili_donem == 'all' else secili_donem }}</span>
+            <span>📑 Diğer Harcamalar &nbsp;|&nbsp; Şube: {{ sube_display }} &nbsp;|&nbsp; Dönem: {{ 'Tümü' if
+                secili_donem == 'all' else secili_donem }}</span>
         </div>
         <div class="summary-cards-grid">
             <div class="summary-stat-box">
@@ -574,40 +579,43 @@
                     data-tip="{{ item.Harcama_Tipi }}" data-donem="{{ item.Donem }}" data-tutar="{{ item.Tutar }}">
                     <td style="font-weight: 600; color: #0f172a;">{{ item.Alici_Adi }}</td>
                     <td style="font-family: monospace; color: #64748b;">{{ item.Belge_Numarasi or '-' }}</td>
-                    <td style="color: #64748b; font-size: 0.85rem;">{{ item.Belge_Tarihi }}</td>
-                    <td style="text-align: right; font-weight: 700; color: #15803d; font-size: 0.95rem;">
+                    <td style="color: #64748b; font-size: 0.8rem;">{{ item.Belge_Tarihi }}</td>
+                    <td style="text-align: right; font-weight: 700; color: #15803d; font-size: 0.88rem;">
                         {{ "{:,.2f}".format(item.Tutar).replace(',', 'X').replace('.', ',').replace('X', '.') }} ₺
                     </td>
                     <td style="color: #475569;">{{ kategori_map.get(item.Kategori_ID, '') }}</td>
                     <td style="white-space: nowrap;">
-                        <span style="background: #f1f5f9; color: #334155; padding: 4px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; white-space: nowrap; display: inline-block;">
-                            {{ item.Harcama_Tipi }}
-                        </span>
+                            <span
+                                style="background: #f1f5f9; color: #334155; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; display: inline-block;">
+                                {{ item.Harcama_Tipi }}
+                            </span>
                     </td>
                     <td style="text-align: center;">
                         {% if item.Gunluk_Harcama %}
-                        <i class="fas fa-check-circle" style="color: #16a34a; font-size: 16px;"></i>
+                        <i class="fas fa-check-circle" style="color: #16a34a; font-size: 14px;"></i>
                         {% else %}
-                        <span class="checkbox-empty"></span>
+                        <span class="checkbox-empty" style="width: 13px; height: 13px;"></span>
                         {% endif %}
                     </td>
                     <td class="hide-on-print">
                         <div class="actions-cell">
                             {% if has_match_permission %}
-                            <button class="btn-row-action btn-match" onclick='openMatchModal({{ item | tojson | safe }})'
-                                title="e-Fatura Eşleştir"><i class="fas fa-link"></i></button>
+                            <button class="btn-row-action btn-match"
+                                onclick='openMatchModal({{ item | tojson | safe }})' title="e-Fatura Eşleştir"><i
+                                    class="fas fa-link"></i></button>
                             {% endif %}
                             <button class="btn-row-action btn-edit" onclick='openEditModal({{ item | tojson | safe }})'
                                 title="Düzenle"><i class="fas fa-pencil-alt"></i></button>
-                            <button class="btn-row-action btn-delete" onclick="deleteRecord({{ item.Harcama_ID }})" title="Sil"><i
-                                     class="fas fa-trash-alt"></i></button>
+                            <button class="btn-row-action btn-delete" onclick="deleteRecord({{ item.Harcama_ID }})"
+                                title="Sil"><i class="fas fa-trash-alt"></i></button>
                         </div>
                     </td>
                 </tr>
                 {% else %}
                 <tr class="empty-row">
                     <td colspan="8" style="text-align: center; color: var(--text-gray); padding: 40px;">
-                        <i class="fas fa-receipt" style="font-size: 32px; display: block; margin-bottom: 12px; opacity: 0.4;"></i>
+                        <i class="fas fa-receipt"
+                            style="font-size: 32px; display: block; margin-bottom: 12px; opacity: 0.4;"></i>
                         Kayıt bulunamadı.
                     </td>
                 </tr>
@@ -642,8 +650,8 @@
     let kategorilerMap = {{ kategori_map | tojson | safe }};
     const SUBELER = [
         {% for s in subeler %}
-        { Sube_ID: {{ s.Sube_ID }}, Sube_Adi: {{ s.Sube_Adi | tojson }} }{% if not loop.last %},{% endif %}
-        {% endfor %}
+    { Sube_ID: { { s.Sube_ID } }, Sube_Adi: { { s.Sube_Adi | tojson } } } {% if not loop.last %}, {% endif %}
+    {% endfor %}
     ];
 
 
@@ -977,8 +985,8 @@
     }
 
     const HARCAMALAR_DATA = {{ harcamalar | tojson | safe }};
-    const CURRENT_SUBE_ADI = {{ (sube_display if sube_display is defined else (subeler | selectattr("Sube_ID", "equalto", secili_sube_id) | map(attribute="Sube_Adi") | first or 'Tümü')) | tojson | safe }};
-    const CURRENT_DONEM_STR = {{ ('Tümü' if secili_donem == 'all' else secili_donem|string) | tojson | safe }};
+    const CURRENT_SUBE_ADI = {{ (sube_display if sube_display is defined else (subeler | selectattr("Sube_ID", "equalto", secili_sube_id) | map(attribute = "Sube_Adi") | first or 'Tümü')) | tojson | safe }};
+    const CURRENT_DONEM_STR = {{ ('Tümü' if secili_donem == 'all' else secili_donem | string) | tojson | safe }};
 
     function getHarcamalarReportMailHtml() {
         const totalCount = HARCAMALAR_DATA.length;
@@ -1687,7 +1695,7 @@
 
     // Clean up modal size when modal is closed
     const origHideModal = window.hideModal;
-    window.hideModal = function() {
+    window.hideModal = function () {
         const modalContainer = document.querySelector('.modal-container');
         if (modalContainer) {
             modalContainer.classList.remove('modal-lg');
