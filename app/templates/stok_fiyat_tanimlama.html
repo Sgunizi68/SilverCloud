@@ -1,5 +1,8 @@
 {% extends "base.html" %}
 
+{% set secili_sube = (subeler | selectattr("Sube_ID", "equalto", secili_sube_id) | first) %}
+{% set sube_display = secili_sube.Sube_Adi if secili_sube else 'Tümü' %}
+
 {% block title %}Stok Fiyat Tanımlama - SilverCloud{% endblock %}
 
 {% block nav_stok_fiyat_tanimlama %}active{% endblock %}
@@ -9,365 +12,612 @@
 {% block extra_style %}
 <style>
     :root {
-        --premium-blue: #6366f1;
-        --premium-bg: rgba(255, 255, 255, 0.85);
-        --glass-border: rgba(255, 255, 255, 0.4);
+        --glass-bg: rgba(255, 255, 255, 0.95);
+        --glass-border: rgba(255, 255, 255, 0.3);
+        --accent-color: #667eea;
+        --text-dark: #2d3748;
+        --text-gray: #718096;
+    }
+
+    .main-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        padding: 24px;
+        margin-bottom: 24px;
     }
 
     .page-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 2rem;
+        margin-bottom: 24px;
+        gap: 16px;
+        flex-wrap: wrap;
     }
 
     .page-title {
-        color: #1e293b;
+        font-size: 1.25rem;
         font-weight: 700;
-        font-size: 1.5rem;
-    }
-
-    .filters {
-        display: flex;
-        gap: 1rem;
-        align-items: center;
-        background: var(--premium-bg);
-        padding: 1rem;
-        border-radius: 12px;
-        border: 1px solid var(--glass-border);
-        margin-bottom: 1.5rem;
-    }
-
-    .filter-group {
+        color: var(--text-dark);
+        margin: 0;
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 10px;
     }
 
-    .select-premium {
-        padding: 0.5rem 1rem;
+    .action-bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .search-container {
+        position: relative;
+        min-width: 250px;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 10px 16px 10px 40px;
         border-radius: 8px;
         border: 1px solid #e2e8f0;
+        outline: none;
+        transition: all 0.2s;
         font-size: 0.9rem;
+        background: white;
+    }
+
+    .search-input:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-gray);
+        font-size: 13px;
+    }
+
+    .filter-select {
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        font-size: 0.88rem;
+        outline: none;
+        min-width: 170px;
         color: #334155;
-        min-width: 200px;
     }
 
-    .action-buttons {
+    .filter-select:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .btn-icon {
+        width: 40px;
+        height: 40px;
         display: flex;
-        gap: 1rem;
         align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        color: var(--text-dark);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.95rem;
     }
 
-    .btn-premium {
-        background: var(--premium-blue);
+    .btn-icon:hover {
+        background: #f7fafc;
+        border-color: #cbd5e0;
+    }
+
+    .btn-new {
+        background: var(--accent-color);
         color: white;
-        padding: 0.6rem 1.2rem;
+        border: none;
+        padding: 10px 20px;
         border-radius: 8px;
         font-weight: 600;
         display: flex;
         align-items: center;
-        gap: 0.5rem;
-        border: none;
-        transition: all 0.2s;
+        gap: 8px;
         cursor: pointer;
+        transition: transform 0.2s, background 0.2s;
+        font-size: 0.9rem;
     }
 
-    .btn-premium:hover {
-        background: #4f46e5;
+    .btn-new:hover {
+        background: #5a67d8;
         transform: translateY(-1px);
     }
 
-    .table-card {
-        background: var(--premium-bg);
-        backdrop-filter: blur(12px);
-        border: 1px solid var(--glass-border);
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    .filter-checkbox-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 0.88rem;
+        font-weight: 500;
+        color: #475569;
+        cursor: pointer;
+        user-select: none;
     }
 
-    .fiyat-table {
+    .filter-checkbox-wrapper input {
+        cursor: pointer;
+        width: 16px;
+        height: 16px;
+    }
+
+    /* Table styles */
+    .table-container {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        background: #ffffff;
+    }
+
+    .data-table {
         width: 100%;
         border-collapse: collapse;
     }
 
-    .fiyat-table th {
-        background: #f8fafc;
-        padding: 1rem;
-        text-align: left;
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        color: #64748b;
-        border-bottom: 1px solid #e2e8f0;
+    .data-table thead tr {
+        background: #1e293b;
     }
 
-    .fiyat-table td {
-        padding: 1rem;
-        font-size: 0.875rem;
-        color: #334155;
-        border-bottom: 1px solid #f1f5f9;
+    .data-table th {
+        background: #1e293b;
+        color: #ffffff;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 9px 14px;
+        text-align: left;
+        border-bottom: 2px solid #0f172a;
+    }
+
+    .data-table td {
+        padding: 8px 14px;
+        color: #1e293b;
+        font-size: 0.86rem;
+        border-bottom: 1px solid #e2e8f0;
         vertical-align: middle;
+    }
+
+    .data-table tbody tr:nth-child(even) td {
+        background-color: #f8fafc;
+    }
+
+    .data-table tbody tr:hover td {
+        background-color: #eff6ff !important;
+    }
+
+    .stok-code {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 600;
+        color: #1e293b;
     }
 
     .fiyat-amount {
         font-weight: 700;
-        color: #0f172a;
+        color: #15803d;
+        font-size: 0.92rem;
+    }
+
+    .btn-row-action {
+        width: 28px;
+        height: 28px;
+        font-size: 0.82rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-edit {
+        background: #ebf4ff;
+        color: #3182ce;
+    }
+
+    .btn-edit:hover {
+        background: #bee3f8;
+    }
+
+    .btn-delete {
+        background: #fee2e2;
+        color: #ef4444;
+    }
+
+    .btn-delete:hover {
+        background: #fecaca;
     }
 
     .status-badge {
-        padding: 0.25rem 0.6rem;
-        border-radius: 9999px;
-        font-size: 0.75rem;
-        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 0.15s ease, opacity 0.15s;
     }
 
-    .status-active {
+    .status-badge:hover {
+        transform: scale(1.05);
+        opacity: 0.9;
+    }
+
+    .status-badge.active {
         background: #dcfce7;
         color: #15803d;
     }
 
-    .status-passive {
+    .status-badge.inactive {
         background: #fee2e2;
         color: #b91c1c;
     }
 
-    .btn-icon {
-        padding: 0.5rem;
-        border-radius: 6px;
-        color: #64748b;
-        transition: all 0.2s;
-        border: 1px solid transparent;
-        background: transparent;
-        cursor: pointer;
-    }
-
-    .btn-icon:hover {
-        background: white;
-        color: var(--premium-blue);
-        border-color: #e2e8f0;
-    }
-
-    /* Modal */
-    .modal {
-        display: none;
-        position: fixed;
-        z-index: 1000;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.4);
-        backdrop-filter: blur(4px);
-    }
-
-    .modal-content {
-        background: white;
-        margin: 5% auto;
-        padding: 2rem;
-        border-radius: 12px;
-        width: 450px;
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-    }
-
-    .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1.5rem;
-    }
-
-    .modal-header h3 {
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: #1e293b;
-    }
-
+    /* Modal Form Styling */
     .form-group {
-        margin-bottom: 1rem;
+        margin-bottom: 14px;
     }
 
     .form-group label {
         display: block;
-        font-size: 0.875rem;
+        font-size: 0.85rem;
         font-weight: 600;
-        margin-bottom: 0.4rem;
-        color: #475569;
+        color: var(--text-dark);
+        margin-bottom: 6px;
     }
 
-    .form-control {
+    .form-group input,
+    .form-group select {
         width: 100%;
-        padding: 0.6rem;
-        border: 1px solid #e2e8f0;
+        padding: 9px 12px;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        outline: none;
+        font-size: 0.9rem;
+        background: #fff;
+        box-sizing: border-box;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 24px;
+    }
+
+    .btn {
+        padding: 9px 18px;
         border-radius: 6px;
         font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
     }
 
-    .form-control:focus {
-        border-color: var(--premium-blue);
-        outline: none;
+    .btn-secondary {
+        background: #e2e8f0;
+        color: #4a5568;
+    }
+
+    .btn-secondary:hover {
+        background: #cbd5e0;
+    }
+
+    .btn-primary {
+        background: var(--accent-color);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #5a67d8;
+    }
+
+    @media print {
+        .hide-on-print,
+        .page-header,
+        .action-bar {
+            display: none !important;
+        }
+
+        .main-card {
+            box-shadow: none !important;
+            border: none !important;
+            padding: 0 !important;
+        }
+
+        .table-container {
+            border: 1px solid #000 !important;
+        }
+
+        .data-table th {
+            background: #f1f5f9 !important;
+            color: #000 !important;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="sube-page-container">
+{% set secili_sube = (subeler | selectattr("Sube_ID", "equalto", secili_sube_id) | first) %}
+{% set sube_display = secili_sube.Sube_Adi if secili_sube else 'Tümü' %}
+
+<div class="main-card">
     <div class="page-header">
-        <h2 class="page-title">Stok Fiyat Tanımlama</h2>
-        <div class="action-buttons">
-            <button class="btn-premium" onclick="openModal()">
-                <i class="fas fa-plus"></i> Yeni Fiyat Tanımı
+        <h2 class="page-title">
+            <span>🏷️ Stok Fiyat Tanımlama ({{ sube_display }})</span>
+        </h2>
+
+        <div class="action-bar">
+            <!-- Print Button -->
+            <button class="btn-icon" onclick="window.print()" title="Yazdır">
+                <i class="fas fa-print"></i>
+            </button>
+
+            <!-- Excel Button -->
+            <button class="btn-icon" onclick="exportStokFiyatlarExcel()" title="Excel İndir" style="color: #16a34a;">
+                <i class="fas fa-file-excel"></i>
+            </button>
+
+            <!-- Mail Button -->
+            <button class="btn-icon" data-permission="Mail Gönder" onclick="openStokFiyatlarReportMail()" title="Mail Gönder" style="color: #3b82f6;">
+                <i class="fas fa-envelope"></i>
+            </button>
+
+            <!-- Search Area -->
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="search-input" placeholder="Stok Kodu veya Adı Ara..." id="fiyat-search">
+            </div>
+
+            <!-- Branch Select -->
+            <select class="filter-select" id="filter-sube" onchange="window.location.href='/stok-fiyat-tanimlama?sube_id=' + this.value">
+                {% for s in subeler %}
+                <option value="{{ s.Sube_ID }}" {% if s.Sube_ID == secili_sube_id %}selected{% endif %}>
+                    {{ s.Sube_Adi }}
+                </option>
+                {% endfor %}
+            </select>
+
+            <!-- Active Filter Checkbox -->
+            <label class="filter-checkbox-wrapper">
+                <input type="checkbox" id="filter-active">
+                <span>Sadece Aktifleri Göster</span>
+            </label>
+
+            <!-- New Button -->
+            <button class="btn-new" onclick="openAddModal()">
+                <i class="fas fa-plus"></i>
+                Yeni Fiyat Tanımı
             </button>
         </div>
     </div>
 
-    <div class="filter-group">
-        <label><i class="fas fa-store"></i> Şube:</label>
-        <select class="select-premium" onchange="window.location.href='/stok-fiyat-tanimlama?sube_id=' + this.value">
-            {% for s in subeler %}
-            <option value="{{ s.Sube_ID }}" {% if s.Sube_ID==secili_sube_id %}selected{% endif %}>{{ s.Sube_Adi }}
-            </option>
-            {% endfor %}
-        </select>
-    </div>
-    <div class="filter-group" style="margin-left: auto;">
-        <div style="position: relative;">
-            <i class="fas fa-search"
-                style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
-            <input type="text" id="searchInput" class="select-premium" style="padding-left: 2.5rem; width: 300px;"
-                placeholder="Stok Kodu veya Adı ile ara...">
-        </div>
-    </div>
-</div>
-
-<div class="table-card">
-    <table class="fiyat-table">
-        <thead>
-            <tr>
-                <th>Stok Kodu</th>
-                <th>Stok Adı</th>
-                <th>Geçerlilik Başlangıcı</th>
-                <th>Fiyat</th>
-                <th>Durum</th>
-                <th style="text-align: right;">İşlemler</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for f in fiyatlar %}
-            <tr data-id="{{ f.Fiyat_ID }}">
-                <td style="font-family: monospace; font-weight: 600; color: #1e293b;">{{ f.Malzeme_Kodu }}</td>
-                <td>{{ stok_map.get(f.Malzeme_Kodu, 'Bilinmiyor') }}</td>
-                <td>{{ f.Gecerlilik_Baslangic_Tarih.strftime('%d.%m.%Y') }}</td>
-                <td class="fiyat-amount">{{ "{:,.2f}".format(f.Fiyat) }} ₺</td>
-                <td>
-                    <span class="status-badge {% if f.Aktif_Pasif %}status-active{% else %}status-passive{% endif %}">
-                        {% if f.Aktif_Pasif %}Aktif{% else %}Pasif{% endif %}
-                    </span>
-                </td>
-                <td style="text-align: right;">
-                    <button class="btn-icon"
-                        onclick='editFiyat({{ f.Fiyat_ID }}, "{{ f.Malzeme_Kodu }}", {{ f.Fiyat }}, "{{ f.Gecerlilik_Baslangic_Tarih.isoformat() }}", {{ "true" if f.Aktif_Pasif else "false" }})'>
-                        <i class="fas fa-edit"></i>
-                    </button>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-</div>
-
-<!-- Modal -->
-<div id="fiyatModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 id="modalTitle">Yeni Fiyat Tanımı</h3>
-            <span style="cursor:pointer; font-size: 1.5rem; color: #64748b;" onclick="closeModal()">&times;</span>
-        </div>
-        <form id="fiyatForm">
-            <input type="hidden" id="fiyat_id">
-            <div class="form-group">
-                <label>Stok Seçin</label>
-                <select id="malzeme_kodu" class="form-control" required>
-                    <option value="">-- Stok Seçin --</option>
-                    {% for s in stoklar %}
-                    <option value="{{ s.Malzeme_Kodu }}">{{ s.Malzeme_Kodu }} - {{ s.Malzeme_Aciklamasi }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Fiyat (₺)</label>
-                <input type="number" step="0.01" id="fiyat" class="form-control" required>
-            </div>
-            <div class="form-group">
-                <label>Geçerlilik Başlangıcı</label>
-                <input type="date" id="tarih" class="form-control" required>
-            </div>
-            <div class="form-group" style="display:flex; align-items:center; gap:0.5rem; margin-top: 1rem;">
-                <input type="checkbox" id="aktif_pasif" checked>
-                <label for="aktif_pasif" style="margin:0">Aktif mi?</label>
-            </div>
-            <button type="submit" class="btn-premium"
-                style="width:100%; margin-top:1.5rem; justify-content:center">Kaydet</button>
-        </form>
+    <!-- Table Container -->
+    <div class="table-responsive table-container">
+        <table class="data-table" id="fiyat-table">
+            <thead>
+                <tr>
+                    <th style="width: 140px;">STOK KODU</th>
+                    <th>STOK ADI</th>
+                    <th style="width: 170px;">GEÇERLİLİK BAŞLANGICI</th>
+                    <th style="width: 140px; text-align: right;">FİYAT</th>
+                    <th style="width: 110px; text-align: center;">DURUM</th>
+                    <th style="width: 100px; text-align: center;" class="hide-on-print">İŞLEMLER</th>
+                </tr>
+            </thead>
+            <tbody id="fiyat-tbody">
+                {% for f in fiyatlar %}
+                {% set stok_adi = stok_map.get(f.Malzeme_Kodu, 'Bilinmiyor') %}
+                <tr data-id="{{ f.Fiyat_ID }}"
+                    data-code="{{ (f.Malzeme_Kodu or '') | lower }}"
+                    data-name="{{ (stok_adi or '') | lower }}"
+                    data-aktif="{{ 'true' if f.Aktif_Pasif else 'false' }}">
+                    <td class="stok-code">{{ f.Malzeme_Kodu }}</td>
+                    <td style="font-weight: 600; color: #0f172a;">{{ stok_adi }}</td>
+                    <td style="color: #64748b; font-size: 0.84rem;">
+                        {{ f.Gecerlilik_Baslangic_Tarih.strftime('%d.%m.%Y') if f.Gecerlilik_Baslangic_Tarih else '-' }}
+                    </td>
+                    <td style="text-align: right;" class="fiyat-amount">
+                        {{ "{:,.2f}".format(f.Fiyat).replace(',', 'X').replace('.', ',').replace('X', '.') }} ₺
+                    </td>
+                    <td style="text-align: center;">
+                        <span class="status-badge {{ 'active' if f.Aktif_Pasif else 'inactive' }}"
+                              title="Tıklayarak durumu değiştir"
+                              onclick="toggleStatus({{ f.Fiyat_ID }}, {{ 'false' if f.Aktif_Pasif else 'true' }})">
+                            <i class="fas {{ 'fa-check-circle' if f.Aktif_Pasif else 'fa-times-circle' }}"></i>
+                            {{ 'Aktif' if f.Aktif_Pasif else 'Pasif' }}
+                        </span>
+                    </td>
+                    <td style="text-align: center;" class="hide-on-print">
+                        <div style="display: flex; gap: 6px; justify-content: center; align-items: center;">
+                            <button class="btn-row-action btn-edit" title="Düzenle"
+                                onclick='openEditModal({{ {
+                                    "Fiyat_ID": f.Fiyat_ID,
+                                    "Malzeme_Kodu": f.Malzeme_Kodu,
+                                    "Fiyat": f.Fiyat | float,
+                                    "Gecerlilik_Baslangic_Tarih": f.Gecerlilik_Baslangic_Tarih.isoformat() if f.Gecerlilik_Baslangic_Tarih else "",
+                                    "Aktif_Pasif": f.Aktif_Pasif
+                                } | tojson | safe }})'>
+                                <i class="fas fa-pencil-alt"></i>
+                            </button>
+                            <button class="btn-row-action btn-delete" title="Sil"
+                                onclick="deleteFiyat({{ f.Fiyat_ID }}, `{{ (stok_adi ~ ' (' ~ f.Malzeme_Kodu ~ ')') | escape }}`)">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr class="no-data-row">
+                    <td colspan="6" style="text-align: center; padding: 40px; color: #94a3b8;">
+                        <i class="fas fa-tags" style="font-size: 32px; display: block; margin-bottom: 12px; opacity: 0.5;"></i>
+                        Bu şube için henüz fiyat tanımı bulunmuyor.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    const modal = document.getElementById('fiyatModal');
-    const form = document.getElementById('fiyatForm');
+    const CURRENT_SUBE_ID = parseInt("{{ secili_sube_id or 0 }}", 10);
+    const CURRENT_SUBE_ADI = {{ (sube_display if sube_display is defined else 'Tümü') | tojson | safe }};
 
-    // Jinja variable injected properly:
-    const M_SUBE_ID = parseInt("{{ secili_sube_id }}", 10);
+    const FIYATLAR_DATA = [
+        {% for f in fiyatlar %}
+        {% set stok_adi = stok_map.get(f.Malzeme_Kodu, 'Bilinmiyor') %}
+        {
+            Fiyat_ID: {{ f.Fiyat_ID }},
+            Malzeme_Kodu: {{ (f.Malzeme_Kodu or '') | tojson }},
+            Stok_Adi: {{ (stok_adi or '') | tojson }},
+            Gecerlilik_Baslangic_Tarih: {{ (f.Gecerlilik_Baslangic_Tarih.strftime('%d.%m.%Y') if f.Gecerlilik_Baslangic_Tarih else '') | tojson }},
+            Fiyat: {{ f.Fiyat | float }},
+            Aktif_Pasif: {{ 'true' if f.Aktif_Pasif else 'false' }}
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
 
-    function openModal() {
-        document.getElementById('modalTitle').innerText = 'Yeni Fiyat Tanımı';
-        form.reset();
-        document.getElementById('fiyat_id').value = '';
-        document.getElementById('tarih').valueAsDate = new Date();
-        document.getElementById('malzeme_kodu').disabled = false;
-        modal.style.display = 'block';
-    }
+    const STOKLAR = [
+        {% for s in stoklar %}
+        {
+            Malzeme_Kodu: {{ (s.Malzeme_Kodu or '') | tojson }},
+            Malzeme_Aciklamasi: {{ (s.Malzeme_Aciklamasi or '') | tojson }}
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
 
-    function closeModal() { modal.style.display = 'none'; }
+    document.addEventListener('DOMContentLoaded', () => {
+        const searchInput = document.getElementById('fiyat-search');
+        const activeCheckbox = document.getElementById('filter-active');
 
-    window.onclick = function (event) {
-        if (event.target == modal) closeModal();
-    }
+        function filterTable() {
+            const term = searchInput ? searchInput.value.toLowerCase().trim() : '';
+            const showOnlyActive = activeCheckbox ? activeCheckbox.checked : false;
+            const rows = document.querySelectorAll('#fiyat-tbody tr:not(.no-data-row)');
 
-    function editFiyat(id, kod, fiyat, tarih, aktif) {
-        document.getElementById('modalTitle').innerText = 'Fiyat Düzenle';
-        document.getElementById('fiyat_id').value = id;
-        document.getElementById('malzeme_kodu').value = kod;
-        document.getElementById('malzeme_kodu').disabled = true;
-        document.getElementById('fiyat').value = fiyat;
+            rows.forEach(row => {
+                const code = row.getAttribute('data-code') || '';
+                const name = row.getAttribute('data-name') || '';
+                const isAktif = row.getAttribute('data-aktif') === 'true';
 
-        let t = tarih;
-        if (t && t.includes('T')) {
-            t = t.split('T')[0];
+                const matchesSearch = term === '' || code.includes(term) || name.includes(term);
+                const matchesActive = !showOnlyActive || isAktif;
+
+                if (matchesSearch && matchesActive) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
         }
-        document.getElementById('tarih').value = t;
 
-        document.getElementById('aktif_pasif').checked = aktif;
-        modal.style.display = 'block';
+        if (searchInput) searchInput.addEventListener('keyup', filterTable);
+        if (activeCheckbox) activeCheckbox.addEventListener('change', filterTable);
+
+        filterTable();
+    });
+
+    function fiyatFormHtml(isEdit = false, data = {}) {
+        const todayStr = new Date().toISOString().split('T')[0];
+        let dateVal = todayStr;
+        if (data.Gecerlilik_Baslangic_Tarih) {
+            dateVal = data.Gecerlilik_Baslangic_Tarih.split('T')[0];
+        }
+
+        return `
+            <form id="fiyatForm" data-mode="${isEdit ? 'edit' : 'add'}" data-id="${data.Fiyat_ID || ''}">
+                <div class="form-group">
+                    <label for="form_malzeme_kodu">Stok Seçin *</label>
+                    <select id="form_malzeme_kodu" ${isEdit ? 'disabled style="background-color: #f1f5f9; cursor: not-allowed;"' : ''} required>
+                        <option value="">-- Stok Seçin --</option>
+                        ${STOKLAR.map(s => `
+                            <option value="${s.Malzeme_Kodu}" ${s.Malzeme_Kodu === data.Malzeme_Kodu ? 'selected' : ''}>
+                                ${s.Malzeme_Kodu} - ${s.Malzeme_Aciklamasi}
+                            </option>
+                        `).join('')}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="form_fiyat">Birim Fiyat (₺) *</label>
+                    <input type="number" step="0.01" min="0" id="form_fiyat" placeholder="0.00" value="${data.Fiyat !== undefined ? data.Fiyat : ''}" required>
+                </div>
+                <div class="form-group">
+                    <label for="form_tarih">Geçerlilik Başlangıcı *</label>
+                    <input type="date" id="form_tarih" value="${dateVal}" required>
+                </div>
+                <div class="form-group" style="margin-top: 10px;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="form_aktif_pasif" ${data.Aktif_Pasif !== false ? 'checked' : ''} style="width: 16px; height: 16px;"> Aktif Fiyat
+                    </label>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="hideModal()">İptal</button>
+                    <button type="submit" class="btn btn-primary">${isEdit ? 'Güncelle' : 'Kaydet'}</button>
+                </div>
+            </form>
+        `;
     }
 
-    form.onsubmit = async (e) => {
-        e.preventDefault();
-        const id = document.getElementById('fiyat_id').value;
-        const method = id ? 'PUT' : 'POST';
-        const url = id ? '/api/v1/stok-fiyatlar/' + id : '/api/v1/stok-fiyatlar';
+    function openAddModal() {
+        showModal('Yeni Fiyat Tanımı Ekle', fiyatFormHtml(false));
+        document.getElementById('fiyatForm').addEventListener('submit', handleFormSubmit);
+    }
 
+    function openEditModal(data) {
+        showModal('Fiyat Tanımı Düzenle', fiyatFormHtml(true, data));
+        document.getElementById('fiyatForm').addEventListener('submit', handleFormSubmit);
+    }
+
+    async function handleFormSubmit(e) {
+        e.preventDefault();
+        const form = e.target;
+        const mode = form.dataset.mode;
+        const id = form.dataset.id;
         const data = {
-            Malzeme_Kodu: document.getElementById('malzeme_kodu').value,
-            Fiyat: parseFloat(document.getElementById('fiyat').value),
-            Gecerlilik_Baslangic_Tarih: document.getElementById('tarih').value,
-            Aktif_Pasif: document.getElementById('aktif_pasif').checked,
-            Sube_ID: M_SUBE_ID
+            Malzeme_Kodu: document.getElementById('form_malzeme_kodu').value,
+            Fiyat: parseFloat(document.getElementById('form_fiyat').value),
+            Gecerlilik_Baslangic_Tarih: document.getElementById('form_tarih').value,
+            Aktif_Pasif: document.getElementById('form_aktif_pasif').checked,
+            Sube_ID: CURRENT_SUBE_ID
         };
+
+        const url = mode === 'add' ? '/api/v1/stok-fiyatlar' : `/api/v1/stok-fiyatlar/${id}`;
+        const method = mode === 'add' ? 'POST' : 'PUT';
 
         try {
             const res = await fetch(url, {
@@ -376,23 +626,202 @@
                 body: JSON.stringify(data)
             });
             if (res.ok) {
+                showToast(mode === 'add' ? 'Fiyat başarıyla eklendi.' : 'Fiyat başarıyla güncellendi.');
+                hideModal();
+                setTimeout(() => location.reload(), 900);
+            } else {
+                const err = await res.json();
+                showToast(err.error || 'İşlem sırasında hata oluştu.', 'error');
+            }
+        } catch {
+            showToast('Bağlantı hatası.', 'error');
+        }
+    }
+
+    async function toggleStatus(id, newStatus) {
+        try {
+            const res = await fetch(`/api/v1/stok-fiyatlar/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ Aktif_Pasif: newStatus })
+            });
+            if (res.ok) {
                 location.reload();
             } else {
                 const err = await res.json();
-                alert('Hata: ' + (err.error || 'İşlem başarısız'));
+                showToast(err.error || 'Güncellenirken hata oluştu.', 'error');
             }
-        } catch (e) { console.error(e); }
-    };
+        } catch {
+            showToast('Bağlantı hatası.', 'error');
+        }
+    }
 
-    // Client-side table search
-    document.getElementById('searchInput').addEventListener('keyup', function () {
-        const query = this.value.toLowerCase();
-        const rows = document.querySelectorAll('.fiyat-table tbody tr');
-        rows.forEach(row => {
-            const kod = row.cells[0].innerText.toLowerCase();
-            const ad = row.cells[1].innerText.toLowerCase();
-            row.style.display = (kod.includes(query) || ad.includes(query)) ? '' : 'none';
+    async function deleteFiyat(id, name) {
+        if (!confirm(`'${name}' fiyat tanımını silmek istediğinize emin misiniz?`)) return;
+        try {
+            const res = await fetch(`/api/v1/stok-fiyatlar/${id}`, { method: 'DELETE' });
+            if (res.ok || res.status === 204) {
+                showToast('Fiyat kaydı silindi.');
+                setTimeout(() => location.reload(), 900);
+            } else {
+                const err = await res.json();
+                showToast(err.error || 'Silinirken hata oluştu.', 'error');
+            }
+        } catch {
+            showToast('Bağlantı hatası.', 'error');
+        }
+    }
+
+    // ─── Stok Fiyat Listesi Excel & Mail Raporlama ───
+    function getStokFiyatlarReportMailHtml() {
+        const totalCount = FIYATLAR_DATA.length;
+        const activeCount = FIYATLAR_DATA.filter(f => f.Aktif_Pasif).length;
+
+        let rowsHtml = '';
+        if (totalCount === 0) {
+            rowsHtml = `
+                <tr>
+                    <td colspan="5" align="center" bgcolor="#ffffff" style="padding: 24px; text-align: center; color: #64748b; font-size: 13px; border-bottom: 1px solid #e2e8f0;">
+                        Bu şube için henüz fiyat tanımı bulunmuyor.
+                    </td>
+                </tr>
+            `;
+        } else {
+            rowsHtml = FIYATLAR_DATA.map((f, idx) => {
+                const bg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
+                const statusBadge = f.Aktif_Pasif
+                    ? `<span style="background-color: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">Aktif</span>`
+                    : `<span style="background-color: #fee2e2; color: #b91c1c; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">Pasif</span>`;
+
+                const formattedPrice = Number(f.Fiyat || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₺';
+
+                return `
+                    <tr bgcolor="${bg}" style="background-color: ${bg};">
+                        <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; font-family: monospace; font-weight: 600; color: #334155; border-bottom: 1px solid #e2e8f0;">
+                            ${f.Malzeme_Kodu || ''}
+                        </td>
+                        <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; font-weight: 600; color: #0f172a; border-bottom: 1px solid #e2e8f0;">
+                            ${f.Stok_Adi || ''}
+                        </td>
+                        <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; color: #64748b; border-bottom: 1px solid #e2e8f0;">
+                            ${f.Gecerlilik_Baslangic_Tarih || '-'}
+                        </td>
+                        <td align="right" bgcolor="${bg}" style="padding: 10px 14px; text-align: right; font-size: 13px; font-weight: 700; color: #15803d; border-bottom: 1px solid #e2e8f0;">
+                            ${formattedPrice}
+                        </td>
+                        <td align="center" bgcolor="${bg}" style="padding: 10px 14px; text-align: center; border-bottom: 1px solid #e2e8f0;">
+                            ${statusBadge}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        return `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; max-width: 800px; margin: 0 auto;">
+                <!-- 1. BAŞLIK VE KART BÖLÜMÜ -->
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: separate; margin-bottom: 18px; border: 2px solid #6366f1; border-radius: 8px; overflow: hidden; background-color: #ffffff;">
+                    <tr>
+                        <td colspan="2" bgcolor="#eef2ff" style="padding: 12px 18px; background-color: #eef2ff; border-bottom: 2px solid #c7d2fe; text-align: center;">
+                            <span style="font-size: 16px; font-weight: bold; color: #3730a3;">
+                                🏷️ Stok Fiyat Listesi Raporu (${CURRENT_SUBE_ADI})
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td width="50%" align="center" bgcolor="#f8fafc" style="padding: 14px 10px; background-color: #f8fafc; border-right: 1px solid #e2e8f0; text-align: center;">
+                            <div style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Toplam Fiyat Tanımı</div>
+                            <div style="font-size: 20px; font-weight: 800; color: #312e81;">${totalCount} Kayıt</div>
+                        </td>
+                        <td width="50%" align="center" bgcolor="#f8fafc" style="padding: 14px 10px; background-color: #f8fafc; text-align: center;">
+                            <div style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Aktif Fiyat Tanımı</div>
+                            <div style="font-size: 20px; font-weight: 800; color: #15803d;">${activeCount} Kayıt</div>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- 2. TABLO -->
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; margin-bottom: 16px; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; background-color: #ffffff;">
+                    <thead>
+                        <tr bgcolor="#1e293b" style="background-color: #1e293b;">
+                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a; width: 120px;">STOK KODU</th>
+                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a;">STOK ADI</th>
+                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a; width: 150px;">GEÇERLİLİK TARİHİ</th>
+                            <th align="right" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: right; text-transform: uppercase; border-bottom: 2px solid #0f172a; width: 130px;">FİYAT</th>
+                            <th align="center" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: center; text-transform: uppercase; border-bottom: 2px solid #0f172a; width: 90px;">DURUM</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    function buildStokFiyatlarWorkbook() {
+        if (typeof XLSX === 'undefined') return null;
+
+        const wb = XLSX.utils.book_new();
+        const totalCount = FIYATLAR_DATA.length;
+        const activeCount = FIYATLAR_DATA.filter(f => f.Aktif_Pasif).length;
+
+        const headers = ['STOK KODU', 'STOK ADI', 'GEÇERLİLİK BAŞLANGICI', 'FİYAT (₺)', 'DURUM'];
+
+        const sheetData = [
+            ['STOK FİYAT LİSTESİ (' + CURRENT_SUBE_ADI + ')'],
+            ['Toplam Fiyat Tanımı:', totalCount],
+            ['Aktif Fiyat Tanımı:', activeCount],
+            ['Rapor Tarihi:', new Date().toLocaleString('tr-TR')],
+            [],
+            headers
+        ];
+
+        FIYATLAR_DATA.forEach(f => {
+            sheetData.push([
+                f.Malzeme_Kodu || '',
+                f.Stok_Adi || '',
+                f.Gecerlilik_Baslangic_Tarih || '',
+                f.Fiyat !== undefined ? f.Fiyat : 0,
+                f.Aktif_Pasif ? 'Aktif' : 'Pasif'
+            ]);
         });
-    });
+
+        const ws = XLSX.utils.aoa_to_sheet(sheetData);
+        ws['!cols'] = [
+            { wch: 15 },
+            { wch: 35 },
+            { wch: 22 },
+            { wch: 15 },
+            { wch: 12 }
+        ];
+
+        XLSX.utils.book_append_sheet(wb, ws, 'Stok Fiyatları');
+        return wb;
+    }
+
+    function exportStokFiyatlarExcel() {
+        const wb = buildStokFiyatlarWorkbook();
+        if (!wb) {
+            alert('Excel kütüphanesi yüklenemedi.');
+            return;
+        }
+        XLSX.writeFile(wb, `SilverCloud_StokFiyatlari_${CURRENT_SUBE_ADI}.xlsx`);
+    }
+
+    function getStokFiyatlarReportExcelBase64() {
+        const wb = buildStokFiyatlarWorkbook();
+        if (!wb) return null;
+        return XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+    }
+
+    function openStokFiyatlarReportMail() {
+        openReportMailModal({
+            title: `Stok Fiyat Listesi (${CURRENT_SUBE_ADI})`,
+            filename: `SilverCloud_StokFiyatlari_${CURRENT_SUBE_ADI}.xlsx`,
+            getHtml: getStokFiyatlarReportMailHtml,
+            getExcelBase64: getStokFiyatlarReportExcelBase64
+        });
+    }
 </script>
 {% endblock %}

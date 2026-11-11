@@ -9,114 +9,200 @@
 {% block extra_style %}
 <style>
     :root {
-        --premium-blue: #4f46e5;
-        --premium-bg: rgba(255, 255, 255, 0.8);
+        --glass-bg: rgba(255, 255, 255, 0.95);
         --glass-border: rgba(255, 255, 255, 0.3);
+        --accent-color: #667eea;
+        --text-dark: #2d3748;
+        --text-gray: #718096;
+    }
+
+    .main-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        padding: 24px;
+        margin-bottom: 24px;
     }
 
     .page-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 2rem;
+        margin-bottom: 24px;
+        gap: 16px;
+        flex-wrap: wrap;
     }
 
     .page-title {
-        color: #1e293b;
+        font-size: 1.25rem;
         font-weight: 700;
-        font-size: 1.5rem;
+        color: var(--text-dark);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
     }
 
-    .action-buttons {
+    .action-bar {
         display: flex;
-        gap: 1rem;
         align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
     }
 
     .search-container {
         position: relative;
-        width: 300px;
+        min-width: 250px;
     }
 
     .search-input {
         width: 100%;
-        padding: 0.6rem 1rem 0.6rem 2.5rem;
+        padding: 10px 16px 10px 40px;
         border-radius: 8px;
         border: 1px solid #e2e8f0;
-        background: white;
-        font-size: 0.9rem;
+        outline: none;
         transition: all 0.2s;
+        font-size: 0.9rem;
+        background: white;
     }
 
     .search-input:focus {
-        border-color: var(--premium-blue);
-        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-        outline: none;
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
 
     .search-icon {
         position: absolute;
-        left: 0.8rem;
+        left: 14px;
         top: 50%;
         transform: translateY(-50%);
-        color: #64748b;
+        color: var(--text-gray);
+        font-size: 13px;
     }
 
-    .btn-premium {
-        background: var(--premium-blue);
+    .filter-select {
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        font-size: 0.88rem;
+        outline: none;
+        min-width: 150px;
+        color: #334155;
+    }
+
+    .filter-select:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .btn-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        color: var(--text-dark);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.95rem;
+    }
+
+    .btn-icon:hover {
+        background: #f7fafc;
+        border-color: #cbd5e0;
+    }
+
+    .btn-new {
+        background: var(--accent-color);
         color: white;
-        padding: 0.6rem 1.2rem;
+        border: none;
+        padding: 10px 20px;
         border-radius: 8px;
         font-weight: 600;
         display: flex;
         align-items: center;
-        gap: 0.5rem;
-        border: none;
-        transition: all 0.2s;
+        gap: 8px;
         cursor: pointer;
+        transition: transform 0.2s, background 0.2s;
+        font-size: 0.9rem;
     }
 
-    .btn-premium:hover {
-        background: #4338ca;
+    .btn-new:hover {
+        background: #5a67d8;
         transform: translateY(-1px);
     }
 
-    .table-card {
-        background: var(--premium-bg);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid var(--glass-border);
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    .filter-checkbox-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 0.88rem;
+        font-weight: 500;
+        color: #475569;
+        cursor: pointer;
+        user-select: none;
     }
 
-    .stok-table {
+    .filter-checkbox-wrapper input {
+        cursor: pointer;
+        width: 16px;
+        height: 16px;
+    }
+
+    /* Table styles */
+    .table-container {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        background: #ffffff;
+    }
+
+    .data-table {
         width: 100%;
         border-collapse: collapse;
     }
 
-    .stok-table th {
-        background: #f8fafc;
-        padding: 1rem;
-        text-align: left;
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        color: #64748b;
-        border-bottom: 1px solid #e2e8f0;
+    .data-table thead tr {
+        background: #1e293b;
     }
 
-    .stok-table td {
-        padding: 1rem;
-        font-size: 0.875rem;
-        color: #334155;
-        border-bottom: 1px solid #f1f5f9;
+    .data-table th {
+        background: #1e293b;
+        color: #ffffff;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 9px 14px;
+        text-align: left;
+        border-bottom: 2px solid #0f172a;
+    }
+
+    .data-table td {
+        padding: 8px 14px;
+        color: #1e293b;
+        font-size: 0.86rem;
+        border-bottom: 1px solid #e2e8f0;
         vertical-align: middle;
     }
 
-    .stok-table tr:hover {
-        background: rgba(248, 250, 252, 0.5);
+    .data-table tbody tr:nth-child(even) td {
+        background-color: #f8fafc;
+    }
+
+    .data-table tbody tr:hover td {
+        background-color: #eff6ff !important;
     }
 
     .stok-code {
@@ -125,161 +211,266 @@
         color: #1e293b;
     }
 
-    .status-badge {
-        padding: 0.25rem 0.6rem;
-        border-radius: 9999px;
-        font-size: 0.75rem;
-        font-weight: 600;
+    .btn-row-action {
+        width: 28px;
+        height: 28px;
+        font-size: 0.82rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: all 0.2s;
     }
 
-    .status-active {
+    .btn-edit {
+        background: #ebf4ff;
+        color: #3182ce;
+    }
+
+    .btn-edit:hover {
+        background: #bee3f8;
+    }
+
+    .btn-delete {
+        background: #fee2e2;
+        color: #ef4444;
+    }
+
+    .btn-delete:hover {
+        background: #fecaca;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 0.15s ease, opacity 0.15s;
+    }
+
+    .status-badge:hover {
+        transform: scale(1.05);
+        opacity: 0.9;
+    }
+
+    .status-badge.active {
         background: #dcfce7;
         color: #15803d;
     }
 
-    .status-passive {
+    .status-badge.inactive {
         background: #fee2e2;
         color: #b91c1c;
     }
 
-    .btn-icon {
-        padding: 0.5rem;
-        border-radius: 6px;
-        color: #64748b;
-        transition: all 0.2s;
-        border: 1px solid transparent;
-        background: transparent;
-        cursor: pointer;
-    }
-
-    .btn-icon:hover {
-        background: white;
-        color: var(--premium-blue);
-        border-color: #e2e8f0;
-    }
-
-    /* Modal Styles */
-    .modal {
-        display: none;
-        position: fixed;
-        z-index: 1000;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(4px);
-    }
-
-    .modal-content {
-        background: white;
-        margin: 5% auto;
-        padding: 2rem;
-        border-radius: 12px;
-        width: 500px;
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-    }
-
-    .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1.5rem;
-    }
-
-    .modal-header h3 {
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: #1e293b;
-    }
-
-    .close-modal {
-        font-size: 1.5rem;
-        cursor: pointer;
-        color: #64748b;
-    }
-
+    /* Modal Form Styling */
     .form-group {
-        margin-bottom: 1rem;
+        margin-bottom: 14px;
     }
 
     .form-group label {
         display: block;
-        font-size: 0.875rem;
+        font-size: 0.85rem;
         font-weight: 600;
-        color: #475569;
-        margin-bottom: 0.4rem;
+        color: var(--text-dark);
+        margin-bottom: 6px;
     }
 
-    .form-control {
+    .form-group input,
+    .form-group select {
         width: 100%;
-        padding: 0.6rem;
+        padding: 9px 12px;
         border-radius: 6px;
-        border: 1px solid #e2e8f0;
+        border: 1px solid #cbd5e1;
+        outline: none;
         font-size: 0.9rem;
+        background: #fff;
+        box-sizing: border-box;
     }
 
-    .form-control:focus {
-        border-color: var(--premium-blue);
-        outline: none;
+    .form-group input:focus,
+    .form-group select:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 24px;
+    }
+
+    .btn {
+        padding: 9px 18px;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        border: none;
+        transition: all 0.2s;
+    }
+
+    .btn-secondary {
+        background: #e2e8f0;
+        color: #4a5568;
+    }
+
+    .btn-secondary:hover {
+        background: #cbd5e0;
+    }
+
+    .btn-primary {
+        background: var(--accent-color);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #5a67d8;
+    }
+
+    @media print {
+
+        .hide-on-print,
+        .page-header,
+        .action-bar {
+            display: none !important;
+        }
+
+        .main-card {
+            box-shadow: none !important;
+            border: none !important;
+            padding: 0 !important;
+        }
+
+        .table-container {
+            border: 1px solid #000 !important;
+        }
+
+        .data-table th {
+            background: #f1f5f9 !important;
+            color: #000 !important;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="sube-page-container">
+<div class="main-card">
     <div class="page-header">
-        <h2 class="page-title">Stok Tanımlama</h2>
-        <div class="action-buttons">
+        <h2 class="page-title">
+            <span>📦 Stok Tanımlama</span>
+        </h2>
+
+        <div class="action-bar">
+            <!-- Print Button -->
+            <button class="btn-icon" onclick="window.print()" title="Yazdır">
+                <i class="fas fa-print"></i>
+            </button>
+
+            <!-- Excel Button -->
+            <button class="btn-icon" onclick="exportStoklarExcel()" title="Excel İndir" style="color: #16a34a;">
+                <i class="fas fa-file-excel"></i>
+            </button>
+
+            <!-- Mail Button -->
+            <button class="btn-icon" data-permission="Mail Gönder" onclick="openStoklarReportMail()" title="Mail Gönder"
+                style="color: #3b82f6;">
+                <i class="fas fa-envelope"></i>
+            </button>
+
+            <!-- Search Area -->
             <div class="search-container">
                 <i class="fas fa-search search-icon"></i>
-                <input type="text" id="stokSearch" class="search-input" placeholder="Stok Ara..."
-                    onkeyup="filterTable()">
+                <input type="text" class="search-input" placeholder="Stok Kodu veya Açıklama Ara..." id="stok-search">
             </div>
-            <button class="btn-premium" onclick="openModal()">
-                <i class="fas fa-plus"></i> Yeni Stok
+
+            <!-- Group Filter -->
+            <select class="filter-select" id="filter-grup">
+                <option value="">Tüm Ürün Grupları</option>
+                {% for g in urun_grupları %}
+                <option value="{{ g }}">{{ g }}</option>
+                {% endfor %}
+            </select>
+
+            <!-- Active Filter Checkbox -->
+            <label class="filter-checkbox-wrapper">
+                <input type="checkbox" id="filter-active">
+                <span>Sadece Aktifleri Göster</span>
+            </label>
+
+            <!-- New Button -->
+            <button class="btn-new" onclick="openAddModal()">
+                <i class="fas fa-plus"></i>
+                Yeni Stok
             </button>
         </div>
     </div>
 
-    <div class="table-card">
-        <table class="stok-table" id="stokTable">
+    <!-- Table Container -->
+    <div class="table-responsive table-container">
+        <table class="data-table" id="stok-table">
             <thead>
                 <tr>
-                    <th>Kod</th>
-                    <th>Açıklama</th>
-                    <th>Grup</th>
-                    <th>Birim</th>
-                    <th>Sınıf</th>
-                    <th>Aktif</th>
-                    <th style="text-align: right;">İşlemler</th>
+                    <th style="width: 140px;">KOD</th>
+                    <th>AÇIKLAMA</th>
+                    <th style="width: 150px;">ÜRÜN GRUBU</th>
+                    <th style="width: 90px; text-align: center;">BİRİM</th>
+                    <th style="width: 100px;">SINIF</th>
+                    <th style="width: 110px; text-align: center;">DURUM</th>
+                    <th style="width: 100px; text-align: center;" class="hide-on-print">İŞLEMLER</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="stok-tbody">
                 {% for stok in stoklar %}
-                <tr data-id="{{ stok.Stok_ID }}">
+                <tr data-id="{{ stok.Stok_ID }}" data-code="{{ (stok.Malzeme_Kodu or '') | lower }}"
+                    data-name="{{ (stok.Malzeme_Aciklamasi or '') | lower }}" data-grup="{{ (stok.Urun_Grubu or '') }}"
+                    data-aktif="{{ 'true' if stok.Aktif_Pasif else 'false' }}">
                     <td class="stok-code">{{ stok.Malzeme_Kodu }}</td>
-                    <td>{{ stok.Malzeme_Aciklamasi }}</td>
-                    <td>{{ stok.Urun_Grubu }}</td>
-                    <td>{{ stok.Birimi }}</td>
-                    <td>{{ stok.Sinif or '-' }}</td>
-                    <td>
-                        <span class="status-badge {{ 'status-active' if stok.Aktif_Pasif else 'status-passive' }}">
+                    <td style="font-weight: 600; color: #0f172a;">{{ stok.Malzeme_Aciklamasi }}</td>
+                    <td style="color: #475569;">{{ stok.Urun_Grubu or '-' }}</td>
+                    <td style="text-align: center; color: #475569; font-weight: 600;">{{ stok.Birimi or '-' }}</td>
+                    <td style="color: #64748b;">{{ stok.Sinif or '-' }}</td>
+                    <td style="text-align: center;">
+                        <span class="status-badge {{ 'active' if stok.Aktif_Pasif else 'inactive' }}"
+                            title="Tıklayarak durumu değiştir"
+                            onclick="toggleStatus({{ stok.Stok_ID }}, {{ 'false' if stok.Aktif_Pasif else 'true' }})">
+                            <i class="fas {{ 'fa-check-circle' if stok.Aktif_Pasif else 'fa-times-circle' }}"></i>
                             {{ 'Aktif' if stok.Aktif_Pasif else 'Pasif' }}
                         </span>
                     </td>
-                    <td style="text-align: right;">
-                        <button class="btn-icon" onclick='editStok({{ {
-                            "Stok_ID": stok.Stok_ID,
-                            "Malzeme_Kodu": stok.Malzeme_Kodu,
-                            "Malzeme_Aciklamasi": stok.Malzeme_Aciklamasi,
-                            "Urun_Grubu": stok.Urun_Grubu,
-                            "Birimi": stok.Birimi,
-                            "Sinif": stok.Sinif,
-                            "Aktif_Pasif": stok.Aktif_Pasif
-                        } | tojson }})'>
-                            <i class="fas fa-edit"></i>
-                        </button>
+                    <td style="text-align: center;" class="hide-on-print">
+                        <div style="display: flex; gap: 6px; justify-content: center; align-items: center;">
+                            <button class="btn-row-action btn-edit" title="Düzenle" onclick='openEditModal({{ {
+                                    "Stok_ID": stok.Stok_ID,
+                                    "Malzeme_Kodu": stok.Malzeme_Kodu,
+                                    "Malzeme_Aciklamasi": stok.Malzeme_Aciklamasi,
+                                    "Urun_Grubu": stok.Urun_Grubu,
+                                    "Birimi": stok.Birimi,
+                                    "Sinif": stok.Sinif,
+                                    "Aktif_Pasif": stok.Aktif_Pasif
+                                } | tojson | safe }})'>
+                                <i class="fas fa-pencil-alt"></i>
+                            </button>
+                            <button class="btn-row-action btn-delete" title="Sil"
+                                onclick="deleteStok({{ stok.Stok_ID }}, `{{ (stok.Malzeme_Aciklamasi or stok.Malzeme_Kodu) | escape }}`)">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr class="no-data-row">
+                    <td colspan="7" style="text-align: center; padding: 40px; color: #94a3b8;">
+                        <i class="fas fa-box-open"
+                            style="font-size: 32px; display: block; margin-bottom: 12px; opacity: 0.5;"></i>
+                        Henüz stok tanımı bulunmuyor.
                     </td>
                 </tr>
                 {% endfor %}
@@ -287,134 +478,344 @@
         </table>
     </div>
 </div>
-
-<!-- Stok Modal -->
-<div id="stokModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 id="modalTitle">Yeni Stok</h3>
-            <span class="close-modal" onclick="closeModal()">&times;</span>
-        </div>
-        <form id="stokForm">
-            <input type="hidden" id="stok_id">
-            <div class="form-group">
-                <label>Malzeme Kodu</label>
-                <input type="text" id="malzeme_kodu" class="form-control" required>
-            </div>
-            <div class="form-group">
-                <label>Açıklama</label>
-                <input type="text" id="malzeme_aciklamasi" class="form-control" required>
-            </div>
-            <div class="form-group">
-                <label>Ürün Grubu</label>
-                <input type="text" id="urun_grubu" class="form-control" list="grup_list" required>
-                <datalist id="grup_list">
-                    {% for g in urun_grupları %}<option value="{{ g }}">{% endfor %}
-                </datalist>
-            </div>
-            <div style="display: flex; gap: 1rem;">
-                <div class="form-group" style="flex: 1;">
-                    <label>Birim</label>
-                    <input type="text" id="birimi" class="form-control" list="birim_list" required>
-                    <datalist id="birim_list">
-                        {% for b in birimler %}<option value="{{ b }}">{% endfor %}
-                    </datalist>
-                </div>
-                <div class="form-group" style="flex: 1;">
-                    <label>Sınıf</label>
-                    <input type="text" id="sinif" class="form-control" list="sinif_list">
-                    <datalist id="sinif_list">
-                        {% for s in siniflar %}<option value="{{ s }}">{% endfor %}
-                    </datalist>
-                </div>
-            </div>
-            <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-top: 1rem;">
-                <input type="checkbox" id="aktif_pasif" checked>
-                <label for="aktif_pasif" style="margin-bottom: 0;">Aktif mi?</label>
-            </div>
-            <button type="submit" class="btn-premium" style="width: 100%; margin-top: 1.5rem; justify-content: center;">
-                Kaydet
-            </button>
-        </form>
-    </div>
-</div>
-
 {% endblock %}
 
 {% block scripts %}
 <script>
-    const modal = document.getElementById('stokModal');
-    const stokForm = document.getElementById('stokForm');
+    const STOKLAR_DATA = [
+        {% for stok in stoklar %}
+    {
+        Stok_ID: { { stok.Stok_ID } },
+        Malzeme_Kodu: { { (stok.Malzeme_Kodu or '') | tojson } },
+        Malzeme_Aciklamasi: { { (stok.Malzeme_Aciklamasi or '') | tojson } },
+        Urun_Grubu: { { (stok.Urun_Grubu or '') | tojson } },
+        Birimi: { { (stok.Birimi or '') | tojson } },
+        Sinif: { { (stok.Sinif or '') | tojson } },
+        Aktif_Pasif: { { 'true' if stok.Aktif_Pasif else 'false' } }
+    } {% if not loop.last %}, {% endif %}
+    {% endfor %}
+    ];
 
-    function openModal() {
-        document.getElementById('modalTitle').innerText = 'Yeni Stok';
-        stokForm.reset();
-        document.getElementById('stok_id').value = '';
-        document.getElementById('malzeme_kodu').readOnly = false;
-        modal.style.display = 'block';
+    const URUN_GRUPLARI = {{ urun_grupları | tojson | safe }};
+    const BIRIMLER = {{ birimler | tojson | safe }};
+    const SINIFLAR = {{ siniflar | tojson | safe }};
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const searchInput = document.getElementById('stok-search');
+        const grupSelect = document.getElementById('filter-grup');
+        const activeCheckbox = document.getElementById('filter-active');
+
+        function filterTable() {
+            const term = searchInput ? searchInput.value.toLowerCase().trim() : '';
+            const selectedGrup = grupSelect ? grupSelect.value.trim() : '';
+            const showOnlyActive = activeCheckbox ? activeCheckbox.checked : false;
+            const rows = document.querySelectorAll('#stok-tbody tr:not(.no-data-row)');
+
+            rows.forEach(row => {
+                const code = row.getAttribute('data-code') || '';
+                const name = row.getAttribute('data-name') || '';
+                const grup = row.getAttribute('data-grup') || '';
+                const isAktif = row.getAttribute('data-aktif') === 'true';
+
+                const matchesSearch = term === '' || code.includes(term) || name.includes(term);
+                const matchesGrup = selectedGrup === '' || grup === selectedGrup;
+                const matchesActive = !showOnlyActive || isAktif;
+
+                if (matchesSearch && matchesGrup && matchesActive) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        if (searchInput) searchInput.addEventListener('keyup', filterTable);
+        if (grupSelect) grupSelect.addEventListener('change', filterTable);
+        if (activeCheckbox) activeCheckbox.addEventListener('change', filterTable);
+
+        filterTable();
+    });
+
+    function stokFormHtml(isEdit = false, data = {}) {
+        return `
+            <form id="stokForm" data-mode="${isEdit ? 'edit' : 'add'}" data-id="${data.Stok_ID || ''}">
+                <div class="form-group">
+                    <label for="Malzeme_Kodu">Malzeme Kodu *</label>
+                    <input type="text" id="Malzeme_Kodu" placeholder="Örn: STK-001" value="${data.Malzeme_Kodu || ''}" ${isEdit ? 'readonly style="background-color: #f1f5f9; cursor: not-allowed;"' : ''} required>
+                </div>
+                <div class="form-group">
+                    <label for="Malzeme_Aciklamasi">Açıklama *</label>
+                    <input type="text" id="Malzeme_Aciklamasi" placeholder="Örn: Espresso Çekirdeği 1kg" value="${data.Malzeme_Aciklamasi || ''}" required>
+                </div>
+                <div class="form-group">
+                    <label for="Urun_Grubu">Ürün Grubu *</label>
+                    <input type="text" id="Urun_Grubu" list="stok_grup_list" placeholder="Grup seçin veya yazın" value="${data.Urun_Grubu || ''}" required>
+                    <datalist id="stok_grup_list">
+                        ${URUN_GRUPLARI.map(g => `<option value="${g}">`).join('')}
+                    </datalist>
+                </div>
+                <div style="display: flex; gap: 12px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label for="Birimi">Birim *</label>
+                        <input type="text" id="Birimi" list="stok_birim_list" placeholder="Örn: KG, AD" value="${data.Birimi || ''}" required>
+                        <datalist id="stok_birim_list">
+                            ${BIRIMLER.map(b => `<option value="${b}">`).join('')}
+                        </datalist>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label for="Sinif">Sınıf</label>
+                        <input type="text" id="Sinif" list="stok_sinif_list" placeholder="Örn: Hammadde" value="${data.Sinif || ''}">
+                        <datalist id="stok_sinif_list">
+                            ${SINIFLAR.map(s => `<option value="${s}">`).join('')}
+                        </datalist>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top: 10px;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="Aktif_Pasif" ${data.Aktif_Pasif !== false ? 'checked' : ''} style="width: 16px; height: 16px;"> Aktif Stok
+                    </label>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="hideModal()">İptal</button>
+                    <button type="submit" class="btn btn-primary">${isEdit ? 'Güncelle' : 'Kaydet'}</button>
+                </div>
+            </form>
+        `;
     }
 
-    function closeModal() {
-        modal.style.display = 'none';
+    function openAddModal() {
+        showModal('Yeni Stok Ekle', stokFormHtml(false));
+        document.getElementById('stokForm').addEventListener('submit', handleFormSubmit);
     }
 
-    window.onclick = function (event) {
-        if (event.target == modal) closeModal();
+    function openEditModal(data) {
+        showModal('Stok Düzenle', stokFormHtml(true, data));
+        document.getElementById('stokForm').addEventListener('submit', handleFormSubmit);
     }
 
-    function editStok(stok) {
-        document.getElementById('modalTitle').innerText = 'Stok Düzenle';
-        document.getElementById('stok_id').value = stok.Stok_ID;
-        document.getElementById('malzeme_kodu').value = stok.Malzeme_Kodu;
-        document.getElementById('malzeme_kodu').readOnly = true;
-        document.getElementById('malzeme_aciklamasi').value = stok.Malzeme_Aciklamasi;
-        document.getElementById('urun_grubu').value = stok.Urun_Grubu;
-        document.getElementById('birimi').value = stok.Birimi;
-        document.getElementById('sinif').value = stok.Sinif || '';
-        document.getElementById('aktif_pasif').checked = stok.Aktif_Pasif;
-        modal.style.display = 'block';
-    }
-
-    stokForm.onsubmit = async (e) => {
+    async function handleFormSubmit(e) {
         e.preventDefault();
-        const id = document.getElementById('stok_id').value;
-        const method = id ? 'PUT' : 'POST';
-        const url = id ? `/api/v1/stok/${id}` : '/api/v1/stok';
-
+        const form = e.target;
+        const mode = form.dataset.mode;
+        const id = form.dataset.id;
         const data = {
-            Malzeme_Kodu: document.getElementById('malzeme_kodu').value,
-            Malzeme_Aciklamasi: document.getElementById('malzeme_aciklamasi').value,
-            Urun_Grubu: document.getElementById('urun_grubu').value,
-            Birimi: document.getElementById('birimi').value,
-            Sinif: document.getElementById('sinif').value,
-            Aktif_Pasif: document.getElementById('aktif_pasif').checked
+            Malzeme_Kodu: document.getElementById('Malzeme_Kodu').value.trim(),
+            Malzeme_Aciklamasi: document.getElementById('Malzeme_Aciklamasi').value.trim(),
+            Urun_Grubu: document.getElementById('Urun_Grubu').value.trim(),
+            Birimi: document.getElementById('Birimi').value.trim(),
+            Sinif: document.getElementById('Sinif').value.trim(),
+            Aktif_Pasif: document.getElementById('Aktif_Pasif').checked
         };
 
+        const url = mode === 'add' ? '/api/v1/stok' : `/api/v1/stok/${id}`;
+        const method = mode === 'add' ? 'POST' : 'PUT';
+
         try {
-            const response = await fetch(url, {
+            const res = await fetch(url, {
                 method: method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
+            if (res.ok) {
+                showToast(mode === 'add' ? 'Stok başarıyla eklendi.' : 'Stok başarıyla güncellendi.');
+                hideModal();
+                setTimeout(() => location.reload(), 900);
+            } else {
+                const err = await res.json();
+                showToast(err.error || 'İşlem sırasında hata oluştu.', 'error');
+            }
+        } catch {
+            showToast('Bağlantı hatası.', 'error');
+        }
+    }
 
-            if (response.ok) {
+    async function toggleStatus(id, newStatus) {
+        try {
+            const res = await fetch(`/api/v1/stok/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ Aktif_Pasif: newStatus })
+            });
+            if (res.ok) {
                 location.reload();
             } else {
-                const err = await response.json();
-                alert('Hata: ' + (err.error || 'İşlem başarısız'));
+                const err = await res.json();
+                showToast(err.error || 'Güncellenirken hata oluştu.', 'error');
             }
-        } catch (err) {
-            console.error(err);
-            alert('Sunucu hatası!');
+        } catch {
+            showToast('Bağlantı hatası.', 'error');
         }
-    };
+    }
 
-    function filterTable() {
-        const query = document.getElementById('stokSearch').value.toLowerCase();
-        const rows = document.querySelectorAll('#stokTable tbody tr');
-        rows.forEach(row => {
-            const text = row.innerText.toLowerCase();
-            row.style.display = text.includes(query) ? '' : 'none';
+    async function deleteStok(id, name) {
+        if (!confirm(`'${name}' stok kartını silmek istediğinize emin misiniz?`)) return;
+        try {
+            const res = await fetch(`/api/v1/stok/${id}`, { method: 'DELETE' });
+            if (res.ok || res.status === 204) {
+                showToast('Kayıt silindi.');
+                setTimeout(() => location.reload(), 900);
+            } else {
+                const err = await res.json();
+                showToast(err.error || 'Silinirken hata oluştu.', 'error');
+            }
+        } catch {
+            showToast('Bağlantı hatası.', 'error');
+        }
+    }
+
+    // ─── Stok Listesi Excel & Mail Raporlama ───
+    function getStoklarReportMailHtml() {
+        const totalCount = STOKLAR_DATA.length;
+        const activeCount = STOKLAR_DATA.filter(s => s.Aktif_Pasif).length;
+
+        let rowsHtml = '';
+        if (totalCount === 0) {
+            rowsHtml = `
+                <tr>
+                    <td colspan="6" align="center" bgcolor="#ffffff" style="padding: 24px; text-align: center; color: #64748b; font-size: 13px; border-bottom: 1px solid #e2e8f0;">
+                        Henüz stok tanımı bulunmuyor.
+                    </td>
+                </tr>
+            `;
+        } else {
+            rowsHtml = STOKLAR_DATA.map((s, idx) => {
+                const bg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
+                const statusBadge = s.Aktif_Pasif
+                    ? `<span style="background-color: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">Aktif</span>`
+                    : `<span style="background-color: #fee2e2; color: #b91c1c; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">Pasif</span>`;
+
+                return `
+                    <tr bgcolor="${bg}" style="background-color: ${bg};">
+                        <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; font-family: monospace; font-weight: 600; color: #334155; border-bottom: 1px solid #e2e8f0;">
+                            ${s.Malzeme_Kodu || ''}
+                        </td>
+                        <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; font-weight: 600; color: #0f172a; border-bottom: 1px solid #e2e8f0;">
+                            ${s.Malzeme_Aciklamasi || ''}
+                        </td>
+                        <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; color: #475569; border-bottom: 1px solid #e2e8f0;">
+                            ${s.Urun_Grubu || '-'}
+                        </td>
+                        <td align="center" bgcolor="${bg}" style="padding: 10px 14px; text-align: center; font-size: 13px; color: #475569; border-bottom: 1px solid #e2e8f0;">
+                            ${s.Birimi || '-'}
+                        </td>
+                        <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; color: #64748b; border-bottom: 1px solid #e2e8f0;">
+                            ${s.Sinif || '-'}
+                        </td>
+                        <td align="center" bgcolor="${bg}" style="padding: 10px 14px; text-align: center; border-bottom: 1px solid #e2e8f0;">
+                            ${statusBadge}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        return `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; max-width: 800px; margin: 0 auto;">
+                <!-- 1. BAŞLIK VE KART BÖLÜMÜ -->
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: separate; margin-bottom: 18px; border: 2px solid #6366f1; border-radius: 8px; overflow: hidden; background-color: #ffffff;">
+                    <tr>
+                        <td colspan="2" bgcolor="#eef2ff" style="padding: 12px 18px; background-color: #eef2ff; border-bottom: 2px solid #c7d2fe; text-align: center;">
+                            <span style="font-size: 16px; font-weight: bold; color: #3730a3;">
+                                📦 Stok Listesi Raporu
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td width="50%" align="center" bgcolor="#f8fafc" style="padding: 14px 10px; background-color: #f8fafc; border-right: 1px solid #e2e8f0; text-align: center;">
+                            <div style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Toplam Stok Kartı</div>
+                            <div style="font-size: 20px; font-weight: 800; color: #312e81;">${totalCount} Kayıt</div>
+                        </td>
+                        <td width="50%" align="center" bgcolor="#f8fafc" style="padding: 14px 10px; background-color: #f8fafc; text-align: center;">
+                            <div style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Aktif Stok Kartı</div>
+                            <div style="font-size: 20px; font-weight: 800; color: #15803d;">${activeCount} Kayıt</div>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- 2. TABLO -->
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; margin-bottom: 16px; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; background-color: #ffffff;">
+                    <thead>
+                        <tr bgcolor="#1e293b" style="background-color: #1e293b;">
+                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a; width: 110px;">KOD</th>
+                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a;">AÇIKLAMA</th>
+                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a; width: 130px;">ÜRÜN GRUBU</th>
+                            <th align="center" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: center; text-transform: uppercase; border-bottom: 2px solid #0f172a; width: 70px;">BİRİM</th>
+                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a; width: 90px;">SINIF</th>
+                            <th align="center" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: center; text-transform: uppercase; border-bottom: 2px solid #0f172a; width: 90px;">DURUM</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    function buildStoklarWorkbook() {
+        if (typeof XLSX === 'undefined') return null;
+
+        const wb = XLSX.utils.book_new();
+        const totalCount = STOKLAR_DATA.length;
+        const activeCount = STOKLAR_DATA.filter(s => s.Aktif_Pasif).length;
+
+        const headers = ['KOD', 'AÇIKLAMA', 'ÜRÜN GRUBU', 'BİRİM', 'SINIF', 'DURUM'];
+
+        const sheetData = [
+            ['STOK TANIMLARI LİSTESİ'],
+            ['Toplam Stok Kartı:', totalCount],
+            ['Aktif Stok Kartı:', activeCount],
+            ['Rapor Tarihi:', new Date().toLocaleString('tr-TR')],
+            [],
+            headers
+        ];
+
+        STOKLAR_DATA.forEach(s => {
+            sheetData.push([
+                s.Malzeme_Kodu || '',
+                s.Malzeme_Aciklamasi || '',
+                s.Urun_Grubu || '',
+                s.Birimi || '',
+                s.Sinif || '',
+                s.Aktif_Pasif ? 'Aktif' : 'Pasif'
+            ]);
+        });
+
+        const ws = XLSX.utils.aoa_to_sheet(sheetData);
+        ws['!cols'] = [
+            { wch: 15 },
+            { wch: 35 },
+            { wch: 20 },
+            { wch: 10 },
+            { wch: 15 },
+            { wch: 12 }
+        ];
+
+        XLSX.utils.book_append_sheet(wb, ws, 'Stoklar');
+        return wb;
+    }
+
+    function exportStoklarExcel() {
+        const wb = buildStoklarWorkbook();
+        if (!wb) {
+            alert('Excel kütüphanesi yüklenemedi.');
+            return;
+        }
+        XLSX.writeFile(wb, 'SilverCloud_Stoklar.xlsx');
+    }
+
+    function getStoklarReportExcelBase64() {
+        const wb = buildStoklarWorkbook();
+        if (!wb) return null;
+        return XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+    }
+
+    function openStoklarReportMail() {
+        openReportMailModal({
+            title: 'Stok Listesi',
+            filename: 'SilverCloud_Stoklar.xlsx',
+            getHtml: getStoklarReportMailHtml,
+            getExcelBase64: getStoklarReportExcelBase64
         });
     }
 </script>
