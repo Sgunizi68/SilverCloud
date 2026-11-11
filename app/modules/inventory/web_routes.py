@@ -44,12 +44,26 @@ def stok_tanimlama():
     birimler = sorted(list(set([s.Birimi for s in stoklar if s.Birimi]))) if stoklar else ["AD", "KG", "LT", "PK"]
     siniflar = sorted(list(set([s.Sinif for s in stoklar if s.Sinif]))) if stoklar else []
 
+    stoklar_json = [
+        {
+            'Stok_ID': s.Stok_ID,
+            'Malzeme_Kodu': s.Malzeme_Kodu or '',
+            'Malzeme_Aciklamasi': s.Malzeme_Aciklamasi or '',
+            'Urun_Grubu': s.Urun_Grubu or '',
+            'Birimi': s.Birimi or '',
+            'Sinif': s.Sinif or '',
+            'Aktif_Pasif': bool(s.Aktif_Pasif)
+        }
+        for s in stoklar
+    ]
+
     db_session.close()
     
     return render_template(
         "stok_tanimlama.html",
         user=user,
         stoklar=stoklar,
+        stoklar_json=stoklar_json,
         urun_grupları=urun_grupları,
         birimler=birimler,
         siniflar=siniflar,

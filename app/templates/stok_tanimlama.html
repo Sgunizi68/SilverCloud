@@ -482,19 +482,7 @@
 
 {% block scripts %}
 <script>
-    const STOKLAR_DATA = [
-        {% for stok in stoklar %}
-    {
-        Stok_ID: { { stok.Stok_ID } },
-        Malzeme_Kodu: { { (stok.Malzeme_Kodu or '') | tojson } },
-        Malzeme_Aciklamasi: { { (stok.Malzeme_Aciklamasi or '') | tojson } },
-        Urun_Grubu: { { (stok.Urun_Grubu or '') | tojson } },
-        Birimi: { { (stok.Birimi or '') | tojson } },
-        Sinif: { { (stok.Sinif or '') | tojson } },
-        Aktif_Pasif: { { 'true' if stok.Aktif_Pasif else 'false' } }
-    } {% if not loop.last %}, {% endif %}
-    {% endfor %}
-    ];
+    const STOKLAR_DATA = {{ (stoklar_json if stoklar_json is defined else []) | tojson | safe }};
 
     const URUN_GRUPLARI = {{ urun_grupları | tojson | safe }};
     const BIRIMLER = {{ birimler | tojson | safe }};

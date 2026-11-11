@@ -469,6 +469,8 @@ def diger_harcamalar():
     # Build kategori map (id -> name) for server-side table rendering (all categories)
     kategori_map = {k.Kategori_ID: k.Kategori_Adi for k in all_kategoriler_raw}
 
+    # Plain list of subeler for JS to avoid template formatting issues
+    subeler_json = [{'Sube_ID': s.Sube_ID, 'Sube_Adi': s.Sube_Adi} for s in auth_suber]
     
     db_session.close()
     
@@ -476,6 +478,7 @@ def diger_harcamalar():
         "diger_harcamalar.html",
         user=user,
         subeler=auth_suber,
+        subeler_json=subeler_json,
         kategoriler=kategoriler,
         harcamalar=harcamalar_list,
         secili_sube_id=sube_id,
