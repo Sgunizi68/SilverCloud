@@ -579,10 +579,11 @@ def create_odeme_bulk(
 ) -> dict:
     """
     Bulk create Odeme records.
-    Returns counts of added and skipped records.
+    Returns counts of added and skipped records, and indices of added items.
     """
     added = 0
     skipped = 0
+    added_indices = []
     
     # Pre-fetch all OdemeReferans to match Kategori_ID
     odeme_referanslar = db.execute(select(OdemeReferans)).scalars().all()
@@ -635,12 +636,14 @@ def create_odeme_bulk(
             )
             db.add(new_odeme)
             added += 1
+            if data.get("_index") is not None:
+                added_indices.append(data["_index"])
         except Exception as e:
             db.rollback()
             raise e
             
     db.commit()
-    return {"added": added, "skipped": skipped}
+    return {"added": added, "skipped": skipped, "added_indices": added_indices}
 
 
 # ============================================================================

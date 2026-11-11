@@ -12,160 +12,392 @@
         padding: 30px;
         max-width: 1000px;
         margin: 0 auto;
-    }
 
-    .card-glass {
-        background: rgba(255, 255, 255, 0.9);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.4);
-        border-radius: 16px;
-        padding: 25px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    }
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.95);
+            --glass-border: rgba(255, 255, 255, 0.3);
+            --accent-color: #667eea;
+            --text-dark: #2d3748;
+            --text-gray: #718096;
+        }
 
-    .page-title {
-        font-size: 20px;
-        font-weight: 700;
-        color: #1e293b;
-        margin-bottom: 25px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
+        .card-glass {
+            background: rgba(255, 255, 255, 0.9);
 
-    .form-group label {
-        display: block;
-        font-size: 14px;
-        font-weight: 600;
-        color: #475569;
-        margin-bottom: 8px;
-    }
+            .main-card {
+                background: var(--glass-bg);
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.4);
+                border-radius: 16px;
+                padding: 25px;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+                border: 1px solid var(--glass-border);
+                border-radius: 12px;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+                padding: 24px;
+                margin-bottom: 24px;
+            }
 
-    .form-control {
-        width: 100%;
-        padding: 12px;
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-        font-size: 14px;
-        transition: all 0.2s;
-        background: white;
-    }
+            .page-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 24px;
+                gap: 16px;
+                flex-wrap: wrap;
+            }
 
-    .form-control:focus {
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        outline: none;
-    }
+            .page-title {
+                font-size: 20px;
+                font-size: 1.25rem;
+                font-weight: 700;
+                color: #1e293b;
+                margin-bottom: 25px;
+                color: var(--text-dark);
+                margin: 0;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
 
-    .upload-row {
-        display: flex;
-        gap: 15px;
-        align-items: flex-end;
-        margin-bottom: 20px;
-    }
+            .info-banner {
+                background: #eef2ff;
+                border-left: 4px solid #6366f1;
+                border-radius: 8px;
+                padding: 14px 18px;
+                margin-bottom: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 16px;
+                color: #3730a3;
+                font-size: 0.88rem;
+                flex-wrap: wrap;
+            }
 
-    .upload-row .form-group {
-        flex: 1;
-    }
+            .info-banner-left {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
 
-    .btn-upload {
-        background: #3b82f6;
-        color: white;
-        border: none;
-        padding: 12px 24px;
-        border-radius: 8px;
-        font-weight: 600;
-        font-size: 14px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        transition: all 0.2s;
-        white-space: nowrap;
-        height: 44px;
-    }
+            .info-banner i {
+                font-size: 1.2rem;
+                color: #4f46e5;
+            }
 
-    .btn-upload:hover {
-        background: #2563eb;
-        transform: translateY(-1px);
-    }
+            .btn-template {
+                background: white;
+                color: #4338ca;
+                border: 1px solid #c7d2fe;
+                padding: 8px 14px;
+                border-radius: 6px;
+                font-size: 0.82rem;
+                font-weight: 600;
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                transition: all 0.2s;
+                white-space: nowrap;
+            }
 
-    .btn-upload:disabled {
-        background: #94a3b8;
-        cursor: not-allowed;
-        transform: none;
-    }
+            .btn-template:hover {
+                background: #e0e7ff;
+                border-color: #a5b4fc;
+                transform: translateY(-1px);
+            }
 
-    .btn-template {
-        background: white;
-        color: #334155;
-        border: 1px solid #cbd5e1;
-        padding: 8px 16px;
-        border-radius: 6px;
-        font-size: 13px;
-        font-weight: 500;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        transition: all 0.2s;
-    }
+            .upload-form-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+                gap: 16px;
+                align-items: flex-end;
+                background: white;
+                padding: 20px;
+                border-radius: 10px;
+                border: 1px solid #e2e8f0;
+                box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+                margin-bottom: 24px;
+            }
 
-    .btn-template:hover {
-        border-color: #3b82f6;
-        color: #3b82f6;
-    }
+            .form-group {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
 
-    .info-text {
-        font-size: 12px;
-        color: #64748b;
-        margin-top: 8px;
-    }
+            .form-group label {
+                display: block;
+                font-size: 14px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                color: #475569;
+                margin-bottom: 8px;
+                color: var(--text-dark);
+            }
 
-    .info-text strong {
-        color: #334155;
-    }
+            .form-control {
+                width: 100%;
+                padding: 12px;
+                padding: 10px 14px;
+                border-radius: 8px;
+                border: 1px solid #cbd5e1;
+                border-radius: 8px;
+                font-size: 14px;
+                outline: none;
+                font-size: 0.9rem;
+                background: white;
+                transition: all 0.2s;
+                background: white;
+                box-sizing: border-box;
+            }
 
-    .result-card {
-        margin-top: 25px;
-        padding: 20px;
-        border-radius: 12px;
-        display: none;
-        border: 1px solid #e2e8f0;
-    }
+            .form-control:focus {
+                border-color: #3b82f6;
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+                outline: none;
+                border-color: var(--accent-color);
+                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            }
 
-    .result-success {
-        background: #f0fdf4;
-        border-color: #bbf7d0;
-        color: #166534;
-    }
+            .upload-row {
+                display: flex;
+                gap: 15px;
+                align-items: flex-end;
+                margin-bottom: 20px;
+            }
 
-    .result-stats {
-        display: flex;
-        gap: 30px;
-        margin-top: 15px;
-    }
+            .upload-row .form-group {
+                flex: 1;
+            }
 
-    .stat-item {
-        text-align: center;
-        flex: 1;
-        background: white;
-        padding: 15px;
-        border-radius: 8px;
-        border: 1px solid rgba(0, 0, 0, 0.05);
-    }
+            .btn-upload {
+                background: #3b82f6;
 
-    .stat-value {
-        font-size: 24px;
-        font-weight: 700;
-        display: block;
-    }
+                .btn-new {
+                    background: var(--accent-color);
+                    color: white;
+                    border: none;
+                    padding: 12px 24px;
+                    padding: 10px 24px;
+                    border-radius: 8px;
+                    font-weight: 600;
+                    font-size: 14px;
+                    cursor: pointer;
+                    display: flex;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 8px;
+                    transition: all 0.2s;
+                    cursor: pointer;
+                    transition: transform 0.2s, background 0.2s;
+                    font-size: 0.9rem;
+                    height: 42px;
+                    white-space: nowrap;
+                    height: 44px;
+                }
 
-    .stat-label {
-        font-size: 12px;
-        color: #64748b;
-        text-transform: uppercase;
-    }
+                .btn-upload:hover {
+                    background: #2563eb;
+
+                    .btn-new:hover {
+                        background: #5a67d8;
+                        transform: translateY(-1px);
+                    }
+
+                    .btn-upload:disabled {
+                        .btn-new:disabled {
+                            background: #94a3b8;
+                            cursor: not-allowed;
+                            transform: none;
+                        }
+
+                        .btn-template {
+                            background: white;
+                            color: #334155;
+                            border: 1px solid #cbd5e1;
+                            padding: 8px 16px;
+                            border-radius: 6px;
+                            font-size: 13px;
+                            font-weight: 500;
+                            cursor: pointer;
+                            display: inline-flex;
+
+                            /* Summary Banner & Cards */
+                            .summary-banner {
+                                background: #ffffff;
+                                border: 2px solid #6366f1;
+                                border-radius: 10px;
+                                overflow: hidden;
+                                margin-top: 24px;
+                                margin-bottom: 20px;
+                                box-shadow: 0 4px 12px rgba(99, 102, 241, 0.08);
+                                display: none;
+                            }
+
+                            .summary-banner-title {
+                                background: #eef2ff;
+                                border-bottom: 2px solid #c7d2fe;
+                                padding: 12px 20px;
+                                text-align: center;
+                                font-size: 15px;
+                                font-weight: 700;
+                                color: #3730a3;
+                                display: flex;
+                                align-items: center;
+                                gap: 6px;
+                                transition: all 0.2s;
+                                justify-content: center;
+                                gap: 8px;
+                            }
+
+                            .btn-template:hover {
+                                border-color: #3b82f6;
+                                color: #3b82f6;
+
+                                .summary-cards-grid {
+                                    display: grid;
+                                    grid-template-columns: 1fr 1fr;
+                                    background: #f8fafc;
+                                }
+
+                                .info-text {
+                                    font-size: 12px;
+                                    color: #64748b;
+                                    margin-top: 8px;
+
+                                    .summary-stat-box {
+                                        padding: 16px;
+                                        text-align: center;
+                                    }
+
+                                    .info-text strong {
+                                        color: #334155;
+
+                                        .summary-stat-box:first-child {
+                                            border-right: 1px solid #e2e8f0;
+                                        }
+
+                                        .result-card {
+                                            margin-top: 25px;
+                                            padding: 20px;
+                                            border-radius: 12px;
+                                            display: none;
+                                            border: 1px solid #e2e8f0;
+
+                                            .summary-stat-label {
+                                                font-size: 11px;
+                                                font-weight: 700;
+                                                color: #64748b;
+                                                text-transform: uppercase;
+                                                letter-spacing: 0.5px;
+                                                margin-bottom: 5px;
+                                            }
+
+                                            .result-success {
+                                                background: #f0fdf4;
+                                                border-color: #bbf7d0;
+                                                color: #166534;
+
+                                                .summary-stat-val {
+                                                    font-size: 24px;
+                                                    font-weight: 800;
+                                                }
+
+                                                .result-stats {
+                                                    display: flex;
+                                                    gap: 30px;
+                                                    margin-top: 15px;
+
+                                                    .stat-added {
+                                                        color: #15803d;
+                                                    }
+
+                                                    .stat-item {
+                                                        text-align: center;
+                                                        flex: 1;
+                                                        background: white;
+                                                        padding: 15px;
+
+                                                        .stat-skipped {
+                                                            color: #b45309;
+                                                        }
+
+                                                        /* Table styles */
+                                                        .table-container {
+                                                            border: 1px solid #cbd5e1;
+                                                            border-radius: 8px;
+                                                            border: 1px solid rgba(0, 0, 0, 0.05);
+                                                            overflow: hidden;
+                                                            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+                                                            background: #ffffff;
+                                                            margin-top: 20px;
+                                                            display: none;
+                                                        }
+
+                                                        .stat-value {
+                                                            font-size: 24px;
+                                                            font-weight: 700;
+                                                            display: block;
+
+                                                            .data-table {
+                                                                width: 100%;
+                                                                border-collapse: collapse;
+                                                            }
+
+                                                            .stat-label {
+                                                                font-size: 12px;
+                                                                color: #64748b;
+
+                                                                .data-table thead tr {
+                                                                    background: #1e293b;
+                                                                }
+
+                                                                .data-table th {
+                                                                    background: #1e293b;
+                                                                    color: #ffffff;
+                                                                    font-size: 0.75rem;
+                                                                    font-weight: 700;
+                                                                    text-transform: uppercase;
+                                                                    letter-spacing: 0.05em;
+                                                                    padding: 9px 14px;
+                                                                    text-align: left;
+                                                                    border-bottom: 2px solid #0f172a;
+                                                                }
+
+                                                                .data-table td {
+                                                                    padding: 8px 14px;
+                                                                    color: #1e293b;
+                                                                    font-size: 0.86rem;
+                                                                    border-bottom: 1px solid #e2e8f0;
+                                                                    vertical-align: middle;
+                                                                }
+
+                                                                .data-table tbody tr:nth-child(even) td {
+                                                                    background-color: #f8fafc;
+                                                                }
+
+                                                                .data-table tbody tr:hover td {
+                                                                    background-color: #eff6ff !important;
+                                                                }
+
+                                                                .code-cell {
+                                                                    font-family: 'JetBrains Mono', monospace;
+                                                                    font-weight: 600;
+                                                                    color: #1e293b;
+                                                                }
+
+                                                                @media (max-width: 768px) {
+                                                                    .upload-form-grid {
+                                                                        grid-template-columns: 1fr;
+                                                                    }
+
+                                                                    .btn-new {
+                                                                        width: 100%;
+                                                                    }
+                                                                }
 </style>
 {% endblock %}
 
@@ -176,335 +408,509 @@
             <i class="fas fa-file-invoice-dollar" style="color: #3b82f6;"></i>
             Ödeme Yükleme (Şube: <span id="displayBranchName">Seçilmedi</span>)
         </h1>
-
-        <form id="uploadForm">
-            <div class="form-group" style="margin-bottom: 15px;">
-                <label>Şube Seçimi *</label>
-                <select id="Sube_ID" class="form-control" required onchange="document.getElementById('displayBranchName').innerText = this.options[this.selectedIndex].text;">
-                    {% for s in subeler %}
-                    <option value="{{ s.Sube_ID }}">{{ s.Sube_Adi }}</option>
-                    {% endfor %}
-                </select>
+        <div class="main-card">
+            <div class="page-header">
+                <h2 class="page-title">
+                    <span>💳 Ödeme Yükleme (<span id="displayBranchName">Seçilmedi</span>)</span>
+                </h2>
             </div>
 
-            <div class="form-group" style="margin-bottom: 15px;">
-                <label>Yükleme Modu</label>
-                <select id="loadingMode" class="form-control" onchange="document.getElementById('metadataFields').style.display = (this.value === 'ham_veri' ? 'grid' : 'none');">
-                    <option value="standard">Standart</option>
-                    <option value="ham_veri" selected>Ham Veri</option>
-                </select>
-            </div>
-
-            <div id="metadataFields" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-                <div class="form-group">
-                    <label>Tip *</label>
-                    <select id="inject_tip" class="form-control">
-                        <option value="Banka Hesabı">Banka Hesabı</option>
-                        <option value="Kredi Kartı">Kredi Kartı</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Hesap Adı *</label>
-                    <select id="inject_hesap_adi" class="form-control">
-                        <option value="QNB - DBS">QNB - DBS</option>
-                        <option value="QNB - Vadesiz Kobi Nakit">QNB - Vadesiz Kobi Nakit</option>
-                        <option value="QNB-KOBI TROY Temassiz">QNB-KOBI TROY Temassiz</option>
-                    </select>
-                </div>
-            </div>
-            <div class="form-group" style="margin-bottom: 15px;">
-                <label>CSV Dosyası (.csv, .xlsx, .xls) *</label>
-                <div class="upload-row">
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <input type="file" id="uploadFile" class="form-control" accept=".csv,.xlsx,.xls" required>
+            <form id="uploadForm">
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label>Şube Seçimi *</label>
+                    <!-- Info banner -->
+                    <div class="info-banner">
+                        <div class="info-banner-left">
+                            <i class="fas fa-info-circle"></i>
+                            <div>
+                                Lütfen <strong>.xlsx</strong>, <strong>.xls</strong> veya <strong>.csv</strong>
+                                formatında ödeme dosyasını yükleyin.
+                                Gerekli temel sütunlar: <strong>Tarih</strong>, <strong>Tutar</strong>,
+                                <strong>Açıklama</strong> (opsiyonel), <strong>Tip</strong> (opsiyonel), <strong>Hesap
+                                    Adı</strong> (opsiyonel).
+                            </div>
+                        </div>
+                        <button class="btn-template" id="downloadTemplateBtn" type="button">
+                            <i class="fas fa-download"></i> Örnek Şablon İndir
+                        </button>
                     </div>
-                    <button type="submit" class="btn-upload" id="submitBtn">
-                        <i class="fas fa-upload"></i> Yükle
-                    </button>
+
+                    <!-- Upload Form -->
+                    <form id="uploadForm">
+                        <div class="upload-form-grid">
+                            <div class="form-group">
+                                <label for="Sube_ID">Şube Seçimi *</label>
+                                <select id="Sube_ID" class="form-control" required
+                                    onchange="document.getElementById('displayBranchName').innerText = this.options[this.selectedIndex].text;">
+                                    {% for s in subeler %}
+                                    <option value="{{ s.Sube_ID }}">{{ s.Sube_Adi }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 15px;">
+                                <label>Yükleme Modu</label>
+                                <select id="loadingMode" class="form-control"
+                                    onchange="document.getElementById('metadataFields').style.display = (this.value === 'ham_veri' ? 'grid' : 'none');">
+                                    <option value="standard">Standart</option>
+                                    <option value="ham_veri" selected>Ham Veri</option>
+                                    <div class="form-group">
+                                        <label for="loadingMode">Yükleme Modu</label>
+                                        <select id="loadingMode" class="form-control"
+                                            onchange="toggleMetadataFields(this.value)">
+                                            <option value="ham_veri" selected>Ham Veri (Banka Ekstresi)</option>
+                                            <option value="standard">Standart Şablon</option>
+                                        </select>
+                                    </div>
+
+                                    <div id="metadataFields"
+                                        style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                                        <div class="form-group">
+                                            <label>Tip *</label>
+                                            <select id="inject_tip" class="form-control">
+                                                <option value="Banka Hesabı">Banka Hesabı</option>
+                                                <option value="Kredi Kartı">Kredi Kartı</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Hesap Adı *</label>
+                                            <select id="inject_hesap_adi" class="form-control">
+                                                <option value="QNB - DBS">QNB - DBS</option>
+                                                <option value="QNB - Vadesiz Kobi Nakit">QNB - Vadesiz Kobi Nakit
+                                                </option>
+                                                <option value="QNB-KOBI TROY Temassiz">QNB-KOBI TROY Temassiz</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group metadata-field">
+                                            <label for="inject_tip">Tip *</label>
+                                            <select id="inject_tip" class="form-control">
+                                                <option value="Banka Hesabı">Banka Hesabı</option>
+                                                <option value="Kredi Kartı">Kredi Kartı</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group" style="margin-bottom: 15px;">
+                                            <label>CSV Dosyası (.csv, .xlsx, .xls) *</label>
+                                            <div class="upload-row">
+                                                <div class="form-group" style="margin-bottom: 0;">
+                                                    <input type="file" id="uploadFile" class="form-control"
+                                                        accept=".csv,.xlsx,.xls" required>
+                                                </div>
+                                                <button type="submit" class="btn-upload" id="submitBtn">
+                                                    <i class="fas fa-upload"></i> Yükle
+                                                </button>
+                                            </div>
+
+                                            <div class="form-group metadata-field">
+                                                <label for="inject_hesap_adi">Hesap Adı *</label>
+                                                <select id="inject_hesap_adi" class="form-control">
+                                                    <option value="QNB - DBS">QNB - DBS</option>
+                                                    <option value="QNB - Vadesiz Kobi Nakit">QNB - Vadesiz Kobi Nakit
+                                                    </option>
+                                                    <option value="QNB-KOBI TROY Temassiz">QNB-KOBI TROY Temassiz
+                                                    </option>
+                                                </select>
+                                            </div>
+                    </form>
+
+                    <div style="margin-top: 10px;">
+                        <button class="btn-template" id="downloadTemplateBtn">
+                            <i class="fas fa-download"></i> Örnek Şablon İndir
+                        </button>
+                        <div class="form-group" style="grid-column: span 2;">
+                            <label for="uploadFile">Dosya Seçin (.csv, .xlsx, .xls) *</label>
+                            <input type="file" id="uploadFile" class="form-control" accept=".csv,.xlsx,.xls" required>
+                        </div>
+
+                        <div class="form-group" style="justify-content: flex-end;">
+                            <button type="submit" class="btn-new" id="submitBtn">
+                                <i class="fas fa-upload"></i> Dosyayı Yükle
+                            </button>
+                        </div>
+                    </div>
+            </form>
+
+            <div id="resultCard" class="result-card result-success">
+                <h3 style="margin-top: 0; font-size: 16px;">Yükleme Tamamlandı</h3>
+                <div class="result-stats">
+                    <div class="stat-item">
+                        <span class="stat-value" id="countAdded" style="color: #16a34a;">0</span>
+                        <span class="stat-label">Eklenen</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="countSkipped" style="color: #ca8a04;">0</span>
+                        <span class="stat-label">Atlanan (Mevcut)</span>
+                    </div>
+                    <!-- Summary Banner & Results -->
+                    <div class="summary-banner" id="resultBanner">
+                        <div class="summary-banner-title">
+                            <span>✅ Yükleme Sonuçları</span>
+                        </div>
+                        <div class="summary-cards-grid">
+                            <div class="summary-stat-box">
+                                <div class="summary-stat-label">Başarıyla Eklenen Ödemeler</div>
+                                <div class="summary-stat-val stat-added" id="countAdded">0 Adet</div>
+                            </div>
+                            <div class="summary-stat-box">
+                                <div class="summary-stat-label">Atlanan (Sistemde Mevcut) Ödemeler</div>
+                                <div class="summary-stat-val stat-skipped" id="countSkipped">0 Adet</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Processed Payments Table -->
+                    <div class="table-responsive table-container" id="previewContainer">
+                        <div
+                            style="padding: 12px 16px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-weight: 700; color: #1e293b; font-size: 0.92rem;">
+                                <i class="fas fa-list-check" style="color: #10b981; margin-right: 6px;"></i>
+                                Eklenen Ödemeler Listesi (<span id="addedCountLabel">0</span>)
+                            </span>
+                        </div>
+                        <table class="data-table" id="previewTable">
+                            <thead>
+                                <tr>
+                                    <th style="width: 110px;">TARİH</th>
+                                    <th style="width: 130px;">TİP</th>
+                                    <th style="width: 160px;">HESAP ADI</th>
+                                    <th>AÇIKLAMA</th>
+                                    <th style="width: 90px; text-align: center;">DÖNEM</th>
+                                    <th style="width: 130px; text-align: right;">TUTAR</th>
+                                </tr>
+                            </thead>
+                            <tbody id="previewTbody">
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
-        </form>
+                {% endblock %}
 
-        <div style="margin-top: 10px;">
-            <button class="btn-template" id="downloadTemplateBtn">
-                <i class="fas fa-download"></i> Örnek Şablon İndir
-            </button>
-        </div>
-
-        <div id="resultCard" class="result-card result-success">
-            <h3 style="margin-top: 0; font-size: 16px;">Yükleme Tamamlandı</h3>
-            <div class="result-stats">
-                <div class="stat-item">
-                    <span class="stat-value" id="countAdded" style="color: #16a34a;">0</span>
-                    <span class="stat-label">Eklenen</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-value" id="countSkipped" style="color: #ca8a04;">0</span>
-                    <span class="stat-label">Atlanan (Mevcut)</span>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-    // Init branch name display
-    document.addEventListener("DOMContentLoaded", () => {
-        const subeSelect = document.getElementById('Sube_ID');
-        if (subeSelect.options.length > 0) {
-            document.getElementById('displayBranchName').innerText = subeSelect.options[subeSelect.selectedIndex].text;
-        }
-    });
-
-    const parseDMYDateString = (dateStr) => {
-        if (!dateStr) return '';
-        if (typeof dateStr === 'number') {
-            const excelEpoch = new Date(1899, 11, 30);
-            const excelDate = new Date(excelEpoch.getTime() + dateStr * 24 * 60 * 60 * 1000);
-            if (!isNaN(excelDate.getTime())) {
-                const year = excelDate.getFullYear();
-                const month = (excelDate.getMonth() + 1).toString().padStart(2, '0');
-                const day = excelDate.getDate().toString().padStart(2, '0');
-                return `${year}-${month}-${day}`;
-            }
-        }
-        const parts = String(dateStr).split(/[-./]/);
-        if (parts.length === 3) {
-            let [day, month, year] = parts;
-            if (day && month && year) {
-                if (year.length === 2) {
-                    const currentYear = new Date().getFullYear();
-                    const currentCentury = Math.floor(currentYear / 100) * 100;
-                    let fullYear = currentCentury + parseInt(year, 10);
-                    if (fullYear > currentYear + 20) fullYear -= 100;
-                    year = String(fullYear);
-                }
-                if (year.length === 4) {
-                    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-                }
-            }
-        }
-        return dateStr;
-    };
-
-    const parseCurrencyValue = (value) => {
-        if (typeof value === 'number') return isNaN(value) ? 0 : value;
-        if (typeof value === 'string') {
-            const sanitized = value.replace(/\./g, '').replace(',', '.');
-            const num = parseFloat(sanitized);
-            return isNaN(num) ? 0 : num;
-        }
-        return 0;
-    };
-
-    // Download sample template
-    document.getElementById('downloadTemplateBtn').addEventListener('click', () => {
-        const sampleData = [
-            { "Tip": "Ödeme", "Hesap Adı": "Ana Hesap", "Tarih": "01.02.2026", "Açıklama": "Aylık Kira", "Tutar": 15000.00 },
-            { "Tip": "Komisyon", "Hesap Adı": "Banka", "Tarih": "05.02.2026", "Açıklama": "Pos Komisyon", "Tutar": 125.50 },
-        ];
-        const ws = XLSX.utils.json_to_sheet(sampleData);
-        ws['!cols'] = [
-            { wch: 15 }, { wch: 20 }, { wch: 12 }, { wch: 30 }, { wch: 15 }
-        ];
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Ödemeler");
-        XLSX.writeFile(wb, "Odeme_Yukleme_Sablon.xlsx");
-        showToast('Örnek şablon indirildi.');
-    });
-
-    const transformDBSHamData = (worksheet, subeId, tip, hesapAdi) => {
-        const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-        const data = [];
-        
-        for (let i = 0; i < rows.length; i++) {
-            const row = rows[i];
-            
-            // Skip bank metadata (0-9)
-            if (i < 10) continue; 
-            
-            // Skip non-data rows (like header repetitions or "DEVREDEN BAKİYE")
-            const valDateRaw = row[0];
-            const aciklama = String(row[4] || "").trim();
-            
-            if (!valDateRaw || valDateRaw === "-" || aciklama === "DEVREDEN BAKİYE" || aciklama.includes("İşlem Açıklaması")) continue;
-
-            const odemeTarihi = parseDMYDateString(valDateRaw);
-            if (!odemeTarihi) continue;
-
-            const odemeTutari = parseCurrencyValue(row[5]);
-            if (isNaN(odemeTutari) || odemeTutari === 0) continue;
-
-            // Calculate Donem (YYMM)
-            const d = new Date(odemeTarihi);
-            let donemStr = "";
-            if (!isNaN(d.getTime())) {
-                donemStr = d.getFullYear().toString().substring(2) + (d.getMonth() + 1).toString().padStart(2, '0');
-            }
-
-            data.push({
-                Sube_ID: parseInt(subeId),
-                Tip: tip,
-                Hesap_Adi: hesapAdi,
-                Odeme_Tarihi: odemeTarihi,
-                Aciklama: aciklama,
-                Odeme_Tutari: odemeTutari,
-                Donem: donemStr ? parseInt(donemStr) : null
-            });
-        }
-        return data;
-    };
-
-    // Upload handler
-    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const fileInput = document.getElementById('uploadFile');
-        const submitBtn = document.getElementById('submitBtn');
-        const subeId = document.getElementById('Sube_ID').value;
-
-        if (!fileInput.files[0]) return;
-        if (!subeId) {
-            showToast('Lütfen bir şube seçin ve şubenin seçili olduğundan emin olun.', 'error');
-            return;
-        }
-
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> İşleniyor...';
-        document.getElementById('resultCard').style.display = 'none';
-
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-            try {
-                const data = new Uint8Array(event.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const firstSheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheetName];
-                const loadingMode = document.getElementById('loadingMode').value;
-                let odemeler = [];
-
-                if (loadingMode === 'ham_veri') {
-                    const tip = document.getElementById('inject_tip').value;
-                    const hesapAdi = document.getElementById('inject_hesap_adi').value;
-                    try {
-                        odemeler = transformDBSHamData(worksheet, subeId, tip, hesapAdi);
-                    } catch (err) {
-                        showToast('Ham veri dönüştürme hatası: ' + err.message, 'error');
-                        submitBtn.disabled = false;
-                        submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
-                        return;
-                    }
-                } else {
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
-
-                    if (jsonData.length === 0) {
-                        showToast('Dosya boş görünüyor.', 'error');
-                        submitBtn.disabled = false;
-                        submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
-                        return;
+                {% block scripts %}
+                <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+                <script>
+                    // Init branch name display
+                    function toggleMetadataFields(mode) {
+                        const fields = document.querySelectorAll('.metadata-field');
+                        fields.forEach(el => {
+                            el.style.display = (mode === 'ham_veri' ? 'flex' : 'none');
+                        });
                     }
 
-                    const headers = Object.keys(jsonData[0]);
-                    const tipKey = headers.find(k => k.toLowerCase().includes("tip") || k.toLowerCase().includes("type"));
-                    const hesapAdiKey = headers.find(k => k.toLowerCase().includes("hesap") || k.toLowerCase().includes("account"));
-                    const tarihKey = headers.find(k => k.toLowerCase().includes("tarih") || k.toLowerCase().includes("date"));
-                    const aciklamaKey = headers.find(k => k.toLowerCase().includes("açıklama") || k.toLowerCase().includes("aciklama") || k.toLowerCase().includes("desc"));
-                    const tutarKey = headers.find(k => k.toLowerCase().includes("tutar") || k.toLowerCase().includes("amount"));
+                    document.addEventListener("DOMContentLoaded", () => {
+                        const subeSelect = document.getElementById('Sube_ID');
+                        if (subeSelect.options.length > 0) {
+                            if (subeSelect && subeSelect.options.length > 0) {
+                                document.getElementById('displayBranchName').innerText = subeSelect.options[subeSelect.selectedIndex].text;
+                            }
+                        });
 
-                    if (!tarihKey || !tutarKey) {
-                        showToast("'Tarih' ve 'Tutar' sütunları bulunamadı. Lütfen sütun adlarını kontrol edin.", 'error');
-                        submitBtn.disabled = false;
-                        submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
-                        return;
+                    const parseDMYDateString = (dateStr) => {
+                        if (!dateStr) return '';
+                        if (typeof dateStr === 'number') {
+                            const excelEpoch = new Date(1899, 11, 30);
+                            const excelDate = new Date(excelEpoch.getTime() + dateStr * 24 * 60 * 60 * 1000);
+                            if (!isNaN(excelDate.getTime())) {
+                                const year = excelDate.getFullYear();
+                                const month = (excelDate.getMonth() + 1).toString().padStart(2, '0');
+                                const day = excelDate.getDate().toString().padStart(2, '0');
+                                return `${year}-${month}-${day}`;
+                            }
+                        }
+                        const parts = String(dateStr).split(/[-./]/);
+                        if (parts.length === 3) {
+                            let [day, month, year] = parts;
+                            if (day && month && year) {
+                                if (year.length === 2) {
+                                    const currentYear = new Date().getFullYear();
+                                    const currentCentury = Math.floor(currentYear / 100) * 100;
+                                    let fullYear = currentCentury + parseInt(year, 10);
+                                    if (fullYear > currentYear + 20) fullYear -= 100;
+                                    year = String(fullYear);
+                                }
+                                if (year.length === 4) {
+                                    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                                }
+                            }
+                        }
+                        return dateStr;
+                    };
+
+                    const parseCurrencyValue = (value) => {
+                        if (typeof value === 'number') return isNaN(value) ? 0 : value;
+                        if (typeof value === 'string') {
+                            const sanitized = value.replace(/\./g, '').replace(',', '.');
+                            const num = parseFloat(sanitized);
+                            return isNaN(num) ? 0 : num;
+                        }
+                        return 0;
+                    };
+
+                    function formatTR(num) {
+                        return num.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                     }
 
-                    odemeler = jsonData.map((row, index) => {
-                        try {
-                            const dateStr = parseDMYDateString(row[tarihKey]);
-                            if (!dateStr) return null; // Skip if no date
+                    // Download sample template
+                    document.getElementById('downloadTemplateBtn').addEventListener('click', () => {
+                        const sampleData = [
+                            { "Tip": "Ödeme", "Hesap Adı": "Ana Hesap", "Tarih": "01.02.2026", "Açıklama": "Aylık Kira", "Tutar": 15000.00 },
+                            { "Tip": "Komisyon", "Hesap Adı": "Banka", "Tarih": "05.02.2026", "Açıklama": "Pos Komisyon", "Tutar": 125.50 },
+                        ];
+                        const ws = XLSX.utils.json_to_sheet(sampleData);
+                        ws['!cols'] = [
+                            { wch: 15 }, { wch: 20 }, { wch: 12 }, { wch: 30 }, { wch: 15 }
+                        ];
+                        const wb = XLSX.utils.book_new();
+                        XLSX.utils.book_append_sheet(wb, ws, "Ödemeler");
+                        XLSX.writeFile(wb, "Odeme_Yukleme_Sablon.xlsx");
+                        showToast('Örnek şablon indirildi.');
+                    });
+
+                    const transformDBSHamData = (worksheet, subeId, tip, hesapAdi) => {
+                        const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                        const data = [];
+
+                        for (let i = 0; i < rows.length; i++) {
+                            const row = rows[i];
+
+                            // Skip bank metadata (0-9)
+                            if (i < 10) continue;
+
+                            // Skip non-data rows (like header repetitions or "DEVREDEN BAKİYE")
+                            // Skip non-data rows
+                            const valDateRaw = row[0];
+                            const aciklama = String(row[4] || "").trim();
+
+                            if (!valDateRaw || valDateRaw === "-" || aciklama === "DEVREDEN BAKİYE" || aciklama.includes("İşlem Açıklaması")) continue;
+
+                            const odemeTarihi = parseDMYDateString(valDateRaw);
+                            if (!odemeTarihi) continue;
+
+                            const odemeTutari = parseCurrencyValue(row[5]);
+                            if (isNaN(odemeTutari) || odemeTutari === 0) continue;
 
                             // Calculate Donem (YYMM)
-                            const d = new Date(dateStr);
+                            const d = new Date(odemeTarihi);
                             let donemStr = "";
                             if (!isNaN(d.getTime())) {
                                 donemStr = d.getFullYear().toString().substring(2) + (d.getMonth() + 1).toString().padStart(2, '0');
                             }
 
-                            return {
+                            data.push({
+                                _index: data.length,
                                 Sube_ID: parseInt(subeId),
-                                Tip: tipKey ? String(row[tipKey] || "").trim() : "",
-                                Hesap_Adi: hesapAdiKey ? String(row[hesapAdiKey] || "").trim() : "",
-                                Odeme_Tarihi: dateStr,
-                                Aciklama: aciklamaKey ? String(row[aciklamaKey] || "").trim() : "",
-                                Odeme_Tutari: parseCurrencyValue(row[tutarKey]),
+                                Tip: tip,
+                                Hesap_Adi: hesapAdi,
+                                Odeme_Tarihi: odemeTarihi,
+                                Aciklama: aciklama,
+                                Odeme_Tutari: odemeTutari,
                                 Donem: donemStr ? parseInt(donemStr) : null
-                            };
-                        } catch (err) {
-                            console.error(`Error at row ${index}:`, err);
-                            return null;
+                            });
                         }
-                    }).filter(x => x !== null);
-                }
+                        return data;
+                    };
 
-                if (odemeler.length === 0) {
-                    showToast('Geçerli veri bulunamadı. Sütun adlarını kontrol edin.', 'error');
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
-                    return;
-                }
+                    // Upload handler
+                    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+                        e.preventDefault();
+                        const fileInput = document.getElementById('uploadFile');
+                        const submitBtn = document.getElementById('submitBtn');
+                        const subeId = document.getElementById('Sube_ID').value;
 
-                const chunkSize = 50;
-                let totalAdded = 0;
-                let totalSkipped = 0;
-                let hasError = false;
-                const totalChunks = Math.ceil(odemeler.length / chunkSize);
+                        if (!fileInput.files[0]) return;
+                        if (!fileInput.files[0]) {
+                            showToast('Lütfen bir dosya seçin.', 'error');
+                            return;
+                        }
+                        if (!subeId) {
+                            showToast('Lütfen bir şube seçin ve şubenin seçili olduğundan emin olun.', 'error');
+                            showToast('Lütfen bir şube seçin.', 'error');
+                            return;
+                        }
 
-                for (let i = 0; i < totalChunks; i++) {
-                    const chunk = odemeler.slice(i * chunkSize, (i + 1) * chunkSize);
-                    submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> İşleniyor... (${i + 1}/${totalChunks})`;
-                    
-                    const response = await fetch('/api/v1/odemeler/bulk', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
-                        body: JSON.stringify({ odemeler: chunk })
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> İşleniyor...';
+                        document.getElementById('resultCard').style.display = 'none';
+                        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Dosya Okunuyor...';
+                        document.getElementById('resultBanner').style.display = 'none';
+
+                        const reader = new FileReader();
+                        reader.onload = async (event) => {
+                            try {
+                                const data = new Uint8Array(event.target.result);
+                                const workbook = XLSX.read(data, { type: 'array' });
+                                const firstSheetName = workbook.SheetNames[0];
+                                const worksheet = workbook.Sheets[firstSheetName];
+                                const loadingMode = document.getElementById('loadingMode').value;
+                                let odemeler = [];
+
+                                if (loadingMode === 'ham_veri') {
+                                    const tip = document.getElementById('inject_tip').value;
+                                    const hesapAdi = document.getElementById('inject_hesap_adi').value;
+                                    try {
+                                        odemeler = transformDBSHamData(worksheet, subeId, tip, hesapAdi);
+                                    } catch (err) {
+                                        showToast('Ham veri dönüştürme hatası: ' + err.message, 'error');
+                                        submitBtn.disabled = false;
+                                        submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
+                                        submitBtn.innerHTML = '<i class="fas fa-upload"></i> Dosyayı Yükle';
+                                        return;
+                                    }
+                                } else {
+                                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+
+                                    if (jsonData.length === 0) {
+                                        showToast('Dosya boş görünüyor.', 'error');
+                                        submitBtn.disabled = false;
+                                        submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
+                                        submitBtn.innerHTML = '<i class="fas fa-upload"></i> Dosyayı Yükle';
+                                        return;
+                                    }
+
+                                    const headers = Object.keys(jsonData[0]);
+                                    const tipKey = headers.find(k => k.toLowerCase().includes("tip") || k.toLowerCase().includes("type"));
+                                    const hesapAdiKey = headers.find(k => k.toLowerCase().includes("hesap") || k.toLowerCase().includes("account"));
+                                    const tarihKey = headers.find(k => k.toLowerCase().includes("tarih") || k.toLowerCase().includes("date"));
+                                    const aciklamaKey = headers.find(k => k.toLowerCase().includes("açıklama") || k.toLowerCase().includes("aciklama") || k.toLowerCase().includes("desc"));
+                                    const tutarKey = headers.find(k => k.toLowerCase().includes("tutar") || k.toLowerCase().includes("amount"));
+
+                                    if (!tarihKey || !tutarKey) {
+                                        showToast("'Tarih' ve 'Tutar' sütunları bulunamadı. Lütfen sütun adlarını kontrol edin.", 'error');
+                                        submitBtn.disabled = false;
+                                        submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
+                                        submitBtn.innerHTML = '<i class="fas fa-upload"></i> Dosyayı Yükle';
+                                        return;
+                                    }
+
+                                    let curIdx = 0;
+                                    odemeler = jsonData.map((row, index) => {
+                                        try {
+                                            const dateStr = parseDMYDateString(row[tarihKey]);
+                                            if (!dateStr) return null; // Skip if no date
+                                            if (!dateStr) return null;
+
+                                            // Calculate Donem (YYMM)
+                                            const d = new Date(dateStr);
+                                            let donemStr = "";
+                                            if (!isNaN(d.getTime())) {
+                                                donemStr = d.getFullYear().toString().substring(2) + (d.getMonth() + 1).toString().padStart(2, '0');
+                                            }
+
+                                            return {
+                                                _index: curIdx++,
+                                                Sube_ID: parseInt(subeId),
+                                                Tip: tipKey ? String(row[tipKey] || "").trim() : "",
+                                                Hesap_Adi: hesapAdiKey ? String(row[hesapAdiKey] || "").trim() : "",
+                                                Odeme_Tarihi: dateStr,
+                                                Aciklama: aciklamaKey ? String(row[aciklamaKey] || "").trim() : "",
+                                                Odeme_Tutari: parseCurrencyValue(row[tutarKey]),
+                                                Donem: donemStr ? parseInt(donemStr) : null
+                                            };
+                                        } catch (err) {
+                                            console.error(`Error at row ${index}:`, err);
+                                            return null;
+                                        }
+                                    }).filter(x => x !== null);
+                                }
+
+                                if (odemeler.length === 0) {
+                                    showToast('Geçerli veri bulunamadı. Sütun adlarını kontrol edin.', 'error');
+                                    submitBtn.disabled = false;
+                                    submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
+                                    submitBtn.innerHTML = '<i class="fas fa-upload"></i> Dosyayı Yükle';
+                                    return;
+                                }
+
+                                const chunkSize = 50;
+                                let totalAdded = 0;
+                                let totalSkipped = 0;
+                                let hasError = false;
+                                const totalChunks = Math.ceil(odemeler.length / chunkSize);
+                                const allAddedIndicesSet = new Set();
+
+                                for (let i = 0; i < totalChunks; i++) {
+                                    const chunk = odemeler.slice(i * chunkSize, (i + 1) * chunkSize);
+                                    submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> İşleniyor... (${i + 1}/${totalChunks})`;
+                                    submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Yükleniyor (${i + 1}/${totalChunks})...`;
+
+                                    const response = await fetch('/api/v1/odemeler/bulk', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        credentials: 'include',
+                                        body: JSON.stringify({ odemeler: chunk })
+                                    });
+
+                                    if (response.ok) {
+                                        const resData = await response.json();
+                                        totalAdded += resData.added || 0;
+                                        totalSkipped += resData.skipped || 0;
+                                        if (Array.isArray(resData.added_indices)) {
+                                            resData.added_indices.forEach(idx => allAddedIndicesSet.add(idx));
+                                        }
+                                    } else {
+                                        let errMessage = 'Bilinmeyen Hata';
+                                        try {
+                                            const err = await response.json();
+                                            errMessage = err.error || errMessage;
+                                        } catch (parseErr) {
+                                            errMessage = `Sunucu hatası veya zaman aşımı (Status: ${response.status})`;
+                                            errMessage = `Sunucu hatası (Status: ${response.status})`;
+                                        }
+                                        showToast(`Hata (${i + 1}. paket): ${errMessage}`, 'error');
+                                        hasError = true;
+                                        break;
+                                    }
+                                }
+
+                                // Filter only newly added records
+                                const successfullyAddedList = odemeler.filter(o => allAddedIndicesSet.has(o._index));
+
+                                const tbody = document.getElementById('previewTbody');
+                                if (successfullyAddedList.length > 0) {
+                                    tbody.innerHTML = successfullyAddedList.map(o => `
+                        <tr>
+                            <td style="color: #64748b;">${o.Odeme_Tarihi || '-'}</td>
+                            <td class="code-cell">${o.Tip || '-'}</td>
+                            <td style="color: #475569; font-weight: 500;">${o.Hesap_Adi || '-'}</td>
+                            <td style="font-weight: 500; color: #0f172a;">${o.Aciklama || '-'}</td>
+                            <td style="text-align: center; font-weight: 600; color: #334155;">${o.Donem || '-'}</td>
+                            <td style="text-align: right; font-weight: 700; color: #15803d;">
+                                ${formatTR(o.Odeme_Tutari)} ₺
+                            </td>
+                        </tr>
+                    `).join('');
+                                } else {
+                                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" style="text-align: center; color: #64748b; padding: 24px;">
+                                <i class="fas fa-info-circle" style="margin-right: 6px;"></i>
+                                Yeni eklenen ödeme kaydı bulunamadı (Tüm kayıtlar sistemde zaten mevcuttu).
+                            </td>
+                        </tr>
+                    `;
+                                }
+
+                                document.getElementById('addedCountLabel').innerText = `${successfullyAddedList.length} Kayıt`;
+                                document.getElementById('previewContainer').style.display = 'block';
+
+                                if (!hasError) {
+                                    document.getElementById('countAdded').innerText = totalAdded;
+                                    document.getElementById('countSkipped').innerText = totalSkipped;
+                                    document.getElementById('resultCard').style.display = 'block';
+                                    document.getElementById('countAdded').innerText = `${totalAdded} Adet`;
+                                    document.getElementById('countSkipped').innerText = `${totalSkipped} Adet`;
+                                    document.getElementById('resultBanner').style.display = 'block';
+                                    showToast(`İşlem tamamlandı. Eklenen: ${totalAdded}, Atlanan: ${totalSkipped}`);
+                                }
+
+                            } catch (err) {
+                                console.error(err);
+                                showToast('Dosya okuma hatası: ' + err.message, 'error');
+                            } finally {
+                                submitBtn.disabled = false;
+                                submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
+                                submitBtn.innerHTML = '<i class="fas fa-upload"></i> Dosyayı Yükle';
+                            }
+                        };
+                        reader.readAsArrayBuffer(fileInput.files[0]);
                     });
-
-                    if (response.ok) {
-                        const resData = await response.json();
-                        totalAdded += resData.added || 0;
-                        totalSkipped += resData.skipped || 0;
-                    } else {
-                        let errMessage = 'Bilinmeyen Hata';
-                        try {
-                            const err = await response.json();
-                            errMessage = err.error || errMessage;
-                        } catch (parseErr) {
-                            errMessage = `Sunucu hatası veya zaman aşımı (Status: ${response.status})`;
-                        }
-                        showToast(`Hata (${i + 1}. paket): ${errMessage}`, 'error');
-                        hasError = true;
-                        break;
-                    }
-                }
-
-                if (!hasError) {
-                    document.getElementById('countAdded').innerText = totalAdded;
-                    document.getElementById('countSkipped').innerText = totalSkipped;
-                    document.getElementById('resultCard').style.display = 'block';
-                    showToast(`İşlem tamamlandı. Eklenen: ${totalAdded}, Atlanan: ${totalSkipped}`);
-                }
-
-            } catch (err) {
-                console.error(err);
-                showToast('Dosya okuma hatası: ' + err.message, 'error');
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
-            }
-        };
-        reader.readAsArrayBuffer(fileInput.files[0]);
-    });
-</script>
-{% endblock %}
+                </script>
+                {% endblock %}
