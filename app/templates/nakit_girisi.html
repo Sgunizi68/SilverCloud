@@ -1,16 +1,24 @@
 {% extends "base.html" %}
+
 {% block title %}Nakit Girişleri - SilverCloud{% endblock %}
 {% block nav_nakit_girisi %}active{% endblock %}
 
-{% block content %}
+{% block extra_style %}
 <style>
-    .glass-panel {
-        background: rgba(255, 255, 255, 0.75);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.5);
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.95);
+        --glass-border: rgba(255, 255, 255, 0.3);
+        --accent-color: #667eea;
+        --text-dark: #2d3748;
+        --text-gray: #718096;
+    }
+
+    .main-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
         border-radius: 12px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
         padding: 24px;
         margin-bottom: 24px;
     }
@@ -20,233 +28,395 @@
         justify-content: space-between;
         align-items: center;
         margin-bottom: 24px;
-        flex-wrap: wrap;
         gap: 16px;
+        flex-wrap: wrap;
     }
 
     .page-title {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: #1e293b;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-dark);
         margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
     }
 
-    .filter-group {
+    .action-bar {
         display: flex;
-        gap: 16px;
-        align-items: flex-end;
+        align-items: center;
+        gap: 12px;
         flex-wrap: wrap;
     }
 
-    .form-group {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
+    .search-container {
+        position: relative;
+        min-width: 200px;
     }
 
-    .form-group label {
-        font-size: 0.85rem;
-        font-weight: 500;
-        color: #64748b;
-    }
-
-    .form-control {
-        padding: 8px 12px;
-        border: 1px solid #cbd5e1;
-        border-radius: 6px;
-        font-size: 0.9rem;
+    .search-input {
+        width: 100%;
+        padding: 10px 16px 10px 40px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        outline: none;
         transition: all 0.2s;
+        font-size: 0.9rem;
         background: white;
     }
 
-    .form-control:focus {
+    .search-input:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-gray);
+        font-size: 13px;
+    }
+
+    .filter-select {
+        padding: 10px 14px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
         outline: none;
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        font-size: 0.88rem;
+        font-weight: 500;
+        color: #475569;
+        background: white;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .filter-select:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .btn-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        color: var(--text-dark);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.95rem;
+    }
+
+    .btn-icon:hover {
+        background: #f7fafc;
+        border-color: #cbd5e0;
+    }
+
+    .btn-new {
+        background: var(--accent-color);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        transition: transform 0.2s, background 0.2s;
+        font-size: 0.9rem;
+    }
+
+    .btn-new:hover {
+        background: #5a67d8;
+        transform: translateY(-1px);
+    }
+
+    /* Table styles matching Ust Kategori / Degerler */
+    .table-container {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        overflow-x: auto;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        background: #ffffff;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .data-table thead tr {
+        background: #1e293b;
+    }
+
+    .data-table th {
+        background: #1e293b;
+        color: #ffffff;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 9px 14px;
+        text-align: left;
+        border-bottom: 2px solid #0f172a;
+    }
+
+    .data-table td {
+        padding: 8px 14px;
+        color: #1e293b;
+        font-size: 0.86rem;
+        border-bottom: 1px solid #e2e8f0;
+        vertical-align: middle;
+    }
+
+    .data-table tbody tr:nth-child(even) td {
+        background-color: #f8fafc;
+    }
+
+    .data-table tbody tr:hover td {
+        background-color: #eff6ff !important;
+    }
+
+    .tutar-cell {
+        font-family: monospace;
+        font-weight: 700;
+        color: #0f766e;
+        font-size: 0.95rem;
+    }
+
+    .tip-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 8px;
+        border-radius: 6px;
+        background: #eef2ff;
+        color: #4338ca;
+        font-weight: 600;
+        font-size: 11px;
+    }
+
+    .btn-row-action {
+        width: 28px;
+        height: 28px;
+        font-size: 0.82rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-edit {
+        background: #ebf4ff;
+        color: #3182ce;
+    }
+
+    .btn-edit:hover {
+        background: #bee3f8;
+    }
+
+    .btn-delete {
+        background: #fee2e2;
+        color: #ef4444;
+    }
+
+    .btn-delete:hover {
+        background: #fecaca;
+    }
+
+    /* Modal Form Styling matching ust_kategori */
+    .form-group {
+        margin-bottom: 16px;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        margin-bottom: 6px;
+    }
+
+    .form-group input,
+    .form-group select {
+        width: 100%;
+        padding: 9px 12px;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        outline: none;
+        font-size: 0.9rem;
+        background: #fff;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .modal-row {
+        display: flex;
+        gap: 16px;
+    }
+
+    .modal-col {
+        flex: 1;
+    }
+
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 24px;
     }
 
     .btn {
-        padding: 8px 16px;
+        padding: 9px 18px;
         border-radius: 6px;
         font-size: 0.9rem;
-        font-weight: 500;
+        font-weight: 600;
         cursor: pointer;
-        transition: all 0.2s;
         border: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
+        transition: all 0.2s;
+    }
+
+    .btn-secondary {
+        background: #e2e8f0;
+        color: #4a5568;
+    }
+
+    .btn-secondary:hover {
+        background: #cbd5e0;
     }
 
     .btn-primary {
-        background: #3b82f6;
+        background: var(--accent-color);
         color: white;
     }
 
     .btn-primary:hover {
-        background: #2563eb;
+        background: #5a67d8;
     }
 
-    .btn-secondary {
-        background: #f1f5f9;
-        color: #475569;
-    }
+    @media print {
+        .hide-on-print,
+        .page-header,
+        .action-bar {
+            display: none !important;
+        }
 
-    .btn-secondary:hover {
-        background: #e2e8f0;
-    }
+        .main-card {
+            box-shadow: none !important;
+            border: none !important;
+            padding: 0 !important;
+        }
 
-    .table-container {
-        overflow-x: auto;
-        background: white;
-        border-radius: 8px;
-        border: 1px solid #e2e8f0;
-    }
+        .table-container {
+            border: 1px solid #000 !important;
+        }
 
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        white-space: nowrap;
-    }
-
-    th {
-        background: #f8fafc;
-        padding: 12px 16px;
-        text-align: left;
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: #475569;
-        border-bottom: 2px solid #e2e8f0;
-    }
-
-    td {
-        padding: 12px 16px;
-        font-size: 0.9rem;
-        color: #1e293b;
-        border-bottom: 1px solid #e2e8f0;
-    }
-
-    tbody tr:hover {
-        background: #f8fafc;
-    }
-
-    .action-icons {
-        display: flex;
-        gap: 8px;
-        justify-content: flex-end;
-    }
-
-    .icon-btn {
-        background: none;
-        border: none;
-        cursor: pointer;
-        padding: 4px;
-        color: #64748b;
-        transition: color 0.2s;
-        border-radius: 4px;
-    }
-
-    .icon-btn:hover {
-        background: #f1f5f9;
-    }
-
-    .icon-btn.edit:hover {
-        color: #ca8a04;
-    }
-
-    .icon-btn.delete:hover {
-        color: #ef4444;
-    }
-
-    .cell-muted {
-        color: #64748b;
-    }
-
-    .text-right {
-        text-align: right;
-    }
-
-    .text-center {
-        text-align: center;
-    }
-
-    .image-link:hover {
-        text-decoration: underline;
-    }
-
-    .row {
-        display: flex;
-        gap: 16px;
-        margin-bottom: 16px;
-    }
-
-    .col-6 {
-        flex: 1;
+        .data-table th {
+            background: #f1f5f9 !important;
+            color: #000 !important;
+        }
     }
 </style>
+{% endblock %}
 
-<div class="glass-panel">
+{% block content %}
+<div class="main-card">
     <div class="page-header">
-        <h1 class="page-title">
-            Nakit Girişleri
+        <h2 class="page-title">
+            <span>💵 Nakit Girişleri</span>
             {% for s in subeler %}
             {% if s.Sube_ID == secili_sube_id %}
-            <span style="color:#64748b; font-size:1.1rem; font-weight:normal;">(Şube: {{ s.Sube_Adi }})</span>
+            <span style="color: var(--text-gray); font-size: 1rem; font-weight: normal;">(Şube: {{ s.Sube_Adi }})</span>
             {% endif %}
             {% endfor %}
-        </h1>
+        </h2>
 
-        <div class="filter-group">
-            <div class="form-group">
-                <label>Dönem</label>
-                <select id="filterDonem" class="form-control" onchange="onDonemChange(this.value)">
-                    {% for d in donem_listesi %}
-                    <option value="{{ d }}" {% if d==secili_donem %}selected{% endif %}>{{ d }}</option>
-                    {% endfor %}
-                </select>
+        <div class="action-bar">
+            <!-- Print Button -->
+            <button class="btn-icon" onclick="window.print()" title="Yazdır">
+                <i class="fas fa-print"></i>
+            </button>
+
+            <!-- Excel Button -->
+            <button class="btn-icon" onclick="exportNakitlerExcel()" title="Excel İndir" style="color: #16a34a;">
+                <i class="fas fa-file-excel"></i>
+            </button>
+
+            <!-- Mail Button -->
+            <button class="btn-icon" data-permission="Mail Gönder" onclick="openNakitlerReportMail()" title="Mail Gönder" style="color: #3b82f6;">
+                <i class="fas fa-envelope"></i>
+            </button>
+
+            <!-- Dönem Filter -->
+            <select id="filterDonem" class="filter-select" onchange="onDonemChange(this.value)" title="Dönem Seçimi">
+                {% for d in donem_listesi %}
+                <option value="{{ d }}" {% if d==secili_donem %}selected{% endif %}>Dönem: {{ d }}</option>
+                {% endfor %}
+            </select>
+
+            <!-- Search Area -->
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="searchInput" class="search-input" placeholder="Tutar veya Tip ara...">
             </div>
-            <div class="form-group">
-                <input type="text" id="searchInput" class="form-control" placeholder="Tutar veya Tip ara..."
-                    style="margin-bottom: 1px; min-width: 250px;">
-            </div>
-            <button class="btn btn-primary" onclick="openAddModal()">
-                <i class="fas fa-plus"></i> Yeni Nakit Girişi
+
+            <!-- New Button -->
+            <button class="btn-new" onclick="openAddModal()">
+                <i class="fas fa-plus"></i>
+                Yeni Nakit Girişi
             </button>
         </div>
     </div>
 
-    <div class="table-container">
-        <table>
+    <!-- Table Container -->
+    <div class="table-responsive table-container">
+        <table class="data-table" id="nakitTable">
             <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>TARİH</th>
-                    <th class="text-right">TUTAR</th>
+                    <th style="width: 70px;">ID</th>
+                    <th style="width: 120px;">TARİH</th>
+                    <th style="width: 140px; text-align: right;">TUTAR</th>
                     <th>TİP</th>
-                    <th>DÖNEM</th>
-                    <th>KAYIT TARİHİ</th>
-                    <th class="text-right">İŞLEMLER</th>
+                    <th style="width: 100px; text-align: center;">DÖNEM</th>
+                    <th style="width: 120px;">KAYIT TARİHİ</th>
+                    <th style="width: 90px; text-align: center;" class="hide-on-print">İŞLEMLER</th>
                 </tr>
             </thead>
             <tbody id="tableBody">
                 {% if nakitler %}
                 {% for item in nakitler %}
                 <tr data-tip="{{ item.Tip|lower }}" data-tutar="{{ item.Tutar }}">
-                    <td class="cell-muted">{{ item.Nakit_ID }}</td>
-                    <td>{{ item.Tarih_Formatli }}</td>
-                    <td class="text-right" style="font-weight: 500;">{{ "{:,.2f}".format(item.Tutar) }}</td>
-                    <td>{{ item.Tip }}</td>
-                    <td class="cell-muted">{{ item.Donem }}</td>
-                    <td class="cell-muted">{{ item.Kayit_Tarih }}</td>
-                    <td class="text-right">
-                        <div class="action-icons">
-                            <button class="icon-btn edit" data-id="{{ item.Nakit_ID }}" data-tarih="{{ item.Tarih }}"
+                    <td style="font-family: monospace; font-weight: 600; color: #64748b;">#{{ item.Nakit_ID }}</td>
+                    <td style="font-weight: 600; color: #0f172a;">{{ item.Tarih_Formatli }}</td>
+                    <td style="text-align: right;" class="tutar-cell">{{ "{:,.2f}".format(item.Tutar) }} ₺</td>
+                    <td>
+                        <span class="tip-badge">{{ item.Tip }}</span>
+                    </td>
+                    <td style="text-align: center; color: #64748b; font-family: monospace;">{{ item.Donem }}</td>
+                    <td style="color: #64748b; font-size: 0.82rem;">{{ item.Kayit_Tarih }}</td>
+                    <td style="text-align: center;" class="hide-on-print">
+                        <div style="display: flex; gap: 6px; justify-content: center; align-items: center;">
+                            <button class="btn-row-action btn-edit" title="Düzenle"
+                                data-id="{{ item.Nakit_ID }}" data-tarih="{{ item.Tarih }}"
                                 data-tutar="{{ item.Tutar }}" data-tip="{{ item.Tip }}" data-donem="{{ item.Donem }}"
-                                onclick="openEditModal(this)" title="Düzenle">
-                                <i class="fas fa-edit"></i>
+                                onclick="openEditModal(this)">
+                                <i class="fas fa-pencil-alt"></i>
                             </button>
-                            <button class="icon-btn delete" data-id="{{ item.Nakit_ID }}"
-                                onclick="deleteRecord(this.dataset.id)" title="Sil">
+                            <button class="btn-row-action btn-delete" title="Sil"
+                                data-id="{{ item.Nakit_ID }}"
+                                onclick="deleteRecord(this.dataset.id)">
                                 <i class="fas fa-trash-alt"></i>
                             </button>
                         </div>
@@ -254,24 +424,30 @@
                 </tr>
                 {% endfor %}
                 {% else %}
-                <tr>
-                    <td colspan="7" class="text-center cell-muted" style="padding: 40px;">Kayıt bulunamadı.</td>
+                <tr class="no-data-row">
+                    <td colspan="7" style="text-align: center; padding: 40px; color: #94a3b8;">
+                        <i class="fas fa-money-bill-wave" style="font-size: 32px; display: block; margin-bottom: 12px; opacity: 0.5;"></i>
+                        Kayıt bulunamadı.
+                    </td>
                 </tr>
                 {% endif %}
             </tbody>
         </table>
     </div>
 </div>
-
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
+    const NAKITLER_DATA = {{ nakitler | tojson | safe }};
+    const TIPLER = {{ tipler | tojson | safe }};
+
     document.getElementById('searchInput').addEventListener('input', function () {
-        const val = this.value.toLowerCase();
-        document.querySelectorAll('#tableBody tr').forEach(row => {
-            const tip = row.dataset.tip || '';
-            const tutar = row.dataset.tutar || '';
+        const val = this.value.toLowerCase().trim();
+        document.querySelectorAll('#tableBody tr:not(.no-data-row)').forEach(row => {
+            const tip = (row.dataset.tip || '').toLowerCase();
+            const tutar = (row.dataset.tutar || '').toLowerCase();
             row.style.display = (tip.includes(val) || tutar.includes(val)) ? '' : 'none';
         });
     });
@@ -290,85 +466,80 @@
     }
 
     function openAddModal() {
-        const tipler = {{ tipler | tojson | safe
-    }};
-    let tipOpts = tipler.map(t => `<option value="${t}">${t}</option>`).join('');
+        let tipOpts = TIPLER.map(t => `<option value="${t}">${t}</option>`).join('');
 
-    const html = `
+        const html = `
             <form id="saveForm" onsubmit="saveData(event)">
-                <div class="row">
-                    <div class="col-6 form-group">
-                        <label>Tarih</label>
-                        <input type="date" class="form-control" name="Tarih" required value="${new Date().toISOString().split('T')[0]}">
+                <div class="modal-row">
+                    <div class="modal-col form-group">
+                        <label>Tarih *</label>
+                        <input type="date" name="Tarih" required value="${new Date().toISOString().split('T')[0]}">
                     </div>
-                    <div class="col-6 form-group">
-                        <label>Tutar</label>
-                        <input type="number" step="0.01" class="form-control" name="Tutar" required>
+                    <div class="modal-col form-group">
+                        <label>Tutar (₺) *</label>
+                        <input type="number" step="0.01" name="Tutar" placeholder="0.00" required>
                     </div>
                 </div>
-                <div class="row">
-                    <div class="col-6 form-group">
-                        <label>Tip</label>
-                        <select class="form-control" name="Tip" required>
+                <div class="modal-row">
+                    <div class="modal-col form-group">
+                        <label>Tip *</label>
+                        <select name="Tip" required>
                             ${tipOpts}
                         </select>
                     </div>
-                    <div class="col-6 form-group">
-                        <label>Dönem</label>
-                        <input type="number" class="form-control" name="Donem" required value="{{ secili_donem }}">
+                    <div class="modal-col form-group">
+                        <label>Dönem *</label>
+                        <input type="number" name="Donem" required value="{{ secili_donem }}">
                     </div>
                 </div>
-                <div style="margin-top:20px; text-align:right;">
+                <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="hideModal()">İptal</button>
                     <button type="submit" class="btn btn-primary">Kaydet</button>
                 </div>
             </form>
         `;
-    showModal('Yeni Nakit Girişi', html);
+        showModal('Yeni Nakit Girişi', html);
     }
 
     function openEditModal(btn) {
         const ds = btn.dataset;
-        const tipler = {{ tipler | tojson | safe
-    }};
-    let editTipOpts = tipler.map(t => `<option value="${t}" ${t == ds.tip ? 'selected' : ''}>${t}</option>`).join('');
+        let editTipOpts = TIPLER.map(t => `<option value="${t}" ${t == ds.tip ? 'selected' : ''}>${t}</option>`).join('');
 
-    // Ensure tip from data is included even if it's not in default tips
-    if (!tipler.includes(ds.tip)) {
-        editTipOpts += `<option value="${ds.tip}" selected>${ds.tip}</option>`;
-    }
+        if (!TIPLER.includes(ds.tip)) {
+            editTipOpts += `<option value="${ds.tip}" selected>${ds.tip}</option>`;
+        }
 
-    const editHtml = `
+        const editHtml = `
             <form id="saveForm" onsubmit="saveData(event, ${ds.id})">
-                <div class="row">
-                    <div class="col-6 form-group">
-                        <label>Tarih</label>
-                        <input type="date" class="form-control" name="Tarih" required value="${ds.tarih}">
+                <div class="modal-row">
+                    <div class="modal-col form-group">
+                        <label>Tarih *</label>
+                        <input type="date" name="Tarih" required value="${ds.tarih}">
                     </div>
-                    <div class="col-6 form-group">
-                        <label>Tutar</label>
-                        <input type="number" step="0.01" class="form-control" name="Tutar" required value="${ds.tutar}">
+                    <div class="modal-col form-group">
+                        <label>Tutar (₺) *</label>
+                        <input type="number" step="0.01" name="Tutar" required value="${ds.tutar}">
                     </div>
                 </div>
-                <div class="row">
-                    <div class="col-6 form-group">
-                        <label>Tip</label>
-                        <select class="form-control" name="Tip" required>
+                <div class="modal-row">
+                    <div class="modal-col form-group">
+                        <label>Tip *</label>
+                        <select name="Tip" required>
                             ${editTipOpts}
                         </select>
                     </div>
-                    <div class="col-6 form-group">
-                        <label>Dönem</label>
-                        <input type="number" class="form-control" name="Donem" required value="${ds.donem}">
+                    <div class="modal-col form-group">
+                        <label>Dönem *</label>
+                        <input type="number" name="Donem" required value="${ds.donem}">
                     </div>
                 </div>
-                <div style="margin-top:20px; text-align:right;">
+                <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="hideModal()">İptal</button>
                     <button type="submit" class="btn btn-primary">Güncelle</button>
                 </div>
             </form>
         `;
-    showModal('Nakit Girişi Düzenle', editHtml);
+        showModal('Nakit Girişi Düzenle', editHtml);
     }
 
     async function saveData(e, id = null) {
@@ -382,21 +553,175 @@
         try {
             const res = await fetch(url, { method: method, body: formData });
             if (!res.ok) throw new Error("İşlem başarısız.");
-            location.reload();
+            showToast(id ? 'Nakit giriş güncellendi.' : 'Nakit giriş eklendi.');
+            hideModal();
+            setTimeout(() => location.reload(), 800);
         } catch (err) {
-            alert(err.message);
+            showToast(err.message || 'Hata oluştu.', 'error');
         }
     }
 
     async function deleteRecord(id) {
-        if (!confirm("Silmek istediğinize emin misiniz?")) return;
+        if (!confirm("Bu kaydı silmek istediğinize emin misiniz?")) return;
         try {
             const res = await fetch(`/api/v1/nakitler/${id}`, { method: 'DELETE' });
             if (!res.ok) throw new Error("Silme işlemi başarısız.");
-            location.reload();
+            showToast('Kayıt silindi.');
+            setTimeout(() => location.reload(), 800);
         } catch (err) {
-            alert(err.message);
+            showToast(err.message || 'Hata oluştu.', 'error');
         }
+    }
+
+    // ─── Nakitler Excel & Mail Raporlama ───
+    function getNakitlerReportMailHtml() {
+        const totalCount = NAKITLER_DATA.length;
+        const totalAmount = NAKITLER_DATA.reduce((sum, item) => sum + (Number(item.Tutar) || 0), 0);
+
+        let rowsHtml = '';
+        if (totalCount === 0) {
+            rowsHtml = `
+                <tr>
+                    <td colspan="5" align="center" bgcolor="#ffffff" style="padding: 24px; text-align: center; color: #64748b; font-size: 13px; border-bottom: 1px solid #e2e8f0;">
+                        Kayıt bulunamadı.
+                    </td>
+                </tr>
+            `;
+        } else {
+            rowsHtml = NAKITLER_DATA.map((item, idx) => {
+                const bg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
+                return `
+                    <tr bgcolor="${bg}" style="background-color: ${bg};">
+                        <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; font-family: monospace; color: #64748b; border-bottom: 1px solid #e2e8f0;">
+                            #${item.Nakit_ID}
+                        </td>
+                        <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; font-weight: 600; color: #0f172a; border-bottom: 1px solid #e2e8f0;">
+                            ${item.Tarih_Formatli}
+                        </td>
+                        <td align="right" bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; font-family: monospace; font-weight: 700; color: #0f766e; text-align: right; border-bottom: 1px solid #e2e8f0;">
+                            ${Number(item.Tutar).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺
+                        </td>
+                        <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; color: #4338ca; border-bottom: 1px solid #e2e8f0;">
+                            <span style="background-color: #eef2ff; color: #4338ca; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600;">
+                                ${item.Tip}
+                            </span>
+                        </td>
+                        <td align="center" bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; font-family: monospace; text-align: center; color: #64748b; border-bottom: 1px solid #e2e8f0;">
+                            ${item.Donem}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        return `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; max-width: 750px; margin: 0 auto;">
+                <!-- 1. BAŞLIK VE KART BÖLÜMÜ -->
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: separate; margin-bottom: 18px; border: 2px solid #6366f1; border-radius: 8px; overflow: hidden; background-color: #ffffff;">
+                    <tr>
+                        <td colspan="2" bgcolor="#eef2ff" style="padding: 12px 18px; background-color: #eef2ff; border-bottom: 2px solid #c7d2fe; text-align: center;">
+                            <span style="font-size: 16px; font-weight: bold; color: #3730a3;">
+                                💵 Nakit Girişleri Raporu (Dönem: {{ secili_donem }})
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td width="50%" align="center" bgcolor="#f8fafc" style="padding: 14px 10px; background-color: #f8fafc; border-right: 1px solid #e2e8f0; text-align: center;">
+                            <div style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Toplam Kayıt</div>
+                            <div style="font-size: 20px; font-weight: 800; color: #312e81;">${totalCount} Adet</div>
+                        </td>
+                        <td width="50%" align="center" bgcolor="#f8fafc" style="padding: 14px 10px; background-color: #f8fafc; text-align: center;">
+                            <div style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Toplam Tutar</div>
+                            <div style="font-size: 20px; font-weight: 800; color: #0f766e;">${totalAmount.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺</div>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- 2. TABLO -->
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; margin-bottom: 16px; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; background-color: #ffffff;">
+                    <thead>
+                        <tr bgcolor="#1e293b" style="background-color: #1e293b;">
+                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a; width: 60px;">ID</th>
+                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a; width: 110px;">TARİH</th>
+                            <th align="right" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: right; text-transform: uppercase; border-bottom: 2px solid #0f172a; width: 130px;">TUTAR</th>
+                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a;">TİP</th>
+                            <th align="center" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: center; text-transform: uppercase; border-bottom: 2px solid #0f172a; width: 90px;">DÖNEM</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    function buildNakitlerWorkbook() {
+        if (typeof XLSX === 'undefined') return null;
+
+        const wb = XLSX.utils.book_new();
+        const totalCount = NAKITLER_DATA.length;
+        const totalAmount = NAKITLER_DATA.reduce((sum, item) => sum + (Number(item.Tutar) || 0), 0);
+
+        const headers = ['ID', 'TARİH', 'TUTAR', 'TİP', 'DÖNEM', 'KAYIT TARİHİ'];
+
+        const sheetData = [
+            ['NAKİT GİRİŞLERİ LİSTESİ'],
+            ['Dönem:', '{{ secili_donem }}'],
+            ['Toplam Kayıt:', totalCount],
+            ['Toplam Tutar:', totalAmount],
+            ['Rapor Tarihi:', new Date().toLocaleString('tr-TR')],
+            [],
+            headers
+        ];
+
+        NAKITLER_DATA.forEach(item => {
+            sheetData.push([
+                item.Nakit_ID || '',
+                item.Tarih_Formatli || '',
+                Number(item.Tutar) || 0,
+                item.Tip || '',
+                item.Donem || '',
+                item.Kayit_Tarih || ''
+            ]);
+        });
+
+        const ws = XLSX.utils.aoa_to_sheet(sheetData);
+        ws['!cols'] = [
+            { wch: 10 },
+            { wch: 14 },
+            { wch: 16 },
+            { wch: 25 },
+            { wch: 12 },
+            { wch: 15 }
+        ];
+
+        XLSX.utils.book_append_sheet(wb, ws, 'Nakit Girişleri');
+        return wb;
+    }
+
+    function exportNakitlerExcel() {
+        const wb = buildNakitlerWorkbook();
+        if (!wb) {
+            alert('Excel kütüphanesi yüklenemedi.');
+            return;
+        }
+        XLSX.writeFile(wb, "Nakit_Girisleri_{{ secili_donem }}.xlsx");
+    }
+
+    function getNakitlerReportExcelBase64() {
+        const wb = buildNakitlerWorkbook();
+        if (!wb) return null;
+        return XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+    }
+
+    function openNakitlerReportMail() {
+        openReportMailModal({
+            title: 'Nakit Girişleri Raporu',
+            filename: 'Nakit_Girisleri_{{ secili_donem }}.xlsx',
+            getHtml: getNakitlerReportMailHtml,
+            getExcelBase64: getNakitlerReportExcelBase64
+        });
     }
 </script>
 {% endblock %}
