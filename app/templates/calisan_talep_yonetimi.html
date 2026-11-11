@@ -2,104 +2,373 @@
 
 {% block title %}Çalışan Talep Yönetimi - SilverCloud{% endblock %}
 
+{% block acc_calisan %}active{% endblock %}
+{% block acc_calisan_content %}open{% endblock %}
+{% block nav_calisan_talep_yonetimi %}active{% endblock %}
+
 {% block extra_style %}
 <style>
-    .glass-card {
-        background: rgba(255, 255, 255, 0.95);
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.95);
+        --glass-border: rgba(255, 255, 255, 0.3);
+        --accent-color: #667eea;
+        --text-dark: #2d3748;
+        --text-gray: #718096;
+    }
+
+    .main-card {
+        background: var(--glass-bg);
         backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 15px;
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
-        padding: 2rem;
-        margin-bottom: 2rem;
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        padding: 24px;
+        margin-bottom: 24px;
     }
 
-    .table-container {
-        overflow-x: auto;
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        gap: 16px;
+        flex-wrap: wrap;
     }
 
-    .table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0 8px;
+    .page-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-dark);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
     }
 
-    .table th {
-        background: transparent;
-        color: #64748b;
+    .sube-badge {
+        font-size: 0.82rem;
         font-weight: 600;
-        text-transform: uppercase;
-        font-size: 0.75rem;
-        letter-spacing: 0.05em;
-        padding: 1rem;
-        border: none;
+        color: #475569;
+        background: #f1f5f9;
+        padding: 4px 10px;
+        border-radius: 6px;
+        border: 1px solid #e2e8f0;
     }
 
-    .table td {
-        background: #fff;
-        padding: 1.25rem 1rem;
-        vertical-align: middle;
-        border-top: 1px solid #f1f5f9;
-        border-bottom: 1px solid #f1f5f9;
+    .action-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .btn-action-primary {
+        background: var(--accent-color);
+        color: white;
+        border: none;
+        padding: 9px 16px;
+        border-radius: 8px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        cursor: pointer;
+        transition: transform 0.2s, background 0.2s;
+        font-size: 0.88rem;
+    }
+
+    .btn-action-primary:hover {
+        background: #5a67d8;
+        transform: translateY(-1px);
+    }
+
+    .btn-action-danger {
+        background: #ef4444;
+        color: white;
+        border: none;
+        padding: 9px 16px;
+        border-radius: 8px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        cursor: pointer;
+        transition: transform 0.2s, background 0.2s;
+        font-size: 0.88rem;
+    }
+
+    .btn-action-danger:hover {
+        background: #dc2626;
+        transform: translateY(-1px);
+    }
+
+    /* Filter Area */
+    .filter-panel {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 14px 18px;
+        margin-bottom: 20px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+    }
+
+    .filter-panel-left {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .filter-tabs {
+        display: inline-flex;
+        background: #f1f5f9;
+        padding: 3px;
+        border-radius: 8px;
+        gap: 3px;
+    }
+
+    .filter-tab {
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-size: 0.84rem;
+        font-weight: 600;
+        color: #64748b;
+        cursor: pointer;
+        transition: all 0.2s;
+        user-select: none;
+    }
+
+    .filter-tab:hover {
+        color: #1e293b;
+    }
+
+    .filter-tab.active {
+        background: #ffffff;
+        color: var(--accent-color);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+
+    .filter-checkbox-wrapper {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 12px;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 0.84rem;
+        font-weight: 500;
+        color: #475569;
+        cursor: pointer;
+        user-select: none;
         transition: all 0.2s;
     }
 
-    .table tr td:first-child {
-        border-left: 1px solid #f1f5f9;
-        border-top-left-radius: 12px;
-        border-bottom-left-radius: 12px;
-    }
-
-    .table tr td:last-child {
-        border-right: 1px solid #f1f5f9;
-        border-top-right-radius: 12px;
-        border-bottom-right-radius: 12px;
-    }
-
-    .table tr:hover td {
+    .filter-checkbox-wrapper:hover {
         background: #f8fafc;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        border-color: #cbd5e1;
     }
 
-    .badge {
-        padding: 0.5rem 1rem;
-        border-radius: 9999px;
-        font-weight: 600;
+    .filter-checkbox-wrapper input {
+        cursor: pointer;
+        width: 15px;
+        height: 15px;
+        accent-color: var(--accent-color);
+        margin: 0;
+    }
+
+    .filter-panel-right {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .search-container {
+        position: relative;
+        min-width: 240px;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 9px 14px 9px 36px;
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+        outline: none;
+        transition: all 0.2s;
+        font-size: 0.88rem;
+        background: white;
+        box-sizing: border-box;
+    }
+
+    .search-input:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-gray);
+        font-size: 13px;
+    }
+
+    .filter-select {
+        padding: 9px 12px;
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+        outline: none;
+        font-size: 0.88rem;
+        font-weight: 500;
+        color: #1e293b;
+        background: white;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .filter-select:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    /* Table styles matching Ust Kategori */
+    .table-container {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        overflow-x: auto;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        background: #ffffff;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .data-table thead tr {
+        background: #1e293b;
+    }
+
+    .data-table th {
+        background: #1e293b;
+        color: #ffffff;
         font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 9px 14px;
+        text-align: left;
+        border-bottom: 2px solid #0f172a;
+        white-space: nowrap;
     }
 
-    .badge-success {
-        background: #dcfce7;
-        color: #166534;
+    .data-table td {
+        padding: 8px 14px;
+        color: #1e293b;
+        font-size: 0.86rem;
+        border-bottom: 1px solid #e2e8f0;
+        vertical-align: middle;
+        white-space: nowrap;
     }
 
-    .badge-warning {
-        background: #fef9c3;
-        color: #854d0e;
+    .data-table tbody tr:nth-child(even) td {
+        background-color: #f8fafc;
     }
 
-    .badge-info {
+    .data-table tbody tr:hover td {
+        background-color: #eff6ff !important;
+    }
+
+    .cell-tc {
+        font-family: 'SFMono-Regular', Consolas, monospace;
+        font-size: 0.84rem;
+        font-weight: 600;
+        color: var(--accent-color);
+    }
+
+    .cell-salary {
+        font-family: 'SFMono-Regular', Consolas, monospace;
+        font-weight: 700;
+        color: #1e293b;
+    }
+
+    .badge-talep {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 9px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .badge-talep-giris {
         background: #e0f2fe;
         color: #0369a1;
     }
 
-    .badge-danger {
+    .badge-talep-cikis {
         background: #fee2e2;
-        color: #991b1b;
+        color: #b91c1c;
     }
 
-    .btn-action {
-        width: 32px;
-        height: 32px;
+    .badge-durum {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 9px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .badge-durum-success {
+        background: #dcfce7;
+        color: #15803d;
+    }
+
+    .badge-durum-warning {
+        background: #fef9c3;
+        color: #854d0e;
+    }
+
+    .badge-durum-info {
+        background: #e0f2fe;
+        color: #0369a1;
+    }
+
+    .badge-durum-danger {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        display: inline-block;
+        background: currentColor;
+    }
+
+    /* Row Action Buttons matching Ust Kategori */
+    .btn-row-action {
+        width: 28px;
+        height: 28px;
+        font-size: 0.82rem;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        border-radius: 8px;
-        margin: 0 2px;
-        transition: all 0.2s;
-        border: none;
+        border-radius: 6px;
+        border: 1px solid transparent;
         cursor: pointer;
+        transition: all 0.2s;
+        margin: 0 1px;
     }
 
     .btn-view {
@@ -107,243 +376,216 @@
         color: #64748b;
     }
 
+    .btn-view:hover {
+        background: #e2e8f0;
+        color: #1e293b;
+    }
+
     .btn-edit {
-        background: #eff6ff;
-        color: #3b82f6;
+        background: #ebf4ff;
+        color: #3182ce;
+    }
+
+    .btn-edit:hover {
+        background: #bee3f8;
     }
 
     .btn-delete {
-        background: #fef2f2;
+        background: #fee2e2;
         color: #ef4444;
     }
 
+    .btn-delete:hover {
+        background: #fecaca;
+    }
+
     .btn-approve {
-        background: #f0fdf4;
-        color: #22c55e;
+        background: #dcfce7;
+        color: #16a34a;
     }
 
-    .btn-action:hover {
-        transform: scale(1.1);
+    .btn-approve:hover {
+        background: #bbf7d0;
     }
 
-    .status-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        display: inline-block;
-        margin-right: 6px;
+    /* Modal Form inside showModal() */
+    .talep-form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-bottom: 12px;
     }
 
-    /* Filters Styles */
-    .filter-tabs {
+    .talep-form-group {
         display: flex;
-        gap: 0.5rem;
-        margin-bottom: 1rem;
+        flex-direction: column;
+        gap: 5px;
     }
 
-    .filter-tab {
-        padding: 0.5rem 1.5rem;
-        border-radius: 8px;
-        font-weight: 500;
+    .talep-form-group label {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        margin: 0;
+    }
+
+    .talep-form-control {
+        width: 100%;
+        padding: 8px 12px;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        font-size: 0.88rem;
+        outline: none;
+        box-sizing: border-box;
+        transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .talep-form-control:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .talep-modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 18px;
+        padding-top: 14px;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .btn-modal-cancel {
+        background: #e2e8f0;
+        color: var(--text-dark);
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 0.88rem;
+        font-weight: 600;
         cursor: pointer;
-        transition: all 0.2s;
-        border: 1px solid #e2e8f0;
-        background: #f8fafc;
-        color: #64748b;
+        transition: background 0.2s;
     }
 
-    .filter-tab.active {
-        background: #3b82f6;
-        color: #fff;
-        border-color: #3b82f6;
+    .btn-modal-cancel:hover {
+        background: #cbd5e0;
     }
 
-    .btn-primary-custom {
-        background: #3b82f6;
+    .btn-modal-submit {
+        background: var(--accent-color);
         color: white;
         border: none;
-        padding: 0.6rem 1.2rem;
-        border-radius: 10px;
-        font-weight: 500;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        transition: all 0.2s;
+        padding: 8px 18px;
+        border-radius: 6px;
+        font-size: 0.88rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
     }
 
-    .btn-danger-custom {
-        background: #ef4444;
-        color: white;
-        border: none;
-        padding: 0.6rem 1.2rem;
-        border-radius: 10px;
-        font-weight: 500;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        transition: all 0.2s;
-    }
-
-    .btn-primary-custom:hover,
-    .btn-danger-custom:hover {
-        opacity: 0.9;
-        transform: translateY(-1px);
-    }
-
-    .header-actions {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 2rem;
-    }
-
-    .action-buttons {
-        display: flex;
-        gap: 1rem;
-    }
-
-    .search-input-group {
-        position: relative;
-        flex: 1;
-        max-width: 400px;
-    }
-
-    .search-input-group i {
-        position: absolute;
-        left: 1rem;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #94a3b8;
-    }
-
-    .search-input {
-        width: 100%;
-        padding: 0.6rem 1rem 0.6rem 2.5rem;
-        border-radius: 12px;
-        border: 1px solid #e2e8f0;
-        background: #f8fafc;
-    }
-
-    .form-group label {
-        display: block;
-        margin-bottom: 0.5rem;
-        font-weight: 500;
-        color: #475569;
-    }
-
-    .form-control {
-        width: 100%;
-        padding: 0.6rem 1rem;
-        border-radius: 8px;
-        border: 1px solid #e2e8f0;
-        margin-bottom: 1rem;
+    .btn-modal-submit:hover {
+        background: #5a67d8;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
-    <div id="page-data" data-sube-id="{{ current_sube_id }}"></div>
-    <div class="glass-card">
-        <div class="header-actions">
-            <div>
-                <h1 class="h3 mb-2 font-weight-bold text-dark">Çalışan Talep Yönetimi</h1>
-                <p class="text-muted small">Şube: <strong>{{ sube_adi }}</strong></p>
+<div id="page-data" data-sube-id="{{ current_sube_id }}"></div>
+
+<div class="main-card">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="page-title">
+            <i class="fas fa-clipboard-list" style="color: var(--accent-color);"></i>
+            <span>Çalışan Talep Yönetimi</span>
+            <span class="sube-badge">{{ sube_adi }}</span>
+        </div>
+        <div class="action-bar">
+            <button class="btn-action-primary" onclick="openTalepModal('İşe Giriş')">
+                <i class="fas fa-plus"></i> Yeni İşe Giriş
+            </button>
+            <button class="btn-action-danger" onclick="openTalepModal('İşten Çıkış')">
+                <i class="fas fa-sign-out-alt"></i> İşten Çıkış
+            </button>
+        </div>
+    </div>
+
+    <!-- Filter Panel -->
+    <div class="filter-panel">
+        <div class="filter-panel-left">
+            <div class="filter-tabs">
+                <div class="filter-tab {% if not current_talep %}active{% endif %}" onclick="filterTalep('')">Tümü</div>
+                <div class="filter-tab {% if current_talep == 'İşe Giriş' %}active{% endif %}" onclick="filterTalep('İşe Giriş')">İşe Giriş</div>
+                <div class="filter-tab {% if current_talep == 'İşten Çıkış' %}active{% endif %}" onclick="filterTalep('İşten Çıkış')">İşten Çıkış</div>
             </div>
-            <div class="action-buttons">
-                <button class="btn-primary-custom" onclick="openTalepModal('İşe Giriş')">
-                    <i class="fas fa-plus"></i> Yeni İşe Giriş
-                </button>
-                <button class="btn-danger-custom" onclick="openTalepModal('İşten Çıkış')">
-                    <i class="fas fa-sign-out-alt"></i> İşten Çıkış
-                </button>
-            </div>
+
+            <label class="filter-checkbox-wrapper" for="ssk_only">
+                <input type="checkbox" id="ssk_only" onchange="filterTable()">
+                <span>SSK Onaylandı</span>
+            </label>
         </div>
 
-        <div class="d-flex flex-wrap align-items-center mb-4 gap-4">
-            <div class="filter-tabs m-0">
-                <div class="filter-tab {% if not current_talep %}active{% endif %}" onclick="filterTalep('')">Tümü</div>
-                <div class="filter-tab {% if current_talep == 'İşe Giriş' %}active{% endif %}"
-                    onclick="filterTalep('İşe Giriş')">İşe Giriş</div>
-                <div class="filter-tab {% if current_talep == 'İşten Çıkış' %}active{% endif %}"
-                    onclick="filterTalep('İşten Çıkış')">İşten Çıkış</div>
+        <div class="filter-panel-right">
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="tableSearch" class="search-input" placeholder="Çalışan veya TC No ara..." onkeyup="filterTable()">
             </div>
 
-            <div class="custom-control custom-checkbox m-0 d-flex align-items-center">
-                <input type="checkbox" class="custom-control-input" id="ssk_only" onchange="filterTable()">
-                <label class="custom-control-label text-muted mb-0" for="ssk_only" style="padding-top:2px;">SSK
-                    Onaylandı</label>
-            </div>
-
-            <div class="search-input-group m-0" style="min-width: 250px;">
-                <i class="fas fa-search"></i>
-                <input type="text" id="tableSearch" class="search-input" placeholder="Çalışan veya TC No ara..."
-                    onkeyup="filterTable()">
-            </div>
-
-            <select class="form-control m-0" style="max-width: 200px;"
-                onchange="window.location.href='/calisan-talep-yonetimi?sube_id=' + this.value">
+            <select class="filter-select" onchange="window.location.href='/calisan-talep-yonetimi?sube_id=' + this.value">
                 {% for s in subeler %}
-                <option value="{{ s.Sube_ID }}" {% if s.Sube_ID==current_sube_id %}selected{% endif %}>{{ s.Sube_Adi
-                    }}</option>
+                <option value="{{ s.Sube_ID }}" {% if s.Sube_ID==current_sube_id %}selected{% endif %}>{{ s.Sube_Adi }}</option>
                 {% endfor %}
             </select>
         </div>
     </div>
 
+    <!-- Table -->
     <div class="table-container">
-        <table class="table" id="taleplerTable">
+        <table class="data-table" id="taleplerTable">
             <thead>
                 <tr>
-                    <th>TC No</th>
+                    <th style="width: 120px;">TC No</th>
                     <th>Ad Soyad</th>
-                    <th>Net Maaş</th>
-                    <th>Talep Türü</th>
-                    <th>Tarih</th>
-                    <th>Durum</th>
-                    <th class="text-right">İşlemler</th>
+                    <th style="width: 130px;">Net Maaş</th>
+                    <th style="width: 120px; text-align: center;">Talep Türü</th>
+                    <th style="width: 110px;">Tarih</th>
+                    <th style="width: 140px; text-align: center;">Durum</th>
+                    <th style="width: 140px; text-align: right;">İşlemler</th>
                 </tr>
             </thead>
             <tbody>
                 {% for t in talepler %}
                 <tr data-ssk="{{ t.SSK_Onay }}">
-                    <td>{{ t.TC_No }}</td>
-                    <td class="font-weight-bold">{{ t.Ad_Soyad }}</td>
-                    <td>₺{{ "{:,.2f}".format(t.Net_Maas).replace(",", "X").replace(".", ",").replace("X", ".") }}
-                    </td>
-                    <td>
-                        <span
-                            class="badge {% if t.Talep_Turu == 'İşe Giriş' %}badge-info{% else %}badge-danger{% endif %}">
+                    <td class="cell-tc">{{ t.TC_No }}</td>
+                    <td style="font-weight: 600;">{{ t.Ad_Soyad }}</td>
+                    <td class="cell-salary">₺{{ "{:,.2f}".format(t.Net_Maas).replace(",", "X").replace(".", ",").replace("X", ".") }}</td>
+                    <td style="text-align: center;">
+                        <span class="badge-talep {% if t.Talep_Turu == 'İşe Giriş' %}badge-talep-giris{% else %}badge-talep-cikis{% endif %}">
                             {{ t.Talep_Turu }}
                         </span>
                     </td>
-                    <td>{{ t.Tarih }}</td>
-                    <td>
-                        <span class="badge badge-{{ t.Durum_Color }}">
-                            <span class="status-dot" style="background: currentColor;"></span>
+                    <td style="color: #64748b;">{{ t.Tarih }}</td>
+                    <td style="text-align: center;">
+                        <span class="badge-durum badge-durum-{{ t.Durum_Color }}">
+                            <span class="status-dot"></span>
                             {{ t.Durum }}
                         </span>
                     </td>
-                    <td class="text-right">
-                        <button class="btn-action btn-view" title="Görüntüle"
-                            onclick='showDetails({{ t.Data | tojson }})'>
+                    <td style="text-align: right;">
+                        <button class="btn-row-action btn-view" title="Görüntüle" onclick='showDetails({{ t.Data | tojson }})'>
                             <i class="fas fa-eye"></i>
                         </button>
-                        <button class="btn-action btn-edit" title="Düzenle"
-                            onclick='openEditModal({{ t.Data | tojson }})'>
-                            <i class="fas fa-edit"></i>
+                        <button class="btn-row-action btn-edit" title="Düzenle" onclick='openEditModal({{ t.Data | tojson }})'>
+                            <i class="fas fa-pencil-alt"></i>
                         </button>
-                        <button class="btn-action btn-delete" title="Sil" onclick="deleteTalep({{ t.ID }})">
+                        <button class="btn-row-action btn-delete" title="Sil" onclick="deleteTalep({{ t.ID }})">
                             <i class="fas fa-trash"></i>
                         </button>
                         {% if not t.HR_Onay %}
-                        <button class="btn-action btn-approve" title="HR Onayı Ver"
-                            onclick="approveTalep({{ t.ID }}, 'hr')">
+                        <button class="btn-row-action btn-approve" title="HR Onayı Ver" onclick="approveTalep({{ t.ID }}, 'hr')">
                             <i class="fas fa-check"></i>
                         </button>
                         {% elif not t.SSK_Onay %}
-                        <button class="btn-action btn-approve" title="SSK Onayı Ver"
-                            onclick="approveTalep({{ t.ID }}, 'ssk')">
+                        <button class="btn-row-action btn-approve" title="SSK Onayı Ver" onclick="approveTalep({{ t.ID }}, 'ssk')">
                             <i class="fas fa-check-double"></i>
                         </button>
                         {% endif %}
@@ -351,11 +593,9 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="7" class="text-center py-5">
-                        <div class="text-muted">
-                            <i class="fas fa-info-circle mb-2 fa-2x"></i>
-                            <p>Herhangi bir çalışan talebi bulunamadı.</p>
-                        </div>
+                    <td colspan="7" style="text-align: center; padding: 40px; color: #94a3b8;">
+                        <i class="fas fa-info-circle mb-2 fa-2x" style="opacity: 0.4;"></i>
+                        <p style="margin: 6px 0 0; font-weight: 500;">Herhangi bir çalışan talebi bulunamadı.</p>
                     </td>
                 </tr>
                 {% endfor %}
@@ -363,9 +603,6 @@
         </table>
     </div>
 </div>
-</div>
-
-<!-- Talep modal in HTML is removed. Modal content is generated in JS and shown via global showModal() -->
 {% endblock %}
 
 {% block scripts %}
@@ -419,124 +656,124 @@
                 ${idHtml}
                 <input type="hidden" name="Talep" value="${type}">
                 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div class="form-group">
-                        <label>TC No <span class="text-danger">*</span></label>
-                        <input type="text" name="TC_No" class="form-control" value="${data.TC_No || ''}" required maxlength="11" ${tcReadOnly}>
+                <div class="talep-form-grid">
+                    <div class="talep-form-group">
+                        <label>TC No <span style="color:#ef4444;">*</span></label>
+                        <input type="text" name="TC_No" class="talep-form-control" value="${data.TC_No || ''}" required maxlength="11" ${tcReadOnly}>
                     </div>
-                    <div class="form-group">
+                    <div class="talep-form-group">
                         <label>Net Maaş</label>
-                        <input type="number" step="0.01" name="Net_Maas" class="form-control" value="${data.Net_Maas || ''}">
+                        <input type="number" step="0.01" name="Net_Maas" class="talep-form-control" value="${data.Net_Maas || ''}">
                     </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div class="form-group">
-                        <label>Adı <span class="text-danger">*</span></label>
-                        <input type="text" name="Adi" class="form-control" value="${data.Adi || ''}" required>
+                <div class="talep-form-grid">
+                    <div class="talep-form-group">
+                        <label>Adı <span style="color:#ef4444;">*</span></label>
+                        <input type="text" name="Adi" class="talep-form-control" value="${data.Adi || ''}" required>
                     </div>
-                    <div class="form-group">
-                        <label>Soyadı <span class="text-danger">*</span></label>
-                        <input type="text" name="Soyadi" class="form-control" value="${data.Soyadi || ''}" required>
+                    <div class="talep-form-group">
+                        <label>Soyadı <span style="color:#ef4444;">*</span></label>
+                        <input type="text" name="Soyadi" class="talep-form-control" value="${data.Soyadi || ''}" required>
                     </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div class="form-group" style="${isIstenCikis ? 'display:none;' : ''}">
+                <div class="talep-form-grid">
+                    <div class="talep-form-group" style="${isIstenCikis ? 'display:none;' : ''}">
                         <label>İlk Soyadı</label>
-                        <input type="text" name="Ilk_Soyadi" class="form-control" value="${data.Ilk_Soyadi || ''}">
+                        <input type="text" name="Ilk_Soyadi" class="talep-form-control" value="${data.Ilk_Soyadi || ''}">
                     </div>
-                    <div class="form-group">
+                    <div class="talep-form-group">
                         <label>Görevi</label>
-                        <input type="text" name="Gorevi" class="form-control" value="${data.Gorevi || ''}">
+                        <input type="text" name="Gorevi" class="talep-form-control" value="${data.Gorevi || ''}">
                     </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div class="form-group">
+                <div class="talep-form-grid">
+                    <div class="talep-form-group">
                         <label>Cinsiyet</label>
-                        <select name="Cinsiyet" class="form-control">
+                        <select name="Cinsiyet" class="talep-form-control">
                             <option value="Erkek" ${data.Cinsiyet === 'Erkek' ? 'selected' : ''}>Erkek</option>
                             <option value="Kadın" ${data.Cinsiyet === 'Kadın' ? 'selected' : ''}>Kadın</option>
                         </select>
                     </div>
-                    <div class="form-group">
+                    <div class="talep-form-group">
                         <label>Medeni Hali</label>
-                        <select name="Medeni_Hali" class="form-control">
+                        <select name="Medeni_Hali" class="talep-form-control">
                             <option value="Bekar" ${data.Medeni_Hali === 'Bekar' ? 'selected' : ''}>Bekar</option>
                             <option value="Evli" ${data.Medeni_Hali === 'Evli' ? 'selected' : ''}>Evli</option>
                         </select>
                     </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div class="form-group">
+                <div class="talep-form-grid">
+                    <div class="talep-form-group">
                         <label>Doğum Tarihi</label>
-                        <input type="date" name="Dogum_Tarihi" class="form-control" value="${data.Dogum_Tarihi || ''}">
+                        <input type="date" name="Dogum_Tarihi" class="talep-form-control" value="${data.Dogum_Tarihi || ''}">
                     </div>
-                    <div class="form-group">
+                    <div class="talep-form-group">
                         <label>Doğum Yeri</label>
-                        <input type="text" name="Dogum_Yeri" class="form-control" value="${data.Dogum_Yeri || ''}">
+                        <input type="text" name="Dogum_Yeri" class="talep-form-control" value="${data.Dogum_Yeri || ''}">
                     </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div class="form-group">
+                <div class="talep-form-grid">
+                    <div class="talep-form-group">
                         <label>Anne Adı</label>
-                        <input type="text" name="Anne_Adi" class="form-control" value="${data.Anne_Adi || ''}">
+                        <input type="text" name="Anne_Adi" class="talep-form-control" value="${data.Anne_Adi || ''}">
                     </div>
-                    <div class="form-group">
+                    <div class="talep-form-group">
                         <label>Baba Adı</label>
-                        <input type="text" name="Baba_Adi" class="form-control" value="${data.Baba_Adi || ''}">
+                        <input type="text" name="Baba_Adi" class="talep-form-control" value="${data.Baba_Adi || ''}">
                     </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div class="form-group">
+                <div class="talep-form-grid">
+                    <div class="talep-form-group">
                         <label>Cep No</label>
-                        <input type="text" name="Cep_No" class="form-control" value="${data.Cep_No || ''}" maxlength="16">
+                        <input type="text" name="Cep_No" class="talep-form-control" value="${data.Cep_No || ''}" maxlength="16">
                     </div>
-                    <div class="form-group">
+                    <div class="talep-form-group">
                         <label>Öğrenim Durumu</label>
-                        <input type="text" name="Ogrenim_Durumu" class="form-control" value="${data.Ogrenim_Durumu || ''}">
+                        <input type="text" name="Ogrenim_Durumu" class="talep-form-control" value="${data.Ogrenim_Durumu || ''}">
                     </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div class="form-group" style="${isIstenCikis ? 'display:none;' : ''}">
+                <div class="talep-form-grid">
+                    <div class="talep-form-group" style="${isIstenCikis ? 'display:none;' : ''}">
                         <label>Sigorta Giriş Tarihi</label>
-                        <input type="date" name="Sigorta_Giris" class="form-control" value="${data.Sigorta_Giris || ''}">
+                        <input type="date" name="Sigorta_Giris" class="talep-form-control" value="${data.Sigorta_Giris || ''}">
                     </div>
-                    <div class="form-group" style="${!isIstenCikis ? 'display:none;' : ''}">
+                    <div class="talep-form-group" style="${!isIstenCikis ? 'display:none;' : ''}">
                         <label>Sigorta Çıkış Tarihi</label>
-                        <input type="date" name="Sigorta_Cikis" class="form-control" value="${data.Sigorta_Cikis || ''}">
+                        <input type="date" name="Sigorta_Cikis" class="talep-form-control" value="${data.Sigorta_Cikis || ''}">
                     </div>
                 </div>
 
-                <div class="form-group" style="${!isIstenCikis ? 'display:none;' : ''}">
+                <div class="talep-form-group" style="${!isIstenCikis ? 'display:none;' : ''} margin-bottom:12px;">
                     <label>Çıkış Nedeni</label>
-                    <input type="text" name="SSK_Cikis_Nedeni" class="form-control" value="${data.SSK_Cikis_Nedeni || ''}">
+                    <input type="text" name="SSK_Cikis_Nedeni" class="talep-form-control" value="${data.SSK_Cikis_Nedeni || ''}">
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div class="form-group">
+                <div class="talep-form-grid">
+                    <div class="talep-form-group">
                         <label>Hesap No</label>
-                        <input type="text" name="Hesap_No" class="form-control" value="${data.Hesap_No || ''}">
+                        <input type="text" name="Hesap_No" class="talep-form-control" value="${data.Hesap_No || ''}">
                     </div>
-                    <div class="form-group">
+                    <div class="talep-form-group">
                         <label>IBAN</label>
-                        <input type="text" name="IBAN" class="form-control" value="${data.IBAN || ''}" maxlength="26">
+                        <input type="text" name="IBAN" class="talep-form-control" value="${data.IBAN || ''}" maxlength="26">
                     </div>
                 </div>
 
-                <div class="form-group">
+                <div class="talep-form-group">
                     <label>Adres Bilgileri</label>
-                    <textarea name="Adres_Bilgileri" class="form-control" rows="2">${data.Adres_Bilgileri || ''}</textarea>
+                    <textarea name="Adres_Bilgileri" class="talep-form-control" rows="2">${data.Adres_Bilgileri || ''}</textarea>
                 </div>
 
-                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:15px; border-top: 1px solid #e2e8f0; padding-top:15px;">
-                    <button type="button" class="btn btn-secondary" onclick="hideModal()">İptal</button>
-                    <button type="submit" class="btn btn-primary">Kaydet</button>
+                <div class="talep-modal-footer">
+                    <button type="button" class="btn-modal-cancel" onclick="hideModal()">İptal</button>
+                    <button type="submit" class="btn-modal-submit">Kaydet</button>
                 </div>
             </form>
         `;
@@ -644,18 +881,14 @@
     }
 
     function showDetails(dataStr) {
-        // Parse the JSON string passed effectively bypassing tooltip issues 
-        // if using string interpolation in HTML. We'll pass the whole object.
         const data = typeof dataStr === 'string' ? JSON.parse(dataStr) : dataStr;
-
         const title = 'Talep Detayları';
-        // Add a dummy ID to make fields readonly based on our logic
         if (!data.ID) data.ID = 'view';
 
         const originalHtml = generateFormHTML(data.Talep, data);
 
         // Remove the submit button since this is view only
-        const viewHtml = originalHtml.replace('<button type="submit" class="btn btn-primary">Kaydet</button>', '');
+        const viewHtml = originalHtml.replace('<button type="submit" class="btn-modal-submit">Kaydet</button>', '');
 
         showModal(title, viewHtml);
 
