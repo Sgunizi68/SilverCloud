@@ -1,157 +1,724 @@
 {% extends "base.html" %}
 
-{% block title %}Fatura Bölme Yönetimi{% endblock %}
+{% block title %}Fatura Bölme Yönetimi - SilverCloud{% endblock %}
+
+{% block extra_style %}
+<style>
+  :root {
+    --glass-bg: rgba(255, 255, 255, 0.95);
+    --glass-border: rgba(255, 255, 255, 0.3);
+    --accent-color: #667eea;
+    --text-dark: #2d3748;
+    --text-gray: #718096;
+  }
+
+  .main-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .page-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .action-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .search-container {
+    position: relative;
+    min-width: 220px;
+  }
+
+  .search-input {
+    width: 100%;
+    padding: 10px 16px 10px 38px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    outline: none;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+    background: white;
+  }
+
+  .search-input:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-gray);
+    font-size: 13px;
+  }
+
+  .filter-select {
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    outline: none;
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: #475569;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .filter-select:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  .btn-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    color: var(--text-dark);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.95rem;
+  }
+
+  .btn-icon:hover {
+    background: #f7fafc;
+    border-color: #cbd5e0;
+  }
+
+  .btn-new {
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: transform 0.2s, background 0.2s;
+    font-size: 0.9rem;
+  }
+
+  .btn-new:hover {
+    background: #5a67d8;
+    transform: translateY(-1px);
+  }
+
+  /* Invoice Group Card (Accordion) */
+  .fbm-group {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    margin-bottom: 16px;
+    overflow: hidden;
+    transition: all 0.2s;
+  }
+
+  .fbm-group:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
+    border-color: #cbd5e1;
+  }
+
+  .fbm-group-header {
+    padding: 16px 20px;
+    background: #ffffff;
+    border-bottom: 1px solid transparent;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+
+  .fbm-group.open .fbm-group-header {
+    background: #f8fafc;
+    border-bottom-color: #e2e8f0;
+  }
+
+  .fbm-group-header:hover {
+    background: #f8fafc;
+  }
+
+  .fbm-group-header.mismatch {
+    background: #fff5f5;
+    border-bottom-color: #fed7d7;
+  }
+
+  .fbm-group-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .fbm-chevron {
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background: #f1f5f9;
+    color: #64748b;
+    font-size: 13px;
+    transition: transform 0.2s, background 0.2s;
+  }
+
+  .fbm-group.open .fbm-chevron {
+    transform: rotate(180deg);
+    background: #e2e8f0;
+    color: #1e293b;
+  }
+
+  .fbm-group-meta h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin: 0 0 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .fbm-group-meta p {
+    font-size: 0.84rem;
+    color: var(--text-gray);
+    margin: 0 0 6px;
+  }
+
+  .fbm-group-meta .fbm-check-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    color: #475569;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  .fbm-group-right {
+    display: flex;
+    gap: 24px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .fbm-stat label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-gray);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .fbm-stat .val {
+    font-size: 1.05rem;
+    font-weight: 700;
+    font-family: 'SFMono-Regular', Consolas, monospace;
+  }
+
+  .fbm-stat .val.gray { color: #1e293b; }
+  .fbm-stat .val.ok { color: #16a34a; }
+  .fbm-stat .val.bad { color: #dc2626; }
+  .fbm-stat .val.blue { color: var(--accent-color); font-family: inherit; }
+
+  .fbm-mismatch-alert {
+    font-size: 0.86rem;
+    color: #dc2626;
+    background: #fef2f2;
+    border-bottom: 1px solid #fee2e2;
+    font-weight: 600;
+    padding: 8px 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Expanded Details */
+  .fbm-details {
+    display: none;
+    padding: 20px;
+    background: #ffffff;
+  }
+
+  .fbm-group.open .fbm-details {
+    display: block;
+  }
+
+  .fbm-details-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+
+  .fbm-details-head h4 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-add-detail {
+    background: #10b981;
+    color: #ffffff;
+    border: none;
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-size: 0.84rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.15s ease, transform 0.15s ease;
+  }
+
+  .btn-add-detail:hover {
+    background: #059669;
+    transform: translateY(-1px);
+  }
+
+  /* Table Style (identical to Ust Kategori) */
+  .table-container {
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    overflow-x: auto;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    background: #ffffff;
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .data-table thead tr {
+    background: #1e293b;
+  }
+
+  .data-table th {
+    background: #1e293b;
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 9px 14px;
+    text-align: left;
+    border-bottom: 2px solid #0f172a;
+    white-space: nowrap;
+  }
+
+  .data-table td {
+    padding: 8px 14px;
+    color: #1e293b;
+    font-size: 0.86rem;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+
+  .data-table tbody tr:nth-child(even) td {
+    background-color: #f8fafc;
+  }
+
+  .data-table tbody tr:hover td {
+    background-color: #eff6ff !important;
+  }
+
+  .data-table tfoot td {
+    padding: 10px 14px;
+    background: #f1f5f9;
+    font-weight: 700;
+    border-top: 2px solid #cbd5e1;
+  }
+
+  .data-table td.fatura-no {
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    font-weight: 700;
+    color: var(--accent-color);
+  }
+
+  .data-table td.amount {
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    font-weight: 700;
+    color: #1e293b;
+  }
+
+  td.ok-amount { color: #16a34a !important; font-family: 'SFMono-Regular', Consolas, monospace; }
+  td.bad-amount { color: #dc2626 !important; font-family: 'SFMono-Regular', Consolas, monospace; }
+
+  /* Inline edit inputs */
+  .fbm-edit-input {
+    padding: 6px 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 0.84rem;
+    outline: none;
+    background: #ffffff;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+
+  .fbm-edit-input:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  .fbm-edit-input.w-money { width: 110px; font-family: monospace; font-weight: 600; }
+  .fbm-edit-input.w-kat { width: 160px; }
+  .fbm-edit-input.w-donem { width: 130px; }
+
+  /* Row action buttons */
+  .btn-row-action {
+    width: 28px;
+    height: 28px;
+    font-size: 0.82rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-row-action.edit {
+    background: #ebf4ff;
+    color: #3182ce;
+  }
+
+  .btn-row-action.edit:hover {
+    background: #bee3f8;
+  }
+
+  .btn-row-action.del {
+    background: #fee2e2;
+    color: #ef4444;
+  }
+
+  .btn-row-action.del:hover {
+    background: #fecaca;
+  }
+
+  .btn-row-action.save {
+    background: #dcfce7;
+    color: #16a34a;
+  }
+
+  .btn-row-action.save:hover {
+    background: #bbf7d0;
+  }
+
+  .btn-row-action.cancel {
+    background: #f1f5f9;
+    color: #64748b;
+  }
+
+  .btn-row-action.cancel:hover {
+    background: #e2e8f0;
+  }
+
+  .btn-row-action:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* Modal Form Styling (identical to Ust Kategori) */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease-in-out;
+  }
+
+  .modal-overlay.active {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .modal-content {
+    background: white;
+    width: 100%;
+    max-width: 500px;
+    border-radius: 12px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    transform: scale(0.95);
+    transition: all 0.2s ease-in-out;
+  }
+
+  .modal-overlay.active .modal-content {
+    transform: scale(1);
+  }
+
+  .modal-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .modal-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin: 0;
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    color: var(--text-gray);
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px;
+  }
+
+  .modal-close:hover {
+    color: var(--text-dark);
+  }
+
+  .modal-body {
+    padding: 24px;
+  }
+
+  .modal-footer {
+    padding: 16px 24px;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .form-group:last-child {
+    margin-bottom: 0;
+  }
+
+  .form-label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 6px;
+  }
+
+  .form-control {
+    width: 100%;
+    padding: 9px 12px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    font-size: 0.9rem;
+    outline: none;
+    box-sizing: border-box;
+  }
+
+  .form-control:focus {
+    border-color: var(--accent-color);
+  }
+
+  .btn {
+    padding: 9px 18px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+  }
+
+  .btn-secondary {
+    background: #e2e8f0;
+    color: var(--text-dark);
+  }
+
+  .btn-secondary:hover {
+    background: #cbd5e0;
+  }
+
+  .btn-primary {
+    background: var(--accent-color);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background: #5a67d8;
+  }
+
+  .btn-primary:disabled {
+    background: #a5b4fc;
+    cursor: not-allowed;
+  }
+
+  .fbm-search-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .fbm-search-row .form-control {
+    flex: 1;
+  }
+
+  .fbm-found-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 14px;
+    font-size: 0.88rem;
+    color: #334155;
+  }
+
+  .fbm-found-card p {
+    margin: 0 0 6px;
+  }
+
+  .fbm-found-card p:last-child {
+    margin-bottom: 0;
+  }
+
+  /* Empty / Loading */
+  .fbm-loading, .fbm-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-gray);
+    font-size: 0.95rem;
+    background: #ffffff;
+    border-radius: 8px;
+    border: 1px dashed #cbd5e1;
+  }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="fbm-page">
+<div class="main-card">
 
   <!-- ── Header ── -->
-  <div class="fbm-topbar">
-    <h1 class="fbm-title">Fatura Bölme Yönetimi</h1>
-    <div class="fbm-topbar-right">
-      <div class="fbm-donem-filter">
-        <label>Dönem:</label>
-        <select id="donemSelect" onchange="filterByDonem()">
-          <option value="">Tüm Dönemler</option>
-        </select>
+  <div class="page-header">
+    <h1 class="page-title">
+      <i class="fas fa-columns" style="color: var(--accent-color);"></i>
+      Fatura Bölme Yönetimi
+    </h1>
+    <div class="action-bar">
+      <button class="btn-icon" onclick="window.print()" title="Yazdır">
+        <i class="fas fa-print"></i>
+      </button>
+
+      <div class="search-container">
+        <i class="fas fa-search search-icon"></i>
+        <input type="text" id="searchInput" class="search-input" placeholder="Fatura veya Alıcı Ara..." onkeyup="filterList()">
       </div>
-      <button class="fbm-btn-primary" onclick="openYeniModal()">
+
+      <select id="donemSelect" class="filter-select" onchange="filterList()">
+        <option value="">Tüm Dönemler</option>
+      </select>
+
+      <button class="btn-new" onclick="openYeniModal()">
         <i class="fas fa-plus"></i> Yeni Fatura Bölme
       </button>
     </div>
   </div>
 
-  <!-- ── Invoice Groups ── -->
-  <div id="faturaListContainer" class="fbm-list">
+  <!-- ── Invoice Groups Container ── -->
+  <div id="faturaListContainer">
     <div class="fbm-loading"><i class="fas fa-spinner fa-spin"></i> Yükleniyor...</div>
   </div>
 
 </div>
 
-<!-- ── Yeni Fatura Bölme Modal ── -->
-<div id="yeniModal" class="fbm-modal-overlay" style="display:none">
-  <div class="fbm-modal">
-    <div class="fbm-modal-head">
-      <h3>Yeni Fatura Bölme</h3>
-      <span class="fbm-modal-close" onclick="closeYeniModal()">&times;</span>
+<!-- ── Yeni Fatura Bölme Modal (Ust Kategori Stili) ── -->
+<div id="yeniModal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title">Yeni Fatura Bölme</h3>
+      <button class="modal-close" onclick="closeYeniModal()">&times;</button>
     </div>
-    <div class="fbm-modal-body">
-      <label class="fbm-label">Fatura Numarası</label>
-      <div class="fbm-search-row">
-        <input type="text" id="yeniFaturaNo" class="fbm-input" placeholder="Fatura numarasını giriniz" onkeydown="if(event.key==='Enter') bulFatura()">
-        <button class="fbm-btn-icon" onclick="bulFatura()"><i class="fas fa-search"></i></button>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Fatura Numarası</label>
+        <div class="fbm-search-row">
+          <input type="text" id="yeniFaturaNo" class="form-control" placeholder="Fatura numarasını giriniz" onkeydown="if(event.key==='Enter') bulFatura()">
+          <button class="btn btn-primary" style="padding:9px 14px;" onclick="bulFatura()"><i class="fas fa-search"></i></button>
+        </div>
       </div>
-      <div id="bulunmusFatura" style="display:none; margin-top:16px; border-top:1px solid #e5e7eb; padding-top:16px;">
-        <h4 style="margin-bottom:10px; font-weight:600">Bulunan Fatura:</h4>
+      <div id="bulunmusFatura" style="display:none; margin-top:16px; border-top:1px solid #e2e8f0; padding-top:16px;">
+        <h4 style="margin:0 0 10px; font-size:0.9rem; font-weight:700; color:var(--text-dark);">Bulunan Fatura:</h4>
         <div class="fbm-found-card">
           <p><strong>Alıcı:</strong> <span id="bfAlici"></span></p>
           <p><strong>Tarih:</strong> <span id="bfTarih"></span></p>
-          <p><strong>Tutar:</strong> <span id="bfTutar"></span></p>
+          <p><strong>Tutar:</strong> <span id="bfTutar" style="font-family:monospace; font-weight:700; color:#16a34a;"></span></p>
           <p><strong>Açıklama:</strong> <span id="bfAciklama"></span></p>
         </div>
       </div>
     </div>
-    <div class="fbm-modal-foot">
-      <button id="bolBtn" class="fbm-btn-green" onclick="kaydetBolme()" disabled>Faturayı Böl</button>
-      <button class="fbm-btn-gray" onclick="closeYeniModal()">İptal</button>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeYeniModal()">İptal</button>
+      <button id="bolBtn" class="btn btn-primary" onclick="kaydetBolme()" disabled>
+        <i class="fas fa-columns"></i> Faturayı Böl
+      </button>
     </div>
   </div>
 </div>
-
-<!-- ── Styles ── -->
-<style>
-.fbm-page { max-width: 1200px; margin: 0 auto; padding: 24px; font-family: 'Inter', 'Segoe UI', sans-serif; }
-
-/* Topbar */
-.fbm-topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
-.fbm-title { font-size:22px; font-weight:700; color:#111827; margin:0; }
-.fbm-topbar-right { display:flex; align-items:center; gap:16px; }
-.fbm-donem-filter { display:flex; align-items:center; gap:8px; font-size:14px; color:#374151; font-weight:500; }
-.fbm-donem-filter select { padding:8px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px; cursor:pointer; }
-.fbm-btn-primary { background:#2563eb; color:#fff; border:none; padding:9px 18px; border-radius:6px; font-size:14px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:8px; }
-.fbm-btn-primary:hover { background:#1d4ed8; }
-
-/* Invoice Group Card */
-.fbm-group { background:#fff; border-radius:8px; box-shadow:0 1px 4px rgba(0,0,0,.1); margin-bottom:16px; overflow:hidden; }
-.fbm-group-header { padding:16px 22px; border-bottom:1px solid #e5e7eb; cursor:pointer; display:flex; justify-content:space-between; align-items:flex-start; user-select:none; }
-.fbm-group-header:hover { background:#f9fafb; }
-.fbm-group-header.mismatch { background:#fef2f2; border-bottom-color:#fca5a5; }
-.fbm-group-left { display:flex; align-items:flex-start; gap:12px; }
-.fbm-chevron { color:#9ca3af; font-size:14px; margin-top:3px; transition:transform .2s; }
-.fbm-group.open .fbm-chevron { transform:rotate(180deg); }
-.fbm-group-meta h3 { font-size:16px; font-weight:700; color:#111827; margin:0 0 4px; }
-.fbm-group-meta p { font-size:13px; color:#6b7280; margin:0 0 6px; }
-.fbm-group-meta .fbm-check-row { display:flex; align-items:center; gap:6px; font-size:13px; color:#374151; }
-.fbm-group-right { display:flex; gap:28px; text-align:center; flex-shrink:0; }
-.fbm-stat label { font-size:12px; color:#6b7280; display:block; margin-bottom:2px; }
-.fbm-stat .val { font-size:16px; font-weight:700; }
-.fbm-stat .val.gray { color:#111827; }
-.fbm-stat .val.ok { color:#16a34a; }
-.fbm-stat .val.bad { color:#dc2626; }
-.fbm-stat .val.blue { color:#2563eb; }
-.fbm-mismatch-alert { font-size:13px; color:#dc2626; font-weight:500; padding:4px 22px 10px; }
-
-/* Expanded Details */
-.fbm-details { display:none; padding:16px 22px; }
-.fbm-group.open .fbm-details { display:block; }
-.fbm-details-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
-.fbm-details-head h4 { font-size:14px; font-weight:700; color:#111827; margin:0; }
-.fbm-btn-green { background:#16a34a; color:#fff; border:none; padding:7px 14px; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
-.fbm-btn-green:hover { background:#15803d; }
-.fbm-btn-green:disabled { background:#86efac; cursor:not-allowed; }
-.fbm-btn-gray { background:#6b7280; color:#fff; border:none; padding:7px 14px; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; }
-
-/* Table */
-.fbm-table-wrap { overflow-x:auto; }
-table.fbm-table { width:100%; border-collapse:collapse; font-size:13px; }
-.fbm-table thead tr { background:#f9fafb; }
-.fbm-table th { padding:9px 12px; text-align:left; font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:.03em; border-bottom:1px solid #e5e7eb; white-space:nowrap; }
-.fbm-table td { padding:10px 12px; border-bottom:1px solid #f3f4f6; vertical-align:middle; }
-.fbm-table tbody tr:hover { background:#f9fafb; }
-.fbm-table tfoot td { padding:10px 12px; background:#f9fafb; font-weight:700; }
-.fbm-table td.fatura-no { font-family:monospace; color:#2563eb; white-space:nowrap; }
-.fbm-table td.amount { font-weight:600; white-space:nowrap; }
-td.ok-amount { color:#16a34a; }
-td.bad-amount { color:#dc2626; }
-
-/* Inline edit inputs */
-.fbm-edit-input { padding:5px 8px; border:1px solid #d1d5db; border-radius:5px; font-size:13px; }
-.fbm-edit-input.w-money { width:90px; }
-.fbm-edit-input.w-kat { width:140px; }
-.fbm-edit-input.w-donem { width:120px; }
-.fbm-action-btn { width:28px; height:28px; border-radius:5px; border:none; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; font-size:13px; }
-.fbm-action-btn.edit { background:#eff6ff; color:#2563eb; }
-.fbm-action-btn.del { background:#fef2f2; color:#dc2626; }
-.fbm-action-btn.save { background:#f0fdf4; color:#16a34a; }
-.fbm-action-btn.cancel { background:#f3f4f6; color:#6b7280; }
-.fbm-action-btn:disabled { opacity:.4; cursor:not-allowed; }
-
-/* Modal */
-.fbm-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; z-index:1000; backdrop-filter:blur(3px); }
-.fbm-modal { background:#fff; border-radius:12px; width:460px; max-width:92vw; box-shadow:0 20px 40px rgba(0,0,0,.2); }
-.fbm-modal-head { display:flex; justify-content:space-between; align-items:center; padding:20px 24px; border-bottom:1px solid #e5e7eb; }
-.fbm-modal-head h3 { margin:0; font-size:17px; font-weight:700; }
-.fbm-modal-close { font-size:26px; cursor:pointer; color:#9ca3af; line-height:1; }
-.fbm-modal-body { padding:20px 24px; }
-.fbm-modal-foot { display:flex; gap:10px; padding:16px 24px; border-top:1px solid #e5e7eb; }
-.fbm-modal-foot button { flex:1; padding:10px; font-size:14px; }
-.fbm-label { display:block; font-size:13px; font-weight:600; color:#374151; margin-bottom:7px; }
-.fbm-input { width:100%; padding:9px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:14px; box-sizing:border-box; }
-.fbm-search-row { display:flex; gap:8px; }
-.fbm-search-row .fbm-input { flex:1; }
-.fbm-btn-icon { background:#2563eb; color:#fff; border:none; padding:9px 13px; border-radius:6px; cursor:pointer; }
-.fbm-found-card { background:#f9fafb; border-radius:6px; padding:14px; font-size:13px; color:#374151; }
-.fbm-found-card p { margin:0 0 6px; }
-
-/* Loading / Empty */
-.fbm-loading, .fbm-empty { text-align:center; padding:60px 20px; color:#9ca3af; font-size:15px; }
-</style>
 
 <script>
 // ── State ──────────────────────────────────────────────────────────────────
 const API = '/api/v1';
 let allGroups = [];       // [{id, orijinalFaturaNo, aliciUnvani, faturaTarihi, toplamTutar, aciklama, donem, gunluk, subeId, detaylar:[{id,faturaNo,tutar,kategori,kategoriId,ozel,donem,aciklama,isNew}]}]
-let kategoriler = [];     // [{Kategori_ID, Kategori_Adi}]
+let kategoriler = [];     // [{Kategori_ID, Kategori_Adi, Tip}]
 let donemler = [];        // unique donem strings
 let editingId = null;     // detay.id being edited
 let tempVals = {};
@@ -165,7 +732,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function loadKategoriler() {
   try {
     const r = await fetch(`${API}/kategoriler?limit=2000`);
-    kategoriler = await r.json();
+    const data = await r.json();
+    // Yalnızca "Gider" ve "Bilgi" tipindeki kategorileri al
+    kategoriler = (Array.isArray(data) ? data : [])
+      .filter(k => k.Tip === 'Gider' || k.Tip === 'Bilgi')
+      .sort((a, b) => (a.Kategori_Adi || '').localeCompare(b.Kategori_Adi || '', 'tr'));
   } catch(e) { console.error('Kategoriler yüklenemedi', e); }
 }
 
@@ -212,7 +783,7 @@ async function loadData() {
       }
     });
 
-    // Fetch parent invoice for correct toplamTutar if needed
+    // Sort parent invoices by date descending
     allGroups = Object.values(grouped).sort((a,b) => (b.faturaTarihi || "").localeCompare(a.faturaTarihi || ""));
 
     // Populate donem dropdown
@@ -232,10 +803,38 @@ async function loadData() {
   }
 }
 
-// ── Render ────────────────────────────────────────────────────────────────
+// ── Filter and Render ─────────────────────────────────────────────────────
+function filterList() {
+  renderList();
+}
+
+function filterByDonem() {
+  renderList();
+}
+
 function renderList() {
   const filterDonem = document.getElementById('donemSelect').value;
-  const visible = filterDonem ? allGroups.filter(g => g.donem === filterDonem) : allGroups;
+  const searchTxt = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
+
+  let visible = allGroups;
+
+  if (filterDonem) {
+    visible = visible.filter(g => g.donem === filterDonem);
+  }
+
+  if (searchTxt) {
+    visible = visible.filter(g => {
+      const parentMatch = (g.orijinalFaturaNo || '').toLowerCase().includes(searchTxt) ||
+                          (g.aliciUnvani || '').toLowerCase().includes(searchTxt) ||
+                          (g.aciklama || '').toLowerCase().includes(searchTxt);
+      if (parentMatch) return true;
+      return g.detaylar.some(d =>
+        (d.faturaNo || '').toLowerCase().includes(searchTxt) ||
+        (d.kategori || '').toLowerCase().includes(searchTxt)
+      );
+    });
+  }
+
   const container = document.getElementById('faturaListContainer');
 
   if (!visible.length) {
@@ -256,13 +855,13 @@ function renderGroup(g) {
 <div id="grp-${g.id}" class="fbm-group ${openClass}">
   <div class="fbm-group-header ${mismatchHeader}" onclick="toggleGroup('${g.id}')">
     <div class="fbm-group-left">
-      <i class="fas fa-chevron-down fbm-chevron"></i>
+      <div class="fbm-chevron"><i class="fas fa-chevron-down"></i></div>
       <div class="fbm-group-meta">
         <h3>${g.orijinalFaturaNo} - ${escHtml(g.aliciUnvani)}</h3>
         <p>${g.faturaTarihi || ''} | ${donemFormatla(g.donem)} | ${escHtml(g.aciklama || '')}</p>
         <div class="fbm-check-row">
-          <input type="checkbox" ${g.gunluk ? 'checked' : ''} disabled style="width:14px;height:14px">
-          <span>Günlük</span>
+          <input type="checkbox" ${g.gunluk ? 'checked' : ''} disabled style="width:14px;height:14px;accent-color:var(--accent-color);">
+          <span>Günlük Harcama</span>
         </div>
       </div>
     </div>
@@ -281,28 +880,28 @@ function renderGroup(g) {
       </div>
     </div>
   </div>
-  ${!tutarUyumlu ? `<div class="fbm-mismatch-alert">⚠️ Detay toplamı ana fatura tutarı ile eşleşmiyor! Fark: ${fmtTL(g.toplamTutar - detayToplami)}</div>` : ''}
+  ${!tutarUyumlu ? `<div class="fbm-mismatch-alert"><i class="fas fa-exclamation-triangle"></i> Detay toplamı ana fatura tutarı ile eşleşmiyor! Fark: ${fmtTL(g.toplamTutar - detayToplami)}</div>` : ''}
   <div class="fbm-details">
     <div class="fbm-details-head">
-      <h4>Bölünmüş Fatura Detayları</h4>
-      <button class="fbm-btn-green" onclick="yeniDetayEkle('${g.id}')">
+      <h4><i class="fas fa-list-ul" style="color:var(--accent-color);"></i> Bölünmüş Fatura Detayları</h4>
+      <button class="btn-add-detail" onclick="yeniDetayEkle('${g.id}')">
         <i class="fas fa-plus"></i> Yeni Detay Ekle
       </button>
     </div>
-    <div class="fbm-table-wrap">
-      <table class="fbm-table">
+    <div class="table-container">
+      <table class="data-table">
         <thead>
           <tr>
             <th>Fatura No</th>
             <th>Alıcı Ünvanı</th>
             <th>Fatura Tarihi</th>
-            <th>Tutar</th>
+            <th style="text-align:right;">Tutar</th>
             <th>Kategori</th>
             <th>Açıklama</th>
             <th>Dönem</th>
-            <th>Günlük</th>
-            <th>Özel</th>
-            <th>İşlemler</th>
+            <th style="text-align:center;">Günlük</th>
+            <th style="text-align:center;">Özel</th>
+            <th style="text-align:center;">İşlemler</th>
           </tr>
         </thead>
         <tbody>
@@ -310,8 +909,8 @@ function renderGroup(g) {
         </tbody>
         <tfoot>
           <tr>
-            <td colspan="3" style="text-align:right">TOPLAM:</td>
-            <td class="${tutarUyumlu ? 'ok-amount' : 'bad-amount'}">${fmtTL(detayToplami)}</td>
+            <td colspan="3" style="text-align:right; font-weight:700;">TOPLAM:</td>
+            <td style="text-align:right;" class="${tutarUyumlu ? 'ok-amount' : 'bad-amount'}">${fmtTL(detayToplami)}</td>
             <td colspan="6"></td>
           </tr>
         </tfoot>
@@ -333,20 +932,20 @@ function renderDetayRow(g, d, detayToplami) {
       `<option value="${dm}" ${dm === tempVals.donem ? 'selected' : ''}>${donemFormatla(dm)}</option>`
     ).join('');
     return `
-<tr style="background:#fffbeb">
+<tr style="background:#fffbeb !important;">
   <td class="fatura-no">${escHtml(d.faturaNo)}</td>
   <td>${escHtml(g.aliciUnvani)}</td>
   <td>${g.faturaTarihi || ''}</td>
-  <td><input type="number" class="fbm-edit-input w-money" id="et-tutar" value="${tempVals.tutar}" step="0.01"></td>
+  <td style="text-align:right;"><input type="number" class="fbm-edit-input w-money" id="et-tutar" value="${tempVals.tutar}" step="0.01"></td>
   <td><select class="fbm-edit-input w-kat" id="et-kat">${katOptions}</select></td>
   <td>${escHtml(g.aciklama || '')}</td>
   <td><select class="fbm-edit-input w-donem" id="et-donem">${donemOptions}</select></td>
-  <td><input type="checkbox" disabled ${g.gunluk ? 'checked' : ''} style="width:14px;height:14px"></td>
-  <td><input type="checkbox" id="et-ozel" ${tempVals.ozel ? 'checked' : ''} style="width:14px;height:14px"></td>
-  <td>
-    <div style="display:flex;gap:4px">
-      <button class="fbm-action-btn save" onclick="kaydetDetay('${g.id}', '${d.id}')" title="Kaydet"><i class="fas fa-check"></i></button>
-      <button class="fbm-action-btn cancel" onclick="iptalDetay('${g.id}')" title="İptal"><i class="fas fa-times"></i></button>
+  <td style="text-align:center;"><input type="checkbox" disabled ${g.gunluk ? 'checked' : ''} style="width:14px;height:14px;"></td>
+  <td style="text-align:center;"><input type="checkbox" id="et-ozel" ${tempVals.ozel ? 'checked' : ''} style="width:14px;height:14px;accent-color:var(--accent-color);"></td>
+  <td style="text-align:center;">
+    <div style="display:inline-flex; gap:6px;">
+      <button class="btn-row-action save" onclick="kaydetDetay('${g.id}', '${d.id}')" title="Kaydet"><i class="fas fa-check"></i></button>
+      <button class="btn-row-action cancel" onclick="iptalDetay('${g.id}')" title="İptal"><i class="fas fa-times"></i></button>
     </div>
   </td>
 </tr>`;
@@ -358,24 +957,22 @@ function renderDetayRow(g, d, detayToplami) {
   <td class="fatura-no">${escHtml(d.faturaNo)}</td>
   <td>${escHtml(g.aliciUnvani)}</td>
   <td>${g.faturaTarihi || ''}</td>
-  <td class="amount">${fmtTL(d.tutar)}</td>
+  <td class="amount" style="text-align:right;">${fmtTL(d.tutar)}</td>
   <td>${escHtml(d.kategori || '')}</td>
   <td>${escHtml(g.aciklama || '')}</td>
   <td>${donemFormatla(d.donem)}</td>
-  <td><input type="checkbox" disabled ${g.gunluk ? 'checked' : ''} style="width:14px;height:14px"></td>
-  <td><input type="checkbox" disabled ${d.ozel ? 'checked' : ''} style="width:14px;height:14px"></td>
-  <td>
-    <div style="display:flex;gap:4px">
-      <button class="fbm-action-btn edit" onclick="baslatEdit('${g.id}', '${d.id}')" title="Düzenle"><i class="fas fa-pencil-alt"></i></button>
-      <button class="fbm-action-btn del" onclick="silDetay('${g.id}', '${d.id}')" ${g.detaylar.length <= 2 ? 'disabled' : ''} title="Sil"><i class="fas fa-trash"></i></button>
+  <td style="text-align:center;"><input type="checkbox" disabled ${g.gunluk ? 'checked' : ''} style="width:14px;height:14px;"></td>
+  <td style="text-align:center;"><input type="checkbox" disabled ${d.ozel ? 'checked' : ''} style="width:14px;height:14px;accent-color:var(--accent-color);"></td>
+  <td style="text-align:center;">
+    <div style="display:inline-flex; gap:6px;">
+      <button class="btn-row-action edit" onclick="baslatEdit('${g.id}', '${d.id}')" title="Düzenle"><i class="fas fa-pencil-alt"></i></button>
+      <button class="btn-row-action del" onclick="silDetay('${g.id}', '${d.id}')" ${g.detaylar.length <= 2 ? 'disabled' : ''} title="Sil"><i class="fas fa-trash"></i></button>
     </div>
   </td>
 </tr>`;
 }
 
 // ── Interactions ──────────────────────────────────────────────────────────
-function filterByDonem() { renderList(); }
-
 function toggleGroup(id) {
   const g = allGroups.find(x => x.id === id);
   if (g) { g.acik = !g.acik; renderList(); }
@@ -498,13 +1095,26 @@ function yeniDetayEkle(grupId) {
 
 // ── New Split Modal ───────────────────────────────────────────────────────
 function openYeniModal() {
-  document.getElementById('yeniModal').style.display = 'flex';
+  const modal = document.getElementById('yeniModal');
+  modal.classList.add('active');
   document.getElementById('yeniFaturaNo').value = '';
   document.getElementById('bulunmusFatura').style.display = 'none';
   document.getElementById('bolBtn').disabled = true;
   foundInvoice = null;
 }
-function closeYeniModal() { document.getElementById('yeniModal').style.display = 'none'; }
+
+function closeYeniModal() {
+  const modal = document.getElementById('yeniModal');
+  modal.classList.remove('active');
+}
+
+// Modal dışına tıklandığında kapat
+window.addEventListener('click', (e) => {
+  const modal = document.getElementById('yeniModal');
+  if (e.target === modal) {
+    closeYeniModal();
+  }
+});
 
 async function bulFatura() {
   const no = document.getElementById('yeniFaturaNo').value.trim();
