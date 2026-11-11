@@ -516,7 +516,7 @@
                 for (let i = 0; i < totalChunks; i++) {
                     const chunk = efaturalar.slice(i * chunkSize, (i + 1) * chunkSize);
                     submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Yükleniyor (${i + 1}/${totalChunks})...`;
-                    
+
                     const response = await fetch('/api/v1/efaturalar/bulk', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -549,7 +549,7 @@
                 const successfullyAddedList = efaturalar.filter(f => allAddedInvoicesSet.has(f.Fatura_No));
 
                 const tbody = document.getElementById('previewTbody');
-           yAddedList.length > 0) {
+                if (successfullyAddedList.length > 0) {
                     tbody.innerHTML = successfullyAddedList.map(f => `
                         <tr>
                             <td class="code-cell">${f.Fatura_No}</td>
