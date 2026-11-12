@@ -153,58 +153,7 @@
         transform: translateY(-1px);
     }
 
-    /* Summary Banner */
-    .summary-banner {
-        background: #ffffff;
-        border: 2px solid #6366f1;
-        border-radius: 10px;
-        overflow: hidden;
-        margin-bottom: 20px;
-        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.08);
-    }
 
-    .summary-banner-title {
-        background: #eef2ff;
-        border-bottom: 2px solid #c7d2fe;
-        padding: 12px 20px;
-        text-align: center;
-        font-size: 15px;
-        font-weight: 700;
-        color: #3730a3;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-    }
-
-    .summary-cards-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        background: #f8fafc;
-    }
-
-    .summary-stat-box {
-        padding: 16px;
-        text-align: center;
-    }
-
-    .summary-stat-box:first-child {
-        border-right: 1px solid #e2e8f0;
-    }
-
-    .summary-stat-label {
-        font-size: 11px;
-        font-weight: 700;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 5px;
-    }
-
-    .summary-stat-val {
-        font-size: 22px;
-        font-weight: 800;
-    }
 
     /* Table styles matching Üst Kategori & Yemek Çeki */
     .table-container {
@@ -486,23 +435,7 @@
         </div>
     </div>
 
-    <!-- Summary Banner -->
-    <div class="summary-banner">
-        <div class="summary-banner-title">
-            <i class="fas fa-chart-pie"></i>
-            <span>Mutabakat Özeti &nbsp;|&nbsp; Şube: <span id="displayBranchName">{{ sube_display }}</span></span>
-        </div>
-        <div class="summary-cards-grid">
-            <div class="summary-stat-box">
-                <div class="summary-stat-label">Toplam Mutabakat Kaydı</div>
-                <div class="summary-stat-val" id="statCount" style="color: #3730a3;">0 Adet</div>
-            </div>
-            <div class="summary-stat-box">
-                <div class="summary-stat-label">Net Bakiye Toplamı</div>
-                <div class="summary-stat-val" id="statAmount" style="color: #15803d;">0,00 ₺</div>
-            </div>
-        </div>
-    </div>
+
 
     <!-- Table Section -->
     <div class="table-container">
@@ -602,8 +535,6 @@
         loading.style.display = 'flex';
 
         const subeId = getSelectedSubeId();
-        const subeNameEl = document.getElementById('displayBranchName');
-        if (subeNameEl) subeNameEl.textContent = getSelectedSubeName();
 
         let url = `/api/v1/mutabakatlar?limit=1000&sube_id=${subeId}`;
         if (cariId) url += `&cari_id=${cariId}`;
@@ -630,11 +561,6 @@
         const statAmount = document.getElementById('statAmount');
 
         countBadge.textContent = data.length;
-        if (statCount) statCount.textContent = `${data.length} Adet`;
-
-        let totalAmount = 0;
-        data.forEach(m => totalAmount += (parseFloat(m.Tutar) || 0));
-        if (statAmount) statAmount.textContent = fmtTL(totalAmount);
 
         if (data.length === 0) {
             tbody.innerHTML = '';
