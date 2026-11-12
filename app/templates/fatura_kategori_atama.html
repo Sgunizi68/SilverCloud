@@ -81,45 +81,7 @@
         border-color: #cbd5e0;
     }
 
-    .btn-excel {
-        background: #16a34a;
-        color: white;
-        border: none;
-        padding: 10px 18px;
-        border-radius: 8px;
-        font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        cursor: pointer;
-        transition: all 0.2s;
-        font-size: 0.9rem;
-    }
 
-    .btn-excel:hover {
-        background: #15803d;
-        transform: translateY(-1px);
-    }
-
-    .btn-mail {
-        background: #2563eb;
-        color: white;
-        border: none;
-        padding: 10px 18px;
-        border-radius: 8px;
-        font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        cursor: pointer;
-        transition: all 0.2s;
-        font-size: 0.9rem;
-    }
-
-    .btn-mail:hover {
-        background: #1d4ed8;
-        transform: translateY(-1px);
-    }
 
     /* Filter Area */
     .filter-panel {
@@ -404,11 +366,11 @@
             <button class="btn-icon" onclick="window.print()" title="Yazdır">
                 <i class="fas fa-print"></i>
             </button>
-            <button class="btn-excel" id="exportExcelBtn" title="Excel Olarak İndir">
-                <i class="fas fa-file-excel"></i> Excel
+            <button class="btn-icon" id="exportExcelBtn" title="Excel İndir" style="color: #16a34a;">
+                <i class="fas fa-file-excel"></i>
             </button>
-            <button class="btn-mail" data-permission="Mail Gönder" onclick="openReportMailModal({ tableId: 'faturaTable' })" title="E-Posta Gönder">
-                <i class="fas fa-envelope"></i> Mail Gönder
+            <button class="btn-icon" data-permission="Mail Gönder" onclick="openReportMailModal({ tableId: 'faturaTable' })" title="Mail Gönder" style="color: #3b82f6;">
+                <i class="fas fa-envelope"></i>
             </button>
         </div>
     </div>
