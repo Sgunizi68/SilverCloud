@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
-{% set sube_display = (subeler | selectattr("Sube_ID", "equalto", secili_sube_id) | map(attribute="Sube_Adi") | first or 'Tümü') %}
+{% set sube_display = (subeler | selectattr("Sube_ID", "equalto", secili_sube_id) | map(attribute="Sube_Adi") | first or
+'Tümü') %}
 
 {% block title %}Mutabakat Yönetimi - SilverCloud{% endblock %}
 {% block nav_mutabakat %}active{% endblock %}
@@ -409,6 +410,7 @@
     }
 
     @media print {
+
         .hide-on-print,
         .page-header,
         .action-bar,
@@ -458,7 +460,8 @@
             </button>
 
             <!-- Mail Button -->
-            <button class="btn-icon" data-permission="Mail Gönder" onclick="openMutabakatReportMail()" title="Mail Gönder" style="color: #3b82f6;">
+            <button class="btn-icon" data-permission="Mail Gönder" onclick="openMutabakatReportMail()"
+                title="Mail Gönder" style="color: #3b82f6;">
                 <i class="fas fa-envelope"></i>
             </button>
 
@@ -548,8 +551,10 @@
 
         <div class="form-group">
             <label>Tutar (Bakiye ₺) *</label>
-            <input type="number" step="0.01" name="Tutar" id="modalTutarInput" class="form-control" placeholder="0.00" required>
-            <small style="font-size: 0.78rem; color: #64748b; margin-top: 2px;">Anlaşılan net cari bakiyeyi giriniz.</small>
+            <input type="number" step="0.01" name="Tutar" id="modalTutarInput" class="form-control" placeholder="0.00"
+                required>
+            <small style="font-size: 0.78rem; color: #64748b; margin-top: 2px;">Anlaşılan net cari bakiyeyi
+                giriniz.</small>
         </div>
 
         <div class="modal-actions">
