@@ -304,6 +304,7 @@
     }
 
     @media print {
+
         .hide-on-print,
         .page-header,
         .filter-panel,
@@ -356,7 +357,8 @@
                 <i class="fas fa-file-excel"></i>
             </button>
             <!-- Mail Button -->
-            <button class="btn-icon" data-permission="Mail Gönder" onclick="openReportMailModal({ tableId: 'odemeTable' })" title="Mail Gönder" style="color: #3b82f6;">
+            <button class="btn-icon" data-permission="Mail Gönder"
+                onclick="openReportMailModal({ tableId: 'odemeTable' })" title="Mail Gönder" style="color: #3b82f6;">
                 <i class="fas fa-envelope"></i>
             </button>
         </div>
@@ -369,7 +371,7 @@
                 <label>Şube Seçimi</label>
                 <select id="subeSelect" class="filter-select">
                     {% for sube in subeler %}
-                        <option value="{{ sube.Sube_ID }}">{{ sube.Sube_Adi }}</option>
+                    <option value="{{ sube.Sube_ID }}">{{ sube.Sube_Adi }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -445,7 +447,7 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
     let allOdemeler = [];
-    
+
     // Calculate current period YYMM (only as fallback)
     const calculateCurrentPeriod = () => {
         const now = new Date();
@@ -453,7 +455,7 @@
         const monthStr = (now.getMonth() + 1).toString().padStart(2, '0');
         return parseInt(yearStr + monthStr);
     };
-    
+
     const currentPeriod = calculateCurrentPeriod();
 
     async function loadOdemeler() {
@@ -462,7 +464,7 @@
         const body = document.getElementById('odemeTableBody');
         const noData = document.getElementById('noDataMessage');
         const countBadge = document.getElementById('rowCount');
-        
+
         body.innerHTML = '<tr class="loading-row"><td colspan="7"><i class="fas fa-spinner fa-spin"></i> Veriler yükleniyor...</td></tr>';
         noData.style.display = 'none';
         countBadge.textContent = "0";
@@ -477,7 +479,7 @@
                 throw new Error(`HTTP ${resp.status}`);
             }
             allOdemeler = await resp.json();
-            
+
             populatePeriodDropdown(allOdemeler);
             applyFiltersAndRender();
         } catch (err) {
@@ -490,10 +492,10 @@
         // Find unique periods and sort descending (latest first)
         const periods = [...new Set(data.map(o => parseInt(o.Donem)).filter(p => p))].sort((a, b) => b - a);
         const select = document.getElementById('filterDonem');
-        
+
         const currentValue = select.value;
         const isInitialized = select.dataset.initialized === "true";
-        
+
         select.innerHTML = '<option value="">Tüm Dönemler</option>';
         periods.forEach(p => {
             select.innerHTML += `<option value="${p}">${p}</option>`;
@@ -507,7 +509,7 @@
         } else {
             select.value = currentValue;
         }
-        
+
         select.dataset.initialized = "true";
     }
 
@@ -522,9 +524,9 @@
         if (donem && donem !== "") data = data.filter(o => String(o.Donem) === String(donem));
         if (kategoriId && kategoriId !== "") data = data.filter(o => String(o.Kategori_ID) === String(kategoriId));
         if (onlyUncategorized) data = data.filter(o => !o.Kategori_ID);
-        
+
         if (search) {
-            data = data.filter(o => 
+            data = data.filter(o =>
                 (o.Tip || '').toLowerCase().includes(search) ||
                 (o.Hesap_Adi || '').toLowerCase().includes(search) ||
                 (o.Aciklama || '').toLowerCase().includes(search)
@@ -538,7 +540,7 @@
         const tbody = document.getElementById('odemeTableBody');
         const noData = document.getElementById('noDataMessage');
         const countBadge = document.getElementById('rowCount');
-        
+
         countBadge.textContent = data.length;
 
         if (data.length === 0) {
@@ -564,19 +566,19 @@
                     <select class="select-table" onchange="updateRow(${o.Odeme_ID}, 'Kategori_ID', this.value)">
                         <option value="">Seçin...</option>
                         {% for k in kategoriler %}
-                        <option value="{{ k.Kategori_ID }}" ${o.Kategori_ID == {{ k.Kategori_ID }} ? 'selected' : ''}>{{ k.Kategori_Adi }}</option>
-                        {% endfor %}
-                    </select>
-                </td>
-                <td>
-                    <select class="select-table" onchange="updateRow(${o.Odeme_ID}, 'Donem', this.value)">
-                        <option value="">Seçin...</option>
-                        ${rowPeriods.map(p => `
+                        <option value="{{ k.Kategori_ID }}" ${o.Kategori_ID == {{ k.Kategori_ID }} ?'selected' : ''}> {{ k.Kategori_Adi }}</option >
+        {% endfor %}
+                    </select >
+                </td >
+        <td>
+            <select class="select-table" onchange="updateRow(${o.Odeme_ID}, 'Donem', this.value)">
+                <option value="">Seçin...</option>
+                ${rowPeriods.map(p => `
                             <option value="${p}" ${o.Donem == p ? 'selected' : ''}>${p}</option>
                         `).join('')}
-                    </select>
-                </td>
-            </tr>
+            </select>
+        </td>
+            </tr >
         `).join('');
     }
 
@@ -587,7 +589,7 @@
         }
 
         try {
-            const resp = await fetch(`/api/v1/odemeler/${id}`, {
+            const resp = await fetch(`/ api / v1 / odemeler / ${ id } `, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -597,7 +599,7 @@
                 const o = allOdemeler.find(x => x.Odeme_ID === id);
                 if (o) {
                     o[field] = value ? parseInt(value) : null;
-                    const row = document.getElementById(`row-${id}`);
+                    const row = document.getElementById(`row - ${ id } `);
                     if (row) {
                         if (field === 'Kategori_ID') {
                             if (!value) row.classList.add('row-uncategorized');
@@ -652,7 +654,7 @@
         })));
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Odemeler");
-        XLSX.writeFile(wb, `SilverCloud_Odemeler_${donem || 'Hepsi'}.xlsx`);
+        XLSX.writeFile(wb, `SilverCloud_Odemeler_${ donem || 'Hepsi' }.xlsx`);
     });
 
     // Event Listeners
