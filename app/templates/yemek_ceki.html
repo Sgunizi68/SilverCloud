@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
-{% set sube_display = (subeler | selectattr("Sube_ID", "equalto", secili_sube_id) | map(attribute="Sube_Adi") | first or 'Tümü') %}
+{% set sube_display = (subeler | selectattr("Sube_ID", "equalto", secili_sube_id) | map(attribute="Sube_Adi") | first or
+'Tümü') %}
 
 {% block title %}Yemek Çeki - SilverCloud{% endblock %}
 {% block nav_yemek_ceki %}active{% endblock %}
@@ -407,6 +408,7 @@
     }
 
     @media print {
+
         .hide-on-print,
         .page-header,
         .action-bar,
@@ -456,7 +458,8 @@
             </button>
 
             <!-- Mail Button -->
-            <button class="btn-icon" data-permission="Mail Gönder" onclick="openYemekCekiReportMail()" title="Mail Gönder" style="color: #3b82f6;">
+            <button class="btn-icon" data-permission="Mail Gönder" onclick="openYemekCekiReportMail()"
+                title="Mail Gönder" style="color: #3b82f6;">
                 <i class="fas fa-envelope"></i>
             </button>
 
@@ -469,14 +472,14 @@
             <!-- Period Select -->
             <select class="control-select" id="filterDonem" onchange="onDonemChange(this.value)">
                 {% for d in donem_listesi %}
-                <option value="{{ d }}" {% if d == secili_donem %}selected{% endif %}>
+                <option value="{{ d }}" {% if d==secili_donem %}selected{% endif %}>
                     {{ d }} &ndash;
                     {%- set yy = (d // 100) %}
                     {%- set mm = (d % 100) %}
-                    {%- set ay_adlari = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'] %}
-                    {{ ay_adlari[mm - 1] if mm >= 1 and mm <= 12 else '' }} {{ 2000 + yy }}
-                </option>
-                {% endfor %}
+                    {%- set ay_adlari = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas',
+                    'Ara'] %}
+                    {{ ay_adlari[mm - 1] if mm >= 1 and mm <= 12 else '' }} {{ 2000 + yy }} </option>
+                        {% endfor %}
             </select>
 
             <!-- New Button -->
@@ -501,7 +504,7 @@
                 <div class="summary-stat-label">Toplam Tutar</div>
                 {% set ns = namespace(total=0) %}
                 {% for item in cekiler %}
-                    {% set ns.total = ns.total + item.Tutar %}
+                {% set ns.total = ns.total + item.Tutar %}
                 {% endfor %}
                 <div class="summary-stat-val" id="statAmount" style="color: #15803d;">
                     {{ '{:,.2f}'.format(ns.total) }} ₺
@@ -536,7 +539,8 @@
                     <td class="cell-mono">{{ item.Son_Tarih }}</td>
                     <td style="text-align: center;">
                         {% if item.has_imaj %}
-                        <a href="#" class="image-link" data-imaj-id="{{ item.ID }}" onclick="viewImageDeferred('{{ item.ID }}', '{{ item.Imaj_Adi }}', this); return false;">
+                        <a href="#" class="image-link" data-imaj-id="{{ item.ID }}"
+                            onclick="viewImageDeferred('{{ item.ID }}', '{{ item.Imaj_Adi }}', this); return false;">
                             <i class="fas fa-image"></i> Görüntüle
                         </a>
                         {% else %}
@@ -545,10 +549,11 @@
                     </td>
                     <td style="text-align: right;" class="hide-on-print">
                         <div class="actions-cell">
-                            <button class="btn-row-action btn-edit" data-id="{{ item.ID }}" data-kat="{{ item.Kategori_ID }}"
-                                data-tarih="{{ item.Tarih }}" data-tutar="{{ item.Tutar }}"
-                                data-odeme="{{ item.Odeme_Tarih }}" data-ilk="{{ item.Ilk_Tarih }}"
-                                data-son="{{ item.Son_Tarih }}" onclick="openEditModal(this)" title="Düzenle">
+                            <button class="btn-row-action btn-edit" data-id="{{ item.ID }}"
+                                data-kat="{{ item.Kategori_ID }}" data-tarih="{{ item.Tarih }}"
+                                data-tutar="{{ item.Tutar }}" data-odeme="{{ item.Odeme_Tarih }}"
+                                data-ilk="{{ item.Ilk_Tarih }}" data-son="{{ item.Son_Tarih }}"
+                                onclick="openEditModal(this)" title="Düzenle">
                                 <i class="fas fa-pencil-alt"></i>
                             </button>
                             <button class="btn-row-action btn-delete" data-id="{{ item.ID }}"
@@ -561,7 +566,8 @@
                 {% else %}
                 <tr class="empty-row">
                     <td colspan="8" style="text-align: center; color: var(--text-gray); padding: 40px;">
-                        <i class="fas fa-ticket-alt" style="font-size: 32px; display: block; margin-bottom: 12px; opacity: 0.4;"></i>
+                        <i class="fas fa-ticket-alt"
+                            style="font-size: 32px; display: block; margin-bottom: 12px; opacity: 0.4;"></i>
                         Kayıt bulunamadı.
                     </td>
                 </tr>
@@ -639,7 +645,7 @@
         if (typeof XLSX === 'undefined') return null;
         const wb = XLSX.utils.book_new();
         const headers = ['KATEGORİ', 'TARİH', 'TUTAR (TL)', 'ÖDEME TARİHİ', 'İLK TARİH', 'SON TARİH'];
-        
+
         let totalAmount = 0;
         const rows = YEMEK_CEKILERI_DATA.map(item => {
             totalAmount += (item.Tutar || 0);
@@ -850,7 +856,7 @@
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         btn.style.opacity = '0.7';
         btn.style.pointerEvents = 'none';
-        
+
         try {
             let data;
             if (window.fetchingImages[id]) {

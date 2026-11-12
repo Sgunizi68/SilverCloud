@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
+{% set sube_display = (subeler | selectattr("Sube_ID", "equalto", secili_sube_id) | map(attribute="Sube_Adi") | first or 'Tümü') %}
+
 {% block title %}Mutabakat Yönetimi - SilverCloud{% endblock %}
 {% block nav_mutabakat %}active{% endblock %}
 {% block acc_fatura_harcama %}active{% endblock %}
@@ -7,178 +9,311 @@
 
 {% block extra_style %}
 <style>
-    .ref-page-container {
-        padding: 20px;
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.95);
+        --glass-border: rgba(255, 255, 255, 0.3);
+        --accent-color: #667eea;
+        --text-dark: #2d3748;
+        --text-gray: #718096;
     }
 
-    .card-glass {
-        background: rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(8px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
+    .main-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
         border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-        margin-bottom: 20px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        padding: 24px;
+        margin-bottom: 24px;
     }
 
-    .header-bar {
+    .page-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 15px 20px;
+        margin-bottom: 24px;
+        gap: 16px;
         flex-wrap: wrap;
-        gap: 15px;
     }
 
-    .header-title {
-        font-size: 16px;
+    .page-title {
+        font-size: 1.25rem;
         font-weight: 700;
-        color: #1e293b;
+        color: var(--text-dark);
         margin: 0;
         display: flex;
         align-items: center;
         gap: 10px;
     }
 
-    .header-title i {
-        color: #3b82f6;
+    .badge-count {
+        background: #e2e8f0;
+        color: #475569;
+        padding: 2px 9px;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        letter-spacing: 0;
     }
 
-    .header-actions {
+    .action-bar {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
+        flex-wrap: wrap;
     }
 
-    .action-btn {
-        padding: 8px 14px;
+    .search-container {
+        position: relative;
+        min-width: 240px;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 10px 16px 10px 40px;
+        border-radius: 8px;
         border: 1px solid #e2e8f0;
-        border-radius: 6px;
+        outline: none;
+        transition: all 0.2s;
+        font-size: 0.9rem;
         background: white;
+        box-sizing: border-box;
+    }
+
+    .search-input:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-gray);
         font-size: 13px;
-        font-weight: 500;
-        color: #475569;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
+    }
+
+    .control-select {
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        font-size: 0.9rem;
+        outline: none;
+        min-width: 180px;
+        color: #334155;
         transition: all 0.2s;
     }
 
-    .action-btn:hover {
-        background: #f8fafc;
-        border-color: #cbd5e1;
-        color: #334155;
+    .control-select:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
 
-    .action-btn.primary {
-        background: #3b82f6;
-        color: white;
-        border-color: #3b82f6;
-        font-weight: 600;
-    }
-
-    .toolbar-input {
-        padding: 8px 12px;
+    .btn-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
         border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        font-size: 13px;
-        outline: none;
         background: white;
-        color: #475569;
-        min-width: 180px;
+        color: var(--text-dark);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.95rem;
     }
 
-    /* Table styling */
-    .ref-table-wrapper {
-        padding: 0;
+    .btn-icon:hover {
+        background: #f7fafc;
+        border-color: #cbd5e0;
+    }
+
+    .btn-new {
+        background: var(--accent-color);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        transition: transform 0.2s, background 0.2s;
+        font-size: 0.9rem;
+        white-space: nowrap;
+    }
+
+    .btn-new:hover {
+        background: #5a67d8;
+        transform: translateY(-1px);
+    }
+
+    /* Summary Banner */
+    .summary-banner {
+        background: #ffffff;
+        border: 2px solid #6366f1;
+        border-radius: 10px;
         overflow: hidden;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.08);
+    }
+
+    .summary-banner-title {
+        background: #eef2ff;
+        border-bottom: 2px solid #c7d2fe;
+        padding: 12px 20px;
+        text-align: center;
+        font-size: 15px;
+        font-weight: 700;
+        color: #3730a3;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .summary-cards-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        background: #f8fafc;
+    }
+
+    .summary-stat-box {
+        padding: 16px;
+        text-align: center;
+    }
+
+    .summary-stat-box:first-child {
+        border-right: 1px solid #e2e8f0;
+    }
+
+    .summary-stat-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 5px;
+    }
+
+    .summary-stat-val {
+        font-size: 22px;
+        font-weight: 800;
+    }
+
+    /* Table styles matching Üst Kategori & Yemek Çeki */
+    .table-container {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        overflow-x: auto;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        background: #ffffff;
         position: relative;
     }
 
-    .ref-table {
+    .data-table {
         width: 100%;
         border-collapse: collapse;
     }
 
-    .ref-table th {
-        background: #fdfdfd;
-        color: #64748b;
-        font-size: 11px;
-        font-weight: 600;
-        padding: 12px 20px;
-        text-align: left;
-        border-bottom: 1px solid #e2e8f0;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+    .data-table thead tr {
+        background: #1e293b;
     }
 
-    .ref-table td {
-        padding: 10px 20px;
-        color: #475569;
-        font-size: 13px;
+    .data-table th {
+        background: #1e293b;
+        color: #ffffff;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 9px 14px;
+        text-align: left;
+        border-bottom: 2px solid #0f172a;
+        white-space: nowrap;
+    }
+
+    .data-table td {
+        padding: 8px 14px;
+        color: #1e293b;
+        font-size: 0.86rem;
         border-bottom: 1px solid #e2e8f0;
         vertical-align: middle;
+        white-space: nowrap;
     }
 
-    .ref-table tr:hover {
+    .data-table tbody tr:nth-child(even) td {
         background-color: #f8fafc;
     }
 
-    .cell-bold {
-        color: #334155;
-        font-weight: 600;
+    .data-table tbody tr:hover td {
+        background-color: #eff6ff !important;
     }
 
-    .text-right {
-        text-align: right !important;
+    .cell-bold {
+        font-weight: 600;
+        color: #0f172a;
+    }
+
+    .cell-mono {
+        font-family: 'SFMono-Regular', Consolas, monospace;
+        color: #64748b;
+        font-size: 0.82rem;
     }
 
     .amount-cell {
-        font-family: inherit;
+        font-family: 'SFMono-Regular', Consolas, monospace;
         font-weight: 700;
+        text-align: right;
     }
 
     .amount-positive {
-        color: #059669;
+        color: #15803d;
     }
 
     .amount-negative {
-        color: #dc2626;
+        color: #b91c1c;
     }
 
-    .action-icons {
-        display: flex;
-        gap: 6px;
-        justify-content: flex-end;
-    }
-
-    .icon-btn {
+    .btn-row-action {
         width: 28px;
         height: 28px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        background: transparent;
-        border: 1px solid #e2e8f0;
         border-radius: 6px;
+        border: 1px solid transparent;
         cursor: pointer;
         transition: all 0.2s;
-        color: #64748b;
+        font-size: 0.82rem;
     }
 
-    .icon-btn.edit:hover {
-        background: #eff6ff;
-        border-color: #bfdbfe;
-        color: #3b82f6;
+    .btn-edit {
+        background: #ebf4ff;
+        color: #3182ce;
     }
 
-    .icon-btn.delete {
+    .btn-edit:hover {
+        background: #bee3f8;
+    }
+
+    .btn-delete {
+        background: #fee2e2;
         color: #ef4444;
-        border-color: #fca5a5;
     }
 
-    .icon-btn.delete:hover {
-        background: #fef2f2;
+    .btn-delete:hover {
+        background: #fecaca;
+    }
+
+    .actions-cell {
+        display: flex;
+        gap: 6px;
+        justify-content: flex-end;
     }
 
     .loading-overlay {
@@ -194,9 +329,10 @@
         z-index: 10;
     }
 
-    #noDataMessage {
-        padding: 60px;
+    .no-data-msg {
+        display: none;
         text-align: center;
+        padding: 50px 20px;
         color: #94a3b8;
     }
 
@@ -204,72 +340,180 @@
     .form-group {
         display: flex;
         flex-direction: column;
-        gap: 5px;
-        margin-bottom: 15px;
+        gap: 6px;
+        margin-bottom: 14px;
     }
 
     .form-group label {
-        font-size: 13px;
+        font-size: 0.82rem;
         font-weight: 600;
         color: #475569;
     }
 
-    .input-glass {
+    .form-control {
+        width: 100%;
         padding: 9px 12px;
         border: 1px solid #cbd5e1;
         border-radius: 6px;
-        font-size: 14px;
+        font-size: 0.9rem;
         outline: none;
-        width: 100%;
         box-sizing: border-box;
+        background: white;
+        transition: border-color 0.2s;
     }
 
-    .input-glass:focus {
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    .form-control:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.15);
+    }
+
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 20px;
+        padding-top: 15px;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .btn-secondary {
+        background: #e2e8f0;
+        color: #475569;
+        border: none;
+        padding: 9px 16px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.88rem;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .btn-secondary:hover {
+        background: #cbd5e1;
+    }
+
+    .btn-primary {
+        background: var(--accent-color);
+        color: white;
+        border: none;
+        padding: 9px 18px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.88rem;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .btn-primary:hover {
+        background: #5a67d8;
+    }
+
+    @media print {
+        .hide-on-print,
+        .page-header,
+        .action-bar,
+        .actions-cell,
+        th:last-child,
+        td:last-child {
+            display: none !important;
+        }
+
+        .main-card {
+            box-shadow: none !important;
+            border: none !important;
+            padding: 0 !important;
+        }
+
+        .table-container {
+            border: 1px solid #000 !important;
+        }
+
+        .data-table th {
+            background: #f1f5f9 !important;
+            color: #000 !important;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="ref-page-container">
-
+<div class="main-card">
     <!-- Header Bar -->
-    <div class="card-glass header-bar">
-        <h1 class="header-title">
-            <i class="fas fa-handshake"></i>
-            Mutabakat Yönetimi
-        </h1>
+    <div class="page-header">
+        <h2 class="page-title">
+            <i class="fas fa-handshake" style="color: var(--accent-color);"></i>
+            <span>Mutabakat Yönetimi</span>
+            <span class="badge-count" id="rowCount">0</span>
+        </h2>
 
-        <div class="header-actions">
-            <input type="text" id="filterSearch" class="toolbar-input" placeholder="Firma adı ile ara...">
+        <div class="action-bar">
+            <!-- Print Button -->
+            <button class="btn-icon" onclick="window.print()" title="Yazdır">
+                <i class="fas fa-print"></i>
+            </button>
 
-            <select id="filterCari" class="toolbar-input">
+            <!-- Excel Button -->
+            <button class="btn-icon" onclick="exportMutabakatExcel()" title="Excel İndir" style="color: #16a34a;">
+                <i class="fas fa-file-excel"></i>
+            </button>
+
+            <!-- Mail Button -->
+            <button class="btn-icon" data-permission="Mail Gönder" onclick="openMutabakatReportMail()" title="Mail Gönder" style="color: #3b82f6;">
+                <i class="fas fa-envelope"></i>
+            </button>
+
+            <!-- Search Area -->
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="filterSearch" class="search-input" placeholder="Firma adı ile ara...">
+            </div>
+
+            <!-- Cari Select -->
+            <select id="filterCari" class="control-select">
                 <option value="">Tüm Firmalar</option>
                 {% for c in cariler %}
                 <option value="{{ c.Cari_ID }}">{{ c.Alici_Unvani }}</option>
                 {% endfor %}
             </select>
 
-            <button class="action-btn primary" onclick="openCreateModal()">
+            <!-- New Button -->
+            <button class="btn-new" onclick="openCreateModal()">
                 <i class="fas fa-plus"></i> Yeni Kayıt
             </button>
         </div>
     </div>
 
+    <!-- Summary Banner -->
+    <div class="summary-banner">
+        <div class="summary-banner-title">
+            <i class="fas fa-chart-pie"></i>
+            <span>Mutabakat Özeti &nbsp;|&nbsp; Şube: <span id="displayBranchName">{{ sube_display }}</span></span>
+        </div>
+        <div class="summary-cards-grid">
+            <div class="summary-stat-box">
+                <div class="summary-stat-label">Toplam Mutabakat Kaydı</div>
+                <div class="summary-stat-val" id="statCount" style="color: #3730a3;">0 Adet</div>
+            </div>
+            <div class="summary-stat-box">
+                <div class="summary-stat-label">Net Bakiye Toplamı</div>
+                <div class="summary-stat-val" id="statAmount" style="color: #15803d;">0,00 ₺</div>
+            </div>
+        </div>
+    </div>
+
     <!-- Table Section -->
-    <div class="card-glass ref-table-wrapper">
+    <div class="table-container">
         <div class="loading-overlay" id="tableLoading">
-            <i class="fas fa-circle-notch fa-spin fa-2x" style="color: #3b82f6"></i>
+            <i class="fas fa-circle-notch fa-spin fa-2x" style="color: var(--accent-color);"></i>
         </div>
 
-        <table class="ref-table">
+        <table class="data-table" id="mutabakatTable">
             <thead>
                 <tr>
-                    <th style="width: 40%">CARİ ÜNVANI</th>
-                    <th style="width: 25%">MUTABAKAT TARİHİ</th>
-                    <th style="width: 20%" class="text-right">BAKİYE (TUTAR)</th>
-                    <th style="width: 15%" class="text-right">İŞLEMLER</th>
+                    <th style="min-width: 250px;">CARİ ÜNVANI</th>
+                    <th style="width: 140px;">MUTABAKAT TARİHİ</th>
+                    <th style="width: 160px; text-align: right;">BAKİYE (TUTAR)</th>
+                    <th style="width: 90px; text-align: right;" class="hide-on-print">İŞLEMLER</th>
                 </tr>
             </thead>
             <tbody id="mutabakatTableBody">
@@ -277,20 +521,19 @@
             </tbody>
         </table>
 
-        <div id="noDataMessage" style="display: none;">
-            <i class="fas fa-search fa-2x" style="margin-bottom: 10px; display: block;"></i>
-            <p>Kayıt bulunamadı.</p>
+        <div id="noDataMessage" class="no-data-msg">
+            <i class="fas fa-search" style="font-size: 2.2rem; display: block; margin-bottom: 12px; opacity: 0.4;"></i>
+            Kayıt bulunamadı.
         </div>
     </div>
-
 </div>
 
 <!-- Create/Edit Modal Content Template -->
 <template id="mutabakatModalTpl">
     <form id="mutabakatForm">
         <div class="form-group">
-            <label>Firma (Cari)</label>
-            <select name="Cari_ID" id="modalCariSelect" class="input-glass" required>
+            <label>Firma (Cari) *</label>
+            <select name="Cari_ID" id="modalCariSelect" class="form-control" required>
                 <option value="">Firma Seçiniz...</option>
                 {% for c in cariler %}
                 <option value="{{ c.Cari_ID }}">{{ c.Alici_Unvani }}</option>
@@ -299,30 +542,26 @@
         </div>
 
         <div class="form-group">
-            <label>Mutabakat Tarihi</label>
-            <input type="date" name="Mutabakat_Tarihi" id="modalDateInput" class="input-glass" required>
+            <label>Mutabakat Tarihi *</label>
+            <input type="date" name="Mutabakat_Tarihi" id="modalDateInput" class="form-control" required>
         </div>
 
         <div class="form-group">
-            <label>Tutar (Bakiye)</label>
-            <div style="position: relative;">
-                <input type="number" step="0.01" name="Tutar" id="modalTutarInput" class="input-glass"
-                    style="padding-right: 40px;" required>
-                <span style="position: absolute; right: 12px; top: 10px; color: #94a3b8; font-weight: 600;">₺</span>
-            </div>
-            <p style="font-size: 11px; color: #64748b; margin-top: 4px; margin-bottom: 0;">Anlaşılan net cari bakiyeyi
-                giriniz.</p>
+            <label>Tutar (Bakiye ₺) *</label>
+            <input type="number" step="0.01" name="Tutar" id="modalTutarInput" class="form-control" placeholder="0.00" required>
+            <small style="font-size: 0.78rem; color: #64748b; margin-top: 2px;">Anlaşılan net cari bakiyeyi giriniz.</small>
         </div>
 
-        <div style="margin-top: 25px; text-align: right; display: flex; gap: 10px; justify-content: flex-end;">
-            <button type="button" class="action-btn" onclick="hideModal()">İptal</button>
-            <button type="submit" class="action-btn primary">Kaydet</button>
+        <div class="modal-actions">
+            <button type="button" class="btn-secondary" onclick="hideModal()">İptal</button>
+            <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Kaydet</button>
         </div>
     </form>
 </template>
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
     const branchSelect = document.getElementById('branch-select');
     let allMutabakatlar = [];
@@ -333,6 +572,23 @@
         return branchSelect ? branchSelect.value : "{{ secili_sube_id }}";
     }
 
+    function getSelectedSubeName() {
+        if (branchSelect && branchSelect.selectedIndex >= 0) {
+            return branchSelect.options[branchSelect.selectedIndex].text;
+        }
+        return "{{ sube_display }}";
+    }
+
+    function fmtTL(val) {
+        return new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val || 0) + ' ₺';
+    }
+
+    function formatDate(str) {
+        if (!str) return '';
+        const d = new Date(str);
+        return d.toLocaleDateString('tr-TR');
+    }
+
     async function loadMutabakatlar() {
         const cariId = document.getElementById('filterCari').value;
         const search = document.getElementById('filterSearch').value.trim();
@@ -341,6 +597,9 @@
         loading.style.display = 'flex';
 
         const subeId = getSelectedSubeId();
+        const subeNameEl = document.getElementById('displayBranchName');
+        if (subeNameEl) subeNameEl.textContent = getSelectedSubeName();
+
         let url = `/api/v1/mutabakatlar?limit=1000&sube_id=${subeId}`;
         if (cariId) url += `&cari_id=${cariId}`;
         if (search) url += `&search=${encodeURIComponent(search)}`;
@@ -352,11 +611,7 @@
             renderTable(allMutabakatlar);
         } catch (err) {
             console.error(err);
-            if (typeof showToast === 'function') {
-                showToast('Veriler yüklenirken hata oluştu', 'error');
-            } else {
-                alert('Veriler yüklenirken hata oluştu');
-            }
+            showToast('Veriler yüklenirken hata oluştu', 'error');
         } finally {
             loading.style.display = 'none';
         }
@@ -365,6 +620,16 @@
     function renderTable(data) {
         const tbody = document.getElementById('mutabakatTableBody');
         const noData = document.getElementById('noDataMessage');
+        const countBadge = document.getElementById('rowCount');
+        const statCount = document.getElementById('statCount');
+        const statAmount = document.getElementById('statAmount');
+
+        countBadge.textContent = data.length;
+        if (statCount) statCount.textContent = `${data.length} Adet`;
+
+        let totalAmount = 0;
+        data.forEach(m => totalAmount += (parseFloat(m.Tutar) || 0));
+        if (statAmount) statAmount.textContent = fmtTL(totalAmount);
 
         if (data.length === 0) {
             tbody.innerHTML = '';
@@ -375,17 +640,17 @@
         noData.style.display = 'none';
         tbody.innerHTML = data.map(m => `
             <tr>
-                <td class="cell-bold">${m.Alici_Unvani}</td>
-                <td style="color: #64748b;">${formatDate(m.Mutabakat_Tarihi)}</td>
-                <td class="text-right cell-bold amount-cell ${m.Tutar >= 0 ? 'amount-positive' : 'amount-negative'}">
-                    ${formatCurrency(m.Tutar)}
+                <td class="cell-bold">${m.Alici_Unvani || '-'}</td>
+                <td class="cell-mono">${formatDate(m.Mutabakat_Tarihi)}</td>
+                <td class="amount-cell ${m.Tutar >= 0 ? 'amount-positive' : 'amount-negative'}">
+                    ${fmtTL(m.Tutar)}
                 </td>
-                <td class="text-right">
-                    <div class="action-icons">
-                        <button class="icon-btn edit" title="Düzenle" onclick="openEditModal(${m.Mutabakat_ID})">
-                            <i class="fas fa-edit"></i>
+                <td class="hide-on-print">
+                    <div class="actions-cell">
+                        <button class="btn-row-action btn-edit" title="Düzenle" onclick="openEditModal(${m.Mutabakat_ID})">
+                            <i class="fas fa-pencil-alt"></i>
                         </button>
-                        <button class="icon-btn delete" title="Sil" onclick="deleteMutabakat(${m.Mutabakat_ID})">
+                        <button class="btn-row-action btn-delete" title="Sil" onclick="deleteMutabakat(${m.Mutabakat_ID})">
                             <i class="fas fa-trash-alt"></i>
                         </button>
                     </div>
@@ -399,7 +664,6 @@
         const tpl = document.getElementById('mutabakatModalTpl').innerHTML;
         showModal('Yeni Mutabakat Kaydı', tpl);
 
-        // Auto-set today date
         const dateInput = document.getElementById('modalDateInput');
         if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
 
@@ -428,7 +692,6 @@
             const formData = new FormData(form);
             const payload = Object.fromEntries(formData.entries());
 
-            // Add Sube_ID automatically
             payload.Sube_ID = getSelectedSubeId();
 
             const isEdit = !!currentEditId;
@@ -443,15 +706,15 @@
                 });
 
                 if (resp.ok) {
-                    if (typeof showToast === 'function') showToast(currentEditId ? 'Kayıt güncellendi' : 'Kayıt oluşturuldu');
+                    showToast(currentEditId ? 'Kayıt güncellendi' : 'Kayıt oluşturuldu');
                     hideModal();
                     loadMutabakatlar();
                 } else {
                     const err = await resp.json();
-                    alert(err.error || 'Hata oluştu');
+                    showToast(err.error || 'Hata oluştu', 'error');
                 }
             } catch (err) {
-                alert('Bağlantı hatası');
+                showToast('Bağlantı hatası', 'error');
             }
         };
     }
@@ -462,24 +725,162 @@
         try {
             const resp = await fetch(`/api/v1/mutabakatlar/${id}`, { method: 'DELETE' });
             if (resp.ok) {
-                if (typeof showToast === 'function') showToast('Kayıt silindi');
+                showToast('Kayıt silindi');
                 loadMutabakatlar();
             } else {
-                alert('Silme işlemi başarısız');
+                showToast('Silme işlemi başarısız', 'error');
             }
         } catch (err) {
-            alert('Bağlantı hatası');
+            showToast('Bağlantı hatası', 'error');
         }
     }
 
-    function formatCurrency(val) {
-        return new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2 }).format(val) + ' ₺';
+    // Excel Export
+    function buildMutabakatWorkbook() {
+        if (typeof XLSX === 'undefined') return null;
+        const wb = XLSX.utils.book_new();
+        const headers = ['CARİ ÜNVANI', 'MUTABAKAT TARİHİ', 'BAKİYE (TUTAR)'];
+
+        let totalAmount = 0;
+        const rows = allMutabakatlar.map(m => {
+            totalAmount += (parseFloat(m.Tutar) || 0);
+            return [
+                m.Alici_Unvani || '',
+                m.Mutabakat_Tarihi ? formatDate(m.Mutabakat_Tarihi) : '',
+                parseFloat(m.Tutar) || 0
+            ];
+        });
+
+        const sheetData = [
+            ['MUTABAKAT YÖNETİMİ RAPORU'],
+            ['Şube:', getSelectedSubeName()],
+            ['Toplam Kayıt:', allMutabakatlar.length],
+            ['Toplam Bakiye:', totalAmount],
+            ['Rapor Tarihi:', new Date().toLocaleString('tr-TR')],
+            [],
+            headers,
+            ...rows
+        ];
+
+        const ws = XLSX.utils.aoa_to_sheet(sheetData);
+        ws['!cols'] = [
+            { wch: 35 },
+            { wch: 18 },
+            { wch: 20 }
+        ];
+
+        XLSX.utils.book_append_sheet(wb, ws, 'Mutabakat');
+        return wb;
     }
 
-    function formatDate(str) {
-        if (!str) return '';
-        const d = new Date(str);
-        return d.toLocaleDateString('tr-TR');
+    function exportMutabakatExcel() {
+        const wb = buildMutabakatWorkbook();
+        if (!wb) {
+            showToast('Excel kütüphanesi yüklenemedi.', 'error');
+            return;
+        }
+        XLSX.writeFile(wb, `SilverCloud_Mutabakat_${new Date().toISOString().split('T')[0]}.xlsx`);
+    }
+
+    function getMutabakatReportExcelBase64() {
+        const wb = buildMutabakatWorkbook();
+        if (!wb) return null;
+        return XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+    }
+
+    function getMutabakatReportMailHtml() {
+        const totalCount = allMutabakatlar.length;
+        let totalAmount = 0;
+        let rowsHtml = '';
+
+        if (totalCount === 0) {
+            rowsHtml = `
+                <tr>
+                    <td colspan="3" align="center" bgcolor="#ffffff" style="padding: 24px; text-align: center; color: #64748b; font-size: 13px; border-bottom: 1px solid #e2e8f0;">
+                        Mutabakat kaydı bulunamadı.
+                    </td>
+                </tr>
+            `;
+        } else {
+            rowsHtml = allMutabakatlar.map((m, idx) => {
+                totalAmount += (parseFloat(m.Tutar) || 0);
+                const bg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
+                const isPos = (parseFloat(m.Tutar) || 0) >= 0;
+                return `
+                    <tr bgcolor="${bg}" style="background-color: ${bg};">
+                        <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; font-weight: 600; color: #0f172a; border-bottom: 1px solid #e2e8f0;">
+                            ${m.Alici_Unvani || ''}
+                        </td>
+                        <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; font-family: monospace; color: #64748b; border-bottom: 1px solid #e2e8f0;">
+                            ${m.Mutabakat_Tarihi ? formatDate(m.Mutabakat_Tarihi) : '-'}
+                        </td>
+                        <td align="right" bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; font-family: monospace; font-weight: 700; color: ${isPos ? '#15803d' : '#b91c1c'}; text-align: right; border-bottom: 1px solid #e2e8f0;">
+                            ${fmtTL(m.Tutar)}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        const now = new Date().toLocaleString('tr-TR');
+
+        return `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 750px; margin: 0 auto; color: #1e293b;">
+                <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: #ffffff; padding: 24px; border-radius: 8px 8px 0 0;">
+                    <h2 style="margin: 0 0 6px 0; font-size: 20px; font-weight: 700; color: #ffffff;">SilverCloud &bull; Mutabakat Raporu</h2>
+                    <p style="margin: 0; font-size: 13px; color: #e0e7ff;">
+                        <strong>Şube:</strong> ${getSelectedSubeName()} &nbsp;|&nbsp;
+                        <strong>Tarih:</strong> ${now}
+                    </p>
+                </div>
+
+                <!-- ÖZET KARTLARI -->
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; margin-top: 16px; margin-bottom: 16px; border: 2px solid #6366f1; border-radius: 8px; overflow: hidden; background-color: #ffffff;">
+                    <tr>
+                        <td colspan="2" bgcolor="#eef2ff" style="padding: 10px 16px; background-color: #eef2ff; border-bottom: 2px solid #c7d2fe; text-align: center; font-size: 13px; font-weight: bold; color: #3730a3;">
+                            Mutabakat Özeti
+                        </td>
+                    </tr>
+                    <tr>
+                        <td width="50%" align="center" bgcolor="#f8fafc" style="padding: 14px 10px; background-color: #f8fafc; border-right: 1px solid #e2e8f0; text-align: center;">
+                            <div style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Toplam Kayıt</div>
+                            <div style="font-size: 20px; font-weight: 800; color: #312e81;">${totalCount} Adet</div>
+                        </td>
+                        <td width="50%" align="center" bgcolor="#f8fafc" style="padding: 14px 10px; background-color: #f8fafc; text-align: center;">
+                            <div style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">Net Bakiye Toplamı</div>
+                            <div style="font-size: 20px; font-weight: 800; color: #15803d;">${fmtTL(totalAmount)}</div>
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- TABLO -->
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; margin-bottom: 16px; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; background-color: #ffffff;">
+                    <thead>
+                        <tr bgcolor="#1e293b" style="background-color: #1e293b;">
+                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a;">CARİ ÜNVANI</th>
+                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a; width: 140px;">MUTABAKAT TARİHİ</th>
+                            <th align="right" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: right; text-transform: uppercase; border-bottom: 2px solid #0f172a; width: 160px;">BAKİYE (TUTAR)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHtml}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    function openMutabakatReportMail() {
+        if (typeof openReportMailModal === 'function') {
+            openReportMailModal({
+                title: 'Mutabakat Yönetimi Raporu',
+                filename: `SilverCloud_Mutabakat_${new Date().toISOString().split('T')[0]}.xlsx`,
+                getHtml: getMutabakatReportMailHtml,
+                getExcelBase64: getMutabakatReportExcelBase64
+            });
+        } else {
+            showToast('Mail servisi başlatılamadı.', 'error');
+        }
     }
 
     // Debounce search
