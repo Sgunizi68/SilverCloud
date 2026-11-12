@@ -7,141 +7,282 @@
 
 {% block extra_style %}
 <style>
-    .atama-container {
-        padding: 20px;
-        max-width: 100%;
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.95);
+        --glass-border: rgba(255, 255, 255, 0.3);
+        --accent-color: #667eea;
+        --text-dark: #2d3748;
+        --text-gray: #718096;
     }
 
-    .card-glass {
-        background: rgba(255, 255, 255, 0.9);
+    .main-card {
+        background: var(--glass-bg);
         backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.4);
-        border-radius: 16px;
-        padding: 20px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
         margin-bottom: 20px;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+
+    .page-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-dark);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .badge-count {
+        background: #e2e8f0;
+        color: #475569;
+        padding: 2px 9px;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        letter-spacing: 0;
+    }
+
+    .action-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .btn-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        color: var(--text-dark);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.95rem;
+    }
+
+    .btn-icon:hover {
+        background: #f7fafc;
+        border-color: #cbd5e0;
+    }
+
+    /* Filter Area */
+    .filter-panel {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 16px 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     }
 
     .filter-row {
         display: flex;
         flex-wrap: wrap;
-        gap: 12px;
-        margin-bottom: 15px;
+        gap: 14px;
         align-items: flex-end;
     }
 
     .filter-group {
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 6px;
         flex: 1;
-        min-width: 160px;
+        min-width: 170px;
     }
 
     .filter-group label {
-        font-size: 12px;
+        font-size: 0.78rem;
         font-weight: 600;
-        color: #475569;
+        color: var(--text-gray);
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
     }
 
-    .form-control {
+    .search-container {
+        position: relative;
         width: 100%;
-        padding: 7px 10px;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 8px 12px 8px 34px;
+        border-radius: 6px;
         border: 1px solid #cbd5e1;
-        border-radius: 7px;
-        font-size: 13px;
-        background: white;
-        transition: border-color 0.2s;
-    }
-
-    .form-control:focus {
-        border-color: #3b82f6;
         outline: none;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        transition: all 0.2s;
+        font-size: 0.85rem;
+        background: white;
+        box-sizing: border-box;
     }
 
-    .checkbox-filter {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        margin-bottom: 2px;
-        cursor: pointer;
-        font-size: 13px;
-        color: #1e293b;
-        font-weight: 500;
+    .search-input:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.15);
     }
 
-    .table-wrapper {
-        overflow-x: auto;
-        border-radius: 10px;
-        border: 1px solid #e2e8f0;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
+    .search-icon {
+        position: absolute;
+        left: 11px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-gray);
         font-size: 12px;
     }
 
-    th {
-        background: #f1f5f9;
-        padding: 9px 10px;
-        text-align: left;
-        font-weight: 600;
-        color: #475569;
-        border-bottom: 2px solid #e2e8f0;
-        white-space: nowrap;
-    }
-
-    td {
-        padding: 6px 10px;
-        border-bottom: 1px solid #f1f5f9;
-        color: #1e293b;
-    }
-
-    tr:hover td {
-        background: #f8fafc;
-    }
-
-    .row-uncategorized {
-        background: rgba(254, 243, 199, 0.5);
-    }
-
-    .select-small {
-        padding: 3px 6px;
+    .filter-select {
+        padding: 8px 10px;
+        border-radius: 6px;
         border: 1px solid #cbd5e1;
-        border-radius: 5px;
-        font-size: 12px;
-        width: 100%;
         background: white;
-    }
-
-    .select-small:focus {
-        border-color: #3b82f6;
+        font-size: 0.85rem;
         outline: none;
-    }
-
-    .btn {
-        padding: 7px 14px;
-        border-radius: 7px;
-        font-size: 13px;
-        font-weight: 600;
-        cursor: pointer;
-        border: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
+        color: #334155;
         transition: all 0.2s;
     }
 
-    .btn-excel {
-        background: #16a34a;
-        color: white;
+    .filter-select:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.15);
     }
 
-    .btn-excel:hover {
-        background: #15803d;
-        transform: translateY(-1px);
+    .filter-checkbox-wrapper {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #475569;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .filter-checkbox-wrapper:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+    }
+
+    .filter-checkbox-wrapper input[type="checkbox"] {
+        cursor: pointer;
+        width: 15px;
+        height: 15px;
+        accent-color: var(--accent-color);
+        margin: 0;
+    }
+
+    /* Table styles matching Fatura Kategori Atama & Ust Kategori */
+    .table-container {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        overflow-x: auto;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        background: #ffffff;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .data-table thead tr {
+        background: #1e293b;
+    }
+
+    .data-table th {
+        background: #1e293b;
+        color: #ffffff;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 9px 12px;
+        text-align: left;
+        border-bottom: 2px solid #0f172a;
+        white-space: nowrap;
+    }
+
+    .data-table td {
+        padding: 7px 12px;
+        color: #1e293b;
+        font-size: 0.85rem;
+        border-bottom: 1px solid #e2e8f0;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+
+    .data-table tbody tr:nth-child(even) td {
+        background-color: #f8fafc;
+    }
+
+    .data-table tbody tr:hover td {
+        background-color: #eff6ff !important;
+    }
+
+    .data-table tr.row-uncategorized td {
+        background-color: #fffbeb;
+    }
+
+    .data-table tr.row-uncategorized:hover td {
+        background-color: #fef3c7 !important;
+    }
+
+    .badge-tip {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 700;
+        background: #f1f5f9;
+        color: #475569;
+    }
+
+    .cell-mono {
+        font-family: 'SFMono-Regular', Consolas, monospace;
+        font-size: 0.82rem;
+    }
+
+    .cell-amount {
+        font-family: 'SFMono-Regular', Consolas, monospace;
+        font-weight: 700;
+        text-align: right;
+        color: #1e293b;
+    }
+
+    .select-table {
+        padding: 4px 8px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 0.82rem;
+        background: white;
+        outline: none;
+        transition: border-color 0.15s;
+        width: 100%;
+        max-width: 220px;
+    }
+
+    .select-table:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.15);
     }
 
     .loading-row td {
@@ -151,14 +292,39 @@
         font-size: 14px;
     }
 
-    .badge-count {
-        background: #e2e8f0;
-        color: #475569;
-        padding: 2px 8px;
-        border-radius: 10px;
-        font-size: 12px;
-        font-weight: 700;
-        margin-left: 6px;
+    .no-data-msg {
+        display: none;
+        text-align: center;
+        padding: 50px 20px;
+        color: #94a3b8;
+        background: #ffffff;
+        border: 1px dashed #cbd5e1;
+        border-radius: 8px;
+        margin-top: 10px;
+    }
+
+    @media print {
+        .hide-on-print,
+        .page-header,
+        .filter-panel,
+        .action-bar {
+            display: none !important;
+        }
+
+        .main-card {
+            box-shadow: none !important;
+            border: none !important;
+            padding: 0 !important;
+        }
+
+        .table-container {
+            border: 1px solid #000 !important;
+        }
+
+        .data-table th {
+            background: #f1f5f9 !important;
+            color: #000 !important;
+        }
     }
 </style>
 {% endblock %}
@@ -166,100 +332,109 @@
 {% block content %}
 <!-- Permission Check -->
 {% if 'Ödeme Kategori Atama Ekranı Görüntüleme' not in user_permissions %}
-<div class="card-glass" style="text-align: center; padding: 40px;">
+<div class="main-card" style="text-align: center; padding: 40px;">
     <h2 style="color: #ef4444; margin-bottom: 20px;">Erişim Reddedildi</h2>
     <p>Bu ekranı ("Ödeme Kategori Atama") görüntüleme yetkiniz bulunmamaktadır.</p>
 </div>
 {% else %}
 
-<div class="atama-container">
-    <div class="card-glass">
-        <!-- Header -->
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
-            <h1 style="font-size:19px; font-weight:700; margin:0; color:#1e293b;">
-                💳 Ödeme Kategori Atama
-                <span class="badge-count" id="rowCount">0</span>
-            </h1>
-            <div style="display:flex; gap: 8px;">
-                <button class="btn btn-excel" id="exportExcelBtn">
-                    <i class="fas fa-file-excel"></i> Excel
-                </button>
-                <button class="btn btn-excel" data-permission="Mail Gönder" onclick="openReportMailModal({ tableId: 'odemeTable' })" style="background: #2563eb;">
-                    <i class="fas fa-envelope"></i> Mail Gönder
-                </button>
-            </div>
+<div class="main-card">
+    <!-- Header -->
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="fas fa-credit-card" style="color: var(--accent-color);"></i>
+            Ödeme Kategori Atama
+            <span class="badge-count" id="rowCount">0</span>
+        </h1>
+        <div class="action-bar">
+            <!-- Print Button -->
+            <button class="btn-icon" onclick="window.print()" title="Yazdır">
+                <i class="fas fa-print"></i>
+            </button>
+            <!-- Excel Button -->
+            <button class="btn-icon" id="exportExcelBtn" title="Excel İndir" style="color: #16a34a;">
+                <i class="fas fa-file-excel"></i>
+            </button>
+            <!-- Mail Button -->
+            <button class="btn-icon" data-permission="Mail Gönder" onclick="openReportMailModal({ tableId: 'odemeTable' })" title="Mail Gönder" style="color: #3b82f6;">
+                <i class="fas fa-envelope"></i>
+            </button>
         </div>
+    </div>
 
-        <!-- Filters Row -->
+    <!-- Filters Panel -->
+    <div class="filter-panel">
         <div class="filter-row">
-            <div class="filter-group" style="flex: 2; min-width: 220px;">
+            <div class="filter-group" style="flex: 1.5; min-width: 180px;">
                 <label>Şube Seçimi</label>
-                <select id="subeSelect" class="form-control">
+                <select id="subeSelect" class="filter-select">
                     {% for sube in subeler %}
                         <option value="{{ sube.Sube_ID }}">{{ sube.Sube_Adi }}</option>
                     {% endfor %}
                 </select>
             </div>
 
-            <div class="filter-group" style="flex: 2; min-width: 220px;">
-                <label>Ara (Tip, Hesap Adı, Açıklama)</label>
-                <input type="text" id="filterSearch" class="form-control" placeholder="Arama terimi...">
+            <div class="filter-group" style="flex: 2.2; min-width: 220px;">
+                <label>Arama (Tip, Hesap Adı, Açıklama)</label>
+                <div class="search-container">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="filterSearch" class="search-input" placeholder="Arama yapın...">
+                </div>
             </div>
 
-            <div class="filter-group" style="flex: 1; min-width: 160px;">
-                <label>Dönem Filtresi</label>
-                <select id="filterDonem" class="form-control">
-                    <option value="">Tümü</option>
+            <div class="filter-group" style="flex: 1.2; min-width: 140px;">
+                <label>Dönem</label>
+                <select id="filterDonem" class="filter-select">
+                    <option value="">Tüm Dönemler</option>
                 </select>
             </div>
 
-            <div class="filter-group" style="flex: 1.5; min-width: 200px;">
-                <label>Kategori Filtresi</label>
-                <select id="filterKategori" class="form-control">
+            <div class="filter-group" style="flex: 1.8; min-width: 180px;">
+                <label>Kategori</label>
+                <select id="filterKategori" class="filter-select">
                     <option value="">Tüm Kategoriler</option>
                     {% for k in kategoriler %}
                     <option value="{{ k.Kategori_ID }}">{{ k.Kategori_Adi }}</option>
                     {% endfor %}
                 </select>
             </div>
-        </div>
 
-        <!-- Second Row: Checkbox -->
-        <div style="margin-bottom: 15px;">
-            <label class="checkbox-filter">
-                <input type="checkbox" id="filterUncategorized">
-                Sadece Kategorisizleri Göster
-            </label>
+            <div class="filter-group" style="flex: 0 0 auto; justify-content: flex-end;">
+                <label class="filter-checkbox-wrapper">
+                    <input type="checkbox" id="filterUncategorized">
+                    <span>Sadece Kategorisizler</span>
+                </label>
+            </div>
         </div>
+    </div>
 
-        <!-- Table Wrapper -->
-        <div class="table-wrapper">
-            <table id="odemeTable">
-                <thead>
-                    <tr>
-                        <th style="width:10%;">TİP</th>
-                        <th style="width:15%;">HESAP ADI</th>
-                        <th style="width:10%;">TARİH</th>
-                        <th style="width:25%;">AÇIKLAMA</th>
-                        <th style="width:10%; text-align:right;">TUTAR</th>
-                        <th style="width:15%;">KATEGORİ</th>
-                        <th style="width:15%;">DÖNEM</th>
-                    </tr>
-                </thead>
-                <tbody id="odemeTableBody">
-                    <tr class="loading-row">
-                        <td colspan="7">
-                            <i class="fas fa-spinner fa-spin"></i> Veriler yükleniyor...
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+    <!-- Table Container -->
+    <div class="table-container">
+        <table class="data-table" id="odemeTable">
+            <thead>
+                <tr>
+                    <th style="width: 110px;">TİP</th>
+                    <th style="width: 160px;">HESAP ADI</th>
+                    <th style="width: 105px;">TARİH</th>
+                    <th>AÇIKLAMA</th>
+                    <th style="width: 130px; text-align: right;">TUTAR</th>
+                    <th style="width: 200px;">KATEGORİ</th>
+                    <th style="width: 110px;">DÖNEM</th>
+                </tr>
+            </thead>
+            <tbody id="odemeTableBody">
+                <tr class="loading-row">
+                    <td colspan="7">
+                        <i class="fas fa-spinner fa-spin"></i> Veriler yükleniyor...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 
-        <div id="noDataMessage" style="display:none; text-align:center; padding:40px; color:#94a3b8;">
-            <i class="fas fa-search" style="font-size:2rem; opacity:0.3;"></i>
-            <p style="margin-top:10px;">Sonuç bulunamadı.</p>
-        </div>
+    <div id="noDataMessage" class="no-data-msg">
+        <i class="fas fa-receipt" style="font-size: 2.2rem; display: block; margin-bottom: 12px; opacity: 0.4;"></i>
+        Kayıt bulunamadı.
     </div>
 </div>
 {% endif %}
@@ -267,7 +442,7 @@
 
 {% block scripts %}
 {% if 'Ödeme Kategori Atama Ekranı Görüntüleme' in user_permissions %}
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
     let allOdemeler = [];
     
@@ -288,13 +463,11 @@
         const noData = document.getElementById('noDataMessage');
         const countBadge = document.getElementById('rowCount');
         
-        console.log(`Loading payments for sube_id: ${sube_id}`);
-        
         body.innerHTML = '<tr class="loading-row"><td colspan="7"><i class="fas fa-spinner fa-spin"></i> Veriler yükleniyor...</td></tr>';
         noData.style.display = 'none';
         countBadge.textContent = "0";
 
-        // IMPORTANT: limit=10000 to ensure we get all data for the selected branch
+        // limit=10000 to ensure we get all data for the selected branch
         let url = `/api/v1/odemeler?limit=10000`;
         if (sube_id && sube_id !== "") url += `&sube_id=${sube_id}`;
 
@@ -304,13 +477,12 @@
                 throw new Error(`HTTP ${resp.status}`);
             }
             allOdemeler = await resp.json();
-            console.log(`Fetched ${allOdemeler.length} records total.`);
             
             populatePeriodDropdown(allOdemeler);
             applyFiltersAndRender();
         } catch (err) {
             console.error('Load error:', err);
-            body.innerHTML = `<tr class="loading-row"><td colspan="7"><i class="fas fa-exclamation-triangle"></i> Hata: ${err.message}</td></tr>`;
+            body.innerHTML = `<tr class="loading-row"><td colspan="7"><i class="fas fa-exclamation-triangle" style="color: #ef4444; margin-right: 6px;"></i> Hata: ${err.message}</td></tr>`;
         }
     }
 
@@ -322,16 +494,15 @@
         const currentValue = select.value;
         const isInitialized = select.dataset.initialized === "true";
         
-        select.innerHTML = '<option value="">Tümü</option>';
+        select.innerHTML = '<option value="">Tüm Dönemler</option>';
         periods.forEach(p => {
             select.innerHTML += `<option value="${p}">${p}</option>`;
         });
 
-        // REQUIRMENT: Default to the latest period
-        // If not initialized yet, or current selection is invalid, pick the latest
+        // Default to the latest period
         if (!isInitialized || !currentValue || !periods.includes(parseInt(currentValue))) {
             if (periods.length > 0) {
-                select.value = periods[0]; // Latest period (sorted desc)
+                select.value = periods[0];
             }
         } else {
             select.value = currentValue;
@@ -348,7 +519,6 @@
 
         let data = [...allOdemeler];
 
-        // Ensure type compatibility during filtering
         if (donem && donem !== "") data = data.filter(o => String(o.Donem) === String(donem));
         if (kategoriId && kategoriId !== "") data = data.filter(o => String(o.Kategori_ID) === String(kategoriId));
         if (onlyUncategorized) data = data.filter(o => !o.Kategori_ID);
@@ -361,7 +531,6 @@
             );
         }
 
-        console.log(`Filtered to ${data.length} records.`);
         renderTable(data);
     }
 
@@ -370,7 +539,6 @@
         const noData = document.getElementById('noDataMessage');
         const countBadge = document.getElementById('rowCount');
         
-        // Update the badge with the filtered result count
         countBadge.textContent = data.length;
 
         if (data.length === 0) {
@@ -380,20 +548,20 @@
         }
         noData.style.display = 'none';
 
-        // Unique periods for individual row dropdowns (ensure current period is always an option)
+        // Unique periods for individual row dropdowns
         const rowPeriods = [...new Set(allOdemeler.map(x => parseInt(x.Donem)).filter(p => !isNaN(p)))].sort((a, b) => b - a);
         if (!rowPeriods.includes(currentPeriod)) rowPeriods.push(currentPeriod);
         rowPeriods.sort((a, b) => b - a);
 
         tbody.innerHTML = data.map(o => `
             <tr id="row-${o.Odeme_ID}" class="${!o.Kategori_ID ? 'row-uncategorized' : ''}">
-                <td style="font-weight:600; color:#475569;">${o.Tip || ''}</td>
-                <td>${o.Hesap_Adi || ''}</td>
-                <td>${o.Tarih ? formatDate(o.Tarih) : '-'}</td>
-                <td title="${o.Aciklama || ''}" style="max-width:250px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${o.Aciklama || ''}</td>
-                <td style="text-align:right; font-weight:700; font-family: monospace;">${formatCurrency(o.Tutar)}</td>
+                <td><span class="badge-tip">${o.Tip || '-'}</span></td>
+                <td style="color: #475569; font-weight: 500;">${o.Hesap_Adi || '-'}</td>
+                <td class="cell-mono" style="color: #64748b;">${o.Tarih ? formatDate(o.Tarih) : '-'}</td>
+                <td title="${o.Aciklama || ''}" style="max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; color: #0f172a;">${o.Aciklama || '-'}</td>
+                <td class="cell-amount" style="color: #15803d;">${formatCurrency(o.Tutar)}</td>
                 <td>
-                    <select class="select-small" onchange="updateRow(${o.Odeme_ID}, 'Kategori_ID', this.value)">
+                    <select class="select-table" onchange="updateRow(${o.Odeme_ID}, 'Kategori_ID', this.value)">
                         <option value="">Seçin...</option>
                         {% for k in kategoriler %}
                         <option value="{{ k.Kategori_ID }}" ${o.Kategori_ID == {{ k.Kategori_ID }} ? 'selected' : ''}>{{ k.Kategori_Adi }}</option>
@@ -401,7 +569,7 @@
                     </select>
                 </td>
                 <td>
-                    <select class="select-small" onchange="updateRow(${o.Odeme_ID}, 'Donem', this.value)">
+                    <select class="select-table" onchange="updateRow(${o.Odeme_ID}, 'Donem', this.value)">
                         <option value="">Seçin...</option>
                         ${rowPeriods.map(p => `
                             <option value="${p}" ${o.Donem == p ? 'selected' : ''}>${p}</option>
@@ -426,7 +594,6 @@
             });
             
             if (resp.ok) {
-                // Update local cache
                 const o = allOdemeler.find(x => x.Odeme_ID === id);
                 if (o) {
                     o[field] = value ? parseInt(value) : null;
@@ -448,31 +615,13 @@
     }
 
     function formatCurrency(val) {
-        return new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val) + ' ₺';
+        return new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val || 0) + ' ₺';
     }
 
     function formatDate(str) {
         if (!str) return '-';
         const d = new Date(str);
         return d.toLocaleDateString('tr-TR');
-    }
-
-    function showToast(msg, type = 'success') {
-        const toast = document.createElement('div');
-        toast.className = 'toast-notification';
-        toast.style.position = 'fixed';
-        toast.style.bottom = '20px';
-        toast.style.right = '20px';
-        toast.style.padding = '12px 24px';
-        toast.style.borderRadius = '8px';
-        toast.style.color = 'white';
-        toast.style.fontWeight = '600';
-        toast.style.zIndex = '9999';
-        toast.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-        toast.style.background = type === 'success' ? '#10b981' : '#ef4444';
-        toast.textContent = msg;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 2500);
     }
 
     function debounce(fn, ms) {
@@ -487,19 +636,19 @@
         const donem = document.getElementById('filterDonem').value;
         const kategoriId = document.getElementById('filterKategori').value;
         
-        // Export current visible filtered data
         let exportData = [...allOdemeler];
         if (donem) exportData = exportData.filter(o => String(o.Donem) === String(donem));
+        if (kategoriId) exportData = exportData.filter(o => String(o.Kategori_ID) === String(kategoriId));
         if (search) exportData = exportData.filter(o => (o.Aciklama || '').toLowerCase().includes(search));
 
         const ws = XLSX.utils.json_to_sheet(exportData.map(o => ({
-            'Tip': o.Tip,
-            'Hesap Adı': o.Hesap_Adi,
-            'Tarih': o.Tarih,
-            'Açıklama': o.Aciklama,
-            'Tutar': o.Tutar,
-            'Donem': o.Donem,
-            'Kategori': o.Kategori_ID || ''
+            'Tip': o.Tip || '',
+            'Hesap Adı': o.Hesap_Adi || '',
+            'Tarih': o.Tarih || '',
+            'Açıklama': o.Aciklama || '',
+            'Tutar': o.Tutar || 0,
+            'Donem': o.Donem || '',
+            'Kategori ID': o.Kategori_ID || ''
         })));
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Odemeler");
@@ -518,4 +667,3 @@
 </script>
 {% endif %}
 {% endblock %}
-
