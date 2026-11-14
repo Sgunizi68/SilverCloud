@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
-{% set sube_name = subeler | selectattr("Sube_ID", "equalto", current_sube_id) | map(attribute="Sube_Adi") | first or 'Tümü' %}
+{% set sube_name = subeler | selectattr("Sube_ID", "equalto", current_sube_id) | map(attribute="Sube_Adi") | first or
+'Tümü' %}
 
 {% block title %}Çalışan Yönetimi - SilverCloud{% endblock %}
 
@@ -171,7 +172,20 @@
 
     .summary-cards-grid {
         display: grid;
-        grid-template-columns: {% if can_view_salary %}1fr 1fr 1fr{% else %}1fr 1fr{% endif %};
+
+        grid-template-columns: {
+            % if can_view_salary %
+        }
+
+        1fr 1fr 1fr {
+            % else %
+        }
+
+        1fr 1fr {
+            % endif %
+        }
+
+        ;
         background: #f8fafc;
     }
 
@@ -198,9 +212,17 @@
         font-weight: 800;
     }
 
-    .stat-total { color: #312e81; }
-    .stat-active { color: #15803d; }
-    .stat-salary { color: #0284c7; }
+    .stat-total {
+        color: #312e81;
+    }
+
+    .stat-active {
+        color: #15803d;
+    }
+
+    .stat-salary {
+        color: #0284c7;
+    }
 
     /* Table styles matching Avans Talepleri */
     .table-container {
@@ -303,7 +325,8 @@
 {% endblock %}
 
 {% block content %}
-{% set sube_name = subeler | selectattr("Sube_ID", "equalto", current_sube_id) | map(attribute="Sube_Adi") | first or 'Tümü' %}
+{% set sube_name = subeler | selectattr("Sube_ID", "equalto", current_sube_id) | map(attribute="Sube_Adi") | first or
+'Tümü' %}
 {% set total_count = calisanlar | length %}
 {% set active_count = calisanlar | selectattr("Aktif_Pasif", "equalto", true) | list | length %}
 {% set total_net_maas = calisanlar | sum(attribute='Net_Maas') %}
@@ -326,7 +349,8 @@
             </button>
 
             <!-- Mail Button -->
-            <button class="btn-icon" data-permission="Mail Gönder" onclick="openCalisanlarReportMail()" title="Mail Gönder" style="color: #3b82f6;">
+            <button class="btn-icon" data-permission="Mail Gönder" onclick="openCalisanlarReportMail()"
+                title="Mail Gönder" style="color: #3b82f6;">
                 <i class="fas fa-envelope"></i>
             </button>
 
@@ -371,7 +395,9 @@
             </thead>
             <tbody>
                 {% for calisan in calisanlar %}
-                <tr data-tc="{{ calisan.TC_No }}" data-aktif="{{ 'true' if calisan.Aktif_Pasif else 'false' }}" data-cikis="{{ calisan.Sigorta_Cikis or '' }}" data-maas="{{ calisan.Net_Maas }}" data-cihaz="{{ calisan.Cihaz_Kaydi or '' }}">
+                <tr data-tc="{{ calisan.TC_No }}" data-aktif="{{ 'true' if calisan.Aktif_Pasif else 'false' }}"
+                    data-cikis="{{ calisan.Sigorta_Cikis or '' }}" data-maas="{{ calisan.Net_Maas }}"
+                    data-cihaz="{{ calisan.Cihaz_Kaydi or '' }}">
                     <td style="font-family: monospace; font-weight: 600; color: #334155;">{{ calisan.TC_No }}</td>
                     <td style="font-weight: 600; color: #0f172a;">{{ calisan.Adi }} {{ calisan.Soyadi }}</td>
                     {% if can_view_salary %}
@@ -380,7 +406,8 @@
                     </td>
                     {% endif %}
                     <td style="color: #64748b;">{{ calisan.Sigorta_Giris or '-' }}</td>
-                    <td style="color: #64748b;">{{ calisan.Sigorta_Cikis if calisan.Sigorta_Cikis != '2099-01-01' else '-' }}</td>
+                    <td style="color: #64748b;">{{ calisan.Sigorta_Cikis if calisan.Sigorta_Cikis != '2099-01-01' else
+                        '-' }}</td>
                     <td style="color: #475569; font-weight: 500;">{{ calisan.Cihaz_Kaydi or '-' }}</td>
                     <td style="text-align: center;">
                         {% if calisan.Aktif_Pasif %}
@@ -391,7 +418,8 @@
                     </td>
                     <td style="text-align: center;">
                         {% if can_edit %}
-                        <button class="btn-row-action btn-edit" title="Düzenle" data-calisan='{{ calisan | tojson | safe }}'
+                        <button class="btn-row-action btn-edit" title="Düzenle"
+                            data-calisan='{{ calisan | tojson | safe }}'
                             onclick='openEditCalisanModal(JSON.parse(this.getAttribute("data-calisan")))'>
                             <i class="fas fa-pencil-alt"></i>
                         </button>
@@ -402,8 +430,10 @@
                 </tr>
                 {% else %}
                 <tr class="no-data-row">
-                    <td colspan="{% if can_view_salary %}8{% else %}7{% endif %}" style="text-align: center; padding: 40px; color: #94a3b8;">
-                        <i class="fas fa-users-slash" style="font-size: 32px; display: block; margin-bottom: 12px; opacity: 0.5;"></i>
+                    <td colspan="{% if can_view_salary %}8{% else %}7{% endif %}"
+                        style="text-align: center; padding: 40px; color: #94a3b8;">
+                        <i class="fas fa-users-slash"
+                            style="font-size: 32px; display: block; margin-bottom: 12px; opacity: 0.5;"></i>
                         Bu şubede kayıtlı çalışan bulunamadı.
                     </td>
                 </tr>
@@ -426,7 +456,7 @@
             const term = searchInput ? searchInput.value.toLowerCase() : '';
             const showOnlyActive = activeCheckbox ? activeCheckbox.checked : false;
             const rows = document.querySelectorAll('#calisanlar-table tbody tr:not(.no-data-row)');
-            
+
             const today = new Date().toISOString().split('T')[0];
             let visibleCount = 0;
             let visibleSalary = 0;
@@ -436,7 +466,7 @@
                 const tc = row.cells[0].textContent.toLowerCase();
                 const name = row.cells[1].textContent.toLowerCase();
                 const cihaz = (row.getAttribute('data-cihaz') || '').toLowerCase();
-                
+
                 const isAktif = row.getAttribute('data-aktif') === 'true';
                 const cikisTarihi = row.getAttribute('data-cikis');
                 const maas = parseFloat(row.getAttribute('data-maas')) || 0;
@@ -463,7 +493,7 @@
 
         if (searchInput) searchInput.addEventListener('keyup', filterTable);
         if (activeCheckbox) activeCheckbox.addEventListener('change', filterTable);
-        
+
         // Initial run
         filterTable();
     });
@@ -640,7 +670,7 @@
 
     // ─── Çalışanlar Excel & Mail Raporlama (Avans Talepleri ile Uyumlu) ───
     const CALISANLAR_DATA = {{ calisanlar | tojson }};
-    const CALISAN_SUBE = {{ (sube_name if sube_name is defined else (subeler | selectattr("Sube_ID", "equalto", current_sube_id) | map(attribute="Sube_Adi") | first or 'Tümü')) | tojson }};
+    const CALISAN_SUBE = {{ (sube_name if sube_name is defined else (subeler | selectattr("Sube_ID", "equalto", current_sube_id) | map(attribute = "Sube_Adi") | first or 'Tümü')) | tojson }};
 
     function fmtTL(val) {
         return new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val || 0) + ' ₺';
@@ -663,10 +693,10 @@
         } else {
             rowsHtml = CALISANLAR_DATA.map((c, idx) => {
                 const bg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
-                const statusBadge = c.Aktif_Pasif 
+                const statusBadge = c.Aktif_Pasif
                     ? `<span style="background-color: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">Aktif</span>`
                     : `<span style="background-color: #fee2e2; color: #b91c1c; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">Pasif</span>`;
-                
+
                 const salaryCell = canViewSalary ? `
                     <td align="right" bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; font-weight: 700; color: #15803d; text-align: right; border-bottom: 1px solid #e2e8f0;">
                         ${fmtTL(c.Net_Maas)}
