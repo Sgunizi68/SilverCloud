@@ -681,10 +681,9 @@ def vardiya_plan_girisi():
     is_current_period  = (year == current_year and month == current_month)
     is_next_period     = (year == next_yr and month == next_mo)
 
-    # In Vardiya Plan, non-yetki 79 users can edit today and future dates (including next period)
-    # can_edit_period is True if user has gecmis yetki, or if period is current, next, or future.
-    # In general, within the period, cell-level locking enforces: target_date < today is locked if not has_gecmis_yetki.
-    can_edit_period = has_gecmis_yetki or (date_type(year, month, calendar.monthrange(year, month)[1]) >= today)
+    # In Vardiya Plan, non-yetki 79 users can edit from tomorrow onwards (including next period)
+    # can_edit_period is True if user has gecmis yetki, or if period has dates after today.
+    can_edit_period = has_gecmis_yetki or (date_type(year, month, calendar.monthrange(year, month)[1]) > today)
 
     _, num_days = calendar.monthrange(year, month)
 

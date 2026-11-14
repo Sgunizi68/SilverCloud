@@ -535,8 +535,9 @@ def _check_vardiya_plan_period_permission(db, target_date):
     """
     Check if the user has permission to edit vardiya plan for target_date.
     Admins can always edit.
-    Users with Permission 79 ("Vardiya Plan Geçmiş Veri Erişimi") can edit past dates.
-    Otherwise, users without Permission 79 CANNOT add or edit records before today (target_date < today).
+    Users with Permission 79 ("Vardiya Plan Geçmiş Veri Erişimi") can edit today and past dates.
+    Users without Permission 79 CAN ONLY enter/edit plans starting from tomorrow onwards (target_date > today).
+    Today and past dates (target_date <= today) require Permission 79.
     """
     from app.modules.auth import queries as auth_queries
     user_id = session.get('user_id')
@@ -562,8 +563,8 @@ def _check_vardiya_plan_period_permission(db, target_date):
     from datetime import datetime as dt
     today = dt.now().date()
 
-    # Rule: Without Yetki 79, cannot add or modify records before today
-    if target_date < today:
+    # Rule: Without Yetki 79, cannot add or modify records for today or earlier dates (target_date <= today)
+    if target_date <= today:
         return False
 
     return True
@@ -644,10 +645,10 @@ def create_vardiya_plan():
 
         db = get_db_session()
 
-        # Check permission (Yetki 79 / Admin for past dates)
+        # Check permission (Yetki 79 / Admin for today and past dates)
         if not _check_vardiya_plan_period_permission(db, target_date):
             db.close()
-            return jsonify({"error": "Geçmiş günlere vardiya planı giriş/düzenleme yetkiniz bulunmamaktadır."}), 403
+            return jsonify({"error": "Bugün ve geçmiş günlere ait vardiya planı giriş/düzenleme yetkiniz bulunmamaktadır."}), 403
 
         # Validation: Date cannot be before Sigorta_Giris or after Sigorta_Cikis
         calisan = queries.get_calisan_by_tc_no(db, data["TC_No"])
@@ -703,10 +704,10 @@ def update_vardiya_plan(plan_id):
         else:
             target_date = plan.Tarih
 
-        # Check permission (Yetki 79 / Admin for past dates)
+        # Check permission (Yetki 79 / Admin for today and past dates)
         if not _check_vardiya_plan_period_permission(db, target_date):
             db.close()
-            return jsonify({"error": "Geçmiş günlere vardiya planı giriş/düzenleme yetkiniz bulunmamaktadır."}), 403
+            return jsonify({"error": "Bugün ve geçmiş günlere ait vardiya planı giriş/düzenleme yetkiniz bulunmamaktadır."}), 403
 
         calisan = queries.get_calisan_by_tc_no(db, plan.TC_No)
         if calisan:
@@ -752,7 +753,7 @@ def delete_vardiya_plan(plan_id):
 
         if not _check_vardiya_plan_period_permission(db, plan.Tarih):
             db.close()
-            return jsonify({"error": "Geçmiş günlere ait vardiya planı silme yetkiniz bulunmamaktadır."}), 403
+            return jsonify({"error": "Bugün ve geçmiş günlere ait vardiya planı silme yetkiniz bulunmamaktadır."}), 403
 
         queries.delete_vardiya_plan(db, plan_id)
         db.close()

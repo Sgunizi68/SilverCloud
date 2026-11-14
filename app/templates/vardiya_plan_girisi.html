@@ -463,10 +463,10 @@
             if (cellDate > cikisDate) return true;
         }
 
-        // Rule: If user does not have past data permission (Yetki 79 or Admin), cannot edit days before today
+        // Rule: If user does not have past data permission (Yetki 79 or Admin), cannot edit today and earlier days
         if (!HAS_GECMIS_YETKI) {
-            // Cannot edit any date before today
-            if (cellDate < TODAY_DATE) return true;
+            // Only tomorrow and forward can be edited: today and past dates (cellDate <= TODAY_DATE) are locked
+            if (cellDate <= TODAY_DATE) return true;
 
             // After Çıkış seçim entered in grid, subsequent days are locked
             const cd = cikisDayFor[tc];
