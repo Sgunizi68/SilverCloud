@@ -68,6 +68,7 @@ def calisanlar():
             "Net_Maas": float(c.Net_Maas) if c.Net_Maas else 0.0,
             "Sigorta_Giris": c.Sigorta_Giris.isoformat() if c.Sigorta_Giris else "",
             "Sigorta_Cikis": c.Sigorta_Cikis.isoformat() if c.Sigorta_Cikis else "2099-01-01",
+            "Cihaz_Kaydi": c.Cihaz_Kaydi or "",
             "Aktif_Pasif": c.Aktif_Pasif,
             "Sube_ID": c.Sube_ID
         })

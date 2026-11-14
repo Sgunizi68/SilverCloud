@@ -625,6 +625,7 @@ class Calisan(db.Model):
     Net_Maas = Column(DECIMAL(10, 2), nullable=True)
     Sigorta_Giris = Column(Date, nullable=True)
     Sigorta_Cikis = Column(Date, nullable=True)
+    Cihaz_Kaydi = Column("Cihaz_Kaydı", String(50), nullable=True)
     Aktif_Pasif = Column(Boolean, default=True, index=True)
     Sube_ID = Column(Integer, ForeignKey("Sube.Sube_ID"), nullable=False, index=True)
 

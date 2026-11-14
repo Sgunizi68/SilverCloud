@@ -50,6 +50,7 @@ def list_calisanlar():
                 "Net_Maas": float(c.Net_Maas) if c.Net_Maas else None,
                 "Sigorta_Giris": c.Sigorta_Giris.isoformat() if c.Sigorta_Giris else None,
                 "Sigorta_Cikis": c.Sigorta_Cikis.isoformat() if c.Sigorta_Cikis else None,
+                "Cihaz_Kaydi": c.Cihaz_Kaydi,
                 "Aktif_Pasif": c.Aktif_Pasif,
                 "Sube_ID": c.Sube_ID,
             }
@@ -82,6 +83,7 @@ def get_calisan(tc_no):
             "Net_Maas": float(calisan.Net_Maas) if calisan.Net_Maas else None,
             "Sigorta_Giris": calisan.Sigorta_Giris.isoformat() if calisan.Sigorta_Giris else None,
             "Sigorta_Cikis": calisan.Sigorta_Cikis.isoformat() if calisan.Sigorta_Cikis else None,
+            "Cihaz_Kaydi": calisan.Cihaz_Kaydi,
             "Aktif_Pasif": calisan.Aktif_Pasif,
             "Sube_ID": calisan.Sube_ID,
         }
@@ -112,6 +114,7 @@ def create_calisan():
             net_maas=float(data.get("Net_Maas")) if data.get("Net_Maas") not in (None, "") else None,
             sigorta_giris=data.get("Sigorta_Giris"),
             sigorta_cikis=data.get("Sigorta_Cikis"),
+            cihaz_kaydi=data.get("Cihaz_Kaydi"),
             aktif_pasif=data.get("Aktif_Pasif", True)
         )
         db.close()
@@ -125,6 +128,7 @@ def create_calisan():
             "Net_Maas": float(new_calisan.Net_Maas) if new_calisan.Net_Maas else None,
             "Sigorta_Giris": new_calisan.Sigorta_Giris.isoformat() if new_calisan.Sigorta_Giris else None,
             "Sigorta_Cikis": new_calisan.Sigorta_Cikis.isoformat() if new_calisan.Sigorta_Cikis else None,
+            "Cihaz_Kaydi": new_calisan.Cihaz_Kaydi,
             "Aktif_Pasif": new_calisan.Aktif_Pasif,
             "Sube_ID": new_calisan.Sube_ID,
         }
@@ -152,6 +156,7 @@ def update_calisan(tc_no):
             net_maas=data.get("Net_Maas"),
             sigorta_giris=data.get("Sigorta_Giris"),
             sigorta_cikis=data.get("Sigorta_Cikis"),
+            cihaz_kaydi=data.get("Cihaz_Kaydi"),
             aktif_pasif=data.get("Aktif_Pasif"),
             sube_id=data.get("Sube_ID")
         )
@@ -169,6 +174,7 @@ def update_calisan(tc_no):
             "Net_Maas": float(updated_calisan.Net_Maas) if updated_calisan.Net_Maas else None,
             "Sigorta_Giris": updated_calisan.Sigorta_Giris.isoformat() if updated_calisan.Sigorta_Giris else None,
             "Sigorta_Cikis": updated_calisan.Sigorta_Cikis.isoformat() if updated_calisan.Sigorta_Cikis else None,
+            "Cihaz_Kaydi": updated_calisan.Cihaz_Kaydi,
             "Aktif_Pasif": updated_calisan.Aktif_Pasif,
             "Sube_ID": updated_calisan.Sube_ID,
         }

@@ -63,6 +63,7 @@ def create_calisan(
     net_maas: Optional[float] = None,
     sigorta_giris: Optional[date] = None,
     sigorta_cikis: Optional[date] = None,
+    cihaz_kaydi: Optional[str] = None,
     aktif_pasif: bool = True
 ) -> Calisan:
     """Create a new employee or update existing record on re-hire."""
@@ -105,6 +106,8 @@ def create_calisan(
             existing.Sigorta_Cikis = sigorta_cikis_dt
         else:
             existing.Sigorta_Cikis = None
+        if cihaz_kaydi is not None:
+            existing.Cihaz_Kaydi = cihaz_kaydi
         existing.Aktif_Pasif = aktif_pasif
         
         db.commit()
@@ -121,6 +124,7 @@ def create_calisan(
         Net_Maas=net_maas_val,
         Sigorta_Giris=sigorta_giris_dt,
         Sigorta_Cikis=sigorta_cikis_dt,
+        Cihaz_Kaydi=cihaz_kaydi,
         Aktif_Pasif=aktif_pasif
     )
     db.add(new_calisan)
@@ -139,6 +143,7 @@ def update_calisan(
     net_maas: Optional[float] = None,
     sigorta_giris: Optional[date] = None,
     sigorta_cikis: Optional[date] = None,
+    cihaz_kaydi: Optional[str] = None,
     aktif_pasif: Optional[bool] = None,
     sube_id: Optional[int] = None
 ) -> Optional[Calisan]:
@@ -181,6 +186,8 @@ def update_calisan(
             pass
     elif sigorta_cikis is not None:
         calisan.Sigorta_Cikis = sigorta_cikis
+    if cihaz_kaydi is not None:
+        calisan.Cihaz_Kaydi = cihaz_kaydi if cihaz_kaydi != "" else None
     if aktif_pasif is not None:
         calisan.Aktif_Pasif = aktif_pasif
     

@@ -364,13 +364,14 @@
                     {% endif %}
                     <th style="width: 130px;">SİGORTA GİRİŞ</th>
                     <th style="width: 130px;">SİGORTA ÇIKIŞ</th>
+                    <th style="width: 130px;">CİHAZ KAYDI</th>
                     <th style="width: 100px; text-align: center;">DURUM</th>
                     <th style="width: 90px; text-align: center;">İŞLEMLER</th>
                 </tr>
             </thead>
             <tbody>
                 {% for calisan in calisanlar %}
-                <tr data-tc="{{ calisan.TC_No }}" data-aktif="{{ 'true' if calisan.Aktif_Pasif else 'false' }}" data-cikis="{{ calisan.Sigorta_Cikis or '' }}" data-maas="{{ calisan.Net_Maas }}">
+                <tr data-tc="{{ calisan.TC_No }}" data-aktif="{{ 'true' if calisan.Aktif_Pasif else 'false' }}" data-cikis="{{ calisan.Sigorta_Cikis or '' }}" data-maas="{{ calisan.Net_Maas }}" data-cihaz="{{ calisan.Cihaz_Kaydi or '' }}">
                     <td style="font-family: monospace; font-weight: 600; color: #334155;">{{ calisan.TC_No }}</td>
                     <td style="font-weight: 600; color: #0f172a;">{{ calisan.Adi }} {{ calisan.Soyadi }}</td>
                     {% if can_view_salary %}
@@ -380,6 +381,7 @@
                     {% endif %}
                     <td style="color: #64748b;">{{ calisan.Sigorta_Giris or '-' }}</td>
                     <td style="color: #64748b;">{{ calisan.Sigorta_Cikis if calisan.Sigorta_Cikis != '2099-01-01' else '-' }}</td>
+                    <td style="color: #475569; font-weight: 500;">{{ calisan.Cihaz_Kaydi or '-' }}</td>
                     <td style="text-align: center;">
                         {% if calisan.Aktif_Pasif %}
                         <span class="status-badge active"><i class="fas fa-check-circle"></i> Aktif</span>
@@ -400,7 +402,7 @@
                 </tr>
                 {% else %}
                 <tr class="no-data-row">
-                    <td colspan="{% if can_view_salary %}7{% else %}6{% endif %}" style="text-align: center; padding: 40px; color: #94a3b8;">
+                    <td colspan="{% if can_view_salary %}8{% else %}7{% endif %}" style="text-align: center; padding: 40px; color: #94a3b8;">
                         <i class="fas fa-users-slash" style="font-size: 32px; display: block; margin-bottom: 12px; opacity: 0.5;"></i>
                         Bu şubede kayıtlı çalışan bulunamadı.
                     </td>
@@ -433,13 +435,14 @@
                 if (row.cells.length < 2) return;
                 const tc = row.cells[0].textContent.toLowerCase();
                 const name = row.cells[1].textContent.toLowerCase();
+                const cihaz = (row.getAttribute('data-cihaz') || '').toLowerCase();
                 
                 const isAktif = row.getAttribute('data-aktif') === 'true';
                 const cikisTarihi = row.getAttribute('data-cikis');
                 const maas = parseFloat(row.getAttribute('data-maas')) || 0;
 
                 // Search logic
-                const matchesSearch = tc.includes(term) || name.includes(term);
+                const matchesSearch = tc.includes(term) || name.includes(term) || cihaz.includes(term);
 
                 // Active logic
                 let matchesActive = true;
@@ -500,6 +503,10 @@
                     </div>
                 </div>
                 <div class="form-group">
+                    <label>Cihaz Kaydı</label>
+                    <input type="text" name="Cihaz_Kaydi" maxlength="50" placeholder="Örn: Cihaz / PDKS ID">
+                </div>
+                <div class="form-group">
                     <label>
                         <input type="checkbox" name="Aktif_Pasif" checked> Aktif Çalışan
                     </label>
@@ -547,6 +554,10 @@
                         <label>Sigorta Çıkış</label>
                         <input type="date" name="Sigorta_Cikis" value="${calisan.Sigorta_Cikis === '2099-01-01' ? '' : calisan.Sigorta_Cikis}">
                     </div>
+                </div>
+                <div class="form-group">
+                    <label>Cihaz Kaydı</label>
+                    <input type="text" name="Cihaz_Kaydi" maxlength="50" value="${calisan.Cihaz_Kaydi || ''}" placeholder="Örn: Cihaz / PDKS ID">
                 </div>
                 <div class="form-group">
                     <label>
@@ -644,7 +655,7 @@
         if (totalCount === 0) {
             rowsHtml = `
                 <tr>
-                    <td colspan="${canViewSalary ? 6 : 5}" align="center" bgcolor="#ffffff" style="padding: 24px; text-align: center; color: #64748b; font-size: 13px; border-bottom: 1px solid #e2e8f0;">
+                    <td colspan="${canViewSalary ? 7 : 6}" align="center" bgcolor="#ffffff" style="padding: 24px; text-align: center; color: #64748b; font-size: 13px; border-bottom: 1px solid #e2e8f0;">
                         Bu şubede kayıtlı çalışan bulunamadı.
                     </td>
                 </tr>
@@ -676,6 +687,9 @@
                         </td>
                         <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; color: #64748b; border-bottom: 1px solid #e2e8f0;">
                             ${c.Sigorta_Cikis !== '2099-01-01' ? (c.Sigorta_Cikis || '-') : '-'}
+                        </td>
+                        <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; color: #475569; border-bottom: 1px solid #e2e8f0;">
+                            ${c.Cihaz_Kaydi || '-'}
                         </td>
                         <td align="center" bgcolor="${bg}" style="padding: 10px 14px; text-align: center; border-bottom: 1px solid #e2e8f0;">
                             ${statusBadge}
@@ -725,6 +739,7 @@
                             ${canViewSalary ? `<th align="right" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: right; text-transform: uppercase; border-bottom: 2px solid #0f172a;">NET MAAŞ</th>` : ''}
                             <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a;">SİGORTA GİRİŞ</th>
                             <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a;">SİGORTA ÇIKIŞ</th>
+                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a;">CİHAZ KAYDI</th>
                             <th align="center" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: center; text-transform: uppercase; border-bottom: 2px solid #0f172a;">DURUM</th>
                         </tr>
                     </thead>
@@ -741,8 +756,8 @@
                             <td align="right" bgcolor="#f1f5f9" style="padding: 12px 14px; font-size: 14px; font-weight: 800; color: #15803d; text-align: right; border-top: 2px solid #cbd5e1;">
                                 ${fmtTL(totalNetMaas)}
                             </td>
-                            <td colspan="3" bgcolor="#f1f5f9" style="padding: 12px 14px; border-top: 2px solid #cbd5e1;"></td>
-                            ` : `<td colspan="3" bgcolor="#f1f5f9" style="padding: 12px 14px; border-top: 2px solid #cbd5e1;"></td>`}
+                            <td colspan="4" bgcolor="#f1f5f9" style="padding: 12px 14px; border-top: 2px solid #cbd5e1;"></td>
+                            ` : `<td colspan="4" bgcolor="#f1f5f9" style="padding: 12px 14px; border-top: 2px solid #cbd5e1;"></td>`}
                         </tr>
                     </tfoot>
                     ` : ''}
@@ -761,7 +776,7 @@
 
         const headers = ['TC NO', 'ADI SOYADI'];
         if (canViewSalary) headers.push('NET MAAŞ');
-        headers.push('SİGORTA GİRİŞ', 'SİGORTA ÇIKIŞ', 'DURUM');
+        headers.push('SİGORTA GİRİŞ', 'SİGORTA ÇIKIŞ', 'CİHAZ KAYDI', 'DURUM');
 
         const sheetData = [
             ['ÇALIŞAN YÖNETİMİ RAPORU'],
@@ -788,6 +803,7 @@
             row.push(
                 c.Sigorta_Giris || '',
                 c.Sigorta_Cikis !== '2099-01-01' ? (c.Sigorta_Cikis || '') : '',
+                c.Cihaz_Kaydi || '',
                 c.Aktif_Pasif ? 'Aktif' : 'Pasif'
             );
             sheetData.push(row);
@@ -798,9 +814,9 @@
             const totRow = ['TOPLAM', `${totalCount} Çalışan`];
             if (canViewSalary) {
                 totRow.push(totalNetMaas);
-                totRow.push('', '', '');
+                totRow.push('', '', '', '');
             } else {
-                totRow.push('', '', '');
+                totRow.push('', '', '', '');
             }
             sheetData.push(totRow);
         }
@@ -813,7 +829,7 @@
             { wch: 28 }  // ADI SOYADI
         ];
         if (canViewSalary) colWidths.push({ wch: 16 }); // NET MAAŞ
-        colWidths.push({ wch: 16 }, { wch: 16 }, { wch: 12 }); // GİRİŞ, ÇIKIŞ, DURUM
+        colWidths.push({ wch: 16 }, { wch: 16 }, { wch: 18 }, { wch: 12 }); // GİRİŞ, ÇIKIŞ, CİHAZ KAYDI, DURUM
         ws['!cols'] = colWidths;
 
         // Sayı formatları
