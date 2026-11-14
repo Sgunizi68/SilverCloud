@@ -35,11 +35,21 @@ def get_sube_by_name(db: Session, sube_adi: str) -> Optional[Sube]:
     return db.scalars(stmt).first()
 
 
-def create_sube(db: Session, sube_adi: str, aciklama: Optional[str] = None) -> Sube:
+def create_sube(
+    db: Session,
+    sube_adi: str,
+    aciklama: Optional[str] = None,
+    merkez_enlem: Optional[float] = None,
+    merkez_boylam: Optional[float] = None,
+    yaricap_m: int = 100
+) -> Sube:
     """Create a new branch."""
     new_sube = Sube(
         Sube_Adi=sube_adi,
         Aciklama=aciklama,
+        merkez_enlem=merkez_enlem,
+        merkez_boylam=merkez_boylam,
+        yaricap_m=yaricap_m if yaricap_m is not None else 100,
         Aktif_Pasif=True
     )
     db.add(new_sube)
@@ -53,6 +63,9 @@ def update_sube(
     sube_id: int,
     sube_adi: Optional[str] = None,
     aciklama: Optional[str] = None,
+    merkez_enlem: Optional[float] = None,
+    merkez_boylam: Optional[float] = None,
+    yaricap_m: Optional[int] = None,
     aktif_pasif: Optional[bool] = None
 ) -> Optional[Sube]:
     """Update a branch."""
@@ -64,6 +77,12 @@ def update_sube(
         sube.Sube_Adi = sube_adi
     if aciklama is not None:
         sube.Aciklama = aciklama
+    if merkez_enlem is not None:
+        sube.merkez_enlem = merkez_enlem
+    if merkez_boylam is not None:
+        sube.merkez_boylam = merkez_boylam
+    if yaricap_m is not None:
+        sube.yaricap_m = yaricap_m
     if aktif_pasif is not None:
         sube.Aktif_Pasif = aktif_pasif
     

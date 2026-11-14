@@ -304,7 +304,9 @@
                     <th style="width: 80px;">ID</th>
                     <th>ŞUBE ADI</th>
                     <th>AÇIKLAMA</th>
-                    <th style="width: 120px; text-align: center;">DURUM</th>
+                    <th style="width: 170px;">MERKEZ KOORDİNAT</th>
+                    <th style="width: 90px; text-align: center;">YARIÇAP</th>
+                    <th style="width: 110px; text-align: center;">DURUM</th>
                     <th style="width: 90px; text-align: center;" class="hide-on-print">İŞLEMLER</th>
                 </tr>
             </thead>
@@ -314,6 +316,18 @@
                     <td style="font-family: monospace; font-weight: 600; color: #334155;">{{ sube.Sube_ID }}</td>
                     <td style="font-weight: 600; color: #0f172a;">{{ sube.Sube_Adi }}</td>
                     <td style="color: #64748b;">{{ sube.Aciklama or '-' }}</td>
+                    <td style="font-family: monospace; font-size: 11px; color: #0369a1;">
+                        {% if sube.merkez_enlem is not none and sube.merkez_boylam is not none %}
+                        <a href="https://maps.google.com/?q={{ sube.merkez_enlem }},{{ sube.merkez_boylam }}" target="_blank" style="color: #0284c7; text-decoration: none;" title="Haritada Göster">
+                            <i class="fas fa-map-marker-alt" style="color: #ea580c; margin-right: 4px;"></i>{{ "%.6f" | format(sube.merkez_enlem) }}, {{ "%.6f" | format(sube.merkez_boylam) }}
+                        </a>
+                        {% else %}
+                        <span style="color: #dc2626; font-style: italic;"><i class="fas fa-exclamation-triangle" style="margin-right: 4px;"></i>Girilmemiş</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center; font-weight: 600; color: #475569;">
+                        {{ sube.yaricap_m or 100 }} m
+                    </td>
                     <td style="text-align: center;">
                         <span class="status-badge {{ 'active' if sube.Aktif_Pasif else 'inactive' }}"
                               title="Tıklayarak durumu değiştir"
@@ -331,7 +345,7 @@
                 </tr>
                 {% else %}
                 <tr class="no-data-row">
-                    <td colspan="5" style="text-align: center; padding: 40px; color: #94a3b8;">
+                    <td colspan="7" style="text-align: center; padding: 40px; color: #94a3b8;">
                         <i class="fas fa-store-slash" style="font-size: 32px; display: block; margin-bottom: 12px; opacity: 0.5;"></i>
                         Kayıtlı şube bulunamadı.
                     </td>
@@ -340,10 +354,10 @@
             </tbody>
             <tfoot>
                 <tr>
-                    <td colspan="2" style="font-weight: 800; color: #0f172a;">
+                    <td colspan="3" style="font-weight: 800; color: #0f172a;">
                         GENEL TOPLAM (<span id="visible-count">{{ all_suber | length }}</span> Şube)
                     </td>
-                    <td colspan="3" style="text-align: right; color: #64748b; font-size: 0.85rem;">
+                    <td colspan="4" style="text-align: right; color: #64748b; font-size: 0.85rem;">
                         Aktif: <strong style="color: #15803d;" id="visible-active-count">{{ active_count }}</strong>
                     </td>
                 </tr>
@@ -400,18 +414,88 @@
         filterTable();
     });
 
+    // Geolocation helper
+    function getCurrentLocation() {
+        if (!navigator.geolocation) {
+            alert('Tarayıcınız konum özelliğini desteklemiyor.');
+            return;
+        }
+        const btn = document.getElementById('btn-get-location');
+        const origHtml = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Konum Alınıyor...';
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const lat = pos.coords.latitude.toFixed(6);
+                const lon = pos.coords.longitude.toFixed(6);
+                const latInput = document.getElementById('merkez_enlem_input');
+                const lonInput = document.getElementById('merkez_boylam_input');
+                if (latInput) latInput.value = lat;
+                if (lonInput) lonInput.value = lon;
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-check"></i> Konum Alındı';
+                    setTimeout(() => { btn.innerHTML = origHtml; }, 2000);
+                }
+            },
+            (err) => {
+                let msg = 'Konum alınamadı.';
+                if (err.code === 1) msg = 'Konum izni reddedildi. Lütfen tarayıcı ayarlarından konum izni veriniz.';
+                else if (err.code === 2) msg = 'Konum bilgisi tespit edilemedi.';
+                else if (err.code === 3) msg = 'Konum alma zaman aşımına uğradı.';
+                alert(msg);
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = origHtml;
+                }
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+    }
+
     // CRUD Functions
     function openAddSubeModal() {
         const content = `
             <form id="subeForm">
                 <div class="form-group">
-                    <label>Şube Adı</label>
-                    <input type="text" name="Sube_Adi" required>
+                    <label>Şube Adı <span style="color: #ef4444;">*</span></label>
+                    <input type="text" name="Sube_Adi" required placeholder="Örn: Kadıköy Şubesi">
                 </div>
                 <div class="form-group">
                     <label>Açıklama</label>
-                    <textarea name="Aciklama" rows="3"></textarea>
+                    <textarea name="Aciklama" rows="2" placeholder="Şube hakkında açıklama..."></textarea>
                 </div>
+                
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <span style="font-size: 12px; font-weight: 700; color: #1e293b; text-transform: uppercase;">
+                            <i class="fas fa-map-marked-alt" style="color: #6366f1; margin-right: 6px;"></i>Merkez Koordinat Bilgileri
+                        </span>
+                        <button type="button" id="btn-get-location" onclick="getCurrentLocation()" style="background: #eef2ff; color: #4f46e5; border: 1px solid #c7d2fe; border-radius: 6px; padding: 5px 10px; font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                            <i class="fas fa-crosshairs"></i> Ortamdan Al
+                        </button>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label style="font-size: 11px;">Merkez Enlem (Latitude) <span style="color: #ef4444;">*</span></label>
+                            <input type="number" step="0.000001" id="merkez_enlem_input" name="merkez_enlem" required placeholder="Örn: 40.978250" style="font-family: monospace;">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label style="font-size: 11px;">Merkez Boylam (Longitude) <span style="color: #ef4444;">*</span></label>
+                            <input type="number" step="0.000001" id="merkez_boylam_input" name="merkez_boylam" required placeholder="Örn: 29.056420" style="font-family: monospace;">
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 10px; margin-bottom: 0;">
+                        <label style="font-size: 11px;">Çalışma Bölgesi Yarıçapı (Metre) <span style="color: #ef4444;">*</span></label>
+                        <input type="number" name="yaricap_m" value="100" min="10" max="10000" required placeholder="100">
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                         <input type="checkbox" name="Aktif_Pasif" checked style="width: 16px; height: 16px;"> Aktif Şube
@@ -428,6 +512,10 @@
     }
 
     function openEditSubeModal(sube) {
+        const enlemVal = (sube.merkez_enlem !== null && sube.merkez_enlem !== undefined) ? sube.merkez_enlem : '';
+        const boylamVal = (sube.merkez_boylam !== null && sube.merkez_boylam !== undefined) ? sube.merkez_boylam : '';
+        const yaricapVal = (sube.yaricap_m !== null && sube.yaricap_m !== undefined) ? sube.yaricap_m : 100;
+
         const content = `
             <form id="subeForm">
                 <input type="hidden" name="Sube_ID" value="${sube.Sube_ID}">
@@ -436,13 +524,41 @@
                     <input type="text" value="${sube.Sube_ID}" readonly style="background: #f8fafc; font-family: monospace;">
                 </div>
                 <div class="form-group">
-                    <label>Şube Adı</label>
+                    <label>Şube Adı <span style="color: #ef4444;">*</span></label>
                     <input type="text" name="Sube_Adi" value="${sube.Sube_Adi || ''}" required>
                 </div>
                 <div class="form-group">
                     <label>Açıklama</label>
-                    <textarea name="Aciklama" rows="3">${sube.Aciklama || ''}</textarea>
+                    <textarea name="Aciklama" rows="2">${sube.Aciklama || ''}</textarea>
                 </div>
+
+                <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <span style="font-size: 12px; font-weight: 700; color: #1e293b; text-transform: uppercase;">
+                            <i class="fas fa-map-marked-alt" style="color: #6366f1; margin-right: 6px;"></i>Merkez Koordinat Bilgileri
+                        </span>
+                        <button type="button" id="btn-get-location" onclick="getCurrentLocation()" style="background: #eef2ff; color: #4f46e5; border: 1px solid #c7d2fe; border-radius: 6px; padding: 5px 10px; font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: gap; gap: 5px;">
+                            <i class="fas fa-crosshairs"></i> Ortamdan Al
+                        </button>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label style="font-size: 11px;">Merkez Enlem (Latitude) <span style="color: #ef4444;">*</span></label>
+                            <input type="number" step="0.000001" id="merkez_enlem_input" name="merkez_enlem" value="${enlemVal}" required placeholder="Örn: 40.978250" style="font-family: monospace;">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label style="font-size: 11px;">Merkez Boylam (Longitude) <span style="color: #ef4444;">*</span></label>
+                            <input type="number" step="0.000001" id="merkez_boylam_input" name="merkez_boylam" value="${boylamVal}" required placeholder="Örn: 29.056420" style="font-family: monospace;">
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 10px; margin-bottom: 0;">
+                        <label style="font-size: 11px;">Çalışma Bölgesi Yarıçapı (Metre) <span style="color: #ef4444;">*</span></label>
+                        <input type="number" name="yaricap_m" value="${yaricapVal}" min="10" max="10000" required placeholder="100">
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                         <input type="checkbox" name="Aktif_Pasif" ${sube.Aktif_Pasif ? 'checked' : ''} style="width: 16px; height: 16px;"> Aktif Şube
@@ -464,8 +580,16 @@
         const data = {
             Sube_Adi: formData.get('Sube_Adi'),
             Aciklama: formData.get('Aciklama'),
+            merkez_enlem: formData.get('merkez_enlem'),
+            merkez_boylam: formData.get('merkez_boylam'),
+            yaricap_m: formData.get('yaricap_m'),
             Aktif_Pasif: e.target.Aktif_Pasif.checked
         };
+
+        if (!data.merkez_enlem || !data.merkez_boylam) {
+            alert('Koordinatı girilmemiş şube için kayıt kabul edilmemektedir. Lütfen merkez enlem ve boylam giriniz.');
+            return;
+        }
 
         try {
             const response = await fetch('/api/v1/subeler', {
@@ -493,8 +617,16 @@
         const data = {
             Sube_Adi: formData.get('Sube_Adi'),
             Aciklama: formData.get('Aciklama'),
+            merkez_enlem: formData.get('merkez_enlem'),
+            merkez_boylam: formData.get('merkez_boylam'),
+            yaricap_m: formData.get('yaricap_m'),
             Aktif_Pasif: e.target.Aktif_Pasif.checked
         };
+
+        if (!data.merkez_enlem || !data.merkez_boylam) {
+            alert('Koordinatı girilmemiş şube için kayıt kabul edilmemektedir. Lütfen merkez enlem ve boylam giriniz.');
+            return;
+        }
 
         try {
             const response = await fetch(`/api/v1/subeler/${subeId}`, {
@@ -547,7 +679,7 @@
         if (totalCount === 0) {
             rowsHtml = `
                 <tr>
-                    <td colspan="4" align="center" bgcolor="#ffffff" style="padding: 24px; text-align: center; color: #64748b; font-size: 13px; border-bottom: 1px solid #e2e8f0;">
+                    <td colspan="6" align="center" bgcolor="#ffffff" style="padding: 24px; text-align: center; color: #64748b; font-size: 13px; border-bottom: 1px solid #e2e8f0;">
                         Kayıtlı şube bulunamadı.
                     </td>
                 </tr>
@@ -558,6 +690,10 @@
                 const statusBadge = s.Aktif_Pasif
                     ? `<span style="background-color: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">Aktif</span>`
                     : `<span style="background-color: #fee2e2; color: #b91c1c; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: bold;">Pasif</span>`;
+                
+                const coordStr = (s.merkez_enlem !== null && s.merkez_boylam !== null)
+                    ? `${Number(s.merkez_enlem).toFixed(6)}, ${Number(s.merkez_boylam).toFixed(6)}`
+                    : '-';
 
                 return `
                     <tr bgcolor="${bg}" style="background-color: ${bg};">
@@ -569,6 +705,12 @@
                         </td>
                         <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; color: #64748b; border-bottom: 1px solid #e2e8f0;">
                             ${s.Aciklama || '-'}
+                        </td>
+                        <td bgcolor="${bg}" style="padding: 10px 14px; font-size: 12px; font-family: monospace; color: #0369a1; border-bottom: 1px solid #e2e8f0;">
+                            ${coordStr}
+                        </td>
+                        <td align="center" bgcolor="${bg}" style="padding: 10px 14px; font-size: 13px; color: #475569; text-align: center; border-bottom: 1px solid #e2e8f0;">
+                            ${s.yaricap_m || 100} m
                         </td>
                         <td align="center" bgcolor="${bg}" style="padding: 10px 14px; text-align: center; border-bottom: 1px solid #e2e8f0;">
                             ${statusBadge}
@@ -605,10 +747,12 @@
                 <table width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: collapse; margin-bottom: 16px; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; background-color: #ffffff;">
                     <thead>
                         <tr bgcolor="#1e293b" style="background-color: #1e293b;">
-                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a; width: 80px;">ID</th>
+                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a; width: 60px;">ID</th>
                             <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a;">ŞUBE ADI</th>
                             <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a;">AÇIKLAMA</th>
-                            <th align="center" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: center; text-transform: uppercase; border-bottom: 2px solid #0f172a; width: 100px;">DURUM</th>
+                            <th align="left" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: left; text-transform: uppercase; border-bottom: 2px solid #0f172a;">MERKEZ KOORDİNAT</th>
+                            <th align="center" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: center; text-transform: uppercase; border-bottom: 2px solid #0f172a; width: 80px;">YARIÇAP</th>
+                            <th align="center" bgcolor="#1e293b" style="padding: 10px 14px; font-size: 11px; font-weight: 700; color: #ffffff; text-align: center; text-transform: uppercase; border-bottom: 2px solid #0f172a; width: 80px;">DURUM</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -617,10 +761,10 @@
                     ${totalCount > 0 ? `
                     <tfoot>
                         <tr bgcolor="#f1f5f9" style="background-color: #f1f5f9; font-weight: bold;">
-                            <td colspan="2" bgcolor="#f1f5f9" style="padding: 12px 14px; font-size: 13px; font-weight: 800; color: #0f172a; border-top: 2px solid #cbd5e1;">
+                            <td colspan="3" bgcolor="#f1f5f9" style="padding: 12px 14px; font-size: 13px; font-weight: 800; color: #0f172a; border-top: 2px solid #cbd5e1;">
                                 GENEL TOPLAM (${totalCount} Şube)
                             </td>
-                            <td colspan="2" bgcolor="#f1f5f9" align="right" style="padding: 12px 14px; font-size: 13px; color: #15803d; border-top: 2px solid #cbd5e1; text-align: right;">
+                            <td colspan="3" bgcolor="#f1f5f9" align="right" style="padding: 12px 14px; font-size: 13px; color: #15803d; border-top: 2px solid #cbd5e1; text-align: right;">
                                 Aktif: <strong>${activeCount}</strong> | Pasif: <strong>${totalCount - activeCount}</strong>
                             </td>
                         </tr>
@@ -638,7 +782,7 @@
         const totalCount = SUBELER_DATA.length;
         const activeCount = SUBELER_DATA.filter(s => s.Aktif_Pasif).length;
 
-        const headers = ['ID', 'ŞUBE ADI', 'AÇIKLAMA', 'DURUM'];
+        const headers = ['ID', 'ŞUBE ADI', 'AÇIKLAMA', 'MERKEZ KOORDİNAT', 'YARIÇAP (M)', 'DURUM'];
 
         const sheetData = [
             ['ŞUBE YÖNETİMİ RAPORU'],
@@ -650,24 +794,31 @@
         ];
 
         SUBELER_DATA.forEach(s => {
+            const coordStr = (s.merkez_enlem !== null && s.merkez_boylam !== null)
+                ? `${Number(s.merkez_enlem).toFixed(6)}, ${Number(s.merkez_boylam).toFixed(6)}`
+                : '';
             sheetData.push([
                 s.Sube_ID,
                 s.Sube_Adi,
                 s.Aciklama || '',
+                coordStr,
+                s.yaricap_m || 100,
                 s.Aktif_Pasif ? 'Aktif' : 'Pasif'
             ]);
         });
 
         if (totalCount > 0) {
-            sheetData.push(['TOPLAM', `${totalCount} Şube`, '', `Aktif: ${activeCount}`]);
+            sheetData.push(['TOPLAM', `${totalCount} Şube`, '', '', '', `Aktif: ${activeCount}`]);
         }
 
         const ws = XLSX.utils.aoa_to_sheet(sheetData);
         ws['!cols'] = [
             { wch: 10 },
             { wch: 30 },
-            { wch: 40 },
-            { wch: 15 }
+            { wch: 35 },
+            { wch: 25 },
+            { wch: 14 },
+            { wch: 12 }
         ];
 
         XLSX.utils.book_append_sheet(wb, ws, 'Şubeler');

@@ -27,6 +27,9 @@ class Sube(db.Model):
     Sube_ID = Column(Integer, primary_key=True, index=True)
     Sube_Adi = Column(String(100), nullable=False, index=True)
     Aciklama = Column(Text, nullable=True)
+    merkez_enlem = Column(DECIMAL(9, 6), nullable=True)
+    merkez_boylam = Column(DECIMAL(9, 6), nullable=True)
+    yaricap_m = Column(Integer, nullable=False, default=100)
     Aktif_Pasif = Column(Boolean, default=True, index=True)
 
     # Relationships

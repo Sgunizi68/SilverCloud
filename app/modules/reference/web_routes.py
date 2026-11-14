@@ -51,6 +51,9 @@ def subeler():
             "Sube_ID": s.Sube_ID,
             "Sube_Adi": s.Sube_Adi,
             "Aciklama": s.Aciklama,
+            "merkez_enlem": float(s.merkez_enlem) if s.merkez_enlem is not None else None,
+            "merkez_boylam": float(s.merkez_boylam) if s.merkez_boylam is not None else None,
+            "yaricap_m": s.yaricap_m if s.yaricap_m is not None else 100,
             "Aktif_Pasif": s.Aktif_Pasif
         } for s in all_suber
     ]
@@ -60,6 +63,9 @@ def subeler():
             "Sube_ID": s.Sube_ID,
             "Sube_Adi": s.Sube_Adi,
             "Aciklama": s.Aciklama,
+            "merkez_enlem": float(s.merkez_enlem) if s.merkez_enlem is not None else None,
+            "merkez_boylam": float(s.merkez_boylam) if s.merkez_boylam is not None else None,
+            "yaricap_m": s.yaricap_m if s.yaricap_m is not None else 100,
             "Aktif_Pasif": s.Aktif_Pasif
         } for s in auth_suber
     ]

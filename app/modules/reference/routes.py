@@ -41,6 +41,9 @@ def list_suber():
                 "Sube_ID": s.Sube_ID,
                 "Sube_Adi": s.Sube_Adi,
                 "Aciklama": s.Aciklama,
+                "merkez_enlem": float(s.merkez_enlem) if s.merkez_enlem is not None else None,
+                "merkez_boylam": float(s.merkez_boylam) if s.merkez_boylam is not None else None,
+                "yaricap_m": s.yaricap_m if s.yaricap_m is not None else 100,
                 "Aktif_Pasif": s.Aktif_Pasif,
             }
             for s in suber
@@ -67,6 +70,9 @@ def get_sube(sube_id):
             "Sube_ID": sube.Sube_ID,
             "Sube_Adi": sube.Sube_Adi,
             "Aciklama": sube.Aciklama,
+            "merkez_enlem": float(sube.merkez_enlem) if sube.merkez_enlem is not None else None,
+            "merkez_boylam": float(sube.merkez_boylam) if sube.merkez_boylam is not None else None,
+            "yaricap_m": sube.yaricap_m if sube.yaricap_m is not None else 100,
             "Aktif_Pasif": sube.Aktif_Pasif,
         }
         
@@ -81,14 +87,35 @@ def create_sube():
     """Create a new branch."""
     try:
         data = request.get_json()
-        if not data or "Sube_Adi" not in data:
-            return jsonify({"error": "Sube_Adi required"}), 400
+        if not data or "Sube_Adi" not in data or not data["Sube_Adi"].strip():
+            return jsonify({"error": "Şube adı zorunludur."}), 400
         
+        # Validation: Koordinatı girilmemiş şube için kayıt kabul edilmemelidir.
+        enlem = data.get("merkez_enlem")
+        boylam = data.get("merkez_boylam")
+        if enlem in (None, "") or boylam in (None, ""):
+            return jsonify({"error": "Koordinatı girilmemiş şube için kayıt kabul edilmemektedir. Lütfen merkez enlem ve boylam giriniz."}), 400
+        
+        try:
+            enlem_val = float(enlem)
+            boylam_val = float(boylam)
+        except (ValueError, TypeError):
+            return jsonify({"error": "Geçerli bir enlem ve boylam giriniz."}), 400
+
+        yaricap = data.get("yaricap_m", 100)
+        try:
+            yaricap_val = int(yaricap) if yaricap not in (None, "") else 100
+        except (ValueError, TypeError):
+            yaricap_val = 100
+
         db = get_db_session()
         new_sube = queries.create_sube(
             db,
-            sube_adi=data["Sube_Adi"],
-            aciklama=data.get("Aciklama")
+            sube_adi=data["Sube_Adi"].strip(),
+            aciklama=data.get("Aciklama"),
+            merkez_enlem=enlem_val,
+            merkez_boylam=boylam_val,
+            yaricap_m=yaricap_val
         )
         db.close()
         
@@ -96,6 +123,9 @@ def create_sube():
             "Sube_ID": new_sube.Sube_ID,
             "Sube_Adi": new_sube.Sube_Adi,
             "Aciklama": new_sube.Aciklama,
+            "merkez_enlem": float(new_sube.merkez_enlem) if new_sube.merkez_enlem is not None else None,
+            "merkez_boylam": float(new_sube.merkez_boylam) if new_sube.merkez_boylam is not None else None,
+            "yaricap_m": new_sube.yaricap_m,
             "Aktif_Pasif": new_sube.Aktif_Pasif,
         }
         
@@ -110,13 +140,40 @@ def update_sube(sube_id):
     """Update a branch."""
     try:
         data = request.get_json()
-        
+        if not data:
+            return jsonify({"error": "Veri gönderilmedi."}), 400
+
+        enlem_val = None
+        boylam_val = None
+        yaricap_val = None
+
+        # If enlem or boylam is supplied in update, validate both
+        if "merkez_enlem" in data or "merkez_boylam" in data:
+            enlem = data.get("merkez_enlem")
+            boylam = data.get("merkez_boylam")
+            if enlem in (None, "") or boylam in (None, ""):
+                return jsonify({"error": "Koordinatı girilmemiş şube için kayıt kabul edilmemektedir. Lütfen merkez enlem ve boylam giriniz."}), 400
+            try:
+                enlem_val = float(enlem)
+                boylam_val = float(boylam)
+            except (ValueError, TypeError):
+                return jsonify({"error": "Geçerli bir enlem ve boylam giriniz."}), 400
+
+        if "yaricap_m" in data and data.get("yaricap_m") not in (None, ""):
+            try:
+                yaricap_val = int(data.get("yaricap_m"))
+            except (ValueError, TypeError):
+                pass
+
         db = get_db_session()
         updated_sube = queries.update_sube(
             db,
             sube_id,
             sube_adi=data.get("Sube_Adi"),
             aciklama=data.get("Aciklama"),
+            merkez_enlem=enlem_val,
+            merkez_boylam=boylam_val,
+            yaricap_m=yaricap_val,
             aktif_pasif=data.get("Aktif_Pasif")
         )
         db.close()
@@ -128,6 +185,9 @@ def update_sube(sube_id):
             "Sube_ID": updated_sube.Sube_ID,
             "Sube_Adi": updated_sube.Sube_Adi,
             "Aciklama": updated_sube.Aciklama,
+            "merkez_enlem": float(updated_sube.merkez_enlem) if updated_sube.merkez_enlem is not None else None,
+            "merkez_boylam": float(updated_sube.merkez_boylam) if updated_sube.merkez_boylam is not None else None,
+            "yaricap_m": updated_sube.yaricap_m,
             "Aktif_Pasif": updated_sube.Aktif_Pasif,
         }
         
