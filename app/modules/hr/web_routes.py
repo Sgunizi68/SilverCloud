@@ -643,7 +643,7 @@ def vardiya_plan_girisi():
         month     = current_month
         donem_int = current_donem
 
-    # Period access restrictions
+    # Period access helper functions
     def _prev_period(yr, mo, n):
         mo -= n
         while mo <= 0:
@@ -651,7 +651,21 @@ def vardiya_plan_girisi():
             yr -= 1
         return yr, mo
 
+    def _next_period(yr, mo, n):
+        mo += n
+        while mo > 12:
+            mo -= 12
+            yr += 1
+        return yr, mo
+
+    # Calculate next period (current period + 1 month)
+    next_yr, next_mo = _next_period(current_year, current_month, 1)
+    next_donem = int(f"{str(next_yr)[2:]}{next_mo:02d}")
+
     allowed_donems = set()
+    # Next period is allowed for planning
+    allowed_donems.add(next_donem)
+    # Current period and previous periods: non-gecmis user gets current + 2 previous
     for i in range(3):
         yr_tmp2, mo_tmp2 = _prev_period(current_year, current_month, i)
         code = int(f"{str(yr_tmp2)[2:]}{mo_tmp2:02d}")
@@ -664,14 +678,12 @@ def vardiya_plan_girisi():
         month = current_month
 
     is_current_period  = (year == current_year and month == current_month)
-    is_prev_period     = (year == current_year and month == current_month - 1) or \
-                         (month == 12 and year == current_year - 1 and current_month == 1)
+    is_next_period     = (year == next_yr and month == next_mo)
 
-    can_edit_period = (
-        has_gecmis_yetki or
-        is_current_period or
-        (is_prev_period and today_day <= 5)
-    )
+    # In Vardiya Plan, non-yetki 79 users can edit today and future dates (including next period)
+    # can_edit_period is True if user has gecmis yetki, or if period is current, next, or future.
+    # In general, within the period, cell-level locking enforces: target_date < today is locked if not has_gecmis_yetki.
+    can_edit_period = has_gecmis_yetki or (date_type(year, month, calendar.monthrange(year, month)[1]) >= today)
 
     _, num_days = calendar.monthrange(year, month)
 
@@ -759,6 +771,11 @@ def vardiya_plan_girisi():
     ay_adlari = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
                  "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
     donem_options = []
+    
+    # 1. Add next period (gecelek dönem)
+    donem_options.append({"code": next_donem, "label": f"{next_donem} - {ay_adlari[next_mo]} {next_yr}"})
+
+    # 2. Add current period and past periods
     max_periods = 12 if has_gecmis_yetki else 3
     for i in range(max_periods):
         yr2, mo2 = _prev_period(current_year, current_month, i)
@@ -781,8 +798,10 @@ def vardiya_plan_girisi():
         donem=donem_int,
         donem_options=donem_options,
         sube_adi=next((s["Sube_Adi"] for s in subeler_list if s["Sube_ID"] == sube_id), ""),
+        today_date_str=today.isoformat(),
         today_day=today_day,
         is_current_period=is_current_period,
+        is_next_period=is_next_period,
         is_admin=is_admin,
         has_gecmis_yetki=has_gecmis_yetki,
         can_edit_period=can_edit_period,

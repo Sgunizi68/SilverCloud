@@ -390,6 +390,9 @@
     const MONTH = {{ month }};
     const NUM_DAYS = {{ num_days }};
     const TODAY_DAY = {{ today_day }};          // day-of-month for today
+    const TODAY_DATE_STR = {{ today_date_str | tojson }}; // "YYYY-MM-DD"
+    const TODAY_DATE = new Date(TODAY_DATE_STR);
+    TODAY_DATE.setHours(0, 0, 0, 0);
     const IS_CURRENT = {{ is_current_period | tojson }};   // bool
     const CAN_EDIT = {{ can_edit_period | tojson }};     // bool
     const HAS_GECMIS_YETKI = {{ has_gecmis_yetki | tojson }}; // bool
@@ -459,12 +462,12 @@
             if (cellDate > cikisDate) return true;
         }
 
-        // Rule: If user does not have past data permission (Yetki 79 or Admin)
+        // Rule: If user does not have past data permission (Yetki 79 or Admin), cannot edit days before today
         if (!HAS_GECMIS_YETKI) {
-            // Rule 1: No future date entry for the current period
-            if (IS_CURRENT && day > TODAY_DAY) return true;
+            // Cannot edit any date before today
+            if (cellDate < TODAY_DATE) return true;
 
-            // Rule 2: After Çıkış seçim entered in grid, subsequent days are locked
+            // After Çıkış seçim entered in grid, subsequent days are locked
             const cd = cikisDayFor[tc];
             if (cd !== null && cd !== undefined && day > cd) return true;
         }
@@ -700,3 +703,4 @@
     }
 </script>
 {% endblock %}
+
