@@ -302,6 +302,16 @@
         background: #bee3f8;
     }
 
+    .btn-clear-device {
+        background: #fff7ed;
+        color: #ea580c;
+    }
+
+    .btn-clear-device:hover {
+        background: #ffedd5;
+        color: #c2410c;
+    }
+
     .status-badge {
         display: inline-flex;
         align-items: center;
@@ -390,7 +400,7 @@
                     <th style="width: 130px;">SİGORTA ÇIKIŞ</th>
                     <th style="width: 130px;">CİHAZ KAYDI</th>
                     <th style="width: 100px; text-align: center;">DURUM</th>
-                    <th style="width: 90px; text-align: center;">İŞLEMLER</th>
+                    <th style="width: {% if can_edit and can_delete_cihaz %}110px{% else %}90px{% endif %}; text-align: center;">İŞLEMLER</th>
                 </tr>
             </thead>
             <tbody>
@@ -408,7 +418,7 @@
                     <td style="color: #64748b;">{{ calisan.Sigorta_Giris or '-' }}</td>
                     <td style="color: #64748b;">{{ calisan.Sigorta_Cikis if calisan.Sigorta_Cikis != '2099-01-01' else
                         '-' }}</td>
-                    <td style="color: #475569; font-weight: 500;">{{ calisan.Cihaz_Kaydi or '-' }}</td>
+                    <td style="color: #475569; font-weight: 500;" id="cihaz-val-{{ calisan.TC_No }}">{{ calisan.Cihaz_Kaydi or '-' }}</td>
                     <td style="text-align: center;">
                         {% if calisan.Aktif_Pasif %}
                         <span class="status-badge active"><i class="fas fa-check-circle"></i> Aktif</span>
@@ -417,15 +427,26 @@
                         {% endif %}
                     </td>
                     <td style="text-align: center;">
-                        {% if can_edit %}
-                        <button class="btn-row-action btn-edit" title="Düzenle"
-                            data-calisan='{{ calisan | tojson | safe }}'
-                            onclick='openEditCalisanModal(JSON.parse(this.getAttribute("data-calisan")))'>
-                            <i class="fas fa-pencil-alt"></i>
-                        </button>
-                        {% else %}
-                        <span style="color: #94a3b8;">-</span>
-                        {% endif %}
+                        <div style="display: inline-flex; gap: 6px; align-items: center; justify-content: center;">
+                            {% if can_edit %}
+                            <button class="btn-row-action btn-edit" title="Düzenle"
+                                data-calisan='{{ calisan | tojson | safe }}'
+                                onclick='openEditCalisanModal(JSON.parse(this.getAttribute("data-calisan")))'>
+                                <i class="fas fa-pencil-alt"></i>
+                            </button>
+                            {% endif %}
+                            {% if can_delete_cihaz %}
+                            <button class="btn-row-action btn-clear-device" title="Cihaz Kaydı Sil"
+                                onclick="clearCihazKaydi('{{ calisan.TC_No }}', '{{ calisan.Adi }} {{ calisan.Soyadi }}')">
+                                <i class="fas fa-mobile-alt" style="position: relative;">
+                                    <span style="position: absolute; right: -5px; bottom: -3px; font-size: 9px; color: #dc2626;">✕</span>
+                                </i>
+                            </button>
+                            {% endif %}
+                            {% if not can_edit and not can_delete_cihaz %}
+                            <span style="color: #94a3b8;">-</span>
+                            {% endif %}
+                        </div>
                     </td>
                 </tr>
                 {% else %}
@@ -656,6 +677,47 @@
             }
         } catch (err) {
             showToast('Bağlantı hatası', 'error');
+        }
+    }
+
+    async function clearCihazKaydi(tcNo, calisanAdSoyad) {
+        if (!confirm(`${calisanAdSoyad} (${tcNo}) çalışanının cihaz kaydını silmek istediğinize emin misiniz?`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/v1/calisanlar/${tcNo}/cihaz-kaydi`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (response.ok) {
+                showToast('Cihaz kaydı başarıyla silindi.');
+                // Update table cell and data-attribute immediately without full reload
+                const row = document.querySelector(`tr[data-tc="${tcNo}"]`);
+                if (row) {
+                    row.setAttribute('data-cihaz', '');
+                    const cell = document.getElementById(`cihaz-val-${tcNo}`);
+                    if (cell) cell.textContent = '-';
+                    // Update edit button data if present
+                    const editBtn = row.querySelector('.btn-edit');
+                    if (editBtn) {
+                        try {
+                            const cData = JSON.parse(editBtn.getAttribute('data-calisan'));
+                            cData.Cihaz_Kaydi = '';
+                            editBtn.setAttribute('data-calisan', JSON.stringify(cData));
+                        } catch (e) {}
+                    }
+                }
+                // Update in memory CALISANLAR_DATA
+                const mem = CALISANLAR_DATA.find(c => c.TC_No === tcNo);
+                if (mem) mem.Cihaz_Kaydi = '';
+            } else {
+                const err = await response.json();
+                showToast(err.error || 'Cihaz kaydı silinirken hata oluştu.', 'error');
+            }
+        } catch (err) {
+            showToast('Bağlantı hatası oluştu.', 'error');
         }
     }
 

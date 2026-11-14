@@ -201,6 +201,44 @@ def delete_calisan(tc_no):
         return jsonify({"error": str(e)}), 500
 
 
+@hr_bp.route("/calisanlar/<tc_no>/cihaz-kaydi", methods=["DELETE"])
+@auth_required
+def delete_calisan_cihaz_kaydi(tc_no):
+    """Clear employee device registration (Cihaz Kaydı Sil - Yetki 80)."""
+    try:
+        from app.modules.auth import queries as auth_queries
+        user_id = session.get('user_id')
+        db = get_db_session()
+        
+        user = auth_queries.get_kullanici_by_id(db, user_id) if user_id else None
+        is_admin = False
+        if user:
+            if user.Kullanici_Adi and user.Kullanici_Adi.lower() == 'admin':
+                is_admin = True
+            else:
+                roles = auth_queries.get_user_roles(db, user.Kullanici_ID)
+                is_admin = 'admin' in [r.lower() for r in roles]
+
+        can_delete_cihaz = is_admin or (user and auth_queries.has_permission(db, user.Kullanici_ID, "Cihaz Kaydı Sil"))
+        if not can_delete_cihaz:
+            db.close()
+            return jsonify({"error": "Cihaz kaydı silme yetkiniz bulunmamaktadır."}), 403
+
+        updated_calisan = queries.update_calisan(db, tc_no, cihaz_kaydi="")
+        db.close()
+
+        if not updated_calisan:
+            return jsonify({"error": "Calisan not found"}), 404
+
+        return jsonify({
+            "message": "Cihaz kaydı başarıyla silindi.",
+            "TC_No": updated_calisan.TC_No,
+            "Cihaz_Kaydi": updated_calisan.Cihaz_Kaydi
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 # ============================================================================
 # PUANTAJ SECIMI (ATTENDANCE TYPE) ENDPOINTS
 # ============================================================================

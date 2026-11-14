@@ -79,6 +79,7 @@ def calisanlar():
     can_add = is_admin or auth_queries.has_permission(db_session, user.Kullanici_ID, "Yeni Çalışan Ekleme")
     can_edit = is_admin or auth_queries.has_permission(db_session, user.Kullanici_ID, "Çalışan Düzenleme")
     can_view_salary = is_admin or auth_queries.has_permission(db_session, user.Kullanici_ID, "Çalışan Maaş Görme")
+    can_delete_cihaz = is_admin or auth_queries.has_permission(db_session, user.Kullanici_ID, "Cihaz Kaydı Sil")
     
     db_session.close()
     
@@ -90,7 +91,8 @@ def calisanlar():
         calisanlar=calisanlar_list,
         can_add=can_add,
         can_edit=can_edit,
-        can_view_salary=can_view_salary
+        can_view_salary=can_view_salary,
+        can_delete_cihaz=can_delete_cihaz
     )
 
 
