@@ -309,7 +309,8 @@
             <button class="icon-btn" title="Excel İndir" onclick="exportExcel()">
                 <i class="fas fa-file-excel" style="color: #10b981;"></i>
             </button>
-            <button class="icon-btn" data-permission="Mail Gönder" title="Mail Gönder" onclick="openReportMailModal({ title: 'Vardiya Plan Girişi', filename: 'Vardiya_Plan_{{ donem }}.xlsx', tableId: 'vardiya-table' })">
+            <button class="icon-btn" data-permission="Mail Gönder" title="Mail Gönder"
+                onclick="openReportMailModal({ title: 'Vardiya Plan Girişi', filename: 'Vardiya_Plan_{{ donem }}.xlsx', tableId: 'vardiya-table' })">
                 <i class="fas fa-envelope" style="color: #3b82f6;"></i>
             </button>
             <label style="font-size: 12px; font-weight: 600; color: #64748b;">Dönem:</label>
@@ -539,10 +540,10 @@
         // Position popup near click
         const rect = event.currentTarget.getBoundingClientRect();
         popup.style.display = 'block';
-        
+
         const pw = popup.offsetWidth || 200;
         const ph = popup.offsetHeight || 300;
-        
+
         let left = rect.left;
         let top = rect.bottom + 4;
 
@@ -554,7 +555,7 @@
         if (left + pw > window.innerWidth) {
             left = window.innerWidth - pw - 8;
         }
-        
+
         if (left < 8) left = 8;
 
         popup.style.left = left + 'px';
@@ -703,4 +704,3 @@
     }
 </script>
 {% endblock %}
-
