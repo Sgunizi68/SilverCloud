@@ -574,4 +574,224 @@ def calisan_talep_yonetimi():
     )
 
 
+@web_hr_bp.route("/vardiya-plan-girisi", methods=["GET"])
+@login_required
+@permission_required("Vardiya Planı Girişi Ekranı Görüntüleme")
+def vardiya_plan_girisi():
+    """
+    Vardiya Plan Girisi page.
+    Shows an interactive grid: employees (rows) x days of period (columns).
+    Mirrors the puantaj_girisi workflow using Vardiya_Plan table.
+
+    Business rules enforced:
+    - Admin or users with 'Vardiya Plan Geçmiş Veri Erişimi' (Yetki ID 79) have full access to historical periods.
+    - Non-authorized users can only see the last 3 periods and edit current period (or previous within first 5 days).
+    - Future dates cannot be entered for non-authorized users.
+    - Employees whose Sigorta_Cikis is before this period start are excluded.
+    - Dates before Sigorta_Giris or after Sigorta_Cikis are locked.
+    """
+    import calendar
+    import json
+    from datetime import datetime as dt, date as date_type
+
+    db_session = get_db_session()
+    user = auth_queries.get_kullanici_by_id(db_session, session['user_id'])
+    if not user:
+        db_session.close()
+        return redirect(url_for('web_auth.login'))
+
+    # Admin check
+    is_admin = (user.Kullanici_Adi and user.Kullanici_Adi.lower() == 'admin')
+    if not is_admin:
+        roles = auth_queries.get_user_roles(db_session, user.Kullanici_ID)
+        is_admin = 'admin' in [r.lower() for r in roles]
+
+    # Yetki 79: Vardiya Plan Geçmiş Veri Erişimi check
+    has_gecmis_yetki = is_admin or auth_queries.has_permission(
+        db_session, user.Kullanici_ID, "Vardiya Plan Geçmiş Veri Erişimi"
+    )
+
+    # Branch list
+    all_suber = ref_queries.get_suber(db_session, limit=1000)
+    auth_suber = all_suber if is_admin else [
+        s for s in all_suber
+        if s.Sube_ID in auth_queries.get_user_branches(db_session, user.Kullanici_ID)
+    ]
+    subeler_list = [{"Sube_ID": s.Sube_ID, "Sube_Adi": s.Sube_Adi} for s in auth_suber]
+
+    sube_id = request.args.get('sube_id', type=int)
+    if sube_id is None and auth_suber:
+        sube_id = auth_suber[0].Sube_ID
+
+    # Today's date for business rules
+    today = dt.now().date()
+    current_year  = today.year
+    current_month = today.month
+    today_day     = today.day
+    current_donem = int(f"{str(current_year)[2:]}{current_month:02d}")
+
+    # Parse period from URL param
+    donem_raw = request.args.get('donem', None)
+    if not donem_raw:
+        donem_raw = session.get('donem', str(current_donem))
+    try:
+        donem_int = int(donem_raw)
+        year  = 2000 + (donem_int // 100)
+        month = donem_int % 100
+    except (ValueError, TypeError):
+        year      = current_year
+        month     = current_month
+        donem_int = current_donem
+
+    # Period access restrictions
+    def _prev_period(yr, mo, n):
+        mo -= n
+        while mo <= 0:
+            mo += 12
+            yr -= 1
+        return yr, mo
+
+    allowed_donems = set()
+    for i in range(3):
+        yr_tmp2, mo_tmp2 = _prev_period(current_year, current_month, i)
+        code = int(f"{str(yr_tmp2)[2:]}{mo_tmp2:02d}")
+        allowed_donems.add(code)
+
+    if not has_gecmis_yetki and donem_int not in allowed_donems:
+        # Redirect to current period if user lacks past data permission
+        donem_int = current_donem
+        year  = current_year
+        month = current_month
+
+    is_current_period  = (year == current_year and month == current_month)
+    is_prev_period     = (year == current_year and month == current_month - 1) or \
+                         (month == 12 and year == current_year - 1 and current_month == 1)
+
+    can_edit_period = (
+        has_gecmis_yetki or
+        is_current_period or
+        (is_prev_period and today_day <= 5)
+    )
+
+    _, num_days = calendar.monthrange(year, month)
+
+    # Load vardiya/puantaj seçim types from Puantaj_Secimi
+    secimler_data = queries.get_puantaj_secimler(db_session, skip=0, limit=1000)
+    secimler_map  = {s.Secim_ID: s for s in secimler_data}
+    secimler_list = [
+        {
+            "Secim_ID": s.Secim_ID,
+            "Secim":    s.Secim,
+            "Degeri":   float(s.Degeri) if s.Degeri else 0.0,
+            "Renk_Kodu": s.Renk_Kodu or "#cccccc",
+            "Aktif_Pasif": s.Aktif_Pasif,
+        }
+        for s in secimler_data if s.Aktif_Pasif
+    ]
+
+    # Identify "Çıkış" seçim ID
+    cikis_secim_id = None
+    for s in secimler_data:
+        if s.Secim and s.Secim.strip().lower() in ('çıkış', 'cikis', 'exit'):
+            cikis_secim_id = s.Secim_ID
+            break
+
+    # Load active employees for this period
+    period_start = date_type(year, month, 1)
+    _, last = calendar.monthrange(year, month)
+    period_end = date_type(year, month, last)
+
+    all_employees = queries.get_calisanlar(db_session, sube_id=sube_id, aktif_pasif=None, limit=1000)
+
+    employee_data = []
+    for emp in all_employees:
+        sig_cikis = emp.Sigorta_Cikis
+        if sig_cikis and sig_cikis < period_start:
+            continue
+        sig_giris = emp.Sigorta_Giris
+        if sig_giris and sig_giris > period_end:
+            continue
+        employee_data.append(emp)
+
+    # Load vardiya plan records for this month/branch
+    vardiya_records = queries.get_vardiya_planlar_for_month(db_session, sube_id, year, month)
+
+    vardiya_map = {}
+    for v in vardiya_records:
+        tc = v.TC_No
+        day = v.Tarih.day
+        secim = secimler_map.get(v.Secim_ID)
+        if tc not in vardiya_map:
+            vardiya_map[tc] = {}
+        vardiya_map[tc][day] = {
+            "Vardiya_Plan_ID": v.Vardiya_Plan_ID,
+            "Secim_ID":        v.Secim_ID,
+            "Secim":           secim.Secim if secim else "?",
+            "Renk_Kodu":       secim.Renk_Kodu if secim else "#ccc",
+            "Degeri":          float(secim.Degeri) if secim else 0.0,
+        }
+
+    # Build employee list with totals and çıkış day
+    employees = []
+    for emp in employee_data:
+        tc = emp.TC_No
+        emp_days = vardiya_map.get(tc, {})
+        total = sum(d["Degeri"] for d in emp_days.values())
+
+        cikis_day = None
+        if cikis_secim_id:
+            for d, rec in emp_days.items():
+                if rec["Secim_ID"] == cikis_secim_id:
+                    cikis_day = d if cikis_day is None else min(cikis_day, d)
+
+        employees.append({
+            "TC_No":         tc,
+            "Adi":           emp.Adi,
+            "Soyadi":        emp.Soyadi,
+            "Aktif_Pasif":   emp.Aktif_Pasif,
+            "Sigorta_Giris": emp.Sigorta_Giris.isoformat() if emp.Sigorta_Giris else None,
+            "Sigorta_Cikis": emp.Sigorta_Cikis.isoformat() if emp.Sigorta_Cikis else None,
+            "Total":         round(total, 2),
+            "Cikis_Day":     cikis_day,
+        })
+
+    # Donem dropdown options
+    ay_adlari = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
+                 "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
+    donem_options = []
+    max_periods = 12 if has_gecmis_yetki else 3
+    for i in range(max_periods):
+        yr2, mo2 = _prev_period(current_year, current_month, i)
+        code = int(f"{str(yr2)[2:]}{mo2:02d}")
+        donem_options.append({"code": code, "label": f"{code} - {ay_adlari[mo2]} {yr2}"})
+
+    db_session.close()
+
+    return render_template(
+        "vardiya_plan_girisi.html",
+        user=user,
+        subeler=subeler_list,
+        current_sube_id=sube_id,
+        employees=employees,
+        secimler=secimler_list,
+        vardiya_map=json.dumps(vardiya_map),
+        year=year,
+        month=month,
+        num_days=num_days,
+        donem=donem_int,
+        donem_options=donem_options,
+        sube_adi=next((s["Sube_Adi"] for s in subeler_list if s["Sube_ID"] == sube_id), ""),
+        today_day=today_day,
+        is_current_period=is_current_period,
+        is_admin=is_admin,
+        has_gecmis_yetki=has_gecmis_yetki,
+        can_edit_period=can_edit_period,
+        cikis_secim_id=cikis_secim_id or 0,
+        cikis_days_json=json.dumps({emp['TC_No']: emp['Cikis_Day'] for emp in employees}),
+        giris_dates_json=json.dumps({emp['TC_No']: emp['Sigorta_Giris'] for emp in employees}),
+        cikis_dates_json=json.dumps({emp['TC_No']: emp['Sigorta_Cikis'] for emp in employees}),
+    )
+
+
+
 

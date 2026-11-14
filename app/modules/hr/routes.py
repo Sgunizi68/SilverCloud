@@ -5,7 +5,7 @@ All endpoints protected by @auth_required decorator.
 """
 
 from functools import wraps
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 from app.common.database import get_db_session
 from app.modules.hr import queries
 
@@ -517,6 +517,250 @@ def delete_puantaj(puantaj_id):
             return jsonify({"error": "Puantaj not found"}), 404
         
         return jsonify({"message": "Puantaj deleted"}), 204
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ============================================================================
+# VARDIYA PLAN (SHIFT PLAN) ENDPOINTS
+# ============================================================================
+
+def _check_vardiya_plan_period_permission(db, target_date):
+    """
+    Check if the user has permission to edit vardiya plan for target_date.
+    Admins can always edit.
+    Users with Permission 79 ("Vardiya Plan Geçmiş Veri Erişimi") can edit past periods.
+    Otherwise, users can only edit current period or previous period within first 5 days.
+    """
+    from app.modules.auth import queries as auth_queries
+    user_id = session.get('user_id')
+    if not user_id:
+        return True  # Handled by auth_required
+    
+    user = auth_queries.get_kullanici_by_id(db, user_id)
+    if not user:
+        return False
+        
+    is_admin = (user.Kullanici_Adi and user.Kullanici_Adi.lower() == 'admin')
+    if not is_admin:
+        roles = auth_queries.get_user_roles(db, user.Kullanici_ID)
+        is_admin = 'admin' in [r.lower() for r in roles]
+        
+    if is_admin:
+        return True
+        
+    has_gecmis_yetki = auth_queries.has_permission(db, user.Kullanici_ID, "Vardiya Plan Geçmiş Veri Erişimi")
+    if has_gecmis_yetki:
+        return True
+
+    from datetime import datetime as dt
+    today = dt.now().date()
+    current_year = today.year
+    current_month = today.month
+
+    target_year = target_date.year
+    target_month = target_date.month
+
+    is_current_period = (target_year == current_year and target_month == current_month)
+    is_prev_period = (target_year == current_year and target_month == current_month - 1) or \
+                     (target_month == 12 and target_year == current_year - 1 and current_month == 1)
+
+    if is_current_period:
+        return True
+    if is_prev_period and today.day <= 5:
+        return True
+
+    return False
+
+
+@hr_bp.route("/vardiya-planlar", methods=["GET"])
+@auth_required
+def list_vardiya_planlar():
+    """List shift plans with optional filtering."""
+    try:
+        skip = request.args.get("skip", 0, type=int)
+        limit = min(request.args.get("limit", 100, type=int), 1000)
+        tc_no = request.args.get("tc_no", None, type=str)
+        sube_id = request.args.get("sube_id", None, type=int)
+        secim_id = request.args.get("secim_id", None, type=int)
+
+        db = get_db_session()
+        planlar = queries.get_vardiya_planlar(db, skip, limit, tc_no, sube_id, secim_id)
+        db.close()
+
+        result = [
+            {
+                "Vardiya_Plan_ID": p.Vardiya_Plan_ID,
+                "Tarih": p.Tarih.isoformat(),
+                "TC_No": p.TC_No,
+                "Secim_ID": p.Secim_ID,
+                "Sube_ID": p.Sube_ID,
+                "Kayit_Tarihi": p.Kayit_Tarihi.isoformat() if p.Kayit_Tarihi else None,
+            }
+            for p in planlar
+        ]
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@hr_bp.route("/vardiya-planlar/<int:plan_id>", methods=["GET"])
+@auth_required
+def get_vardiya_plan(plan_id):
+    """Get shift plan by ID."""
+    try:
+        db = get_db_session()
+        plan = queries.get_vardiya_plan_by_id(db, plan_id)
+        db.close()
+
+        if not plan:
+            return jsonify({"error": "VardiyaPlan not found"}), 404
+
+        result = {
+            "Vardiya_Plan_ID": plan.Vardiya_Plan_ID,
+            "Tarih": plan.Tarih.isoformat(),
+            "TC_No": plan.TC_No,
+            "Secim_ID": plan.Secim_ID,
+            "Sube_ID": plan.Sube_ID,
+            "Kayit_Tarihi": plan.Kayit_Tarihi.isoformat() if plan.Kayit_Tarihi else None,
+        }
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@hr_bp.route("/vardiya-planlar", methods=["POST"])
+@auth_required
+def create_vardiya_plan():
+    """Create a new shift plan record."""
+    try:
+        data = request.get_json()
+        if not data or "TC_No" not in data or "Secim_ID" not in data or "Sube_ID" not in data:
+            return jsonify({"error": "TC_No, Secim_ID, and Sube_ID required"}), 400
+
+        from datetime import date as date_type
+        target_date = data.get("Tarih")
+        if isinstance(target_date, str):
+            target_date = date_type.fromisoformat(target_date)
+        elif target_date is None:
+            from datetime import datetime as dt
+            target_date = dt.now().date()
+
+        db = get_db_session()
+
+        # Check period edit permission (Yetki 79 / Admin)
+        if not _check_vardiya_plan_period_permission(db, target_date):
+            db.close()
+            return jsonify({"error": "Geçmiş dönem vardiya planı düzenleme yetkiniz bulunmamaktadır."}), 403
+
+        # Validation: Date cannot be before Sigorta_Giris or after Sigorta_Cikis
+        calisan = queries.get_calisan_by_tc_no(db, data["TC_No"])
+        if calisan:
+            if calisan.Sigorta_Giris and target_date < calisan.Sigorta_Giris:
+                db.close()
+                return jsonify({"error": f"Sigorta giriş tarihinden ({calisan.Sigorta_Giris.strftime('%d.%m.%Y')}) öncesine veri girişi yapılamaz."}), 403
+            if calisan.Sigorta_Cikis and target_date > calisan.Sigorta_Cikis:
+                db.close()
+                return jsonify({"error": f"Sigorta çıkış tarihinden ({calisan.Sigorta_Cikis.strftime('%d.%m.%Y')}) sonrasına veri girişi yapılamaz."}), 403
+
+        new_plan = queries.create_vardiya_plan(
+            db,
+            tc_no=data["TC_No"],
+            secim_id=data["Secim_ID"],
+            sube_id=data["Sube_ID"],
+            tarih=target_date,
+            kayit_tarihi=data.get("Kayit_Tarihi")
+        )
+        db.close()
+
+        result = {
+            "Vardiya_Plan_ID": new_plan.Vardiya_Plan_ID,
+            "Tarih": new_plan.Tarih.isoformat(),
+            "TC_No": new_plan.TC_No,
+            "Secim_ID": new_plan.Secim_ID,
+            "Sube_ID": new_plan.Sube_ID,
+            "Kayit_Tarihi": new_plan.Kayit_Tarihi.isoformat() if new_plan.Kayit_Tarihi else None,
+        }
+        return jsonify(result), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@hr_bp.route("/vardiya-planlar/<int:plan_id>", methods=["PUT"])
+@auth_required
+def update_vardiya_plan(plan_id):
+    """Update shift plan record."""
+    try:
+        data = request.get_json()
+        db = get_db_session()
+
+        plan = queries.get_vardiya_plan_by_id(db, plan_id)
+        if not plan:
+            db.close()
+            return jsonify({"error": "VardiyaPlan not found"}), 404
+
+        from datetime import date as date_type
+        target_date = data.get("Tarih")
+        if target_date:
+            if isinstance(target_date, str):
+                target_date = date_type.fromisoformat(target_date)
+        else:
+            target_date = plan.Tarih
+
+        # Check period edit permission (Yetki 79 / Admin)
+        if not _check_vardiya_plan_period_permission(db, target_date):
+            db.close()
+            return jsonify({"error": "Geçmiş dönem vardiya planı düzenleme yetkiniz bulunmamaktadır."}), 403
+
+        calisan = queries.get_calisan_by_tc_no(db, plan.TC_No)
+        if calisan:
+            if calisan.Sigorta_Giris and target_date < calisan.Sigorta_Giris:
+                db.close()
+                return jsonify({"error": f"Sigorta giriş tarihinden ({calisan.Sigorta_Giris.strftime('%d.%m.%Y')}) öncesine veri girişi yapılamaz."}), 403
+            if calisan.Sigorta_Cikis and target_date > calisan.Sigorta_Cikis:
+                db.close()
+                return jsonify({"error": f"Sigorta çıkış tarihinden ({calisan.Sigorta_Cikis.strftime('%d.%m.%Y')}) sonrasına veri girişi yapılamaz."}), 403
+
+        updated_plan = queries.update_vardiya_plan(
+            db,
+            plan_id,
+            secim_id=data.get("Secim_ID"),
+            tarih=target_date,
+            sube_id=data.get("Sube_ID")
+        )
+        db.close()
+
+        result = {
+            "Vardiya_Plan_ID": updated_plan.Vardiya_Plan_ID,
+            "Tarih": updated_plan.Tarih.isoformat(),
+            "TC_No": updated_plan.TC_No,
+            "Secim_ID": updated_plan.Secim_ID,
+            "Sube_ID": updated_plan.Sube_ID,
+            "Kayit_Tarihi": updated_plan.Kayit_Tarihi.isoformat() if updated_plan.Kayit_Tarihi else None,
+        }
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@hr_bp.route("/vardiya-planlar/<int:plan_id>", methods=["DELETE"])
+@auth_required
+def delete_vardiya_plan(plan_id):
+    """Delete shift plan record."""
+    try:
+        db = get_db_session()
+        plan = queries.get_vardiya_plan_by_id(db, plan_id)
+        if not plan:
+            db.close()
+            return jsonify({"error": "VardiyaPlan not found"}), 404
+
+        if not _check_vardiya_plan_period_permission(db, plan.Tarih):
+            db.close()
+            return jsonify({"error": "Geçmiş dönem vardiya planı düzenleme yetkiniz bulunmamaktadır."}), 403
+
+        queries.delete_vardiya_plan(db, plan_id)
+        db.close()
+        return jsonify({"message": "VardiyaPlan deleted"}), 204
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

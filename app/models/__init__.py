@@ -12,7 +12,7 @@ from app.models.models import (
     Nakit, EFaturaReferans, POSHareketleri,
     Gelir, GelirEkstra,
     Stok, StokFiyat, StokSayim,
-    Calisan, PuantajSecimi, Puantaj, AvansIstek, CalisanTalep,
+    Calisan, PuantajSecimi, Puantaj, VardiyaPlan, AvansIstek, CalisanTalep,
     YemekCeki, Cari, Mutabakat, RobotposGelirReferans, RobotposGelir, MuavinDefteri, MuavinEslesmeyenler
 )
 
@@ -25,6 +25,6 @@ __all__ = [
     "Nakit", "EFaturaReferans", "POSHareketleri",
     "Gelir", "GelirEkstra",
     "Stok", "StokFiyat", "StokSayim",
-    "Calisan", "PuantajSecimi", "Puantaj", "AvansIstek", "CalisanTalep",
+    "Calisan", "PuantajSecimi", "Puantaj", "VardiyaPlan", "AvansIstek", "CalisanTalep",
     "YemekCeki", "Cari", "Mutabakat", "RobotposGelirReferans", "RobotposGelir", "MuavinDefteri", "MuavinEslesmeyenler"
 ]

@@ -40,6 +40,7 @@ class Sube(db.Model):
     stok_sayimlar = relationship("StokSayim", back_populates="sube")
     stok_fiyatlar = relationship("StokFiyat", back_populates="sube")
     puantajlar = relationship("Puantaj", back_populates="sube")
+    vardiya_planlar = relationship("VardiyaPlan", back_populates="sube")
     avans_istekler = relationship("AvansIstek", back_populates="sube")
     nakitler = relationship("Nakit", back_populates="sube")
     odemeler = relationship("Odeme", back_populates="sube")
@@ -630,6 +631,7 @@ class Calisan(db.Model):
     # Relationships
     sube = relationship("Sube", back_populates="calisanlar")
     puantajlar = relationship("Puantaj", back_populates="calisan")
+    vardiya_planlar = relationship("VardiyaPlan", back_populates="calisan")
     avans_istekler = relationship("AvansIstek", back_populates="calisan")
 
     def __repr__(self):
@@ -649,6 +651,7 @@ class PuantajSecimi(db.Model):
 
     # Relationships
     puantajlar = relationship("Puantaj", back_populates="secim")
+    vardiya_planlar = relationship("VardiyaPlan", back_populates="secim")
 
     def __repr__(self):
         return f"<PuantajSecimi {self.Secim}>"
@@ -673,6 +676,27 @@ class Puantaj(db.Model):
 
     def __repr__(self):
         return f"<Puantaj {self.Puantaj_ID}>"
+
+
+class VardiyaPlan(db.Model):
+    """Shift plan record"""
+    __tablename__ = "Vardiya_Plan"
+    __table_args__ = {"extend_existing": True}
+
+    Vardiya_Plan_ID = Column(Integer, primary_key=True, autoincrement=True, index=True)
+    Tarih = Column(Date, nullable=False, index=True)
+    TC_No = Column(String(11), ForeignKey("Calisan.TC_No"), nullable=False, index=True)
+    Secim_ID = Column(Integer, ForeignKey("Puantaj_Secimi.Secim_ID"), nullable=False, index=True)
+    Sube_ID = Column(Integer, ForeignKey("Sube.Sube_ID"), nullable=False, index=True)
+    Kayit_Tarihi = Column(DateTime, default=func.now())
+
+    # Relationships
+    calisan = relationship("Calisan", back_populates="vardiya_planlar")
+    secim = relationship("PuantajSecimi", back_populates="vardiya_planlar")
+    sube = relationship("Sube", back_populates="vardiya_planlar")
+
+    def __repr__(self):
+        return f"<VardiyaPlan {self.Vardiya_Plan_ID}>"
 
 
 class AvansIstek(db.Model):

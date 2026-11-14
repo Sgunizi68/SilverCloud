@@ -9,7 +9,7 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
-from app.models import Calisan, PuantajSecimi, Puantaj, AvansIstek, CalisanTalep
+from app.models import Calisan, PuantajSecimi, Puantaj, VardiyaPlan, AvansIstek, CalisanTalep
 
 
 # ============================================================================
@@ -425,6 +425,137 @@ def get_puantajlar_for_month(
         .where(Puantaj.Sube_ID == sube_id)
         .where(Puantaj.Tarih >= tarihten)
         .where(Puantaj.Tarih <= tarihine)
+    )
+    return db.scalars(stmt).all()
+
+
+# ============================================================================
+# VARDIYA PLAN (SHIFT PLAN) QUERIES
+# ============================================================================
+
+def get_vardiya_planlar(
+    db: Session,
+    skip: int = 0,
+    limit: int = 100,
+    tc_no: Optional[str] = None,
+    sube_id: Optional[int] = None,
+    secim_id: Optional[int] = None,
+    tarihten: Optional[date] = None,
+    tarihine: Optional[date] = None
+) -> List[VardiyaPlan]:
+    """Get shift plan records with optional filtering."""
+    stmt = select(VardiyaPlan)
+    if tc_no:
+        stmt = stmt.where(VardiyaPlan.TC_No == tc_no)
+    if sube_id:
+        stmt = stmt.where(VardiyaPlan.Sube_ID == sube_id)
+    if secim_id:
+        stmt = stmt.where(VardiyaPlan.Secim_ID == secim_id)
+    if tarihten:
+        stmt = stmt.where(VardiyaPlan.Tarih >= tarihten)
+    if tarihine:
+        stmt = stmt.where(VardiyaPlan.Tarih <= tarihine)
+    return db.scalars(stmt.offset(skip).limit(limit)).all()
+
+
+def get_vardiya_plan_by_id(db: Session, vardiya_plan_id: int) -> Optional[VardiyaPlan]:
+    """Get shift plan record by ID."""
+    return db.query(VardiyaPlan).filter(VardiyaPlan.Vardiya_Plan_ID == vardiya_plan_id).first()
+
+
+def get_vardiya_plan_by_tc_date(db: Session, tc_no: str, tarih: date) -> Optional[VardiyaPlan]:
+    """Get shift plan record by employee TC and date (to prevent duplicate entries)."""
+    return db.query(VardiyaPlan).filter(VardiyaPlan.TC_No == tc_no, VardiyaPlan.Tarih == tarih).first()
+
+
+def create_vardiya_plan(
+    db: Session,
+    tc_no: str,
+    secim_id: int,
+    sube_id: int,
+    tarih: Optional[date] = None,
+    kayit_tarihi: Optional[datetime] = None
+) -> VardiyaPlan:
+    """Create or update a shift plan record. If record exists for same (TC_No, Tarih), update it."""
+    if tarih is None:
+        tarih = datetime.now().date()
+    if kayit_tarihi is None:
+        kayit_tarihi = datetime.now()
+
+    # Check for existing record for same employee and date
+    existing = get_vardiya_plan_by_tc_date(db, tc_no, tarih)
+    if existing:
+        existing.Secim_ID = secim_id
+        existing.Sube_ID = sube_id
+        db.commit()
+        db.refresh(existing)
+        return existing
+
+    new_plan = VardiyaPlan(
+        Tarih=tarih,
+        TC_No=tc_no,
+        Secim_ID=secim_id,
+        Sube_ID=sube_id,
+        Kayit_Tarihi=kayit_tarihi
+    )
+    db.add(new_plan)
+    db.commit()
+    db.refresh(new_plan)
+    return new_plan
+
+
+def update_vardiya_plan(
+    db: Session,
+    vardiya_plan_id: int,
+    secim_id: Optional[int] = None,
+    tarih: Optional[date] = None,
+    sube_id: Optional[int] = None
+) -> Optional[VardiyaPlan]:
+    """Update shift plan record."""
+    plan = get_vardiya_plan_by_id(db, vardiya_plan_id)
+    if not plan:
+        return None
+
+    if secim_id is not None:
+        plan.Secim_ID = secim_id
+    if tarih is not None:
+        plan.Tarih = tarih
+    if sube_id is not None:
+        plan.Sube_ID = sube_id
+
+    db.commit()
+    db.refresh(plan)
+    return plan
+
+
+def delete_vardiya_plan(db: Session, vardiya_plan_id: int) -> bool:
+    """Delete shift plan record."""
+    plan = get_vardiya_plan_by_id(db, vardiya_plan_id)
+    if not plan:
+        return False
+
+    db.delete(plan)
+    db.commit()
+    return True
+
+
+def get_vardiya_planlar_for_month(
+    db: Session,
+    sube_id: int,
+    year: int,
+    month: int
+) -> List[VardiyaPlan]:
+    """Get all shift plan records for a branch and a specific month."""
+    import calendar
+    _, last_day = calendar.monthrange(year, month)
+    tarihten = date(year, month, 1)
+    tarihine = date(year, month, last_day)
+
+    stmt = (
+        select(VardiyaPlan)
+        .where(VardiyaPlan.Sube_ID == sube_id)
+        .where(VardiyaPlan.Tarih >= tarihten)
+        .where(VardiyaPlan.Tarih <= tarihine)
     )
     return db.scalars(stmt).all()
 
