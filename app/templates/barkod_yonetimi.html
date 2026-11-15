@@ -629,7 +629,14 @@
 
     function printSingleQr() {
         if (!selectedBarkodForModal) return;
-        preparePrintGrid([selectedBarkodForModal.token]);
+        // Print 4 copies in 2x2 grid on A4
+        const tokens = [
+            selectedBarkodForModal.token,
+            selectedBarkodForModal.token,
+            selectedBarkodForModal.token,
+            selectedBarkodForModal.token
+        ];
+        preparePrintGrid(tokens);
         window.print();
     }
 
