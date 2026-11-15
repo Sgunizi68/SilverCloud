@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SilverCloud - Mobil Vardiya Giriş / Çıkış</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --success: #16a34a;
+            --success-dark: #15803d;
+            --danger: #dc2626;
+            --danger-dark: #b91c1c;
+            --warning: #d97706;
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 16px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 440px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .header-card {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: #ffffff;
+            padding: 20px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .header-card h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 4px;
+        }
+
+        .header-card .sub-title {
+            font-size: 0.875rem;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .branch-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(37, 99, 235, 0.2);
+            color: #93c5fd;
+            border: 1px solid rgba(147, 197, 253, 0.25);
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .greeting-box {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+        }
+
+        .greeting-text {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .greeting-sub {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .btn-change-person {
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 6px 8px;
+            border-radius: 6px;
+        }
+
+        .btn-change-person:hover {
+            background: #eff6ff;
+        }
+
+        /* Form Controls */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            height: 48px;
+            padding: 0 16px;
+            border: 1.5px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 1.05rem;
+            font-weight: 500;
+            color: var(--text-main);
+            letter-spacing: 0.05em;
+            background: #ffffff;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+
+        .btn-submit-tc {
+            width: 100%;
+            height: 48px;
+            background: var(--primary);
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn-submit-tc:hover {
+            background: var(--primary-dark);
+        }
+
+        /* Shift Buttons (Large, Touch Friendly) */
+        .action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-top: 8px;
+        }
+
+        .btn-action {
+            height: 110px;
+            border: none;
+            border-radius: 16px;
+            color: #ffffff;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1.15rem;
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: transform 0.1s ease, filter 0.15s ease;
+        }
+
+        .btn-action:active {
+            transform: scale(0.97);
+        }
+
+        .btn-action i {
+            font-size: 2rem;
+        }
+
+        .btn-giris {
+            background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+        }
+
+        .btn-giris:hover {
+            filter: brightness(1.05);
+        }
+
+        .btn-cikis {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        }
+
+        .btn-cikis:hover {
+            filter: brightness(1.05);
+        }
+
+        .btn-action:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Status & Alert Boxes */
+        .alert-box {
+            border-radius: 12px;
+            padding: 14px 16px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-top: 14px;
+        }
+
+        .alert-box i {
+            font-size: 1.2rem;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        .alert-success {
+            background: #ecfdf5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .alert-danger {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .alert-warning {
+            background: #fffbeb;
+            color: #92400e;
+            border: 1px solid #fde68a;
+        }
+
+        .alert-info {
+            background: #eff6ff;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            z-index: 9999;
+        }
+
+        .modal-card {
+            background: #ffffff;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 380px;
+            padding: 24px;
+            text-align: center;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            animation: modalPop 0.2s ease-out;
+        }
+
+        @keyframes modalPop {
+            0% { transform: scale(0.9); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.75rem;
+            margin-bottom: 14px;
+        }
+
+        .modal-icon.warning {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .modal-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 8px;
+        }
+
+        .modal-desc {
+            font-size: 0.9rem;
+            color: #475569;
+            line-height: 1.45;
+            margin-bottom: 20px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-modal {
+            flex: 1;
+            height: 44px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-modal-cancel {
+            background: #e2e8f0;
+            color: #334155;
+        }
+
+        .btn-modal-confirm {
+            background: var(--primary);
+            color: #ffffff;
+        }
+
+        /* Spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #ffffff;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .footer-note {
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header-card">
+            <h1>SilverCloud</h1>
+            <div class="sub-title">
+                <i class="fas fa-qrcode"></i>
+                <span>Mobil Roster Sistemi</span>
+            </div>
+            <div id="branch-badge" class="branch-badge" style="display: none;">
+                <i class="fas fa-store"></i>
+                <span id="branch-name">Şube Yükleniyor...</span>
+            </div>
+        </div>
+
+        <!-- Token Invalid Screen -->
+        <div id="token-error-card" class="card" style="display: none;">
+            <div class="alert-box alert-danger">
+                <i class="fas fa-exclamation-circle"></i>
+                <div>
+                    <div style="font-weight: 700; margin-bottom: 4px;">Geçersiz Barkod</div>
+                    <div id="token-error-message">Barkod geçersiz. Lütfen şubedeki barkodu okutun.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TC Verification Screen (Shown on first use or if no person saved) -->
+        <div id="tc-card" class="card" style="display: none;">
+            <h2 style="font-size: 1.1rem; font-weight: 700; color: #1e293b; margin-bottom: 6px;">Çalışan Doğrulama</h2>
+            <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 16px;">
+                Cihazınızı tanımlamak ve işlem yapabilmek için lütfen 11 haneli T.C. kimlik numaranızı girin.
+            </p>
+
+            <form id="tc-form" onsubmit="handleTcSubmit(event)">
+                <div class="form-group">
+                    <label class="form-label" for="tc-input">T.C. Kimlik Numarası</label>
+                    <input type="tel" id="tc-input" class="form-input" maxlength="11" pattern="\d{11}"
+                           placeholder="___________" autocomplete="off" required inputmode="numeric">
+                </div>
+                <button type="submit" id="btn-tc-submit" class="btn-submit-tc">
+                    <span id="tc-btn-text">Doğrula ve Devam Et</span>
+                    <span id="tc-btn-spinner" class="spinner" style="display: none;"></span>
+                </button>
+            </form>
+
+            <div id="tc-alert" class="alert-box alert-danger" style="display: none;">
+                <i class="fas fa-exclamation-circle"></i>
+                <div id="tc-alert-text">Girilen T.C. kimlik numarası aktif çalışanlar arasında bulunamadı.</div>
+            </div>
+        </div>
+
+        <!-- Shift Check-In / Check-Out Screen -->
+        <div id="action-card" class="card" style="display: none;">
+            <!-- Greeting & Person Info -->
+            <div class="greeting-box">
+                <div>
+                    <div class="greeting-text" id="person-greeting">Hoş geldiniz</div>
+                    <div class="greeting-sub" id="device-status-sub">Cihaz hazır</div>
+                </div>
+                <button type="button" id="btn-change-person" class="btn-change-person" onclick="handleChangePerson()">
+                    <i class="fas fa-user-edit"></i> Değiştir
+                </button>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-grid">
+                <button type="button" id="btn-giris" class="btn-action btn-giris" onclick="handleShiftAction('GIRIS')">
+                    <i class="fas fa-sign-in-alt"></i>
+                    <span>GİRİŞ</span>
+                </button>
+                <button type="button" id="btn-cikis" class="btn-action btn-cikis" onclick="handleShiftAction('CIKIS')">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>ÇIKIŞ</span>
+                </button>
+            </div>
+
+            <!-- Status Alerts -->
+            <div id="action-alert" class="alert-box" style="display: none;">
+                <i id="action-alert-icon" class="fas fa-info-circle"></i>
+                <div id="action-alert-text">İşlem yapılıyor...</div>
+            </div>
+        </div>
+
+        <div class="footer-note">
+            &copy; 2026 SilverCloud &bull; Güvenli Mobil Giriş/Çıkış
+        </div>
+    </div>
+
+    <!-- Duplicate Consecutive Operation Modal -->
+    <div id="duplicate-modal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-icon warning">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="modal-title">Tekrarlı İşlem Uyarısı</div>
+            <div class="modal-desc" id="duplicate-modal-text">
+                Son işleminiz de aynı türde kaydedilmiş. Yine de devam etmek istiyor musunuz?
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-modal btn-modal-cancel" onclick="closeDuplicateModal(false)">Vazgeç</button>
+                <button type="button" class="btn-modal btn-modal-confirm" onclick="closeDuplicateModal(true)">Devam Et</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ─── STATE MANAGEMENT ───
+        const urlParams = new URLSearchParams(window.location.search);
+        const BARKOD_TOKEN = urlParams.get('kod') || '';
+        
+        let currentSubeId = null;
+        let currentSubeAdi = '';
+        let currentCalisanTc = '';
+        let currentCalisanAdi = '';
+        let isDeviceBound = false;
+        let pendingActionType = null;
+
+        // ─── UUIDv4 GENERATOR & PERSISTENT DEVICE ID ───
+        function getOrCreateDeviceId() {
+            let deviceId = localStorage.getItem('sc_mobil_cihaz_id');
+            if (!deviceId) {
+                if (window.crypto && crypto.randomUUID) {
+                    deviceId = crypto.randomUUID();
+                } else {
+                    deviceId = 'dev_' + Math.random().toString(36).substring(2, 15) + '_' + Date.now();
+                }
+                localStorage.setItem('sc_mobil_cihaz_id', deviceId);
+            }
+            return deviceId;
+        }
+
+        // ─── INITIALIZATION ───
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!BARKOD_TOKEN) {
+                showTokenError('Barkod geçersiz. Lütfen şubedeki barkodu okutun.');
+                return;
+            }
+
+            // 1. Validate Barcode Token
+            try {
+                const res = await fetch(`/api/v1/vardiya/token-kontrol?kod=${encodeURIComponent(BARKOD_TOKEN)}`);
+                const data = await res.json();
+                if (!res.ok || !data.valid) {
+                    showTokenError(data.message || 'Barkod geçersiz. Lütfen şubedeki barkodu okutun.');
+                    return;
+                }
+
+                currentSubeId = data.sube_id;
+                currentSubeAdi = data.sube_adi;
+                document.getElementById('branch-name').innerText = currentSubeAdi;
+                document.getElementById('branch-badge').style.display = 'inline-flex';
+
+                // 2. Check if we have a saved person on this device
+                const savedTc = localStorage.getItem('sc_calisan_tc');
+                if (savedTc) {
+                    await verifyEmployee(savedTc, true);
+                } else {
+                    showTcScreen();
+                }
+
+            } catch (err) {
+                showTokenError('Sunucuya ulaşılamadı. Lütfen tekrar deneyin.');
+            }
+        });
+
+        function showTokenError(msg) {
+            document.getElementById('token-error-card').style.display = 'block';
+            document.getElementById('token-error-message').innerText = msg;
+            document.getElementById('tc-card').style.display = 'none';
+            document.getElementById('action-card').style.display = 'none';
+        }
+
+        function showTcScreen() {
+            document.getElementById('tc-card').style.display = 'block';
+            document.getElementById('action-card').style.display = 'none';
+            document.getElementById('tc-input').value = '';
+            document.getElementById('tc-alert').style.display = 'none';
+            document.getElementById('tc-input').focus();
+        }
+
+        function showActionScreen() {
+            document.getElementById('tc-card').style.display = 'none';
+            document.getElementById('action-card').style.display = 'block';
+            document.getElementById('person-greeting').innerText = `Sn. ${currentCalisanAdi}`;
+            
+            // "Değiştir" button can only be used until first successful binding
+            const changeBtn = document.getElementById('btn-change-person');
+            if (isDeviceBound) {
+                changeBtn.style.display = 'none';
+                document.getElementById('device-status-sub').innerText = 'Cihaz bu çalışana bağlı';
+            } else {
+                changeBtn.style.display = 'block';
+                document.getElementById('device-status-sub').innerText = 'İlk kayıt bekleniyor';
+            }
+        }
+
+        // ─── TC SUBMISSION ───
+        async function handleTcSubmit(e) {
+            e.preventDefault();
+            const tcInput = document.getElementById('tc-input').value.trim();
+            if (tcInput.length !== 11) {
+                showTcAlert('T.C. kimlik numarası 11 haneli olmalıdır.');
+                return;
+            }
+
+            const btn = document.getElementById('btn-tc-submit');
+            const btnText = document.getElementById('tc-btn-text');
+            const spinner = document.getElementById('tc-btn-spinner');
+
+            btn.disabled = true;
+            btnText.style.display = 'none';
+            spinner.style.display = 'inline-block';
+            document.getElementById('tc-alert').style.display = 'none';
+
+            await verifyEmployee(tcInput, false);
+
+            btn.disabled = false;
+            btnText.style.display = 'inline';
+            spinner.style.display = 'none';
+        }
+
+        async function verifyEmployee(tcNo, isAuto) {
+            const deviceId = getOrCreateDeviceId();
+            try {
+                const res = await fetch('/api/v1/vardiya/calisan-dogrula', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        kod: BARKOD_TOKEN,
+                        tc_no: tcNo,
+                        cihaz_id: deviceId
+                    })
+                });
+
+                const data = await res.json();
+                if (!res.ok || !data.success) {
+                    if (isAuto) {
+                        // Stored TC invalid or changed
+                        localStorage.removeItem('sc_calisan_tc');
+                        showTcScreen();
+                        showTcAlert(data.message || 'Lütfen T.C. kimlik numaranızı girin.');
+                    } else {
+                        showTcAlert(data.message || 'Girilen T.C. kimlik numarası aktif çalışanlar arasında bulunamadı.');
+                    }
+                    return;
+                }
+
+                currentCalisanTc = tcNo;
+                currentCalisanAdi = data.calisan_adi;
+                isDeviceBound = data.is_device_bound;
+                localStorage.setItem('sc_calisan_tc', tcNo);
+
+                showActionScreen();
+
+            } catch (err) {
+                if (isAuto) {
+                    showTcScreen();
+                } else {
+                    showTcAlert('Sunucuya ulaşılamadı. Lütfen tekrar deneyin.');
+                }
+            }
+        }
+
+        function showTcAlert(msg) {
+            const alertBox = document.getElementById('tc-alert');
+            document.getElementById('tc-alert-text').innerText = msg;
+            alertBox.style.display = 'flex';
+        }
+
+        function handleChangePerson() {
+            if (isDeviceBound) {
+                alert('Bu cihaz personelle eşleştiği için kişi değiştirilemez.');
+                return;
+            }
+            localStorage.removeItem('sc_calisan_tc');
+            showTcScreen();
+        }
+
+        // ─── SHIFT ACTION (GİRİŞ / ÇIKIŞ) ───
+        async function handleShiftAction(actionType, confirmDuplicate = false) {
+            pendingActionType = actionType;
+            setActionButtonsState(false);
+            showActionAlert('info', 'Konum alınıyor ve doğrulanıyor...', true);
+
+            // 1. Get GPS coordinates
+            if (!navigator.geolocation) {
+                showActionAlert('danger', 'Tarayıcınız konum servisini desteklemiyor.');
+                setActionButtonsState(true);
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    await submitShiftRecord(position.coords, actionType, confirmDuplicate);
+                },
+                (error) => {
+                    setActionButtonsState(true);
+                    if (error.code === error.PERMISSION_DENIED) {
+                        showActionAlert('danger', 'Konum izni gereklidir. Lütfen konum izni verin.');
+                    } else if (error.code === error.POSITION_UNAVAILABLE) {
+                        showActionAlert('danger', 'Konumunuz alınamadı. Lütfen tekrar deneyin.');
+                    } else if (error.code === error.TIMEOUT) {
+                        showActionAlert('danger', 'Konum alma zaman aşımına uğradı. Lütfen açık alanda tekrar deneyin.');
+                    } else {
+                        showActionAlert('danger', 'Konumunuz alınamadı. Lütfen tekrar deneyin.');
+                    }
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                }
+            );
+        }
+
+        async function submitShiftRecord(coords, actionType, confirmDuplicate) {
+            const deviceId = getOrCreateDeviceId();
+            const clientTime = new Date().toISOString();
+
+            try {
+                const payload = {
+                    kod: BARKOD_TOKEN,
+                    tc_no: currentCalisanTc,
+                    islem_tipi: actionType,
+                    cihaz_id: deviceId,
+                    istemci_zamani: clientTime,
+                    enlem: coords.latitude,
+                    boylam: coords.longitude,
+                    konum_dogrulugu_m: coords.accuracy,
+                    platform: navigator.platform || '',
+                    ekran: `${window.screen.width}x${window.screen.height}`,
+                    confirm_mukerrer: confirmDuplicate
+                };
+
+                const res = await fetch('/api/v1/vardiya/islem', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+
+                if (data.requires_confirmation) {
+                    // Show confirmation modal
+                    document.getElementById('duplicate-modal-text').innerText = data.message;
+                    document.getElementById('duplicate-modal').style.display = 'flex';
+                    return;
+                }
+
+                if (!res.ok || !data.success) {
+                    showActionAlert('danger', data.message || 'İşlem gerçekleştirilemedi.');
+                    setActionButtonsState(true);
+                    return;
+                }
+
+                // Success!
+                isDeviceBound = true;
+                document.getElementById('btn-change-person').style.display = 'none';
+                document.getElementById('device-status-sub').innerText = 'Cihaz bu çalışana bağlı';
+
+                showActionAlert('success', data.message);
+                setActionButtonsState(true);
+
+            } catch (err) {
+                showActionAlert('danger', 'Sunucuya ulaşılamadı. Lütfen tekrar deneyin.');
+                setActionButtonsState(true);
+            }
+        }
+
+        function setActionButtonsState(enabled) {
+            document.getElementById('btn-giris').disabled = !enabled;
+            document.getElementById('btn-cikis').disabled = !enabled;
+        }
+
+        function showActionAlert(type, msg, isLoading = false) {
+            const box = document.getElementById('action-alert');
+            const icon = document.getElementById('action-alert-icon');
+            const text = document.getElementById('action-alert-text');
+
+            box.className = `alert-box alert-${type}`;
+            text.innerText = msg;
+
+            if (isLoading) {
+                icon.className = 'fas fa-spinner fa-spin';
+            } else if (type === 'success') {
+                icon.className = 'fas fa-check-circle';
+            } else if (type === 'danger') {
+                icon.className = 'fas fa-exclamation-circle';
+            } else if (type === 'warning') {
+                icon.className = 'fas fa-exclamation-triangle';
+            } else {
+                icon.className = 'fas fa-info-circle';
+            }
+
+            box.style.display = 'flex';
+        }
+
+        function closeDuplicateModal(proceed) {
+            document.getElementById('duplicate-modal').style.display = 'none';
+            if (proceed && pendingActionType) {
+                handleShiftAction(pendingActionType, true);
+            } else {
+                setActionButtonsState(true);
+                showActionAlert('warning', 'İşlem iptal edildi.');
+            }
+        }
+    </script>
+</body>
+</html>

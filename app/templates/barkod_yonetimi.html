@@ -1,0 +1,654 @@
+{% extends "base.html" %}
+
+{% block title %}Barkod Yönetimi - SilverCloud{% endblock %}
+
+{% block acc_calisan %}active{% endblock %}
+{% block acc_calisan_content %}show{% endblock %}
+{% block nav_barkod %}active{% endblock %}
+
+{% block content %}
+<style>
+    /* Screen Styles */
+    .barkod-container {
+        padding: 24px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #0f172a;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .branch-select-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .form-select {
+        height: 40px;
+        padding: 0 16px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        background-color: #ffffff;
+        font-size: 0.9rem;
+        color: #334155;
+        font-weight: 500;
+    }
+
+    .btn-primary-action {
+        height: 40px;
+        padding: 0 16px;
+        background-color: #2563eb;
+        color: #ffffff;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        transition: background-color 0.15s;
+    }
+
+    .btn-primary-action:hover {
+        background-color: #1d4ed8;
+    }
+
+    .btn-secondary-action {
+        height: 40px;
+        padding: 0 16px;
+        background-color: #f1f5f9;
+        color: #334155;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        transition: background-color 0.15s;
+    }
+
+    .btn-secondary-action:hover {
+        background-color: #e2e8f0;
+    }
+
+    /* Branch Info Card */
+    .branch-info-banner {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .coord-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.9rem;
+        color: #475569;
+    }
+
+    .coord-item strong {
+        color: #1e293b;
+    }
+
+    /* Table Styles */
+    .card-table {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .custom-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+
+    .custom-table th {
+        background-color: #f8fafc;
+        padding: 12px 16px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .custom-table td {
+        padding: 14px 16px;
+        font-size: 0.9rem;
+        color: #334155;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+    }
+
+    .custom-table tr:hover {
+        background-color: #f8fafc;
+    }
+
+    .badge-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .badge-active {
+        background-color: #dcfce7;
+        color: #15803d;
+    }
+
+    .badge-passive {
+        background-color: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .token-cell {
+        font-family: monospace;
+        background: #f1f5f9;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        color: #0f172a;
+    }
+
+    /* Action Buttons in Table */
+    .btn-table-action {
+        background: none;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.15s;
+    }
+
+    .btn-table-action:hover {
+        background: #f1f5f9;
+    }
+
+    /* QR View Modal */
+    .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(15, 23, 42, 0.5);
+        backdrop-filter: blur(4px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+    }
+
+    .modal-box {
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 24px;
+        width: 100%;
+        max-width: 420px;
+        text-align: center;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    .modal-qr-container {
+        display: flex;
+        justify-content: center;
+        margin: 20px 0;
+    }
+
+    /* Print View Area (Strict A4 Layout: 4 barcodes, 2x2 grid) */
+    @media screen {
+        #print-area {
+            display: none;
+        }
+    }
+
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+
+        #print-area, #print-area * {
+            visibility: visible;
+        }
+
+        #print-area {
+            display: block !important;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 10mm;
+            box-sizing: border-box;
+            background: #ffffff;
+        }
+
+        .print-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 15mm;
+            width: 100%;
+            height: 100%;
+        }
+
+        .print-card {
+            border: 2px dashed #94a3b8;
+            border-radius: 12px;
+            padding: 15mm 10mm;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        .print-branch-title {
+            font-size: 20pt;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 5mm;
+            text-transform: uppercase;
+        }
+
+        .print-qr-target {
+            margin: auto 0;
+        }
+
+        .print-footer-info {
+            font-size: 11pt;
+            color: #475569;
+            margin-top: 5mm;
+        }
+
+        @page {
+            size: A4 portrait;
+            margin: 0;
+        }
+    }
+</style>
+
+<div class="barkod-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="page-title">
+            <i class="fas fa-qrcode" style="color: #2563eb;"></i>
+            <span>Barkod Yönetimi</span>
+        </div>
+        <div class="header-actions">
+            <!-- Branch Selector -->
+            <div class="branch-select-wrapper">
+                <label for="sube-select" style="font-size: 0.85rem; font-weight: 600; color: #475569;">Şube:</label>
+                <select id="sube-select" class="form-select" onchange="handleBranchChange()">
+                    {% for s in subeler %}
+                    <option value="{{ s.Sube_ID }}" {% if s.Sube_ID == selected_sube_id %}selected{% endif %}>
+                        {{ s.Sube_Adi }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- New Barcode Button (#75) -->
+            <button type="button" class="btn-primary-action" onclick="createNewBarkod()">
+                <i class="fas fa-plus"></i>
+                <span>Yeni Barkod Oluştur</span>
+            </button>
+
+            <!-- A4 Print Button (#34) -->
+            <button type="button" class="btn-secondary-action" data-permission="Yazdırma Yetkisi" onclick="printA4Barcodes()">
+                <i class="fas fa-print"></i>
+                <span>A4 Barkod Bas (4'lü)</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Branch Geofence Info Banner -->
+    <div class="branch-info-banner" id="branch-info-banner">
+        <div class="coord-item">
+            <i class="fas fa-map-marker-alt" style="color: #ef4444;"></i>
+            <span>Merkez Enlem: <strong id="info-lat">-</strong></span>
+        </div>
+        <div class="coord-item">
+            <i class="fas fa-map-marker-alt" style="color: #3b82f6;"></i>
+            <span>Merkez Boylam: <strong id="info-lon">-</strong></span>
+        </div>
+        <div class="coord-item">
+            <i class="fas fa-bullseye" style="color: #10b981;"></i>
+            <span>Çalışma Yarıçapı: <strong id="info-radius">100 m</strong></span>
+        </div>
+        <div id="coord-warning" style="display: none; color: #dc2626; font-size: 0.85rem; font-weight: 600;">
+            <i class="fas fa-exclamation-triangle"></i> Koordinat tanımlanmamış! Şube Yönetimi'nden koordinat belirleyin.
+        </div>
+    </div>
+
+    <!-- Barcodes Table -->
+    <div class="card-table">
+        <table class="custom-table" id="barkod-table">
+            <thead>
+                <tr>
+                    <th style="width: 80px;">ID</th>
+                    <th>ŞUBE</th>
+                    <th>BARKOD KODU (TOKEN)</th>
+                    <th>DURUM</th>
+                    <th>OLUŞTURAN</th>
+                    <th>OLUŞTURMA TARİHİ</th>
+                    <th style="text-align: right; width: 220px;">İŞLEMLER</th>
+                </tr>
+            </thead>
+            <tbody id="barkod-table-body">
+                <tr>
+                    <td colspan="7" style="text-align: center; color: #94a3b8; padding: 24px;">Yükleniyor...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- QR View Modal -->
+<div id="qr-modal" class="modal-backdrop">
+    <div class="modal-box">
+        <h3 id="modal-branch-title" style="font-size: 1.15rem; font-weight: 700; color: #0f172a;"></h3>
+        <p style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">Mobil Vardiya Karekodu</p>
+        
+        <div class="modal-qr-container" id="modal-qr-code"></div>
+
+        <div style="font-size: 0.8rem; font-family: monospace; background: #f1f5f9; padding: 6px 12px; border-radius: 6px; word-break: break-all; margin-bottom: 16px;" id="modal-token-text"></div>
+
+        <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn-secondary-action" style="flex: 1; justify-content: center;" onclick="closeQrModal()">Kapat</button>
+            <button type="button" class="btn-primary-action" style="flex: 1; justify-content: center;" onclick="printSingleQr()">Yazdır</button>
+        </div>
+    </div>
+</div>
+
+<!-- Printable A4 Area (4 Barcodes in 2x2 Grid) -->
+<div id="print-area">
+    <div class="print-grid" id="print-grid">
+        <!-- 4 Cards will be generated here -->
+    </div>
+</div>
+
+<!-- QRCode.js CDN for Client-side QR generation -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<script>
+    const SUBELER_DATA = {{ subeler | tojson }};
+    let currentBarcodes = [];
+    let selectedBarkodForModal = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        updateBranchBanner();
+        loadBarcodes();
+    });
+
+    function getSelectedSubeId() {
+        return parseInt(document.getElementById('sube-select').value);
+    }
+
+    function getSelectedSube() {
+        const subeId = getSelectedSubeId();
+        return SUBELER_DATA.find(s => s.Sube_ID === subeId);
+    }
+
+    function updateBranchBanner() {
+        const sube = getSelectedSube();
+        if (!sube) return;
+
+        const latEl = document.getElementById('info-lat');
+        const lonEl = document.getElementById('info-lon');
+        const radEl = document.getElementById('info-radius');
+        const warnEl = document.getElementById('coord-warning');
+
+        if (sube.merkez_enlem && sube.merkez_boylam) {
+            latEl.innerText = sube.merkez_enlem.toFixed(6);
+            lonEl.innerText = sube.merkez_boylam.toFixed(6);
+            radEl.innerText = `${sube.yaricap_m || 100} metre`;
+            warnEl.style.display = 'none';
+        } else {
+            latEl.innerText = 'Tanımlanmamış';
+            lonEl.innerText = 'Tanımlanmamış';
+            radEl.innerText = `${sube.yaricap_m || 100} metre`;
+            warnEl.style.display = 'inline-block';
+        }
+    }
+
+    function handleBranchChange() {
+        updateBranchBanner();
+        loadBarcodes();
+    }
+
+    async function loadBarcodes() {
+        const subeId = getSelectedSubeId();
+        const tbody = document.getElementById('barkod-table-body');
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #94a3b8; padding: 24px;">Yükleniyor...</td></tr>';
+
+        try {
+            const res = await fetch(`/api/v1/barkodlar?sube_id=${subeId}`);
+            if (!res.ok) throw new Error('Barkodlar yüklenemedi.');
+            const data = await res.json();
+            currentBarcodes = data;
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #94a3b8; padding: 24px;">Bu şube için tanımlı barkod bulunmamaktadır.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map(b => `
+                <tr>
+                    <td>#${b.id}</td>
+                    <td><strong>${escapeHtml(b.sube_adi)}</strong></td>
+                    <td><span class="token-cell">${b.barkod_kodu}</span></td>
+                    <td>
+                        <span class="badge-status ${b.aktif ? 'badge-active' : 'badge-passive'}">
+                            <i class="fas fa-${b.aktif ? 'check-circle' : 'times-circle'}"></i>
+                            ${b.aktif ? 'Aktif' : 'Pasif'}
+                        </span>
+                    </td>
+                    <td>${escapeHtml(b.olusturan_adi || '-')}</td>
+                    <td>${b.olusturma_zamani || '-'}</td>
+                    <td style="text-align: right;">
+                        <button type="button" class="btn-table-action" onclick="viewQrModal('${b.barkod_kodu}', '${escapeHtml(b.sube_adi)}')">
+                            <i class="fas fa-qrcode"></i> Göster
+                        </button>
+                        <button type="button" class="btn-table-action" onclick="toggleStatus(${b.id}, ${b.aktif})">
+                            <i class="fas fa-${b.aktif ? 'pause' : 'play'}"></i> ${b.aktif ? 'Pasif Yap' : 'Aktif Yap'}
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #ef4444; padding: 24px;">Hata: ${err.message}</td></tr>`;
+        }
+    }
+
+    async function createNewBarkod() {
+        const subeId = getSelectedSubeId();
+        const sube = getSelectedSube();
+
+        if (!confirm(`"${sube ? sube.Sube_Adi : ''}" şubesi için yeni bir karekod oluşturmak istediğinize emin misiniz?`)) {
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/v1/barkodlar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sube_id: subeId })
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                alert(data.error || 'Barkod oluşturulamadı.');
+                return;
+            }
+
+            loadBarcodes();
+            // Automatically open QR view modal
+            viewQrModal(data.barkod_kodu, data.sube_adi);
+
+        } catch (err) {
+            alert('Sunucu hatası: ' + err.message);
+        }
+    }
+
+    async function toggleStatus(barkodId, currentStatus) {
+        const actionName = currentStatus ? 'pasife almak' : 'aktife almak';
+        if (!confirm(`Barkodu ${actionName} istediğinize emin misiniz?`)) return;
+
+        try {
+            const res = await fetch(`/api/v1/barkodlar/${barkodId}/toggle-durum`, {
+                method: 'PUT'
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                alert(data.error || 'Durum değiştirilemedi.');
+                return;
+            }
+
+            loadBarcodes();
+        } catch (err) {
+            alert('Sunucu hatası: ' + err.message);
+        }
+    }
+
+    function viewQrModal(token, subeAdi) {
+        selectedBarkodForModal = { token, subeAdi };
+        document.getElementById('modal-branch-title').innerText = subeAdi;
+        document.getElementById('modal-token-text').innerText = token;
+
+        const qrContainer = document.getElementById('modal-qr-code');
+        qrContainer.innerHTML = '';
+
+        const fullUrl = `${window.location.origin}/Vardiya?kod=${token}`;
+        new QRCode(qrContainer, {
+            text: fullUrl,
+            width: 200,
+            height: 200,
+            colorDark: "#0f172a",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+        });
+
+        document.getElementById('qr-modal').style.display = 'flex';
+    }
+
+    function closeQrModal() {
+        document.getElementById('qr-modal').style.display = 'none';
+        selectedBarkodForModal = null;
+    }
+
+    function printSingleQr() {
+        if (!selectedBarkodForModal) return;
+        preparePrintGrid([selectedBarkodForModal.token]);
+        window.print();
+    }
+
+    function printA4Barcodes() {
+        // Collect active barcodes for this branch or use the latest ones
+        const activeBarcodes = currentBarcodes.filter(b => b.aktif);
+        if (activeBarcodes.length === 0) {
+            alert('Yazdırılacak aktif barkod bulunamadı. Lütfen önce barkod oluşturun.');
+            return;
+        }
+
+        const tokens = [];
+        // Repeat or fill 4 slots on A4
+        for (let i = 0; i < 4; i++) {
+            const b = activeBarcodes[i % activeBarcodes.length];
+            tokens.push(b.barkod_kodu);
+        }
+
+        preparePrintGrid(tokens);
+        window.print();
+    }
+
+    function preparePrintGrid(tokens) {
+        const sube = getSelectedSube();
+        const subeAdi = sube ? sube.Sube_Adi : 'ŞUBE';
+        const printDate = new Date().toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+        const printGrid = document.getElementById('print-grid');
+        printGrid.innerHTML = '';
+
+        tokens.slice(0, 4).forEach((token, index) => {
+            const card = document.createElement('div');
+            card.className = 'print-card';
+
+            const fullUrl = `${window.location.origin}/Vardiya?kod=${token}`;
+
+            card.innerHTML = `
+                <div class="print-branch-title">${escapeHtml(subeAdi)}</div>
+                <div class="print-qr-target" id="print-qr-${index}"></div>
+                <div class="print-footer-info">
+                    <div><strong>Giriş / Çıkış Karekodu</strong></div>
+                    <div style="font-size: 9pt; margin-top: 2mm;">Basım Tarihi: ${printDate}</div>
+                </div>
+            `;
+            printGrid.appendChild(card);
+
+            new QRCode(document.getElementById(`print-qr-${index}`), {
+                text: fullUrl,
+                width: 220,
+                height: 220,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        });
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/[&<>"']/g, function(m) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+        });
+    }
+</script>
+{% endblock %}

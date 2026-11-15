@@ -7,8 +7,8 @@ All models cleaned up from GumusBulut and optimized for SQLAlchemy 2.0.
 from datetime import datetime, date
 from decimal import Decimal
 from sqlalchemy import (
-    Column, Integer, String, Text, Date, DateTime, Boolean, 
-    DECIMAL, Enum, ForeignKey, LargeBinary, event
+    Column, Integer, BigInteger, String, Text, Date, DateTime, Boolean, 
+    DECIMAL, Enum, ForeignKey, LargeBinary, JSON, event
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -50,6 +50,8 @@ class Sube(db.Model):
     pos_hareketleri = relationship("POSHareketleri", back_populates="sube")
     calisan_talepler = relationship("CalisanTalep", back_populates="sube")
     yemek_cekiler = relationship("YemekCeki", back_populates="sube")
+    barkodlar = relationship("Barkod", back_populates="sube")
+    vardiya_kayitlar = relationship("VardiyaKayit", back_populates="sube")
 
     def __repr__(self):
         return f"<Sube {self.Sube_Adi}>"
@@ -637,6 +639,7 @@ class Calisan(db.Model):
     puantajlar = relationship("Puantaj", back_populates="calisan")
     vardiya_planlar = relationship("VardiyaPlan", back_populates="calisan")
     avans_istekler = relationship("AvansIstek", back_populates="calisan")
+    vardiya_kayitlar = relationship("VardiyaKayit", back_populates="calisan")
 
     def __repr__(self):
         return f"<Calisan {self.TC_No}>"
@@ -869,6 +872,136 @@ class RobotposGelir(db.Model):
         return f"<RobotposGelir {self.Odeme_Tipi} - {self.Tutar}>"
 
 
+# ============================================================================
+# MOBIL ROSTER (GİRİŞ / ÇIKIŞ) MODELS
+# ============================================================================
+
+class Barkod(db.Model):
+    """Branches' QR barcodes for shift check-in/out"""
+    __tablename__ = "barkod"
+    __table_args__ = {"extend_existing": True}
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    sube_id = Column(Integer, ForeignKey("Sube.Sube_ID"), nullable=False, index=True)
+    barkod_kodu = Column(String(32), unique=True, nullable=False)
+    aktif = Column(Boolean, nullable=False, default=True)
+    olusturan_id = Column(Integer, ForeignKey("Kullanici.Kullanici_ID"), nullable=False)
+    olusturma_zamani = Column(DateTime, nullable=False, default=func.now())
+
+    # Relationships
+    sube = relationship("Sube", back_populates="barkodlar")
+    olusturan = relationship("Kullanici", foreign_keys=[olusturan_id])
+    vardiya_kayitlar = relationship("VardiyaKayit", back_populates="barkod")
+
+    def __repr__(self):
+        return f"<Barkod {self.barkod_kodu} (Sube {self.sube_id})>"
+
+
+class VardiyaKayit(db.Model):
+    """Shift check-in / check-out records"""
+    __tablename__ = "vardiya_kayit"
+    __table_args__ = {"extend_existing": True}
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    calisan_id = Column(String(11), ForeignKey("Calisan.TC_No"), nullable=False, index=True)
+    sube_id = Column(Integer, ForeignKey("Sube.Sube_ID"), nullable=False, index=True)
+    barkod_id = Column(BigInteger, ForeignKey("barkod.id"), nullable=True)
+
+    islem_tipi = Column(Enum("GIRIS", "CIKIS", name="islem_tipi_enum"), nullable=False)
+    kaynak = Column(Enum("TELEFON", "MANUEL", name="kaynak_enum"), nullable=False, default="TELEFON")
+
+    kayit_zamani = Column(DateTime, nullable=False)
+    istemci_zamani = Column(DateTime, nullable=True)
+
+    enlem = Column(DECIMAL(9, 6), nullable=True)
+    boylam = Column(DECIMAL(9, 6), nullable=True)
+    konum_dogrulugu_m = Column(DECIMAL(7, 1), nullable=True)
+    bolge_mesafesi_m = Column(DECIMAL(8, 1), nullable=True)
+
+    cihaz_id = Column(String(64), nullable=True, index=True)
+    kullanici_araci = Column(String(255), nullable=True)
+    platform = Column(String(64), nullable=True)
+    ekran = Column(String(20), nullable=True)
+    ip_adresi = Column(String(45), nullable=True)
+
+    mukerrer_uyari = Column(Boolean, nullable=False, default=False)
+    olusturan_id = Column(Integer, ForeignKey("Kullanici.Kullanici_ID"), nullable=True)
+    silindi = Column(Boolean, nullable=False, default=False)
+    olusturma_zamani = Column(DateTime, nullable=False, default=func.now())
+
+    # Relationships
+    calisan = relationship("Calisan", back_populates="vardiya_kayitlar")
+    sube = relationship("Sube", back_populates="vardiya_kayitlar")
+    barkod = relationship("Barkod", back_populates="vardiya_kayitlar")
+    olusturan = relationship("Kullanici", foreign_keys=[olusturan_id])
+    loglar = relationship("VardiyaKayitLog", back_populates="kayit")
+
+    def __repr__(self):
+        return f"<VardiyaKayit {self.id} ({self.calisan_id} - {self.islem_tipi})>"
+
+
+class VardiyaKayitLog(db.Model):
+    """Audit log for VardiyaKayit modifications"""
+    __tablename__ = "vardiya_kayit_log"
+    __table_args__ = {"extend_existing": True}
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    kayit_id = Column(BigInteger, ForeignKey("vardiya_kayit.id"), nullable=False, index=True)
+    islem = Column(Enum("EKLE", "GUNCELLE", "SIL", name="log_islem_enum"), nullable=False)
+    kullanici_id = Column(Integer, ForeignKey("Kullanici.Kullanici_ID"), nullable=False, index=True)
+    islem_zamani = Column(DateTime, nullable=False, default=func.now())
+    gerekce = Column(String(500), nullable=True)
+    eski_deger = Column(JSON, nullable=True)
+    yeni_deger = Column(JSON, nullable=True)
+
+    # Relationships
+    kayit = relationship("VardiyaKayit", back_populates="loglar")
+    kullanici = relationship("Kullanici", foreign_keys=[kullanici_id])
+
+    def __repr__(self):
+        return f"<VardiyaKayitLog {self.id} ({self.islem} on Kayit {self.kayit_id})>"
+
+
+class VardiyaRedDeneme(db.Model):
+    """Rejected check-in/out attempts"""
+    __tablename__ = "vardiya_red_deneme"
+    __table_args__ = {"extend_existing": True}
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    calisan_id = Column(String(11), nullable=True)
+    sube_id = Column(Integer, nullable=True)
+    barkod_id = Column(BigInteger, nullable=True)
+    islem_tipi = Column(Enum("GIRIS", "CIKIS", name="red_islem_tipi_enum"), nullable=True)
+
+    neden = Column(
+        Enum(
+            "BOLGE_DISI",
+            "KONUM_ALINAMADI",
+            "KONUM_DOGRULUGU_DUSUK",
+            "GECERSIZ_BARKOD",
+            "TC_ESLESMEDI",
+            "CIHAZ_KAYDI_DOLU",
+            "DIGER",
+            name="red_neden_enum"
+        ),
+        nullable=False
+    )
+
+    deneme_zamani = Column(DateTime, nullable=False, default=func.now(), index=True)
+
+    enlem = Column(DECIMAL(9, 6), nullable=True)
+    boylam = Column(DECIMAL(9, 6), nullable=True)
+    konum_dogrulugu_m = Column(DECIMAL(7, 1), nullable=True)
+    bolge_mesafesi_m = Column(DECIMAL(8, 1), nullable=True)
+
+    cihaz_id = Column(String(64), nullable=True, index=True)
+    kullanici_araci = Column(String(255), nullable=True)
+    ip_adresi = Column(String(45), nullable=True)
+
+    def __repr__(self):
+        return f"<VardiyaRedDeneme {self.id} ({self.neden})>"
+
+
 # Export all models for easy importing
 __all__ = [
     "Sube", "Kullanici", "Rol", "Yetki", "KullaniciRol", "RolYetki",
@@ -879,4 +1012,5 @@ __all__ = [
     "Stok", "StokFiyat", "StokSayim",
     "Calisan", "PuantajSecimi", "Puantaj", "AvansIstek", "CalisanTalep",
     "YemekCeki", "Cari", "Mutabakat",
+    "Barkod", "VardiyaKayit", "VardiyaKayitLog", "VardiyaRedDeneme",
 ]

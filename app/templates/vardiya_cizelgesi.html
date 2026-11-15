@@ -1,0 +1,991 @@
+{% extends "base.html" %}
+
+{% block title %}Vardiya Çizelgesi - SilverCloud{% endblock %}
+
+{% block acc_calisan %}active{% endblock %}
+{% block acc_calisan_content %}show{% endblock %}
+{% block nav_vardiya_cizelgesi %}active{% endblock %}
+
+{% block content %}
+<style>
+    .cizelge-container {
+        padding: 24px;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #0f172a;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .btn-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 8px;
+        border: 1px solid #cbd5e1;
+        background: #ffffff;
+        color: #475569;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: all 0.15s;
+    }
+
+    .btn-icon:hover {
+        background: #f1f5f9;
+        color: #0f172a;
+    }
+
+    .btn-new-entry {
+        height: 38px;
+        padding: 0 16px;
+        background-color: #2563eb;
+        color: #ffffff;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        transition: background-color 0.15s;
+    }
+
+    .btn-new-entry:hover {
+        background-color: #1d4ed8;
+    }
+
+    /* Filter Bar */
+    .filter-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 18px 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    }
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 14px;
+        align-items: flex-end;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .filter-label {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #475569;
+    }
+
+    .filter-control {
+        height: 38px;
+        padding: 0 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        color: #1e293b;
+        background-color: #ffffff;
+    }
+
+    .filter-control:focus {
+        outline: none;
+        border-color: #2563eb;
+    }
+
+    .btn-filter-apply {
+        height: 38px;
+        padding: 0 16px;
+        background-color: #0f172a;
+        color: #ffffff;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+
+    .btn-filter-apply:hover {
+        background-color: #1e293b;
+    }
+
+    .btn-filter-reset {
+        height: 38px;
+        padding: 0 14px;
+        background-color: #f1f5f9;
+        color: #475569;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    /* Table Container */
+    .table-card {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+
+    .data-table th {
+        background-color: #f8fafc;
+        padding: 12px 14px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        border-bottom: 1px solid #e2e8f0;
+        white-space: nowrap;
+    }
+
+    .data-table td {
+        padding: 12px 14px;
+        font-size: 0.875rem;
+        color: #334155;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+
+    .data-table tr:hover {
+        background-color: #f8fafc;
+    }
+
+    /* Badges */
+    .badge-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 8px;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .badge-giris {
+        background-color: #dcfce7;
+        color: #15803d;
+    }
+
+    .badge-cikis {
+        background-color: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .badge-telefon {
+        background-color: #e0f2fe;
+        color: #0369a1;
+    }
+
+    .badge-manuel {
+        background-color: #fef3c7;
+        color: #b45309;
+    }
+
+    .badge-warning-flag {
+        background-color: #fef3c7;
+        color: #b45309;
+        border: 1px solid #fde68a;
+    }
+
+    /* Pagination */
+    .pagination-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 20px;
+        background-color: #ffffff;
+        border-top: 1px solid #e2e8f0;
+        font-size: 0.85rem;
+        color: #64748b;
+    }
+
+    .page-btn {
+        height: 32px;
+        padding: 0 12px;
+        border: 1px solid #cbd5e1;
+        background-color: #ffffff;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+    }
+
+    .page-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    /* Modals */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(4px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        padding: 16px;
+    }
+
+    .modal-content {
+        background: #ffffff;
+        border-radius: 16px;
+        width: 100%;
+        max-width: 500px;
+        padding: 24px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+    }
+
+    .modal-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 1.25rem;
+        color: #94a3b8;
+        cursor: pointer;
+    }
+
+    .form-group-modal {
+        margin-bottom: 14px;
+    }
+
+    .form-group-modal label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #334155;
+        margin-bottom: 6px;
+    }
+
+    .form-group-modal select,
+    .form-group-modal input,
+    .form-group-modal textarea {
+        width: 100%;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 0.9rem;
+        color: #1e293b;
+        background-color: #ffffff;
+        box-sizing: border-box;
+    }
+
+    .form-group-modal textarea {
+        resize: vertical;
+        min-height: 70px;
+    }
+
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 20px;
+    }
+</style>
+
+<div class="cizelge-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="page-title">
+            <i class="fas fa-clock" style="color: #2563eb;"></i>
+            <span>Vardiya Çizelgesi</span>
+        </div>
+        <div class="header-actions">
+            <!-- Print Button (#34) -->
+            {% if can_print %}
+            <button class="btn-icon" onclick="window.print()" title="Yazdır">
+                <i class="fas fa-print"></i>
+            </button>
+            {% endif %}
+
+            <!-- Excel Button (#33) -->
+            {% if can_excel %}
+            <button class="btn-icon" onclick="exportVardiyaExcel()" title="Excel İndir" style="color: #16a34a;">
+                <i class="fas fa-file-excel"></i>
+            </button>
+            {% endif %}
+
+            <!-- Mail Button (#74) -->
+            {% if can_mail %}
+            <button class="btn-icon" onclick="openVardiyaReportMail()" title="Mail Gönder" style="color: #3b82f6;">
+                <i class="fas fa-envelope"></i>
+            </button>
+            {% endif %}
+
+            <!-- Manual Entry Button (#77) -->
+            {% if can_update %}
+            <button class="btn-new-entry" onclick="openAddModal()">
+                <i class="fas fa-plus"></i>
+                <span>Manuel Kayıt Ekle</span>
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-card">
+        <div class="filter-grid">
+            <div class="filter-group">
+                <label class="filter-label" for="filter-start-date">Başlangıç Tarihi</label>
+                <input type="date" id="filter-start-date" class="filter-control">
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label" for="filter-end-date">Bitiş Tarihi</label>
+                <input type="date" id="filter-end-date" class="filter-control">
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label" for="filter-sube">Şube</label>
+                <select id="filter-sube" class="filter-control">
+                    <option value="">Tüm Şubeler</option>
+                    {% for s in subeler %}
+                    <option value="{{ s.Sube_ID }}">{{ s.Sube_Adi }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label" for="filter-calisan">Çalışan</label>
+                <select id="filter-calisan" class="filter-control">
+                    <option value="">Tüm Çalışanlar</option>
+                    {% for e in employees %}
+                    <option value="{{ e.TC_No }}">{{ e.Adi }} {{ e.Soyadi }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label" for="filter-islem">İşlem Tipi</label>
+                <select id="filter-islem" class="filter-control">
+                    <option value="">Tümü</option>
+                    <option value="GIRIS">Giriş</option>
+                    <option value="CIKIS">Çıkış</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label" for="filter-kaynak">Kaynak</label>
+                <select id="filter-kaynak" class="filter-control">
+                    <option value="">Tümü</option>
+                    <option value="TELEFON">Telefon</option>
+                    <option value="MANUEL">Manuel</option>
+                </select>
+            </div>
+
+            <div style="display: flex; gap: 8px;">
+                <button type="button" class="btn-filter-apply" onclick="applyFilters()">
+                    <i class="fas fa-search"></i> Filtrele
+                </button>
+                <button type="button" class="btn-filter-reset" onclick="resetFilters()">
+                    Sıfırla
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Records Table -->
+    <div class="table-card">
+        <div class="table-responsive">
+            <table class="data-table" id="cizelge-table">
+                <thead>
+                    <tr>
+                        <th style="width: 70px;">ID</th>
+                        <th>ÇALIŞAN</th>
+                        <th>ŞUBE</th>
+                        <th>İŞLEM</th>
+                        <th>KAYIT ZAMANI</th>
+                        <th>KAYNAK</th>
+                        <th>KONUM BİLGİSİ</th>
+                        <th>ŞUBE MESAFESİ</th>
+                        <th>CİHAZ</th>
+                        <th>UYARI</th>
+                        {% if can_update %}
+                        <th style="text-align: right; width: 120px;">İŞLEMLER</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody id="cizelge-table-body">
+                    <tr>
+                        <td colspan="11" style="text-align: center; color: #94a3b8; padding: 30px;">Yükleniyor...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination Bar -->
+        <div class="pagination-bar">
+            <div>
+                Toplam <strong id="total-count-label">0</strong> kayıt &bull; Sayfa <span id="current-page-label">1</span> / <span id="total-pages-label">1</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button type="button" class="page-btn" id="btn-prev-page" onclick="changePage(-1)">
+                    <i class="fas fa-chevron-left"></i> Önceki
+                </button>
+                <button type="button" class="page-btn" id="btn-next-page" onclick="changePage(1)">
+                    Sonraki <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Manuel Kayıt Ekle (#77) -->
+<div id="modal-add" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Manuel Vardiya Kaydı Ekle</h3>
+            <button class="modal-close" onclick="closeModal('modal-add')">&times;</button>
+        </div>
+        <form id="form-add" onsubmit="submitAddModal(event)">
+            <div class="form-group-modal">
+                <label for="add-calisan">Çalışan *</label>
+                <select id="add-calisan" required>
+                    <option value="">Çalışan Seçin</option>
+                    {% for e in employees %}
+                    <option value="{{ e.TC_No }}">{{ e.Adi }} {{ e.Soyadi }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group-modal">
+                <label for="add-sube">Şube *</label>
+                <select id="add-sube" required>
+                    <option value="">Şube Seçin</option>
+                    {% for s in subeler %}
+                    <option value="{{ s.Sube_ID }}">{{ s.Sube_Adi }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group-modal">
+                <label for="add-islem">İşlem Tipi *</label>
+                <select id="add-islem" required>
+                    <option value="GIRIS">Giriş</option>
+                    <option value="CIKIS">Çıkış</option>
+                </select>
+            </div>
+
+            <div class="form-group-modal">
+                <label for="add-zaman">Kayıt Tarih ve Saati *</label>
+                <input type="datetime-local" id="add-zaman" required>
+            </div>
+
+            <div class="form-group-modal">
+                <label for="add-gerekce">Gerekçe / Açıklama *</label>
+                <textarea id="add-gerekce" placeholder="Manuel kayıt girilme nedenini açıklayın..." required></textarea>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-filter-reset" onclick="closeModal('modal-add')">İptal</button>
+                <button type="submit" class="btn-new-entry">Kaydet</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Kayıt Düzelt / Güncelle (#77) -->
+<div id="modal-edit" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Vardiya Kaydını Güncelle</h3>
+            <button class="modal-close" onclick="closeModal('modal-edit')">&times;</button>
+        </div>
+        <form id="form-edit" onsubmit="submitEditModal(event)">
+            <input type="hidden" id="edit-id">
+            <div class="form-group-modal">
+                <label>Çalışan</label>
+                <input type="text" id="edit-calisan-name" disabled style="background: #f1f5f9;">
+            </div>
+
+            <div class="form-group-modal">
+                <label for="edit-islem">İşlem Tipi *</label>
+                <select id="edit-islem" required>
+                    <option value="GIRIS">Giriş</option>
+                    <option value="CIKIS">Çıkış</option>
+                </select>
+            </div>
+
+            <div class="form-group-modal">
+                <label for="edit-zaman">Kayıt Tarih ve Saati *</label>
+                <input type="datetime-local" id="edit-zaman" required>
+            </div>
+
+            <div class="form-group-modal">
+                <label for="edit-gerekce">Değişiklik Gerekçesi *</label>
+                <textarea id="edit-gerekce" placeholder="Değişiklik nedenini açıklayın..." required></textarea>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-filter-reset" onclick="closeModal('modal-edit')">İptal</button>
+                <button type="submit" class="btn-new-entry">Güncelle</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Kayıt Sil (#77 - Soft Delete) -->
+<div id="modal-delete" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title" style="color: #dc2626;">Vardiya Kaydını Sil</h3>
+            <button class="modal-close" onclick="closeModal('modal-delete')">&times;</button>
+        </div>
+        <form id="form-delete" onsubmit="submitDeleteModal(event)">
+            <input type="hidden" id="delete-id">
+            <p style="font-size: 0.9rem; color: #475569; margin-bottom: 14px;">
+                Bu vardiya kaydı silinecektir. Sistemde denetim kaydı tutulacaktır. Lütfen silme gerekçesini belirtin.
+            </p>
+
+            <div class="form-group-modal">
+                <label for="delete-gerekce">Silme Gerekçesi *</label>
+                <textarea id="delete-gerekce" placeholder="Silme gerekçesini yazın..." required></textarea>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-filter-reset" onclick="closeModal('modal-delete')">Vazgeç</button>
+                <button type="submit" class="btn-new-entry" style="background-color: #dc2626;">Silmeyi Onayla</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const CAN_UPDATE = {{ 'true' if can_update else 'false' }};
+    let currentPage = 1;
+    let totalPages = 1;
+    let cachedRecords = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Default date range: today
+        const todayStr = new Date().toISOString().split('T')[0];
+        document.getElementById('filter-start-date').value = todayStr;
+        document.getElementById('filter-end-date').value = todayStr;
+
+        loadRecords(1);
+    });
+
+    async function loadRecords(page = 1) {
+        currentPage = page;
+        const tbody = document.getElementById('cizelge-table-body');
+        tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; color: #94a3b8; padding: 30px;">Yükleniyor...</td></tr>';
+
+        const params = new URLSearchParams({
+            page: currentPage,
+            per_page: 50,
+            start_date: document.getElementById('filter-start-date').value,
+            end_date: document.getElementById('filter-end-date').value,
+            sube_id: document.getElementById('filter-sube').value,
+            calisan_tc: document.getElementById('filter-calisan').value,
+            islem_tipi: document.getElementById('filter-islem').value,
+            kaynak: document.getElementById('filter-kaynak').value
+        });
+
+        try {
+            const res = await fetch(`/api/v1/vardiya-cizelgesi?${params.toString()}`);
+            if (!res.ok) throw new Error('Kayıtlar alınamadı.');
+            const data = await res.json();
+
+            cachedRecords = data.items;
+            totalPages = data.total_pages || 1;
+
+            document.getElementById('total-count-label').innerText = data.total_count;
+            document.getElementById('current-page-label').innerText = data.page;
+            document.getElementById('total-pages-label').innerText = totalPages;
+
+            document.getElementById('btn-prev-page').disabled = (currentPage <= 1);
+            document.getElementById('btn-next-page').disabled = (currentPage >= totalPages);
+
+            if (data.items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; color: #94a3b8; padding: 30px;">Filtrelere uygun vardiya kaydı bulunamadı.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.items.map(r => `
+                <tr>
+                    <td>#${r.id}</td>
+                    <td><strong>${escapeHtml(r.calisan_adi)}</strong></td>
+                    <td>${escapeHtml(r.sube_adi)}</td>
+                    <td>
+                        <span class="badge-pill ${r.islem_tipi === 'GIRIS' ? 'badge-giris' : 'badge-cikis'}">
+                            <i class="fas fa-${r.islem_tipi === 'GIRIS' ? 'sign-in-alt' : 'sign-out-alt'}"></i>
+                            ${r.islem_tipi === 'GIRIS' ? 'Giriş' : 'Çıkış'}
+                        </span>
+                    </td>
+                    <td>${r.kayit_zamani}</td>
+                    <td>
+                        <span class="badge-pill ${r.kaynak === 'TELEFON' ? 'badge-telefon' : 'badge-manuel'}">
+                            <i class="fas fa-${r.kaynak === 'TELEFON' ? 'mobile-alt' : 'keyboard'}"></i>
+                            ${r.kaynak === 'TELEFON' ? 'Telefon' : 'Manuel'}
+                        </span>
+                    </td>
+                    <td>
+                        ${r.enlem ? `${r.enlem.toFixed(4)}, ${r.boylam.toFixed(4)} (±${Math.round(r.konum_dogrulugu_m || 0)}m)` : '<span style="color:#94a3b8;">-</span>'}
+                    </td>
+                    <td>
+                        ${r.bolge_mesafesi_m !== null ? `${Math.round(r.bolge_mesafesi_m)} m` : '<span style="color:#94a3b8;">-</span>'}
+                    </td>
+                    <td>
+                        <span style="font-family: monospace; font-size: 0.8rem; color: #64748b;">${r.cihaz_id ? r.cihaz_id.substring(0, 10) + '...' : '-'}</span>
+                    </td>
+                    <td>
+                        ${r.mukerrer_uyari ? '<span class="badge-pill badge-warning-flag"><i class="fas fa-exclamation-triangle"></i> Tekrarlı</span>' : '<span style="color:#94a3b8;">-</span>'}
+                    </td>
+                    ${CAN_UPDATE ? `
+                    <td style="text-align: right;">
+                        <button type="button" class="btn-icon" style="width: 30px; height: 30px; font-size: 0.8rem;" title="Düzenle" onclick="openEditModal(${r.id})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button type="button" class="btn-icon" style="width: 30px; height: 30px; font-size: 0.8rem; color: #dc2626;" title="Sil" onclick="openDeleteModal(${r.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                    ` : ''}
+                </tr>
+            `).join('');
+
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; color: #ef4444; padding: 30px;">Hata: ${err.message}</td></tr>`;
+        }
+    }
+
+    function applyFilters() {
+        loadRecords(1);
+    }
+
+    function resetFilters() {
+        const todayStr = new Date().toISOString().split('T')[0];
+        document.getElementById('filter-start-date').value = todayStr;
+        document.getElementById('filter-end-date').value = todayStr;
+        document.getElementById('filter-sube').value = '';
+        document.getElementById('filter-calisan').value = '';
+        document.getElementById('filter-islem').value = '';
+        document.getElementById('filter-kaynak').value = '';
+        loadRecords(1);
+    }
+
+    function changePage(delta) {
+        const target = currentPage + delta;
+        if (target >= 1 && target <= totalPages) {
+            loadRecords(target);
+        }
+    }
+
+    // ─── MODAL CONTROLS ───
+    function openModal(id) {
+        document.getElementById(id).style.display = 'flex';
+    }
+
+    function closeModal(id) {
+        document.getElementById(id).style.display = 'none';
+    }
+
+    function openAddModal() {
+        // Set default datetime to now
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        document.getElementById('add-zaman').value = now.toISOString().slice(0, 16);
+        document.getElementById('add-gerekce').value = '';
+        openModal('modal-add');
+    }
+
+    async function submitAddModal(e) {
+        e.preventDefault();
+        const payload = {
+            calisan_tc: document.getElementById('add-calisan').value,
+            sube_id: parseInt(document.getElementById('add-sube').value),
+            islem_tipi: document.getElementById('add-islem').value,
+            kayit_zamani: document.getElementById('add-zaman').value,
+            gerekce: document.getElementById('add-gerekce').value.trim()
+        };
+
+        try {
+            const res = await fetch('/api/v1/vardiya-cizelgesi', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                alert(data.error || 'Kayıt eklenemedi.');
+                return;
+            }
+
+            closeModal('modal-add');
+            loadRecords(currentPage);
+        } catch (err) {
+            alert('Sunucu hatası: ' + err.message);
+        }
+    }
+
+    function openEditModal(kayitId) {
+        const rec = cachedRecords.find(r => r.id === kayitId);
+        if (!rec) return;
+
+        document.getElementById('edit-id').value = rec.id;
+        document.getElementById('edit-calisan-name').value = rec.calisan_adi;
+        document.getElementById('edit-islem').value = rec.islem_tipi;
+        document.getElementById('edit-zaman').value = rec.kayit_tarihi_raw;
+        document.getElementById('edit-gerekce').value = '';
+
+        openModal('modal-edit');
+    }
+
+    async function submitEditModal(e) {
+        e.preventDefault();
+        const kayitId = document.getElementById('edit-id').value;
+        const payload = {
+            islem_tipi: document.getElementById('edit-islem').value,
+            kayit_zamani: document.getElementById('edit-zaman').value,
+            gerekce: document.getElementById('edit-gerekce').value.trim()
+        };
+
+        try {
+            const res = await fetch(`/api/v1/vardiya-cizelgesi/${kayitId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                alert(data.error || 'Güncelleme yapılamadı.');
+                return;
+            }
+
+            closeModal('modal-edit');
+            loadRecords(currentPage);
+        } catch (err) {
+            alert('Sunucu hatası: ' + err.message);
+        }
+    }
+
+    function openDeleteModal(kayitId) {
+        document.getElementById('delete-id').value = kayitId;
+        document.getElementById('delete-gerekce').value = '';
+        openModal('modal-delete');
+    }
+
+    async function submitDeleteModal(e) {
+        e.preventDefault();
+        const kayitId = document.getElementById('delete-id').value;
+        const payload = {
+            gerekce: document.getElementById('delete-gerekce').value.trim()
+        };
+
+        try {
+            const res = await fetch(`/api/v1/vardiya-cizelgesi/${kayitId}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                alert(data.error || 'Silme işlemi gerçekleştirilemedi.');
+                return;
+            }
+
+            closeModal('modal-delete');
+            loadRecords(currentPage);
+        } catch (err) {
+            alert('Sunucu hatası: ' + err.message);
+        }
+    }
+
+    // ─── EXCEL (#33), PRINT (#34), MAIL (#74) INTEGRATION ───
+    async function fetchExportData() {
+        const params = new URLSearchParams({
+            start_date: document.getElementById('filter-start-date').value,
+            end_date: document.getElementById('filter-end-date').value,
+            sube_id: document.getElementById('filter-sube').value,
+            calisan_tc: document.getElementById('filter-calisan').value,
+            islem_tipi: document.getElementById('filter-islem').value,
+            kaynak: document.getElementById('filter-kaynak').value
+        });
+        const res = await fetch(`/api/v1/vardiya-cizelgesi/export-data?${params.toString()}`);
+        if (!res.ok) throw new Error('Dışa aktarma verisi alınamadı.');
+        return await res.json();
+    }
+
+    async function buildVardiyaWorkbook() {
+        if (typeof XLSX === 'undefined') return null;
+
+        const items = await fetchExportData();
+        const wb = XLSX.utils.book_new();
+
+        const headers = [
+            'ID', 'ÇALIŞAN', 'ŞUBE', 'İŞLEM', 'KAYNAK',
+            'KAYIT ZAMANI', 'ENLEM', 'BOYLAM', 'GPS DOĞRULUĞU (m)', 'BÖLGE MESAFESİ (m)', 'CİHAZ', 'TEKRARLI UYARI'
+        ];
+
+        const sheetData = [
+            ['VARDİYA ÇİZELGESİ RAPORU'],
+            ['Rapor Tarihi:', new Date().toLocaleString('tr-TR')],
+            ['Toplam Kayıt:', items.length],
+            [],
+            headers
+        ];
+
+        items.forEach(r => {
+            sheetData.push([
+                r.id,
+                r.calisan_adi,
+                r.sube_adi,
+                r.islem_tipi,
+                r.kaynak,
+                r.kayit_zamani,
+                r.enlem,
+                r.boylam,
+                r.konum_dogrulugu_m,
+                r.bolge_mesafesi_m,
+                r.cihaz_id,
+                r.mukerrer_uyari
+            ]);
+        });
+
+        const ws = XLSX.utils.aoa_to_sheet(sheetData);
+        XLSX.utils.book_append_sheet(wb, ws, "Vardiya Cizelgesi");
+        return wb;
+    }
+
+    async function exportVardiyaExcel() {
+        try {
+            const wb = await buildVardiyaWorkbook();
+            if (!wb) {
+                alert('Excel kütüphanesi yüklenemedi.');
+                return;
+            }
+            XLSX.writeFile(wb, `Vardiya_Cizelgesi_${new Date().toISOString().slice(0, 10)}.xlsx`);
+        } catch (err) {
+            alert('Excel oluşturulurken hata: ' + err.message);
+        }
+    }
+
+    async function getVardiyaReportExcelBase64() {
+        const wb = await buildVardiyaWorkbook();
+        if (!wb) return null;
+        return XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+    }
+
+    async function getVardiyaReportMailHtml() {
+        const items = await fetchExportData();
+        return `
+            <h3>Vardiya Çizelgesi Raporu</h3>
+            <p><strong>Tarih:</strong> ${new Date().toLocaleString('tr-TR')}</p>
+            <p><strong>Toplam Kayıt:</strong> ${items.length}</p>
+            <table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 100%; font-family: sans-serif; font-size: 12px;">
+                <thead style="background-color: #f1f5f9;">
+                    <tr>
+                        <th>ID</th>
+                        <th>Çalışan</th>
+                        <th>Şube</th>
+                        <th>İşlem</th>
+                        <th>Kaynak</th>
+                        <th>Kayıt Zamanı</th>
+                        <th>Mesafe (m)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${items.slice(0, 50).map(r => `
+                        <tr>
+                            <td>#${r.id}</td>
+                            <td>${escapeHtml(r.calisan_adi)}</td>
+                            <td>${escapeHtml(r.sube_adi)}</td>
+                            <td>${r.islem_tipi}</td>
+                            <td>${r.kaynak}</td>
+                            <td>${r.kayit_zamani}</td>
+                            <td>${r.bolge_mesafesi_m || '-'}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+            ${items.length > 50 ? '<p><em>(İlk 50 kayıt listelenmiştir. Tam liste ekteki Excel dosyasındadır.)</em></p>' : ''}
+        `;
+    }
+
+    function openVardiyaReportMail() {
+        if (typeof openReportMailModal === 'function') {
+            openReportMailModal({
+                title: `Vardiya Çizelgesi Raporu`,
+                filename: `Vardiya_Cizelgesi_${new Date().toISOString().slice(0, 10)}.xlsx`,
+                getHtml: getVardiyaReportMailHtml,
+                getExcelBase64: getVardiyaReportExcelBase64
+            });
+        } else {
+            alert('Mail gönderme modülü bu ekranda yüklenemedi.');
+        }
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/[&<>"']/g, function(m) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+        });
+    }
+</script>
+{% endblock %}

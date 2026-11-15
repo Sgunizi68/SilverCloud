@@ -814,5 +814,119 @@ def vardiya_plan_girisi():
     )
 
 
+# ============================================================================
+# MOBIL ROSTER (GİRİŞ / ÇIKIŞ) WEB ROUTES
+# ============================================================================
+
+@web_hr_bp.route("/Vardiya", methods=["GET"])
+def vardiya_mobil():
+    """
+    Public mobile shift check-in/out page.
+    No login required. Works with QR token param: /Vardiya?kod=...
+    """
+    token = request.args.get("kod", "").strip()
+    return render_template("vardiya_mobil.html", token=token)
+
+
+@web_hr_bp.route("/barkod", methods=["GET"])
+@login_required
+@permission_required("Barkod Ekranı Görüntüleme")
+def barkod_yonetimi():
+    """
+    Barkod Yönetimi Screen (#75).
+    Allows creating, viewing, and printing QR codes for branches.
+    """
+    db_session = get_db_session()
+    user = auth_queries.get_kullanici_by_id(db_session, session['user_id'])
+    if not user:
+        db_session.close()
+        return redirect(url_for('web_auth.login'))
+
+    is_admin = False
+    if user.Kullanici_Adi and user.Kullanici_Adi.lower() == 'admin':
+        is_admin = True
+    else:
+        roles = auth_queries.get_user_roles(db_session, user.Kullanici_ID)
+        if 'admin' in [r.lower() for r in roles]:
+            is_admin = True
+
+    all_suber = ref_queries.get_suber(db_session, limit=1000)
+    if is_admin:
+        auth_suber = all_suber
+    else:
+        authorized_branch_ids = auth_queries.get_user_branches(db_session, user.Kullanici_ID)
+        auth_suber = [s for s in all_suber if s.Sube_ID in authorized_branch_ids]
+
+    selected_sube_id = request.args.get('sube_id', type=int)
+    if not selected_sube_id and auth_suber:
+        selected_sube_id = auth_suber[0].Sube_ID
+
+    sube_list = [{"Sube_ID": s.Sube_ID, "Sube_Adi": s.Sube_Adi, "merkez_enlem": float(s.merkez_enlem) if s.merkez_enlem else None, "merkez_boylam": float(s.merkez_boylam) if s.merkez_boylam else None, "yaricap_m": s.yaricap_m} for s in auth_suber]
+
+    db_session.close()
+    return render_template(
+        "barkod_yonetimi.html",
+        user=user,
+        subeler=sube_list,
+        selected_sube_id=selected_sube_id,
+        is_admin=is_admin
+    )
+
+
+@web_hr_bp.route("/vardiya-cizelgesi", methods=["GET"])
+@login_required
+@permission_required("Vardiya Çizelgesi Ekranı Görüntüleme")
+def vardiya_cizelgesi():
+    """
+    Vardiya Çizelgesi Screen (#76).
+    Displays shift records with filters, pagination, manual creation/update (#77),
+    Excel export (#33), Print (#34), and Mail (#74).
+    """
+    db_session = get_db_session()
+    user = auth_queries.get_kullanici_by_id(db_session, session['user_id'])
+    if not user:
+        db_session.close()
+        return redirect(url_for('web_auth.login'))
+
+    is_admin = False
+    if user.Kullanici_Adi and user.Kullanici_Adi.lower() == 'admin':
+        is_admin = True
+    else:
+        roles = auth_queries.get_user_roles(db_session, user.Kullanici_ID)
+        if 'admin' in [r.lower() for r in roles]:
+            is_admin = True
+
+    can_update = is_admin or auth_queries.has_permission(db_session, user.Kullanici_ID, "Vardiya Güncelleme Yetkisi")
+    can_excel = is_admin or auth_queries.has_permission(db_session, user.Kullanici_ID, "Excele Aktar")
+    can_print = is_admin or auth_queries.has_permission(db_session, user.Kullanici_ID, "Yazdırma Yetkisi")
+    can_mail = is_admin or auth_queries.has_permission(db_session, user.Kullanici_ID, "Mail Gönder")
+
+    all_suber = ref_queries.get_suber(db_session, limit=1000)
+    if is_admin:
+        auth_suber = all_suber
+    else:
+        authorized_branch_ids = auth_queries.get_user_branches(db_session, user.Kullanici_ID)
+        auth_suber = [s for s in all_suber if s.Sube_ID in authorized_branch_ids]
+
+    sube_list = [{"Sube_ID": s.Sube_ID, "Sube_Adi": s.Sube_Adi} for s in auth_suber]
+
+    # Active employees list for manual entry modal and filter dropdown
+    active_employees = queries.get_calisanlar(db_session, limit=2000, aktif_pasif=True)
+    emp_list = [{"TC_No": e.TC_No, "Adi": e.Adi, "Soyadi": e.Soyadi, "Sube_ID": e.Sube_ID} for e in active_employees]
+
+    db_session.close()
+    return render_template(
+        "vardiya_cizelgesi.html",
+        user=user,
+        subeler=sube_list,
+        employees=emp_list,
+        can_update=can_update,
+        can_excel=can_excel,
+        can_print=can_print,
+        can_mail=can_mail,
+        is_admin=is_admin
+    )
+
+
 
 

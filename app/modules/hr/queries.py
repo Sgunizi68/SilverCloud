@@ -5,11 +5,16 @@ CRUD operations for Employee, Attendance, Advance Requests, and Employee Request
 
 from datetime import datetime, date
 from decimal import Decimal
-from typing import List, Optional
+import math
+import secrets
+from typing import List, Optional, Tuple, Dict, Any
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import select, desc, func
 
-from app.models import Calisan, PuantajSecimi, Puantaj, VardiyaPlan, AvansIstek, CalisanTalep
+from app.models import (
+    Calisan, PuantajSecimi, Puantaj, VardiyaPlan, AvansIstek, CalisanTalep, Sube,
+    Barkod, VardiyaKayit, VardiyaKayitLog, VardiyaRedDeneme
+)
 
 
 # ============================================================================
@@ -950,3 +955,390 @@ def approve_calisan_talep_ssk(db: Session, talep_id: int, user_id: int) -> Optio
     db.commit()
     db.refresh(talep)
     return talep
+
+
+# ============================================================================
+# MOBIL ROSTER (GİRİŞ / ÇIKIŞ) QUERIES
+# ============================================================================
+
+def calculate_haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """
+    Calculate the great-circle distance between two points on Earth using Haversine formula.
+    Returns distance in meters.
+    """
+    R = 6371000.0  # Earth radius in meters
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    delta_phi = math.radians(lat2 - lat1)
+    delta_lambda = math.radians(lon2 - lon1)
+
+    a = (math.sin(delta_phi / 2.0) ** 2 +
+         math.cos(phi1) * math.cos(phi2) * (math.sin(delta_lambda / 2.0) ** 2))
+    c = 2.0 * math.atan2(math.sqrt(a), math.sqrt(1.0 - a))
+    return R * c
+
+
+# --- Barkod Queries ---
+
+def generate_unique_barcode_token(db: Session) -> str:
+    """Generate a crypto-safe 32-char hex token for QR barcode."""
+    while True:
+        token = secrets.token_hex(16)  # 16 bytes = 32 hex chars
+        existing = db.execute(select(Barkod).where(Barkod.barkod_kodu == token)).scalar_one_or_none()
+        if not existing:
+            return token
+
+
+def create_barkod(db: Session, sube_id: int, olusturan_id: int) -> Barkod:
+    """Create a new active QR barcode for a branch."""
+    token = generate_unique_barcode_token(db)
+    barkod = Barkod(
+        sube_id=sube_id,
+        barkod_kodu=token,
+        aktif=True,
+        olusturan_id=olusturan_id,
+        olusturma_zamani=datetime.now()
+    )
+    db.add(barkod)
+    db.commit()
+    db.refresh(barkod)
+    return barkod
+
+
+def get_barkod_by_token(db: Session, token: str) -> Optional[Barkod]:
+    """Get barcode record by token string."""
+    stmt = select(Barkod).where(Barkod.barkod_kodu == token)
+    return db.execute(stmt).scalar_one_or_none()
+
+
+def get_barkod_by_id(db: Session, barkod_id: int) -> Optional[Barkod]:
+    """Get barcode record by primary key."""
+    stmt = select(Barkod).where(Barkod.id == barkod_id)
+    return db.execute(stmt).scalar_one_or_none()
+
+
+def get_barkodlar_by_sube(db: Session, sube_id: Optional[int] = None) -> List[Barkod]:
+    """List barcodes, optionally filtered by branch, ordered by creation desc."""
+    stmt = select(Barkod)
+    if sube_id:
+        stmt = stmt.where(Barkod.sube_id == sube_id)
+    stmt = stmt.order_by(desc(Barkod.olusturma_zamani))
+    return list(db.execute(stmt).scalars().all())
+
+
+def toggle_barkod_durum(db: Session, barkod_id: int) -> Optional[Barkod]:
+    """Toggle active/passive state of a barcode."""
+    barkod = get_barkod_by_id(db, barkod_id)
+    if not barkod:
+        return None
+    barkod.aktif = not barkod.aktif
+    db.commit()
+    db.refresh(barkod)
+    return barkod
+
+
+# --- Vardiya Red Deneme Query ---
+
+def log_vardiya_red_deneme(
+    db: Session,
+    neden: str,
+    calisan_id: Optional[str] = None,
+    sube_id: Optional[int] = None,
+    barkod_id: Optional[int] = None,
+    islem_tipi: Optional[str] = None,
+    enlem: Optional[float] = None,
+    boylam: Optional[float] = None,
+    konum_dogrulugu_m: Optional[float] = None,
+    bolge_mesafesi_m: Optional[float] = None,
+    cihaz_id: Optional[str] = None,
+    kullanici_araci: Optional[str] = None,
+    ip_adresi: Optional[str] = None
+) -> VardiyaRedDeneme:
+    """Log a rejected check-in/out attempt to vardiya_red_deneme table."""
+    red = VardiyaRedDeneme(
+        calisan_id=calisan_id,
+        sube_id=sube_id,
+        barkod_id=barkod_id,
+        islem_tipi=islem_tipi,
+        neden=neden,
+        deneme_zamani=datetime.now(),
+        enlem=Decimal(str(round(enlem, 6))) if enlem is not None else None,
+        boylam=Decimal(str(round(boylam, 6))) if boylam is not None else None,
+        konum_dogrulugu_m=Decimal(str(round(konum_dogrulugu_m, 1))) if konum_dogrulugu_m is not None else None,
+        bolge_mesafesi_m=Decimal(str(round(bolge_mesafesi_m, 1))) if bolge_mesafesi_m is not None else None,
+        cihaz_id=cihaz_id[:64] if cihaz_id else None,
+        kullanici_araci=kullanici_araci[:255] if kullanici_araci else None,
+        ip_adresi=ip_adresi[:45] if ip_adresi else None
+    )
+    db.add(red)
+    db.commit()
+    db.refresh(red)
+    return red
+
+
+# --- Vardiya Kayıt & Log Queries ---
+
+def get_last_vardiya_kayit_for_calisan(db: Session, tc_no: str) -> Optional[VardiyaKayit]:
+    """Get the most recent non-deleted shift record for an employee."""
+    stmt = (
+        select(VardiyaKayit)
+        .where(VardiyaKayit.calisan_id == tc_no, VardiyaKayit.silindi == False)
+        .order_by(desc(VardiyaKayit.kayit_zamani))
+        .limit(1)
+    )
+    return db.execute(stmt).scalar_one_or_none()
+
+
+def create_mobil_vardiya_kayit(
+    db: Session,
+    calisan_tc: str,
+    sube_id: int,
+    barkod_id: int,
+    islem_tipi: str,
+    istemci_zamani: Optional[datetime],
+    enlem: float,
+    boylam: float,
+    konum_dogrulugu_m: float,
+    bolge_mesafesi_m: float,
+    cihaz_id: str,
+    kullanici_araci: Optional[str],
+    platform: Optional[str],
+    ekran: Optional[str],
+    ip_adresi: Optional[str],
+    mukerrer_uyari: bool = False
+) -> VardiyaKayit:
+    """Create a mobile shift check-in/out record from phone."""
+    server_time = datetime.now()
+    kayit = VardiyaKayit(
+        calisan_id=calisan_tc,
+        sube_id=sube_id,
+        barkod_id=barkod_id,
+        islem_tipi=islem_tipi,
+        kaynak="TELEFON",
+        kayit_zamani=server_time,
+        istemci_zamani=istemci_zamani,
+        enlem=Decimal(str(round(enlem, 6))),
+        boylam=Decimal(str(round(boylam, 6))),
+        konum_dogrulugu_m=Decimal(str(round(konum_dogrulugu_m, 1))),
+        bolge_mesafesi_m=Decimal(str(round(bolge_mesafesi_m, 1))),
+        cihaz_id=cihaz_id[:64] if cihaz_id else None,
+        kullanici_araci=kullanici_araci[:255] if kullanici_araci else None,
+        platform=platform[:64] if platform else None,
+        ekran=ekran[:20] if ekran else None,
+        ip_adresi=ip_adresi[:45] if ip_adresi else None,
+        mukerrer_uyari=mukerrer_uyari,
+        silindi=False,
+        olusturma_zamani=server_time
+    )
+    db.add(kayit)
+    db.commit()
+    db.refresh(kayit)
+    return kayit
+
+
+def create_manuel_vardiya_kayit(
+    db: Session,
+    calisan_tc: str,
+    sube_id: int,
+    islem_tipi: str,
+    kayit_zamani: datetime,
+    olusturan_id: int,
+    gerekce: str
+) -> VardiyaKayit:
+    """Create a manual shift check-in/out record with required audit log."""
+    kayit = VardiyaKayit(
+        calisan_id=calisan_tc,
+        sube_id=sube_id,
+        barkod_id=None,
+        islem_tipi=islem_tipi,
+        kaynak="MANUEL",
+        kayit_zamani=kayit_zamani,
+        istemci_zamani=None,
+        enlem=None,
+        boylam=None,
+        konum_dogrulugu_m=None,
+        bolge_mesafesi_m=None,
+        cihaz_id=None,
+        kullanici_araci=None,
+        platform=None,
+        ekran=None,
+        ip_adresi=None,
+        mukerrer_uyari=False,
+        olusturan_id=olusturan_id,
+        silindi=False,
+        olusturma_zamani=datetime.now()
+    )
+    db.add(kayit)
+    db.flush()  # get kayit.id
+
+    # Create audit log
+    log = VardiyaKayitLog(
+        kayit_id=kayit.id,
+        islem="EKLE",
+        kullanici_id=olusturan_id,
+        islem_zamani=datetime.now(),
+        gerekce=gerekce,
+        eski_deger=None,
+        yeni_deger={
+            "calisan_id": calisan_tc,
+            "sube_id": sube_id,
+            "islem_tipi": islem_tipi,
+            "kaynak": "MANUEL",
+            "kayit_zamani": kayit_zamani.isoformat(),
+            "olusturan_id": olusturan_id
+        }
+    )
+    db.add(log)
+    db.commit()
+    db.refresh(kayit)
+    return kayit
+
+
+def update_vardiya_kayit(
+    db: Session,
+    kayit_id: int,
+    islem_tipi: str,
+    kayit_zamani: datetime,
+    kullanici_id: int,
+    gerekce: str
+) -> Optional[VardiyaKayit]:
+    """Update a shift record with required audit log (Permission #77)."""
+    kayit = db.execute(select(VardiyaKayit).where(VardiyaKayit.id == kayit_id)).scalar_one_or_none()
+    if not kayit or kayit.silindi:
+        return None
+
+    eski_deger = {
+        "islem_tipi": kayit.islem_tipi,
+        "kayit_zamani": kayit.kayit_zamani.isoformat() if kayit.kayit_zamani else None
+    }
+
+    kayit.islem_tipi = islem_tipi
+    kayit.kayit_zamani = kayit_zamani
+
+    yeni_deger = {
+        "islem_tipi": islem_tipi,
+        "kayit_zamani": kayit_zamani.isoformat()
+    }
+
+    log = VardiyaKayitLog(
+        kayit_id=kayit.id,
+        islem="GUNCELLE",
+        kullanici_id=kullanici_id,
+        islem_zamani=datetime.now(),
+        gerekce=gerekce,
+        eski_deger=eski_deger,
+        yeni_deger=yeni_deger
+    )
+    db.add(log)
+    db.commit()
+    db.refresh(kayit)
+    return kayit
+
+
+def soft_delete_vardiya_kayit(
+    db: Session,
+    kayit_id: int,
+    kullanici_id: int,
+    gerekce: str
+) -> Optional[VardiyaKayit]:
+    """Soft delete a shift record with required audit log (Permission #77)."""
+    kayit = db.execute(select(VardiyaKayit).where(VardiyaKayit.id == kayit_id)).scalar_one_or_none()
+    if not kayit or kayit.silindi:
+        return None
+
+    eski_deger = {
+        "calisan_id": kayit.calisan_id,
+        "sube_id": kayit.sube_id,
+        "islem_tipi": kayit.islem_tipi,
+        "kaynak": kayit.kaynak,
+        "kayit_zamani": kayit.kayit_zamani.isoformat() if kayit.kayit_zamani else None,
+        "silindi": False
+    }
+
+    kayit.silindi = True
+
+    log = VardiyaKayitLog(
+        kayit_id=kayit.id,
+        islem="SIL",
+        kullanici_id=kullanici_id,
+        islem_zamani=datetime.now(),
+        gerekce=gerekce,
+        eski_deger=eski_deger,
+        yeni_deger={"silindi": True}
+    )
+    db.add(log)
+    db.commit()
+    db.refresh(kayit)
+    return kayit
+
+
+def get_vardiya_kayitlar(
+    db: Session,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    sube_id: Optional[int] = None,
+    calisan_tc: Optional[str] = None,
+    islem_tipi: Optional[str] = None,
+    kaynak: Optional[str] = None,
+    show_deleted: bool = False,
+    page: int = 1,
+    per_page: int = 50
+) -> Tuple[List[VardiyaKayit], int]:
+    """
+    Get paginated shift records with filtering, ordered by kayit_zamani desc.
+    Returns (records, total_count).
+    """
+    stmt = select(VardiyaKayit)
+    if not show_deleted:
+        stmt = stmt.where(VardiyaKayit.silindi == False)
+
+    if start_date:
+        stmt = stmt.where(VardiyaKayit.kayit_zamani >= datetime.combine(start_date, datetime.min.time()))
+    if end_date:
+        stmt = stmt.where(VardiyaKayit.kayit_zamani <= datetime.combine(end_date, datetime.max.time()))
+    if sube_id:
+        stmt = stmt.where(VardiyaKayit.sube_id == sube_id)
+    if calisan_tc:
+        stmt = stmt.where(VardiyaKayit.calisan_id == calisan_tc)
+    if islem_tipi:
+        stmt = stmt.where(VardiyaKayit.islem_tipi == islem_tipi)
+    if kaynak:
+        stmt = stmt.where(VardiyaKayit.kaynak == kaynak)
+
+    count_stmt = select(func.count()).select_from(stmt.subquery())
+    total_count = db.execute(count_stmt).scalar() or 0
+
+    stmt = stmt.order_by(desc(VardiyaKayit.kayit_zamani))
+    offset = (max(1, page) - 1) * per_page
+    stmt = stmt.offset(offset).limit(per_page)
+
+    records = list(db.execute(stmt).scalars().all())
+    return records, total_count
+
+
+def get_all_vardiya_kayitlar_for_export(
+    db: Session,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    sube_id: Optional[int] = None,
+    calisan_tc: Optional[str] = None,
+    islem_tipi: Optional[str] = None,
+    kaynak: Optional[str] = None
+) -> List[VardiyaKayit]:
+    """Get all filtered non-deleted records for Excel/Mail/Print (without pagination limit)."""
+    stmt = select(VardiyaKayit).where(VardiyaKayit.silindi == False)
+    if start_date:
+        stmt = stmt.where(VardiyaKayit.kayit_zamani >= datetime.combine(start_date, datetime.min.time()))
+    if end_date:
+        stmt = stmt.where(VardiyaKayit.kayit_zamani <= datetime.combine(end_date, datetime.max.time()))
+    if sube_id:
+        stmt = stmt.where(VardiyaKayit.sube_id == sube_id)
+    if calisan_tc:
+        stmt = stmt.where(VardiyaKayit.calisan_id == calisan_tc)
+    if islem_tipi:
+        stmt = stmt.where(VardiyaKayit.islem_tipi == islem_tipi)
+    if kaynak:
+        stmt = stmt.where(VardiyaKayit.kaynak == kaynak)
+
+    stmt = stmt.order_by(desc(VardiyaKayit.kayit_zamani))
+    return list(db.execute(stmt).scalars().all())

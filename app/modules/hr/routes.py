@@ -4,6 +4,8 @@ CRUD endpoints for Employee, Attendance, and Leave/Advance management.
 All endpoints protected by @auth_required decorator.
 """
 
+import math
+from datetime import datetime, date
 from functools import wraps
 from flask import Blueprint, request, jsonify, session
 from app.common.database import get_db_session
@@ -1248,3 +1250,677 @@ def approve_calisan_talep_ssk(talep_id):
         return jsonify({"message": "SSK Approval successful", "talep_id": talep_id}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# ============================================================================
+# MOBIL ROSTER (GİRİŞ / ÇIKIŞ) ENDPOINTS
+# ============================================================================
+
+def _is_current_user_admin(db, user) -> bool:
+    """Helper to check if current logged in user has admin role."""
+    from app.modules.auth import queries as auth_queries
+    if not user:
+        return False
+    if getattr(user, 'Kullanici_Adi', '') and user.Kullanici_Adi.lower() == 'admin':
+        return True
+    roles = auth_queries.get_user_roles(db, user.Kullanici_ID)
+    return 'admin' in [r.lower() for r in roles]
+
+
+def _check_user_permission(db, user, perm_name: str) -> bool:
+    """Helper to verify if user is admin or possesses named permission."""
+    from app.modules.auth import queries as auth_queries
+    if _is_current_user_admin(db, user):
+        return True
+    if not user:
+        return False
+    return auth_queries.has_permission(db, user.Kullanici_ID, perm_name)
+
+
+# --- 1. Barkod Endpoints (Protected with #75) ---
+
+@hr_bp.route("/barkodlar", methods=["GET"])
+@auth_required
+def list_barkodlar():
+    """List barcodes, optionally filtered by sube_id (#75)."""
+    db = get_db_session()
+    try:
+        user = request.user
+        if not _check_user_permission(db, user, "Barkod Ekranı Görüntüleme"):
+            return jsonify({"error": "Barkod Ekranı Görüntüleme yetkiniz bulunmamaktadır."}), 403
+
+        sube_id = request.args.get("sube_id", type=int)
+        barkodlar = queries.get_barkodlar_by_sube(db, sube_id)
+        
+        result = []
+        for b in barkodlar:
+            result.append({
+                "id": b.id,
+                "sube_id": b.sube_id,
+                "sube_adi": b.sube.Sube_Adi if b.sube else "",
+                "barkod_kodu": b.barkod_kodu,
+                "aktif": bool(b.aktif),
+                "olusturan_id": b.olusturan_id,
+                "olusturan_adi": b.olusturan.Adi_Soyadi if b.olusturan else "",
+                "olusturma_zamani": b.olusturma_zamani.strftime("%d.%m.%Y %H:%M:%S") if b.olusturma_zamani else ""
+            })
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
+
+@hr_bp.route("/barkodlar", methods=["POST"])
+@auth_required
+def create_new_barkod():
+    """Create a new random barcode for a branch (#75)."""
+    db = get_db_session()
+    try:
+        user = request.user
+        if not _check_user_permission(db, user, "Barkod Ekranı Görüntüleme"):
+            return jsonify({"error": "Barkod oluşturma yetkiniz bulunmamaktadır."}), 403
+
+        data = request.get_json() or {}
+        sube_id = data.get("sube_id")
+        if not sube_id:
+            return jsonify({"error": "Şube seçimi zorunludur."}), 400
+
+        from app.models import Sube
+        sube = db.get(Sube, sube_id)
+        if not sube:
+            return jsonify({"error": "Geçerli bir şube bulunamadı."}), 404
+
+        barkod = queries.create_barkod(db, sube_id=sube_id, olusturan_id=user.Kullanici_ID)
+        return jsonify({
+            "message": "Barkod başarıyla oluşturuldu.",
+            "id": barkod.id,
+            "sube_id": barkod.sube_id,
+            "sube_adi": sube.Sube_Adi,
+            "barkod_kodu": barkod.barkod_kodu,
+            "aktif": barkod.aktif,
+            "olusturma_zamani": barkod.olusturma_zamani.strftime("%d.%m.%Y %H:%M:%S")
+        }), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
+
+@hr_bp.route("/barkodlar/<int:barkod_id>/toggle-durum", methods=["PUT"])
+@auth_required
+def toggle_barkod_status(barkod_id):
+    """Toggle active/passive state of a barcode (#75)."""
+    db = get_db_session()
+    try:
+        user = request.user
+        if not _check_user_permission(db, user, "Barkod Ekranı Görüntüleme"):
+            return jsonify({"error": "Barkod durumu değiştirme yetkiniz bulunmamaktadır."}), 403
+
+        barkod = queries.toggle_barkod_durum(db, barkod_id)
+        if not barkod:
+            return jsonify({"error": "Barkod bulunamadı."}), 404
+
+        return jsonify({
+            "message": "Barkod durumu güncellendi.",
+            "id": barkod.id,
+            "aktif": barkod.aktif
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
+
+# --- 2. Public Mobile Vardiya Endpoints (No Login Required) ---
+
+@hr_bp.route("/vardiya/token-kontrol", methods=["GET"])
+def check_vardiya_token():
+    """
+    Public token validation endpoint for mobile check-in/out.
+    Checks if token is valid and active. Does not leak employee list or TC numbers.
+    """
+    token = request.args.get("kod", "").strip()
+    if not token:
+        return jsonify({"valid": False, "message": "Barkod geçersiz. Lütfen şubedeki barkodu okutun."}), 400
+
+    db = get_db_session()
+    try:
+        barkod = queries.get_barkod_by_token(db, token)
+        if not barkod or not barkod.aktif:
+            return jsonify({"valid": False, "message": "Barkod geçersiz veya pasif. Lütfen şubedeki barkodu okutun."}), 400
+
+        sube = barkod.sube
+        return jsonify({
+            "valid": True,
+            "sube_id": barkod.sube_id,
+            "sube_adi": sube.Sube_Adi if sube else "Tanımsız Şube"
+        }), 200
+    except Exception as e:
+        return jsonify({"valid": False, "message": f"Sunucu hatası: {str(e)}"}), 500
+    finally:
+        db.close()
+
+
+@hr_bp.route("/vardiya/calisan-dogrula", methods=["POST"])
+def verify_calisan_for_mobile():
+    """
+    Public employee verification endpoint.
+    Validates entered TC_No:
+    - Must exist in Calisan table and be active (Aktif_Pasif=True)
+    - Must belong to the barcode's branch (Rule 10.3)
+    - If Calisan.Cihaz_Kaydi is set, must match passed cihaz_id
+    - If cihaz_id is already bound to another employee, reject
+    """
+    data = request.get_json() or {}
+    token = data.get("kod", "").strip()
+    tc_no = data.get("tc_no", "").strip()
+    cihaz_id = data.get("cihaz_id", "").strip()
+
+    client_ip = request.headers.get("X-Forwarded-For", request.remote_addr)
+    user_agent = request.headers.get("User-Agent", "")
+
+    if not token or not tc_no:
+        return jsonify({"success": False, "message": "Barkod kodu ve T.C. kimlik numarası zorunludur."}), 400
+
+    db = get_db_session()
+    try:
+        barkod = queries.get_barkod_by_token(db, token)
+        if not barkod or not barkod.aktif:
+            queries.log_vardiya_red_deneme(
+                db, neden="GECERSIZ_BARKOD",
+                cihaz_id=cihaz_id, kullanici_araci=user_agent, ip_adresi=client_ip
+            )
+            return jsonify({"success": False, "message": "Barkod geçersiz. Lütfen şubedeki barkodu okutun."}), 400
+
+        from app.models import Calisan
+        calisan = db.get(Calisan, tc_no)
+        if not calisan or not calisan.Aktif_Pasif:
+            queries.log_vardiya_red_deneme(
+                db, neden="TC_ESLESMEDI", sube_id=barkod.sube_id, barkod_id=barkod.id,
+                cihaz_id=cihaz_id, kullanici_araci=user_agent, ip_adresi=client_ip
+            )
+            return jsonify({"success": False, "message": "Girilen T.C. kimlik numarası aktif çalışanlar arasında bulunamadı."}), 400
+
+        # Branch check: Employee must belong to the barcode's branch
+        if calisan.Sube_ID != barkod.sube_id:
+            queries.log_vardiya_red_deneme(
+                db, neden="BOLGE_DISI", calisan_id=calisan.TC_No, sube_id=barkod.sube_id, barkod_id=barkod.id,
+                cihaz_id=cihaz_id, kullanici_araci=user_agent, ip_adresi=client_ip
+            )
+            return jsonify({"success": False, "message": "Kayıtlı olduğunuz şube ile barkodun ait olduğu şube uyuşmuyor."}), 400
+
+        # Device checks
+        if cihaz_id:
+            # Check if this employee already has a different device bound
+            if calisan.Cihaz_Kaydi and calisan.Cihaz_Kaydi != cihaz_id:
+                queries.log_vardiya_red_deneme(
+                    db, neden="CIHAZ_KAYDI_DOLU", calisan_id=calisan.TC_No, sube_id=barkod.sube_id, barkod_id=barkod.id,
+                    cihaz_id=cihaz_id, kullanici_araci=user_agent, ip_adresi=client_ip
+                )
+                return jsonify({"success": False, "message": "Bu kişi için başka bir cihaz kaydı mevcut. Kayıt yapılamaz."}), 400
+
+            # Check if this device is already bound to another employee
+            other_calisan = db.query(Calisan).filter(Calisan.Cihaz_Kaydi == cihaz_id, Calisan.TC_No != calisan.TC_No).first()
+            if other_calisan:
+                queries.log_vardiya_red_deneme(
+                    db, neden="CIHAZ_KAYDI_DOLU", calisan_id=calisan.TC_No, sube_id=barkod.sube_id, barkod_id=barkod.id,
+                    cihaz_id=cihaz_id, kullanici_araci=user_agent, ip_adresi=client_ip
+                )
+                return jsonify({"success": False, "message": "Bu cihaz başka bir çalışanla ilişkilendirilmiş."}), 400
+
+        # Check last operation for duplicate warning check
+        last_rec = queries.get_last_vardiya_kayit_for_calisan(db, calisan.TC_No)
+        last_islem = last_rec.islem_tipi if last_rec else None
+
+        return jsonify({
+            "success": True,
+            "calisan_adi": f"{calisan.Adi} {calisan.Soyadi[:1]}.",
+            "last_islem": last_islem,
+            "is_device_bound": bool(calisan.Cihaz_Kaydi)
+        }), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": f"Sunucu hatası: {str(e)}"}), 500
+    finally:
+        db.close()
+
+
+@hr_bp.route("/vardiya/islem", methods=["POST"])
+def submit_vardiya_islem():
+    """
+    Public mobile shift check-in/out submission endpoint.
+    Performs full server-side validation:
+    1. Validate barcode token (active, not expired)
+    2. Validate employee (active, assigned branch matches barcode's branch)
+    3. Validate device binding (Cihaz_Kaydi):
+       - If empty, bind now to employee
+       - If already set, must match submitted cihaz_id
+       - If submitted cihaz_id already used by someone else, reject
+    4. Validate coordinates and GPS accuracy:
+       - lat/lon required, else KONUM_ALINAMADI
+       - accuracy <= 200m, else KONUM_DOGRULUGU_DUSUK
+       - branch must have merkez_enlem and merkez_boylam, else BOLGE_DISI
+       - distance <= branch.yaricap_m, else BOLGE_DISI
+    5. Check consecutive same action:
+       - If duplicate and not confirmed, return duplicate prompt flag
+       - If confirmed, set mukerrer_uyari = True
+    6. Log rejected attempts to vardiya_red_deneme
+    """
+    data = request.get_json() or {}
+    token = data.get("kod", "").strip()
+    tc_no = data.get("tc_no", "").strip()
+    islem_tipi = (data.get("islem_tipi") or "").upper().strip()
+    cihaz_id = data.get("cihaz_id", "").strip()
+    istemci_zamani_raw = data.get("istemci_zamani")
+    confirm_mukerrer = bool(data.get("confirm_mukerrer", False))
+
+    enlem = data.get("enlem")
+    boylam = data.get("boylam")
+    konum_dogrulugu_m = data.get("konum_dogrulugu_m")
+    platform = data.get("platform", "")
+    ekran = data.get("ekran", "")
+
+    client_ip = request.headers.get("X-Forwarded-For", request.remote_addr)
+    user_agent = request.headers.get("User-Agent", "")
+
+    if islem_tipi not in ["GIRIS", "CIKIS"]:
+        return jsonify({"success": False, "message": "Geçersiz işlem tipi."}), 400
+
+    istemci_zamani = None
+    if istemci_zamani_raw:
+        try:
+            istemci_zamani = datetime.fromisoformat(istemci_zamani_raw.replace("Z", "+00:00"))
+        except Exception:
+            istemci_zamani = None
+
+    db = get_db_session()
+    try:
+        # 1. Barcode check
+        barkod = queries.get_barkod_by_token(db, token)
+        if not barkod or not barkod.aktif:
+            queries.log_vardiya_red_deneme(
+                db, neden="GECERSIZ_BARKOD", islem_tipi=islem_tipi,
+                cihaz_id=cihaz_id, kullanici_araci=user_agent, ip_adresi=client_ip
+            )
+            return jsonify({"success": False, "message": "Barkod geçersiz. Lütfen şubedeki barkodu okutun."}), 400
+
+        sube = barkod.sube
+        sube_id = barkod.sube_id
+
+        # 2. Employee check
+        from app.models import Calisan
+        calisan = db.get(Calisan, tc_no)
+        if not calisan or not calisan.Aktif_Pasif:
+            queries.log_vardiya_red_deneme(
+                db, neden="TC_ESLESMEDI", sube_id=sube_id, barkod_id=barkod.id, islem_tipi=islem_tipi,
+                cihaz_id=cihaz_id, kullanici_araci=user_agent, ip_adresi=client_ip
+            )
+            return jsonify({"success": False, "message": "Girilen T.C. kimlik numarası aktif çalışanlar arasında bulunamadı."}), 400
+
+        # Branch assignment check
+        if calisan.Sube_ID != sube_id:
+            queries.log_vardiya_red_deneme(
+                db, neden="BOLGE_DISI", calisan_id=calisan.TC_No, sube_id=sube_id, barkod_id=barkod.id, islem_tipi=islem_tipi,
+                cihaz_id=cihaz_id, kullanici_araci=user_agent, ip_adresi=client_ip
+            )
+            return jsonify({"success": False, "message": "Kayıtlı olduğunuz şube ile barkodun ait olduğu şube uyuşmuyor."}), 400
+
+        # 3. Device check
+        if not cihaz_id:
+            queries.log_vardiya_red_deneme(
+                db, neden="DIGER", calisan_id=calisan.TC_No, sube_id=sube_id, barkod_id=barkod.id, islem_tipi=islem_tipi,
+                cihaz_id=cihaz_id, kullanici_araci=user_agent, ip_adresi=client_ip
+            )
+            return jsonify({"success": False, "message": "Cihaz tanımlayıcısı bulunamadı. Lütfen sayfayı yenileyin."}), 400
+
+        if calisan.Cihaz_Kaydi and calisan.Cihaz_Kaydi != cihaz_id:
+            queries.log_vardiya_red_deneme(
+                db, neden="CIHAZ_KAYDI_DOLU", calisan_id=calisan.TC_No, sube_id=sube_id, barkod_id=barkod.id, islem_tipi=islem_tipi,
+                cihaz_id=cihaz_id, kullanici_araci=user_agent, ip_adresi=client_ip
+            )
+            return jsonify({"success": False, "message": "Bu kişi için başka bir cihaz kaydı mevcut. Kayıt yapılamaz."}), 400
+
+        other_calisan = db.query(Calisan).filter(Calisan.Cihaz_Kaydi == cihaz_id, Calisan.TC_No != calisan.TC_No).first()
+        if other_calisan:
+            queries.log_vardiya_red_deneme(
+                db, neden="CIHAZ_KAYDI_DOLU", calisan_id=calisan.TC_No, sube_id=sube_id, barkod_id=barkod.id, islem_tipi=islem_tipi,
+                cihaz_id=cihaz_id, kullanici_araci=user_agent, ip_adresi=client_ip
+            )
+            return jsonify({"success": False, "message": "Bu cihaz başka bir çalışanla ilişkilendirilmiş."}), 400
+
+        # 4. Location & Geofence check
+        if enlem is None or boylam is None:
+            queries.log_vardiya_red_deneme(
+                db, neden="KONUM_ALINAMADI", calisan_id=calisan.TC_No, sube_id=sube_id, barkod_id=barkod.id, islem_tipi=islem_tipi,
+                cihaz_id=cihaz_id, kullanici_araci=user_agent, ip_adresi=client_ip
+            )
+            return jsonify({"success": False, "message": "Konumunuz alınamadı. Lütfen tekrar deneyin."}), 400
+
+        try:
+            enlem_val = float(enlem)
+            boylam_val = float(boylam)
+            accuracy_val = float(konum_dogrulugu_m) if konum_dogrulugu_m is not None else 999.0
+        except (ValueError, TypeError):
+            queries.log_vardiya_red_deneme(
+                db, neden="KONUM_ALINAMADI", calisan_id=calisan.TC_No, sube_id=sube_id, barkod_id=barkod.id, islem_tipi=islem_tipi,
+                cihaz_id=cihaz_id, kullanici_araci=user_agent, ip_adresi=client_ip
+            )
+            return jsonify({"success": False, "message": "Geçersiz konum verisi."}), 400
+
+        if accuracy_val > 200.0:
+            queries.log_vardiya_red_deneme(
+                db, neden="KONUM_DOGRULUGU_DUSUK", calisan_id=calisan.TC_No, sube_id=sube_id, barkod_id=barkod.id, islem_tipi=islem_tipi,
+                enlem=enlem_val, boylam=boylam_val, konum_dogrulugu_m=accuracy_val,
+                cihaz_id=cihaz_id, kullanici_araci=user_agent, ip_adresi=client_ip
+            )
+            return jsonify({"success": False, "message": "GPS doğruluğu yetersiz. Açık alanda tekrar deneyin."}), 400
+
+        if not sube or sube.merkez_enlem is None or sube.merkez_boylam is None:
+            queries.log_vardiya_red_deneme(
+                db, neden="BOLGE_DISI", calisan_id=calisan.TC_No, sube_id=sube_id, barkod_id=barkod.id, islem_tipi=islem_tipi,
+                enlem=enlem_val, boylam=boylam_val, konum_dogrulugu_m=accuracy_val,
+                cihaz_id=cihaz_id, kullanici_araci=user_agent, ip_adresi=client_ip
+            )
+            return jsonify({"success": False, "message": "Şubenin merkez koordinatları tanımlanmamış. Kayıt yapılamaz."}), 400
+
+        branch_lat = float(sube.merkez_enlem)
+        branch_lon = float(sube.merkez_boylam)
+        radius_m = float(sube.yaricap_m or 100)
+
+        distance_m = queries.calculate_haversine_distance(enlem_val, boylam_val, branch_lat, branch_lon)
+
+        if distance_m > radius_m:
+            queries.log_vardiya_red_deneme(
+                db, neden="BOLGE_DISI", calisan_id=calisan.TC_No, sube_id=sube_id, barkod_id=barkod.id, islem_tipi=islem_tipi,
+                enlem=enlem_val, boylam=boylam_val, konum_dogrulugu_m=accuracy_val, bolge_mesafesi_m=distance_m,
+                cihaz_id=cihaz_id, kullanici_araci=user_agent, ip_adresi=client_ip
+            )
+            return jsonify({
+                "success": False,
+                "message": f"Çalışma bölgesinin dışındasınız. Şube merkezine uzaklığınız: {int(round(distance_m))} metre."
+            }), 400
+
+        # 5. Duplicate consecutive check (IK-04)
+        last_rec = queries.get_last_vardiya_kayit_for_calisan(db, calisan.TC_No)
+        is_duplicate = (last_rec is not None and last_rec.islem_tipi == islem_tipi)
+
+        if is_duplicate and not confirm_mukerrer:
+            action_tr = "Giriş" if islem_tipi == "GIRIS" else "Çıkış"
+            return jsonify({
+                "requires_confirmation": True,
+                "message": f"Son işleminiz de {action_tr} olarak kaydedilmiş. Yine de devam etmek istiyor musunuz?"
+            }), 200
+
+        # Bind device if not bound yet
+        if not calisan.Cihaz_Kaydi:
+            calisan.Cihaz_Kaydi = cihaz_id
+            db.commit()
+
+        # 6. Create shift record
+        kayit = queries.create_mobil_vardiya_kayit(
+            db=db,
+            calisan_tc=calisan.TC_No,
+            sube_id=sube_id,
+            barkod_id=barkod.id,
+            islem_tipi=islem_tipi,
+            istemci_zamani=istemci_zamani,
+            enlem=enlem_val,
+            boylam=boylam_val,
+            konum_dogrulugu_m=accuracy_val,
+            bolge_mesafesi_m=distance_m,
+            cihaz_id=cihaz_id,
+            kullanici_araci=user_agent,
+            platform=platform,
+            ekran=ekran,
+            ip_adresi=client_ip,
+            mukerrer_uyari=(is_duplicate and confirm_mukerrer)
+        )
+
+        time_str = kayit.kayit_zamani.strftime("%H:%M:%S")
+        action_name = "Giriş" if islem_tipi == "GIRIS" else "Çıkış"
+        return jsonify({
+            "success": True,
+            "message": f"{action_name} kaydedildi. Saat: {time_str}",
+            "kayit_id": kayit.id,
+            "kayit_zamani": kayit.kayit_zamani.isoformat(),
+            "mesafe_m": round(distance_m, 1)
+        }), 201
+
+    except Exception as e:
+        return jsonify({"success": False, "message": f"Sunucu hatası: {str(e)}"}), 500
+    finally:
+        db.close()
+
+
+# --- 3. Vardiya Çizelgesi Endpoints (Protected with #76 and #77) ---
+
+@hr_bp.route("/vardiya-cizelgesi", methods=["GET"])
+@auth_required
+def list_vardiya_cizelgesi():
+    """
+    List shift records with filtering & pagination (#76).
+    Filters: start_date, end_date, sube_id, calisan_tc, islem_tipi, kaynak, show_deleted.
+    """
+    db = get_db_session()
+    try:
+        user = request.user
+        if not _check_user_permission(db, user, "Vardiya Çizelgesi Ekranı Görüntüleme"):
+            return jsonify({"error": "Vardiya Çizelgesi Ekranı Görüntüleme yetkiniz bulunmamaktadır."}), 403
+
+        start_date_str = request.args.get("start_date")
+        end_date_str = request.args.get("end_date")
+        sube_id = request.args.get("sube_id", type=int)
+        calisan_tc = request.args.get("calisan_tc")
+        islem_tipi = request.args.get("islem_tipi")
+        kaynak = request.args.get("kaynak")
+        show_deleted = request.args.get("show_deleted", "false").lower() == "true"
+        page = request.args.get("page", 1, type=int)
+        per_page = min(request.args.get("per_page", 50, type=int), 200)
+
+        start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date() if start_date_str else None
+        end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date() if end_date_str else None
+
+        records, total_count = queries.get_vardiya_kayitlar(
+            db, start_date=start_date, end_date=end_date, sube_id=sube_id,
+            calisan_tc=calisan_tc, islem_tipi=islem_tipi, kaynak=kaynak,
+            show_deleted=show_deleted, page=page, per_page=per_page
+        )
+
+        items = []
+        for r in records:
+            items.append({
+                "id": r.id,
+                "calisan_tc": r.calisan_id,
+                "calisan_adi": f"{r.calisan.Adi} {r.calisan.Soyadi}" if r.calisan else r.calisan_id,
+                "sube_id": r.sube_id,
+                "sube_adi": r.sube.Sube_Adi if r.sube else "",
+                "islem_tipi": r.islem_tipi,
+                "kaynak": r.kaynak,
+                "kayit_zamani": r.kayit_zamani.strftime("%d.%m.%Y %H:%M:%S") if r.kayit_zamani else "",
+                "kayit_tarihi_raw": r.kayit_zamani.strftime("%Y-%m-%dT%H:%M") if r.kayit_zamani else "",
+                "enlem": float(r.enlem) if r.enlem is not None else None,
+                "boylam": float(r.boylam) if r.boylam is not None else None,
+                "konum_dogrulugu_m": float(r.konum_dogrulugu_m) if r.konum_dogrulugu_m is not None else None,
+                "bolge_mesafesi_m": float(r.bolge_mesafesi_m) if r.bolge_mesafesi_m is not None else None,
+                "cihaz_id": r.cihaz_id,
+                "mukerrer_uyari": bool(r.mukerrer_uyari),
+                "silindi": bool(r.silindi)
+            })
+
+        return jsonify({
+            "items": items,
+            "total_count": total_count,
+            "page": page,
+            "per_page": per_page,
+            "total_pages": math.ceil(total_count / per_page) if total_count > 0 else 1
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
+
+@hr_bp.route("/vardiya-cizelgesi/export-data", methods=["GET"])
+@auth_required
+def get_vardiya_cizelgesi_export_data():
+    """Get all filtered records for Excel/Mail/Print (#33, #34, #74)."""
+    db = get_db_session()
+    try:
+        user = request.user
+        if not _check_user_permission(db, user, "Vardiya Çizelgesi Ekranı Görüntüleme"):
+            return jsonify({"error": "Yetkiniz bulunmamaktadır."}), 403
+
+        start_date_str = request.args.get("start_date")
+        end_date_str = request.args.get("end_date")
+        sube_id = request.args.get("sube_id", type=int)
+        calisan_tc = request.args.get("calisan_tc")
+        islem_tipi = request.args.get("islem_tipi")
+        kaynak = request.args.get("kaynak")
+
+        start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date() if start_date_str else None
+        end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date() if end_date_str else None
+
+        records = queries.get_all_vardiya_kayitlar_for_export(
+            db, start_date=start_date, end_date=end_date, sube_id=sube_id,
+            calisan_tc=calisan_tc, islem_tipi=islem_tipi, kaynak=kaynak
+        )
+
+        items = []
+        for r in records:
+            items.append({
+                "id": r.id,
+                "calisan_adi": f"{r.calisan.Adi} {r.calisan.Soyadi}" if r.calisan else r.calisan_id,
+                "sube_adi": r.sube.Sube_Adi if r.sube else "",
+                "islem_tipi": "Giriş" if r.islem_tipi == "GIRIS" else "Çıkış",
+                "kaynak": "Telefon" if r.kaynak == "TELEFON" else "Manuel",
+                "kayit_zamani": r.kayit_zamani.strftime("%d.%m.%Y %H:%M:%S") if r.kayit_zamani else "",
+                "enlem": float(r.enlem) if r.enlem is not None else "",
+                "boylam": float(r.boylam) if r.boylam is not None else "",
+                "konum_dogrulugu_m": float(r.konum_dogrulugu_m) if r.konum_dogrulugu_m is not None else "",
+                "bolge_mesafesi_m": float(r.bolge_mesafesi_m) if r.bolge_mesafesi_m is not None else "",
+                "cihaz_id": r.cihaz_id or "",
+                "mukerrer_uyari": "Evet" if r.mukerrer_uyari else "Hayır"
+            })
+        return jsonify(items), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
+
+@hr_bp.route("/vardiya-cizelgesi", methods=["POST"])
+@auth_required
+def create_manuel_vardiya():
+    """Create manual shift entry (Requires #77 and justification)."""
+    db = get_db_session()
+    try:
+        user = request.user
+        if not _check_user_permission(db, user, "Vardiya Güncelleme Yetkisi"):
+            return jsonify({"error": "Manuel kayıt ekleme yetkiniz bulunmamaktadır (Yetki #77)."}), 403
+
+        data = request.get_json() or {}
+        calisan_tc = data.get("calisan_tc")
+        sube_id = data.get("sube_id")
+        islem_tipi = data.get("islem_tipi")
+        kayit_zamani_str = data.get("kayit_zamani")
+        gerekce = (data.get("gerekce") or "").strip()
+
+        if not calisan_tc or not sube_id or not islem_tipi or not kayit_zamani_str or not gerekce:
+            return jsonify({"error": "Tüm alanlar ve gerekçe açıklaması zorunludur."}), 400
+
+        try:
+            kayit_zamani = datetime.fromisoformat(kayit_zamani_str)
+        except Exception:
+            return jsonify({"error": "Geçersiz tarih/saat formatı."}), 400
+
+        kayit = queries.create_manuel_vardiya_kayit(
+            db=db,
+            calisan_tc=calisan_tc,
+            sube_id=sube_id,
+            islem_tipi=islem_tipi,
+            kayit_zamani=kayit_zamani,
+            olusturan_id=user.Kullanici_ID,
+            gerekce=gerekce
+        )
+
+        return jsonify({
+            "message": "Manuel vardiya kaydı başarıyla oluşturuldu.",
+            "id": kayit.id
+        }), 201
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
+
+@hr_bp.route("/vardiya-cizelgesi/<int:kayit_id>", methods=["PUT"])
+@auth_required
+def update_vardiya(kayit_id):
+    """Update shift record (Requires #77 and justification)."""
+    db = get_db_session()
+    try:
+        user = request.user
+        if not _check_user_permission(db, user, "Vardiya Güncelleme Yetkisi"):
+            return jsonify({"error": "Vardiya güncelleme yetkiniz bulunmamaktadır (Yetki #77)."}), 403
+
+        data = request.get_json() or {}
+        islem_tipi = data.get("islem_tipi")
+        kayit_zamani_str = data.get("kayit_zamani")
+        gerekce = (data.get("gerekce") or "").strip()
+
+        if not islem_tipi or not kayit_zamani_str or not gerekce:
+            return jsonify({"error": "İşlem tipi, kayıt zamanı ve gerekçe açıklaması zorunludur."}), 400
+
+        try:
+            kayit_zamani = datetime.fromisoformat(kayit_zamani_str)
+        except Exception:
+            return jsonify({"error": "Geçersiz tarih/saat formatı."}), 400
+
+        kayit = queries.update_vardiya_kayit(
+            db=db,
+            kayit_id=kayit_id,
+            islem_tipi=islem_tipi,
+            kayit_zamani=kayit_zamani,
+            kullanici_id=user.Kullanici_ID,
+            gerekce=gerekce
+        )
+        if not kayit:
+            return jsonify({"error": "Vardiya kaydı bulunamadı veya silinmiş."}), 404
+
+        return jsonify({"message": "Vardiya kaydı başarıyla güncellendi."}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
+
+@hr_bp.route("/vardiya-cizelgesi/<int:kayit_id>", methods=["DELETE"])
+@auth_required
+def delete_vardiya(kayit_id):
+    """Soft delete shift record (Requires #77 and justification)."""
+    db = get_db_session()
+    try:
+        user = request.user
+        if not _check_user_permission(db, user, "Vardiya Güncelleme Yetkisi"):
+            return jsonify({"error": "Vardiya silme yetkiniz bulunmamaktadır (Yetki #77)."}), 403
+
+        data = request.get_json() or {}
+        gerekce = (data.get("gerekce") or "").strip()
+        if not gerekce:
+            return jsonify({"error": "Silme gerekçesi belirtilmesi zorunludur."}), 400
+
+        kayit = queries.soft_delete_vardiya_kayit(
+            db=db,
+            kayit_id=kayit_id,
+            kullanici_id=user.Kullanici_ID,
+            gerekce=gerekce
+        )
+        if not kayit:
+            return jsonify({"error": "Vardiya kaydı bulunamadı veya zaten silinmiş."}), 404
+
+        return jsonify({"message": "Vardiya kaydı başarıyla silindi."}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
