@@ -1590,9 +1590,10 @@
                         const menu = document.getElementById('menu');
                         if (menu) {
                             menu.querySelectorAll('a[data-permission]').forEach(link => {
-                                const permName = link.getAttribute('data-permission');
+                                const permName = (link.getAttribute('data-permission') || '').trim().toLowerCase();
                                 const li = link.closest('li');
-                                if (!userPermissions.includes(permName)) {
+                                const hasPerm = userPermissions.some(p => (p || '').trim().toLowerCase() === permName);
+                                if (!hasPerm) {
                                     if (li) li.style.display = 'none';
                                 } else {
                                     if (li) li.style.display = '';
