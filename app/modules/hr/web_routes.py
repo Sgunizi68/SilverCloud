@@ -910,9 +910,17 @@ def vardiya_cizelgesi():
 
     sube_list = [{"Sube_ID": s.Sube_ID, "Sube_Adi": s.Sube_Adi} for s in auth_suber]
 
-    # Active employees list for manual entry modal and filter dropdown
+    # Active employees list for manual entry modal and filter dropdown (Sorted alphabetically by Adi, Soyadi)
     active_employees = queries.get_calisanlar(db_session, limit=2000, aktif_pasif=True)
     emp_list = [{"TC_No": e.TC_No, "Adi": e.Adi, "Soyadi": e.Soyadi, "Sube_ID": e.Sube_ID} for e in active_employees]
+    
+    # Turkish-aware lowercase helper for accurate sorting
+    tr_map = str.maketrans("İIŞĞÜÖÇ", "ıisguoc")
+    def tr_sort_key(emp):
+        full_name = f"{emp.get('Adi', '')} {emp.get('Soyadi', '')}".translate(tr_map).lower()
+        return full_name
+
+    emp_list.sort(key=tr_sort_key)
 
     db_session.close()
     return render_template(
