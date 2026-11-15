@@ -98,7 +98,8 @@
         white-space: nowrap;
     }
 
-    .filter-select, .filter-date-input {
+    .filter-select,
+    .filter-date-input {
         height: 36px;
         padding: 0 10px;
         border-radius: 6px;
@@ -110,7 +111,8 @@
         transition: all 0.2s;
     }
 
-    .filter-select:focus, .filter-date-input:focus {
+    .filter-select:focus,
+    .filter-date-input:focus {
         border-color: var(--accent-color);
         box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
@@ -413,7 +415,8 @@
         <!-- Live Search -->
         <div class="search-container" style="margin-left: auto;">
             <i class="fas fa-search search-icon"></i>
-            <input type="text" id="live-search" class="search-input" placeholder="Çalışan, kullanıcı veya gerekçe ara..." oninput="handleClientSearch()">
+            <input type="text" id="live-search" class="search-input"
+                placeholder="Çalışan, kullanıcı veya gerekçe ara..." oninput="handleClientSearch()">
         </div>
     </div>
 
@@ -444,7 +447,8 @@
         <!-- Pagination Bar -->
         <div class="pagination-bar">
             <div>
-                Toplam <strong id="total-count-label">0</strong> log kaydı &bull; Sayfa <span id="current-page-label">1</span> / <span id="total-pages-label">1</span>
+                Toplam <strong id="total-count-label">0</strong> log kaydı &bull; Sayfa <span
+                    id="current-page-label">1</span> / <span id="total-pages-label">1</span>
             </div>
             <div style="display: flex; gap: 8px;">
                 <button type="button" class="page-btn" id="btn-prev-page" onclick="changePage(-1)">
@@ -467,22 +471,32 @@
         </div>
 
         <div style="margin-bottom: 12px;">
-            <label style="font-size: 0.82rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Çalışan:</label>
-            <div id="modal-detail-calisan" style="font-size: 0.9rem; font-weight: 600; color: #1e293b; background: #f8fafc; padding: 6px 12px; border-radius: 6px; border: 1px solid #e2e8f0;"></div>
+            <label
+                style="font-size: 0.82rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Çalışan:</label>
+            <div id="modal-detail-calisan"
+                style="font-size: 0.9rem; font-weight: 600; color: #1e293b; background: #f8fafc; padding: 6px 12px; border-radius: 6px; border: 1px solid #e2e8f0;">
+            </div>
         </div>
 
         <div style="margin-bottom: 14px;">
-            <label style="font-size: 0.82rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Gerekçe:</label>
-            <div id="modal-detail-gerekce" style="font-size: 0.88rem; color: #1e293b; background: #f8fafc; padding: 8px 12px; border-radius: 6px; border: 1px solid #e2e8f0;"></div>
+            <label
+                style="font-size: 0.82rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Gerekçe:</label>
+            <div id="modal-detail-gerekce"
+                style="font-size: 0.88rem; color: #1e293b; background: #f8fafc; padding: 8px 12px; border-radius: 6px; border: 1px solid #e2e8f0;">
+            </div>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
             <div>
-                <label style="font-size: 0.82rem; font-weight: 700; color: #dc2626; display: block; margin-bottom: 4px;">Eski Değer:</label>
+                <label
+                    style="font-size: 0.82rem; font-weight: 700; color: #dc2626; display: block; margin-bottom: 4px;">Eski
+                    Değer:</label>
                 <pre class="json-box" id="modal-detail-eski"></pre>
             </div>
             <div>
-                <label style="font-size: 0.82rem; font-weight: 700; color: #16a34a; display: block; margin-bottom: 4px;">Yeni Değer:</label>
+                <label
+                    style="font-size: 0.82rem; font-weight: 700; color: #16a34a; display: block; margin-bottom: 4px;">Yeni
+                    Değer:</label>
                 <pre class="json-box" id="modal-detail-yeni"></pre>
             </div>
         </div>
@@ -768,7 +782,7 @@
 
     function escapeHtml(str) {
         if (!str) return '';
-        return String(str).replace(/[&<>"']/g, function(m) {
+        return String(str).replace(/[&<>"']/g, function (m) {
             return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
         });
     }
