@@ -294,7 +294,8 @@
             visibility: hidden;
         }
 
-        #print-area, #print-area * {
+        #print-area,
+        #print-area * {
             visibility: visible;
         }
 
@@ -365,16 +366,18 @@
 
         <div class="action-bar">
             <!-- Print Button (Calisan Yonetimi ile birebir ayni buton ve stil) -->
-            <button class="btn-icon" data-permission="Yazdırma Yetkisi" onclick="printA4Barcodes()" title="Yazdır (A4 4'lü Barkod Bas)">
+            <button class="btn-icon" data-permission="Yazdırma Yetkisi" onclick="printA4Barcodes()"
+                title="Yazdır (A4 4'lü Barkod Bas)">
                 <i class="fas fa-print"></i>
             </button>
 
             <!-- Branch Selector -->
             <div class="branch-select-wrapper">
-                <label for="sube-select" style="font-size: 0.88rem; font-weight: 600; color: var(--text-dark);">Şube:</label>
+                <label for="sube-select"
+                    style="font-size: 0.88rem; font-weight: 600; color: var(--text-dark);">Şube:</label>
                 <select id="sube-select" class="branch-select" onchange="handleBranchChange()">
                     {% for s in subeler %}
-                    <option value="{{ s.Sube_ID }}" {% if s.Sube_ID == selected_sube_id %}selected{% endif %}>
+                    <option value="{{ s.Sube_ID }}" {% if s.Sube_ID==selected_sube_id %}selected{% endif %}>
                         {{ s.Sube_Adi }}
                     </option>
                     {% endfor %}
@@ -404,7 +407,8 @@
             <span>Çalışma Yarıçapı: <strong id="info-radius">100 m</strong></span>
         </div>
         <div id="coord-warning" style="display: none; color: #dc2626; font-size: 0.85rem; font-weight: 600;">
-            <i class="fas fa-exclamation-triangle"></i> Koordinat tanımlanmamış! Şube Yönetimi'nden koordinat belirleyin.
+            <i class="fas fa-exclamation-triangle"></i> Koordinat tanımlanmamış! Şube Yönetimi'nden koordinat
+            belirleyin.
         </div>
     </div>
 
@@ -436,14 +440,17 @@
     <div class="modal-box">
         <h3 id="modal-branch-title" style="font-size: 1.15rem; font-weight: 700; color: #0f172a;"></h3>
         <p style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">Mobil Vardiya Karekodu</p>
-        
+
         <div class="modal-qr-container" id="modal-qr-code"></div>
 
-        <div style="font-size: 0.8rem; font-family: monospace; background: #f1f5f9; padding: 6px 12px; border-radius: 6px; word-break: break-all; margin-bottom: 16px;" id="modal-token-text"></div>
+        <div style="font-size: 0.8rem; font-family: monospace; background: #f1f5f9; padding: 6px 12px; border-radius: 6px; word-break: break-all; margin-bottom: 16px;"
+            id="modal-token-text"></div>
 
         <div style="display: flex; gap: 10px;">
-            <button type="button" class="btn-icon" style="flex: 1; width: auto; height: 38px; font-weight: 600;" onclick="closeQrModal()">Kapat</button>
-            <button type="button" class="btn-new" style="flex: 1; justify-content: center; height: 38px;" onclick="printSingleQr()">
+            <button type="button" class="btn-icon" style="flex: 1; width: auto; height: 38px; font-weight: 600;"
+                onclick="closeQrModal()">Kapat</button>
+            <button type="button" class="btn-new" style="flex: 1; justify-content: center; height: 38px;"
+                onclick="printSingleQr()">
                 <i class="fas fa-print"></i> Yazdır
             </button>
         </div>
@@ -686,13 +693,13 @@
                 width: 220,
                 height: 220,
                 colorDark: "#000000",
-                colorLight: "#ffffff",
+                co lorLight: "#ffffff",
                 correctLevel: QRCode.CorrectLevel.H
             });
         });
     }
 
-    function escapeHtml(str) {
+    function ) {
         if (!str) return '';
         return String(str).replace(/[&<>"']/g, function(m) {
             return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];

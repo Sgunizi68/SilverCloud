@@ -118,7 +118,8 @@
         white-space: nowrap;
     }
 
-    .filter-select, .filter-date-input {
+    .filter-select,
+    .filter-date-input {
         height: 36px;
         padding: 0 10px;
         border-radius: 6px;
@@ -130,7 +131,8 @@
         transition: all 0.2s;
     }
 
-    .filter-select:focus, .filter-date-input:focus {
+    .filter-select:focus,
+    .filter-date-input:focus {
         border-color: var(--accent-color);
         box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
@@ -504,7 +506,8 @@
         <!-- Live Search -->
         <div class="search-container" style="margin-left: auto;">
             <i class="fas fa-search search-icon"></i>
-            <input type="text" id="live-search" class="search-input" placeholder="Listede anlık ara..." oninput="handleClientSearch()">
+            <input type="text" id="live-search" class="search-input" placeholder="Listede anlık ara..."
+                oninput="handleClientSearch()">
         </div>
     </div>
 
@@ -540,7 +543,8 @@
         <!-- Pagination Bar -->
         <div class="pagination-bar">
             <div>
-                Toplam <strong id="total-count-label">0</strong> kayıt &bull; Sayfa <span id="current-page-label">1</span> / <span id="total-pages-label">1</span>
+                Toplam <strong id="total-count-label">0</strong> kayıt &bull; Sayfa <span
+                    id="current-page-label">1</span> / <span id="total-pages-label">1</span>
             </div>
             <div style="display: flex; gap: 8px;">
                 <button type="button" class="page-btn" id="btn-prev-page" onclick="changePage(-1)">
@@ -1065,7 +1069,7 @@
 
     function escapeHtml(str) {
         if (!str) return '';
-        return String(str).replace(/[&<>"']/g, function(m) {
+        return String(str).replace(/[&<>"']/g, function (m) {
             return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
         });
     }
