@@ -8,159 +8,173 @@
 
 {% block content %}
 <style>
-    .cizelge-container {
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.95);
+        --glass-border: rgba(255, 255, 255, 0.3);
+        --accent-color: #667eea;
+        --text-dark: #2d3748;
+        --text-gray: #718096;
+    }
+
+    .main-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
         padding: 24px;
-        max-width: 1400px;
-        margin: 0 auto;
+        margin-bottom: 24px;
     }
 
     .page-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 20px;
-        flex-wrap: wrap;
+        margin-bottom: 24px;
         gap: 16px;
+        flex-wrap: wrap;
     }
 
     .page-title {
-        font-size: 1.5rem;
+        font-size: 1.25rem;
         font-weight: 700;
-        color: #0f172a;
+        color: var(--text-dark);
+        margin: 0;
         display: flex;
         align-items: center;
         gap: 10px;
     }
 
-    .header-actions {
+    .action-bar {
         display: flex;
-        gap: 8px;
         align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
     }
 
     .btn-icon {
-        width: 38px;
-        height: 38px;
-        border-radius: 8px;
-        border: 1px solid #cbd5e1;
-        background: #ffffff;
-        color: #475569;
-        display: inline-flex;
+        width: 40px;
+        height: 40px;
+        display: flex;
         align-items: center;
         justify-content: center;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        color: var(--text-dark);
         cursor: pointer;
-        font-size: 1rem;
-        transition: all 0.15s;
+        transition: all 0.2s;
+        font-size: 0.95rem;
     }
 
     .btn-icon:hover {
-        background: #f1f5f9;
-        color: #0f172a;
+        background: #f7fafc;
+        border-color: #cbd5e0;
     }
 
-    .btn-new-entry {
-        height: 38px;
-        padding: 0 16px;
-        background-color: #2563eb;
-        color: #ffffff;
+    .btn-new {
+        background: var(--accent-color);
+        color: white;
         border: none;
+        padding: 10px 20px;
         border-radius: 8px;
-        font-size: 0.9rem;
         font-weight: 600;
-        display: inline-flex;
+        display: flex;
         align-items: center;
         gap: 8px;
         cursor: pointer;
-        transition: background-color 0.15s;
+        transition: transform 0.2s, background 0.2s;
+        font-size: 0.9rem;
     }
 
-    .btn-new-entry:hover {
-        background-color: #1d4ed8;
+    .btn-new:hover {
+        background: #5a67d8;
+        transform: translateY(-1px);
     }
 
-    /* Filter Bar */
-    .filter-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 18px 20px;
-        margin-bottom: 20px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-    }
-
-    .filter-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 14px;
-        align-items: flex-end;
-    }
-
-    .filter-group {
+    /* Filter Toolbar Controls */
+    .filter-toolbar {
         display: flex;
-        flex-direction: column;
-        gap: 6px;
-    }
-
-    .filter-label {
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: #475569;
-    }
-
-    .filter-control {
-        height: 38px;
-        padding: 0 12px;
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-        font-size: 0.875rem;
-        color: #1e293b;
-        background-color: #ffffff;
-    }
-
-    .filter-control:focus {
-        outline: none;
-        border-color: #2563eb;
-    }
-
-    .btn-filter-apply {
-        height: 38px;
-        padding: 0 16px;
-        background-color: #0f172a;
-        color: #ffffff;
-        border: none;
-        border-radius: 8px;
-        font-size: 0.875rem;
-        font-weight: 600;
-        cursor: pointer;
-        display: inline-flex;
         align-items: center;
-        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding: 12px 16px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+
+    .filter-item {
+        display: flex;
+        align-items: center;
         gap: 6px;
     }
 
-    .btn-filter-apply:hover {
-        background-color: #1e293b;
+    .filter-item label {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #475569;
+        white-space: nowrap;
     }
 
-    .btn-filter-reset {
-        height: 38px;
-        padding: 0 14px;
-        background-color: #f1f5f9;
-        color: #475569;
+    .filter-select, .filter-date-input {
+        height: 36px;
+        padding: 0 10px;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        background: white;
+        font-size: 0.85rem;
+        color: var(--text-dark);
+        outline: none;
+        transition: all 0.2s;
+    }
+
+    .filter-select:focus, .filter-date-input:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    /* Search Input matching Calisanlar */
+    .search-container {
+        position: relative;
+        min-width: 200px;
+    }
+
+    .search-input {
+        width: 100%;
+        height: 36px;
+        padding: 0 14px 0 34px;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        outline: none;
+        transition: all 0.2s;
+        font-size: 0.85rem;
+        background: white;
+        box-sizing: border-box;
+    }
+
+    .search-input:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 11px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-gray);
+        font-size: 12px;
+    }
+
+    /* Table styles matching Calisanlar and Avans Talepleri */
+    .table-container {
         border: 1px solid #cbd5e1;
         border-radius: 8px;
-        font-size: 0.875rem;
-        font-weight: 600;
-        cursor: pointer;
-    }
-
-    /* Table Container */
-    .table-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
         overflow: hidden;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        background: #ffffff;
     }
 
     .table-responsive {
@@ -170,34 +184,43 @@
     .data-table {
         width: 100%;
         border-collapse: collapse;
-        text-align: left;
+    }
+
+    .data-table thead tr {
+        background: #1e293b;
     }
 
     .data-table th {
-        background-color: #f8fafc;
-        padding: 12px 14px;
-        font-size: 0.78rem;
+        background: #1e293b;
+        color: #ffffff;
+        font-size: 0.75rem;
         font-weight: 700;
-        color: #64748b;
         text-transform: uppercase;
-        border-bottom: 1px solid #e2e8f0;
+        letter-spacing: 0.05em;
+        padding: 12px 14px;
+        text-align: left;
+        border-bottom: 2px solid #0f172a;
         white-space: nowrap;
     }
 
     .data-table td {
-        padding: 12px 14px;
-        font-size: 0.875rem;
-        color: #334155;
-        border-bottom: 1px solid #f1f5f9;
+        padding: 11px 14px;
+        color: #1e293b;
+        font-size: 0.85rem;
+        border-bottom: 1px solid #e2e8f0;
         vertical-align: middle;
         white-space: nowrap;
     }
 
-    .data-table tr:hover {
+    .data-table tbody tr:nth-child(even) td {
         background-color: #f8fafc;
     }
 
-    /* Badges */
+    .data-table tbody tr:hover td {
+        background-color: #eff6ff !important;
+    }
+
+    /* Status & Operation Badges */
     .badge-pill {
         display: inline-flex;
         align-items: center;
@@ -229,9 +252,41 @@
     }
 
     .badge-warning-flag {
-        background-color: #fef3c7;
-        color: #b45309;
-        border: 1px solid #fde68a;
+        background-color: #fff7ed;
+        color: #c2410c;
+        border: 1px solid #fed7aa;
+    }
+
+    /* Action Buttons in Table */
+    .btn-row-action {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.88rem;
+    }
+
+    .btn-edit {
+        background: #ebf4ff;
+        color: #3182ce;
+    }
+
+    .btn-edit:hover {
+        background: #bee3f8;
+    }
+
+    .btn-delete {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    .btn-delete:hover {
+        background: #fecaca;
     }
 
     /* Pagination */
@@ -239,7 +294,7 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 14px 20px;
+        padding: 12px 18px;
         background-color: #ffffff;
         border-top: 1px solid #e2e8f0;
         font-size: 0.85rem;
@@ -255,6 +310,12 @@
         font-size: 0.85rem;
         font-weight: 500;
         cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .page-btn:hover:not(:disabled) {
+        background: #f1f5f9;
+        border-color: #94a3b8;
     }
 
     .page-btn:disabled {
@@ -346,14 +407,14 @@
     }
 </style>
 
-<div class="cizelge-container">
+<div class="main-card">
     <!-- Header -->
     <div class="page-header">
-        <div class="page-title">
-            <i class="fas fa-clock" style="color: #2563eb;"></i>
-            <span>Vardiya Çizelgesi</span>
-        </div>
-        <div class="header-actions">
+        <h2 class="page-title">
+            <span>⏱️ Vardiya Çizelgesi</span>
+        </h2>
+
+        <div class="action-bar">
             <!-- Print Button (#34) -->
             {% if can_print %}
             <button class="btn-icon" onclick="window.print()" title="Yazdır">
@@ -377,7 +438,7 @@
 
             <!-- Manual Entry Button (#77) -->
             {% if can_update %}
-            <button class="btn-new-entry" onclick="openAddModal()">
+            <button class="btn-new" onclick="openAddModal()">
                 <i class="fas fa-plus"></i>
                 <span>Manuel Kayıt Ekle</span>
             </button>
@@ -385,70 +446,70 @@
         </div>
     </div>
 
-    <!-- Filter Bar -->
-    <div class="filter-card">
-        <div class="filter-grid">
-            <div class="filter-group">
-                <label class="filter-label" for="filter-start-date">Başlangıç Tarihi</label>
-                <input type="date" id="filter-start-date" class="filter-control">
-            </div>
+    <!-- Live Filter Toolbar (Seçilince otomatik tetiklenir) -->
+    <div class="filter-toolbar">
+        <!-- Date Range -->
+        <div class="filter-item">
+            <label for="filter-start-date">Başlangıç:</label>
+            <input type="date" id="filter-start-date" class="filter-date-input" onchange="handleFilterAutoChange()">
+        </div>
 
-            <div class="filter-group">
-                <label class="filter-label" for="filter-end-date">Bitiş Tarihi</label>
-                <input type="date" id="filter-end-date" class="filter-control">
-            </div>
+        <div class="filter-item">
+            <label for="filter-end-date">Bitiş:</label>
+            <input type="date" id="filter-end-date" class="filter-date-input" onchange="handleFilterAutoChange()">
+        </div>
 
-            <div class="filter-group">
-                <label class="filter-label" for="filter-sube">Şube</label>
-                <select id="filter-sube" class="filter-control">
-                    <option value="">Tüm Şubeler</option>
-                    {% for s in subeler %}
-                    <option value="{{ s.Sube_ID }}">{{ s.Sube_Adi }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+        <!-- Branch Selector -->
+        <div class="filter-item">
+            <label for="filter-sube">Şube:</label>
+            <select id="filter-sube" class="filter-select" onchange="handleFilterAutoChange()">
+                <option value="">Tüm Şubeler</option>
+                {% for s in subeler %}
+                <option value="{{ s.Sube_ID }}">{{ s.Sube_Adi }}</option>
+                {% endfor %}
+            </select>
+        </div>
 
-            <div class="filter-group">
-                <label class="filter-label" for="filter-calisan">Çalışan</label>
-                <select id="filter-calisan" class="filter-control">
-                    <option value="">Tüm Çalışanlar</option>
-                    {% for e in employees %}
-                    <option value="{{ e.TC_No }}">{{ e.Adi }} {{ e.Soyadi }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+        <!-- Employee Selector -->
+        <div class="filter-item">
+            <label for="filter-calisan">Çalışan:</label>
+            <select id="filter-calisan" class="filter-select" onchange="handleFilterAutoChange()">
+                <option value="">Tüm Çalışanlar</option>
+                {% for e in employees %}
+                <option value="{{ e.TC_No }}">{{ e.Adi }} {{ e.Soyadi }}</option>
+                {% endfor %}
+            </select>
+        </div>
 
-            <div class="filter-group">
-                <label class="filter-label" for="filter-islem">İşlem Tipi</label>
-                <select id="filter-islem" class="filter-control">
-                    <option value="">Tümü</option>
-                    <option value="GIRIS">Giriş</option>
-                    <option value="CIKIS">Çıkış</option>
-                </select>
-            </div>
+        <!-- Action Type -->
+        <div class="filter-item">
+            <label for="filter-islem">İşlem:</label>
+            <select id="filter-islem" class="filter-select" onchange="handleFilterAutoChange()">
+                <option value="">Tümü</option>
+                <option value="GIRIS">Giriş</option>
+                <option value="CIKIS">Çıkış</option>
+            </select>
+        </div>
 
-            <div class="filter-group">
-                <label class="filter-label" for="filter-kaynak">Kaynak</label>
-                <select id="filter-kaynak" class="filter-control">
-                    <option value="">Tümü</option>
-                    <option value="TELEFON">Telefon</option>
-                    <option value="MANUEL">Manuel</option>
-                </select>
-            </div>
+        <!-- Source -->
+        <div class="filter-item">
+            <label for="filter-kaynak">Kaynak:</label>
+            <select id="filter-kaynak" class="filter-select" onchange="handleFilterAutoChange()">
+                <option value="">Tümü</option>
+                <option value="TELEFON">Telefon</option>
+                <option value="MANUEL">Manuel</option>
+            </select>
+        </div>
 
-            <div style="display: flex; gap: 8px;">
-                <button type="button" class="btn-filter-apply" onclick="applyFilters()">
-                    <i class="fas fa-search"></i> Filtrele
-                </button>
-                <button type="button" class="btn-filter-reset" onclick="resetFilters()">
-                    Sıfırla
-                </button>
-            </div>
+        <!-- Live Search -->
+        <div class="search-container" style="margin-left: auto;">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" id="live-search" class="search-input" placeholder="Listede anlık ara..." oninput="handleClientSearch()">
         </div>
     </div>
 
     <!-- Records Table -->
-    <div class="table-card">
+    <div class="table-container">
         <div class="table-responsive">
             <table class="data-table" id="cizelge-table">
                 <thead>
@@ -464,7 +525,7 @@
                         <th>CİHAZ</th>
                         <th>UYARI</th>
                         {% if can_update %}
-                        <th style="text-align: right; width: 120px;">İŞLEMLER</th>
+                        <th style="text-align: right; width: 100px;">İŞLEMLER</th>
                         {% endif %}
                     </tr>
                 </thead>
@@ -540,8 +601,8 @@
             </div>
 
             <div class="modal-footer">
-                <button type="button" class="btn-filter-reset" onclick="closeModal('modal-add')">İptal</button>
-                <button type="submit" class="btn-new-entry">Kaydet</button>
+                <button type="button" class="page-btn" onclick="closeModal('modal-add')">İptal</button>
+                <button type="submit" class="btn-new">Kaydet</button>
             </div>
         </form>
     </div>
@@ -580,8 +641,8 @@
             </div>
 
             <div class="modal-footer">
-                <button type="button" class="btn-filter-reset" onclick="closeModal('modal-edit')">İptal</button>
-                <button type="submit" class="btn-new-entry">Güncelle</button>
+                <button type="button" class="page-btn" onclick="closeModal('modal-edit')">İptal</button>
+                <button type="submit" class="btn-new">Güncelle</button>
             </div>
         </form>
     </div>
@@ -606,8 +667,8 @@
             </div>
 
             <div class="modal-footer">
-                <button type="button" class="btn-filter-reset" onclick="closeModal('modal-delete')">Vazgeç</button>
-                <button type="submit" class="btn-new-entry" style="background-color: #dc2626;">Silmeyi Onayla</button>
+                <button type="button" class="page-btn" onclick="closeModal('modal-delete')">Vazgeç</button>
+                <button type="submit" class="btn-new" style="background-color: #dc2626;">Silmeyi Onayla</button>
             </div>
         </form>
     </div>
@@ -627,6 +688,10 @@
 
         loadRecords(1);
     });
+
+    function handleFilterAutoChange() {
+        loadRecords(1);
+    }
 
     async function loadRecords(page = 1) {
         currentPage = page;
@@ -659,72 +724,80 @@
             document.getElementById('btn-prev-page').disabled = (currentPage <= 1);
             document.getElementById('btn-next-page').disabled = (currentPage >= totalPages);
 
-            if (data.items.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; color: #94a3b8; padding: 30px;">Filtrelere uygun vardiya kaydı bulunamadı.</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = data.items.map(r => `
-                <tr>
-                    <td>#${r.id}</td>
-                    <td><strong>${escapeHtml(r.calisan_adi)}</strong></td>
-                    <td>${escapeHtml(r.sube_adi)}</td>
-                    <td>
-                        <span class="badge-pill ${r.islem_tipi === 'GIRIS' ? 'badge-giris' : 'badge-cikis'}">
-                            <i class="fas fa-${r.islem_tipi === 'GIRIS' ? 'sign-in-alt' : 'sign-out-alt'}"></i>
-                            ${r.islem_tipi === 'GIRIS' ? 'Giriş' : 'Çıkış'}
-                        </span>
-                    </td>
-                    <td>${r.kayit_zamani}</td>
-                    <td>
-                        <span class="badge-pill ${r.kaynak === 'TELEFON' ? 'badge-telefon' : 'badge-manuel'}">
-                            <i class="fas fa-${r.kaynak === 'TELEFON' ? 'mobile-alt' : 'keyboard'}"></i>
-                            ${r.kaynak === 'TELEFON' ? 'Telefon' : 'Manuel'}
-                        </span>
-                    </td>
-                    <td>
-                        ${r.enlem ? `${r.enlem.toFixed(4)}, ${r.boylam.toFixed(4)} (±${Math.round(r.konum_dogrulugu_m || 0)}m)` : '<span style="color:#94a3b8;">-</span>'}
-                    </td>
-                    <td>
-                        ${r.bolge_mesafesi_m !== null ? `${Math.round(r.bolge_mesafesi_m)} m` : '<span style="color:#94a3b8;">-</span>'}
-                    </td>
-                    <td>
-                        <span style="font-family: monospace; font-size: 0.8rem; color: #64748b;">${r.cihaz_id ? r.cihaz_id.substring(0, 10) + '...' : '-'}</span>
-                    </td>
-                    <td>
-                        ${r.mukerrer_uyari ? '<span class="badge-pill badge-warning-flag"><i class="fas fa-exclamation-triangle"></i> Tekrarlı</span>' : '<span style="color:#94a3b8;">-</span>'}
-                    </td>
-                    ${CAN_UPDATE ? `
-                    <td style="text-align: right;">
-                        <button type="button" class="btn-icon" style="width: 30px; height: 30px; font-size: 0.8rem;" title="Düzenle" onclick="openEditModal(${r.id})">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button type="button" class="btn-icon" style="width: 30px; height: 30px; font-size: 0.8rem; color: #dc2626;" title="Sil" onclick="openDeleteModal(${r.id})">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                    ` : ''}
-                </tr>
-            `).join('');
+            renderTableRows(data.items);
 
         } catch (err) {
             tbody.innerHTML = `<tr><td colspan="11" style="text-align: center; color: #ef4444; padding: 30px;">Hata: ${err.message}</td></tr>`;
         }
     }
 
-    function applyFilters() {
-        loadRecords(1);
+    function renderTableRows(items) {
+        const tbody = document.getElementById('cizelge-table-body');
+        if (!items || items.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="11" style="text-align: center; color: #94a3b8; padding: 30px;">Filtrelere uygun vardiya kaydı bulunamadı.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = items.map(r => `
+            <tr>
+                <td style="color: #64748b; font-weight: 500;">#${r.id}</td>
+                <td><strong>${escapeHtml(r.calisan_adi)}</strong></td>
+                <td>${escapeHtml(r.sube_adi)}</td>
+                <td>
+                    <span class="badge-pill ${r.islem_tipi === 'GIRIS' ? 'badge-giris' : 'badge-cikis'}">
+                        <i class="fas fa-${r.islem_tipi === 'GIRIS' ? 'sign-in-alt' : 'sign-out-alt'}"></i>
+                        ${r.islem_tipi === 'GIRIS' ? 'Giriş' : 'Çıkış'}
+                    </span>
+                </td>
+                <td>${r.kayit_zamani}</td>
+                <td>
+                    <span class="badge-pill ${r.kaynak === 'TELEFON' ? 'badge-telefon' : 'badge-manuel'}">
+                        <i class="fas fa-${r.kaynak === 'TELEFON' ? 'mobile-alt' : 'keyboard'}"></i>
+                        ${r.kaynak === 'TELEFON' ? 'Telefon' : 'Manuel'}
+                    </span>
+                </td>
+                <td>
+                    ${r.enlem ? `${r.enlem.toFixed(4)}, ${r.boylam.toFixed(4)} (±${Math.round(r.konum_dogrulugu_m || 0)}m)` : '<span style="color:#94a3b8;">-</span>'}
+                </td>
+                <td>
+                    ${r.bolge_mesafesi_m !== null ? `${Math.round(r.bolge_mesafesi_m)} m` : '<span style="color:#94a3b8;">-</span>'}
+                </td>
+                <td>
+                    <span style="font-family: monospace; font-size: 0.8rem; color: #64748b;">${r.cihaz_id ? r.cihaz_id.substring(0, 10) + '...' : '-'}</span>
+                </td>
+                <td>
+                    ${r.mukerrer_uyari ? '<span class="badge-pill badge-warning-flag"><i class="fas fa-exclamation-triangle"></i> Tekrarlı</span>' : '<span style="color:#94a3b8;">-</span>'}
+                </td>
+                ${CAN_UPDATE ? `
+                <td style="text-align: right;">
+                    <button type="button" class="btn-row-action btn-edit" title="Düzenle" onclick="openEditModal(${r.id})">
+                        <i class="fas fa-pencil-alt"></i>
+                    </button>
+                    <button type="button" class="btn-row-action btn-delete" title="Sil" onclick="openDeleteModal(${r.id})">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </td>
+                ` : ''}
+            </tr>
+        `).join('');
     }
 
-    function resetFilters() {
-        const todayStr = new Date().toISOString().split('T')[0];
-        document.getElementById('filter-start-date').value = todayStr;
-        document.getElementById('filter-end-date').value = todayStr;
-        document.getElementById('filter-sube').value = '';
-        document.getElementById('filter-calisan').value = '';
-        document.getElementById('filter-islem').value = '';
-        document.getElementById('filter-kaynak').value = '';
-        loadRecords(1);
+    function handleClientSearch() {
+        const term = (document.getElementById('live-search').value || '').toLowerCase().trim();
+        if (!term) {
+            renderTableRows(cachedRecords);
+            return;
+        }
+
+        const filtered = cachedRecords.filter(r => {
+            const name = (r.calisan_adi || '').toLowerCase();
+            const sube = (r.sube_adi || '').toLowerCase();
+            const tc = (r.calisan_tc || '').toLowerCase();
+            const id = String(r.id);
+            return name.includes(term) || sube.includes(term) || tc.includes(term) || id.includes(term);
+        });
+
+        renderTableRows(filtered);
     }
 
     function changePage(delta) {
@@ -744,7 +817,6 @@
     }
 
     function openAddModal() {
-        // Set default datetime to now
         const now = new Date();
         now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
         document.getElementById('add-zaman').value = now.toISOString().slice(0, 16);
@@ -754,7 +826,7 @@
 
     async function submitAddModal(e) {
         e.preventDefault();
-        const payload = {
+        const data = {
             calisan_tc: document.getElementById('add-calisan').value,
             sube_id: parseInt(document.getElementById('add-sube').value),
             islem_tipi: document.getElementById('add-islem').value,
@@ -762,16 +834,20 @@
             gerekce: document.getElementById('add-gerekce').value.trim()
         };
 
+        if (!data.gerekce) {
+            alert('Manuel kayıt için gerekçe açıklaması zorunludur.');
+            return;
+        }
+
         try {
             const res = await fetch('/api/v1/vardiya-cizelgesi', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(data)
             });
-
-            const data = await res.json();
+            const resData = await res.json();
             if (!res.ok) {
-                alert(data.error || 'Kayıt eklenemedi.');
+                alert(resData.error || 'Kayıt eklenemedi.');
                 return;
             }
 
@@ -782,14 +858,14 @@
         }
     }
 
-    function openEditModal(kayitId) {
-        const rec = cachedRecords.find(r => r.id === kayitId);
+    function openEditModal(recordId) {
+        const rec = cachedRecords.find(r => r.id === recordId);
         if (!rec) return;
 
         document.getElementById('edit-id').value = rec.id;
-        document.getElementById('edit-calisan-name').value = rec.calisan_adi;
+        document.getElementById('edit-calisan-name').value = `${rec.calisan_adi} (${rec.calisan_tc})`;
         document.getElementById('edit-islem').value = rec.islem_tipi;
-        document.getElementById('edit-zaman').value = rec.kayit_tarihi_raw;
+        document.getElementById('edit-zaman').value = rec.kayit_tarihi_raw || '';
         document.getElementById('edit-gerekce').value = '';
 
         openModal('modal-edit');
@@ -797,23 +873,27 @@
 
     async function submitEditModal(e) {
         e.preventDefault();
-        const kayitId = document.getElementById('edit-id').value;
-        const payload = {
+        const recordId = document.getElementById('edit-id').value;
+        const data = {
             islem_tipi: document.getElementById('edit-islem').value,
             kayit_zamani: document.getElementById('edit-zaman').value,
             gerekce: document.getElementById('edit-gerekce').value.trim()
         };
 
+        if (!data.gerekce) {
+            alert('Değişiklik için gerekçe açıklaması zorunludur.');
+            return;
+        }
+
         try {
-            const res = await fetch(`/api/v1/vardiya-cizelgesi/${kayitId}`, {
+            const res = await fetch(`/api/v1/vardiya-cizelgesi/${recordId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(data)
             });
-
-            const data = await res.json();
+            const resData = await res.json();
             if (!res.ok) {
-                alert(data.error || 'Güncelleme yapılamadı.');
+                alert(resData.error || 'Kayıt güncellenemedi.');
                 return;
             }
 
@@ -824,29 +904,31 @@
         }
     }
 
-    function openDeleteModal(kayitId) {
-        document.getElementById('delete-id').value = kayitId;
+    function openDeleteModal(recordId) {
+        document.getElementById('delete-id').value = recordId;
         document.getElementById('delete-gerekce').value = '';
         openModal('modal-delete');
     }
 
     async function submitDeleteModal(e) {
         e.preventDefault();
-        const kayitId = document.getElementById('delete-id').value;
-        const payload = {
-            gerekce: document.getElementById('delete-gerekce').value.trim()
-        };
+        const recordId = document.getElementById('delete-id').value;
+        const gerekce = document.getElementById('delete-gerekce').value.trim();
+
+        if (!gerekce) {
+            alert('Silme için gerekçe açıklaması zorunludur.');
+            return;
+        }
 
         try {
-            const res = await fetch(`/api/v1/vardiya-cizelgesi/${kayitId}`, {
+            const res = await fetch(`/api/v1/vardiya-cizelgesi/${recordId}`, {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({ gerekce })
             });
-
-            const data = await res.json();
+            const resData = await res.json();
             if (!res.ok) {
-                alert(data.error || 'Silme işlemi gerçekleştirilemedi.');
+                alert(resData.error || 'Kayıt silinemedi.');
                 return;
             }
 
