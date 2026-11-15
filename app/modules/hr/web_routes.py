@@ -936,5 +936,48 @@ def vardiya_cizelgesi():
     )
 
 
+@web_hr_bp.route("/vardiya-kayit-log-raporu", methods=["GET"])
+@login_required
+@permission_required("Vardiya Kayit Log Raporu Görüntüleme")
+def vardiya_kayit_log_raporu():
+    """
+    Vardiya Kayıt Log Raporu Screen (#81).
+    Displays audit log of shift records with filtering, pagination,
+    Excel export (#33), Print (#34), and Mail (#74).
+    """
+    db_session = get_db_session()
+    user = auth_queries.get_kullanici_by_id(db_session, session['user_id'])
+    if not user:
+        db_session.close()
+        return redirect(url_for('web_auth.login'))
+
+    is_admin = False
+    if user.Kullanici_Adi.lower() == 'admin':
+        is_admin = True
+    else:
+        roles = auth_queries.get_user_roles(db_session, user.Kullanici_ID)
+        is_admin = any(r.Rol_Adi.lower() == 'admin' for r in roles)
+
+    can_excel = is_admin or auth_queries.has_permission(db_session, user.Kullanici_ID, "Excel'e Aktarma")
+    can_print = is_admin or auth_queries.has_permission(db_session, user.Kullanici_ID, "Yazdırma Yetkisi")
+    can_mail = is_admin or auth_queries.has_permission(db_session, user.Kullanici_ID, "Mail Gönder")
+
+    # Get user list for filter dropdown
+    from app.models import Kullanici
+    all_users = db_session.query(Kullanici).filter(Kullanici.Aktif_Pasif == True).all()
+    user_list = [{"Kullanici_ID": u.Kullanici_ID, "Kullanici_Adi": u.Kullanici_Adi} for u in all_users]
+
+    db_session.close()
+    return render_template(
+        "vardiya_kayit_log_raporu.html",
+        user=user,
+        kullanicilar=user_list,
+        can_excel=can_excel,
+        can_print=can_print,
+        can_mail=can_mail,
+        is_admin=is_admin
+    )
+
+
 
 

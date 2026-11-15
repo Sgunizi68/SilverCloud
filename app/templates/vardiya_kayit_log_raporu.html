@@ -1,0 +1,757 @@
+{% extends "base.html" %}
+
+{% block title %}Vardiya Kayıt Log Raporu - SilverCloud{% endblock %}
+
+{% block acc_rapor %}active{% endblock %}
+{% block acc_rapor_content %}show{% endblock %}
+{% block nav_vardiya_kayit_log_raporu %}active{% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.95);
+        --glass-border: rgba(255, 255, 255, 0.3);
+        --accent-color: #667eea;
+        --text-dark: #2d3748;
+        --text-gray: #718096;
+    }
+
+    .main-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+
+    .page-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-dark);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .action-bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .btn-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        color: var(--text-dark);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.95rem;
+    }
+
+    .btn-icon:hover {
+        background: #f7fafc;
+        border-color: #cbd5e0;
+    }
+
+    /* Filter Toolbar Controls */
+    .filter-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding: 12px 16px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+
+    .filter-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .filter-item label {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: #475569;
+        white-space: nowrap;
+    }
+
+    .filter-select, .filter-date-input {
+        height: 36px;
+        padding: 0 10px;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        background: white;
+        font-size: 0.85rem;
+        color: var(--text-dark);
+        outline: none;
+        transition: all 0.2s;
+    }
+
+    .filter-select:focus, .filter-date-input:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    /* Search Input matching Calisanlar */
+    .search-container {
+        position: relative;
+        min-width: 220px;
+    }
+
+    .search-input {
+        width: 100%;
+        height: 36px;
+        padding: 0 14px 0 34px;
+        border-radius: 6px;
+        border: 1px solid #cbd5e1;
+        outline: none;
+        transition: all 0.2s;
+        font-size: 0.85rem;
+        background: white;
+        box-sizing: border-box;
+    }
+
+    .search-input:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 11px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-gray);
+        font-size: 12px;
+    }
+
+    /* Table styles matching Calisanlar and Avans Talepleri */
+    .table-container {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        background: #ffffff;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .data-table thead tr {
+        background: #1e293b;
+    }
+
+    .data-table th {
+        background: #1e293b;
+        color: #ffffff;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 12px 14px;
+        text-align: left;
+        border-bottom: 2px solid #0f172a;
+        white-space: nowrap;
+    }
+
+    .data-table td {
+        padding: 11px 14px;
+        color: #1e293b;
+        font-size: 0.85rem;
+        border-bottom: 1px solid #e2e8f0;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+
+    .data-table tbody tr:nth-child(even) td {
+        background-color: #f8fafc;
+    }
+
+    .data-table tbody tr:hover td {
+        background-color: #eff6ff !important;
+    }
+
+    /* Operation Badges */
+    .badge-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 8px;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+
+    .badge-ekle {
+        background-color: #dcfce7;
+        color: #15803d;
+    }
+
+    .badge-guncelle {
+        background-color: #e0f2fe;
+        color: #0369a1;
+    }
+
+    .badge-sil {
+        background-color: #fee2e2;
+        color: #b91c1c;
+    }
+
+    /* Action Buttons in Table */
+    .btn-row-action {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.88rem;
+    }
+
+    .btn-detail {
+        background: #ebf4ff;
+        color: #3182ce;
+    }
+
+    .btn-detail:hover {
+        background: #bee3f8;
+    }
+
+    /* Pagination */
+    .pagination-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 18px;
+        background-color: #ffffff;
+        border-top: 1px solid #e2e8f0;
+        font-size: 0.85rem;
+        color: #64748b;
+    }
+
+    .page-btn {
+        height: 32px;
+        padding: 0 12px;
+        border: 1px solid #cbd5e1;
+        background-color: #ffffff;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .page-btn:hover:not(:disabled) {
+        background: #f1f5f9;
+        border-color: #94a3b8;
+    }
+
+    .page-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    /* Modal for JSON diff detail */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(4px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        padding: 16px;
+    }
+
+    .modal-content {
+        background: #ffffff;
+        border-radius: 16px;
+        width: 100%;
+        max-width: 650px;
+        padding: 24px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+    }
+
+    .modal-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 1.25rem;
+        color: #94a3b8;
+        cursor: pointer;
+    }
+
+    .json-box {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 12px;
+        font-family: monospace;
+        font-size: 0.82rem;
+        color: #1e293b;
+        max-height: 180px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        word-break: break-all;
+    }
+</style>
+
+<div class="main-card">
+    <!-- Header -->
+    <div class="page-header">
+        <h2 class="page-title">
+            <span>📋 Vardiya Kayıt Log Raporu</span>
+        </h2>
+
+        <div class="action-bar">
+            <!-- Print Button (#34) -->
+            {% if can_print %}
+            <button class="btn-icon" onclick="window.print()" title="Yazdır">
+                <i class="fas fa-print"></i>
+            </button>
+            {% endif %}
+
+            <!-- Excel Button (#33) -->
+            {% if can_excel %}
+            <button class="btn-icon" onclick="exportLogExcel()" title="Excel İndir" style="color: #16a34a;">
+                <i class="fas fa-file-excel"></i>
+            </button>
+            {% endif %}
+
+            <!-- Mail Button (#74) -->
+            {% if can_mail %}
+            <button class="btn-icon" onclick="openLogReportMail()" title="Mail Gönder" style="color: #3b82f6;">
+                <i class="fas fa-envelope"></i>
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Live Filter Toolbar (Seçilince anında güncellenir) -->
+    <div class="filter-toolbar">
+        <!-- Date Range -->
+        <div class="filter-item">
+            <label for="filter-start-date">Başlangıç:</label>
+            <input type="date" id="filter-start-date" class="filter-date-input" onchange="handleFilterAutoChange()">
+        </div>
+
+        <div class="filter-item">
+            <label for="filter-end-date">Bitiş:</label>
+            <input type="date" id="filter-end-date" class="filter-date-input" onchange="handleFilterAutoChange()">
+        </div>
+
+        <!-- Operation Type (EKLE, GUNCELLE, SIL) -->
+        <div class="filter-item">
+            <label for="filter-islem">İşlem:</label>
+            <select id="filter-islem" class="filter-select" onchange="handleFilterAutoChange()">
+                <option value="">Tüm İşlemler</option>
+                <option value="EKLE">Ekle</option>
+                <option value="GUNCELLE">Güncelle</option>
+                <option value="SIL">Sil</option>
+            </select>
+        </div>
+
+        <!-- User Selector -->
+        <div class="filter-item">
+            <label for="filter-kullanici">İşlem Yapan:</label>
+            <select id="filter-kullanici" class="filter-select" onchange="handleFilterAutoChange()">
+                <option value="">Tüm Kullanıcılar</option>
+                {% for u in kullanicilar %}
+                <option value="{{ u.Kullanici_ID }}">{{ u.Kullanici_Adi }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Kayit ID filter -->
+        <div class="filter-item">
+            <label for="filter-kayit-id">Kayıt ID:</label>
+            <input type="number" id="filter-kayit-id" class="filter-date-input" style="width: 90px;" placeholder="Tümü" oninput="handleFilterAutoChange()">
+        </div>
+
+        <!-- Live Search -->
+        <div class="search-container" style="margin-left: auto;">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" id="live-search" class="search-input" placeholder="Gerekçe veya kullanıcı ara..." oninput="handleClientSearch()">
+        </div>
+    </div>
+
+    <!-- Records Table -->
+    <div class="table-container">
+        <div class="table-responsive">
+            <table class="data-table" id="log-table">
+                <thead>
+                    <tr>
+                        <th style="width: 70px;">LOG ID</th>
+                        <th style="width: 90px;">KAYIT ID</th>
+                        <th>İŞLEM</th>
+                        <th>İŞLEM YAPAN KULLANICI</th>
+                        <th>İŞLEM ZAMANI</th>
+                        <th>GEREKÇE / AÇIKLAMA</th>
+                        <th style="text-align: right; width: 80px;">DETAY</th>
+                    </tr>
+                </thead>
+                <tbody id="log-table-body">
+                    <tr>
+                        <td colspan="7" style="text-align: center; color: #94a3b8; padding: 30px;">Yükleniyor...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination Bar -->
+        <div class="pagination-bar">
+            <div>
+                Toplam <strong id="total-count-label">0</strong> log kaydı &bull; Sayfa <span id="current-page-label">1</span> / <span id="total-pages-label">1</span>
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button type="button" class="page-btn" id="btn-prev-page" onclick="changePage(-1)">
+                    <i class="fas fa-chevron-left"></i> Önceki
+                </button>
+                <button type="button" class="page-btn" id="btn-next-page" onclick="changePage(1)">
+                    Sonraki <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Log Değer Detayı (JSON Diff) -->
+<div id="modal-detail" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title" id="modal-detail-title">Log Değişiklik Detayı</h3>
+            <button class="modal-close" onclick="closeDetailModal()">&times;</button>
+        </div>
+
+        <div style="margin-bottom: 14px;">
+            <label style="font-size: 0.82rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Gerekçe:</label>
+            <div id="modal-detail-gerekce" style="font-size: 0.9rem; color: #1e293b; background: #f8fafc; padding: 8px 12px; border-radius: 6px; border: 1px solid #e2e8f0;"></div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+            <div>
+                <label style="font-size: 0.82rem; font-weight: 700; color: #dc2626; display: block; margin-bottom: 4px;">Eski Değer:</label>
+                <pre class="json-box" id="modal-detail-eski"></pre>
+            </div>
+            <div>
+                <label style="font-size: 0.82rem; font-weight: 700; color: #16a34a; display: block; margin-bottom: 4px;">Yeni Değer:</label>
+                <pre class="json-box" id="modal-detail-yeni"></pre>
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end;">
+            <button type="button" class="page-btn" onclick="closeDetailModal()">Kapat</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentPage = 1;
+    let totalPages = 1;
+    let cachedLogs = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadLogs(1);
+    });
+
+    function handleFilterAutoChange() {
+        loadLogs(1);
+    }
+
+    async function loadLogs(page = 1) {
+        currentPage = page;
+        const tbody = document.getElementById('log-table-body');
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #94a3b8; padding: 30px;">Yükleniyor...</td></tr>';
+
+        const params = new URLSearchParams({
+            page: currentPage,
+            per_page: 50,
+            start_date: document.getElementById('filter-start-date').value,
+            end_date: document.getElementById('filter-end-date').value,
+            islem: document.getElementById('filter-islem').value,
+            kullanici_id: document.getElementById('filter-kullanici').value,
+            kayit_id: document.getElementById('filter-kayit-id').value
+        });
+
+        try {
+            const res = await fetch(`/api/v1/vardiya-kayit-log-raporu?${params.toString()}`);
+            if (!res.ok) throw new Error('Log kayıtları alınamadı.');
+            const data = await res.json();
+
+            cachedLogs = data.items;
+            totalPages = data.total_pages || 1;
+
+            document.getElementById('total-count-label').innerText = data.total_count;
+            document.getElementById('current-page-label').innerText = data.page;
+            document.getElementById('total-pages-label').innerText = totalPages;
+
+            document.getElementById('btn-prev-page').disabled = (currentPage <= 1);
+            document.getElementById('btn-next-page').disabled = (currentPage >= totalPages);
+
+            renderTableRows(data.items);
+
+        } catch (err) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #ef4444; padding: 30px;">Hata: ${err.message}</td></tr>`;
+        }
+    }
+
+    function renderTableRows(items) {
+        const tbody = document.getElementById('log-table-body');
+        if (!items || items.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #94a3b8; padding: 30px;">Filtrelere uygun log kaydı bulunamadı.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = items.map(l => {
+            let islemBadgeClass = 'badge-guncelle';
+            let islemLabel = 'Güncelleme';
+            let islemIcon = 'edit';
+            if (l.islem === 'EKLE') {
+                islemBadgeClass = 'badge-ekle';
+                islemLabel = 'Ekleme';
+                islemIcon = 'plus-circle';
+            } else if (l.islem === 'SIL') {
+                islemBadgeClass = 'badge-sil';
+                islemLabel = 'Silme';
+                islemIcon = 'trash';
+            }
+
+            return `
+                <tr>
+                    <td style="color: #64748b; font-weight: 500;">#${l.id}</td>
+                    <td><strong>#${l.kayit_id}</strong></td>
+                    <td>
+                        <span class="badge-pill ${islemBadgeClass}">
+                            <i class="fas fa-${islemIcon}"></i>
+                            ${islemLabel}
+                        </span>
+                    </td>
+                    <td><strong>${escapeHtml(l.kullanici_adi)}</strong></td>
+                    <td>${l.islem_zamani}</td>
+                    <td style="max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(l.gerekce)}">
+                        ${escapeHtml(l.gerekce) || '<span style="color:#94a3b8;">-</span>'}
+                    </td>
+                    <td style="text-align: right;">
+                        <button type="button" class="btn-row-action btn-detail" title="Değişiklik Detayı" onclick="openDetailModal(${l.id})">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function handleClientSearch() {
+        const term = (document.getElementById('live-search').value || '').toLowerCase().trim();
+        if (!term) {
+            renderTableRows(cachedLogs);
+            return;
+        }
+
+        const filtered = cachedLogs.filter(l => {
+            const gerekce = (l.gerekce || '').toLowerCase();
+            const user = (l.kullanici_adi || '').toLowerCase();
+            const islem = (l.islem || '').toLowerCase();
+            const kayitId = String(l.kayit_id);
+            const id = String(l.id);
+            return gerekce.includes(term) || user.includes(term) || islem.includes(term) || kayitId.includes(term) || id.includes(term);
+        });
+
+        renderTableRows(filtered);
+    }
+
+    function changePage(delta) {
+        const target = currentPage + delta;
+        if (target >= 1 && target <= totalPages) {
+            loadLogs(target);
+        }
+    }
+
+    // ─── DETAIL MODAL ───
+    function openDetailModal(logId) {
+        const log = cachedLogs.find(l => l.id === logId);
+        if (!log) return;
+
+        document.getElementById('modal-detail-title').innerText = `Log #${log.id} - Kayıt #${log.kayit_id} (${log.islem})`;
+        document.getElementById('modal-detail-gerekce').innerText = log.gerekce || 'Açıklama belirtilmemiş';
+
+        const eskiStr = log.eski_deger ? JSON.stringify(log.eski_deger, null, 2) : '(Yok)';
+        const yeniStr = log.yeni_deger ? JSON.stringify(log.yeni_deger, null, 2) : '(Yok)';
+
+        document.getElementById('modal-detail-eski').innerText = eskiStr;
+        document.getElementById('modal-detail-yeni').innerText = yeniStr;
+
+        document.getElementById('modal-detail').style.display = 'flex';
+    }
+
+    function closeDetailModal() {
+        document.getElementById('modal-detail').style.display = 'none';
+    }
+
+    // ─── EXCEL, PRINT, MAIL INTEGRATION ───
+    async function fetchExportData() {
+        const params = new URLSearchParams({
+            start_date: document.getElementById('filter-start-date').value,
+            end_date: document.getElementById('filter-end-date').value,
+            islem: document.getElementById('filter-islem').value,
+            kullanici_id: document.getElementById('filter-kullanici').value,
+            kayit_id: document.getElementById('filter-kayit-id').value
+        });
+        const res = await fetch(`/api/v1/vardiya-kayit-log-raporu/export-data?${params.toString()}`);
+        if (!res.ok) throw new Error('Dışa aktarma verisi alınamadı.');
+        return await res.json();
+    }
+
+    async function buildLogWorkbook() {
+        if (typeof XLSX === 'undefined') return null;
+
+        const items = await fetchExportData();
+        const wb = XLSX.utils.book_new();
+
+        const headers = ['LOG ID', 'KAYIT ID', 'İŞLEM', 'İŞLEM YAPAN', 'İŞLEM ZAMANI', 'GEREKÇE'];
+        const sheetData = [
+            ['VARDİYA KAYIT LOG RAPORU'],
+            ['Rapor Tarihi:', new Date().toLocaleString('tr-TR')],
+            ['Toplam Kayıt:', items.length],
+            [],
+            headers
+        ];
+
+        items.forEach(l => {
+            sheetData.push([
+                l.id,
+                l.kayit_id,
+                l.islem,
+                l.kullanici_adi,
+                l.islem_zamani,
+                l.gerekce
+            ]);
+        });
+
+        const ws = XLSX.utils.aoa_to_sheet(sheetData);
+        XLSX.utils.book_append_sheet(wb, ws, "Vardiya Loglari");
+        return wb;
+    }
+
+    async function exportLogExcel() {
+        try {
+            const wb = await buildLogWorkbook();
+            if (!wb) {
+                alert('Excel kütüphanesi yüklenemedi.');
+                return;
+            }
+            XLSX.writeFile(wb, `Vardiya_Kayit_Log_Raporu_${new Date().toISOString().slice(0, 10)}.xlsx`);
+        } catch (err) {
+            alert('Excel oluşturulurken hata: ' + err.message);
+        }
+    }
+
+    async function getLogReportExcelBase64() {
+        const wb = await buildLogWorkbook();
+        if (!wb) return null;
+        return XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+    }
+
+    async function getLogReportMailHtml() {
+        const items = await fetchExportData();
+        return `
+            <h3>Vardiya Kayıt Log Raporu</h3>
+            <p><strong>Tarih:</strong> ${new Date().toLocaleString('tr-TR')}</p>
+            <p><strong>Toplam Kayıt:</strong> ${items.length}</p>
+            <table border="1" cellpadding="6" cellspacing="0" style="border-collapse: collapse; width: 100%; font-family: sans-serif; font-size: 12px;">
+                <thead style="background-color: #f1f5f9;">
+                    <tr>
+                        <th>Log ID</th>
+                        <th>Kayıt ID</th>
+                        <th>İşlem</th>
+                        <th>İşlem Yapan</th>
+                        <th>İşlem Zamanı</th>
+                        <th>Gerekçe</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${items.slice(0, 50).map(l => `
+                        <tr>
+                            <td>#${l.id}</td>
+                            <td>#${l.kayit_id}</td>
+                            <td>${l.islem}</td>
+                            <td>${escapeHtml(l.kullanici_adi)}</td>
+                            <td>${l.islem_zamani}</td>
+                            <td>${escapeHtml(l.gerekce)}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+            ${items.length > 50 ? '<p><em>(İlk 50 kayıt listelenmiştir. Tam liste ekteki Excel dosyasındadır.)</em></p>' : ''}
+        `;
+    }
+
+    function openLogReportMail() {
+        if (typeof openReportMailModal === 'function') {
+            openReportMailModal({
+                title: `Vardiya Kayıt Log Raporu`,
+                filename: `Vardiya_Kayit_Log_Raporu_${new Date().toISOString().slice(0, 10)}.xlsx`,
+                getHtml: getLogReportMailHtml,
+                getExcelBase64: getLogReportExcelBase64
+            });
+        } else {
+            alert('Mail gönderme modülü bu ekranda yüklenemedi.');
+        }
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/[&<>"']/g, function(m) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+        });
+    }
+</script>
+{% endblock %}

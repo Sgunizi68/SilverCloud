@@ -1342,3 +1342,72 @@ def get_all_vardiya_kayitlar_for_export(
 
     stmt = stmt.order_by(desc(VardiyaKayit.kayit_zamani))
     return list(db.execute(stmt).scalars().all())
+
+
+# ============================================================================
+# VARDIYA KAYIT LOG (AUDIT LOG RAPORU) QUERIES
+# ============================================================================
+
+def get_vardiya_kayit_loglar(
+    db: Session,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    islem: Optional[str] = None,
+    kullanici_id: Optional[int] = None,
+    kayit_id: Optional[int] = None,
+    page: int = 1,
+    per_page: int = 50
+) -> Tuple[List[VardiyaKayitLog], int]:
+    """
+    Get paginated vardiya_kayit_log records with filtering, ordered by islem_zamani desc.
+    Returns (records, total_count).
+    """
+    stmt = select(VardiyaKayitLog)
+
+    if start_date:
+        stmt = stmt.where(VardiyaKayitLog.islem_zamani >= datetime.combine(start_date, datetime.min.time()))
+    if end_date:
+        stmt = stmt.where(VardiyaKayitLog.islem_zamani <= datetime.combine(end_date, datetime.max.time()))
+    if islem:
+        stmt = stmt.where(VardiyaKayitLog.islem == islem)
+    if kullanici_id:
+        stmt = stmt.where(VardiyaKayitLog.kullanici_id == kullanici_id)
+    if kayit_id:
+        stmt = stmt.where(VardiyaKayitLog.kayit_id == kayit_id)
+
+    # Count total
+    count_stmt = select(func.count()).select_from(stmt.subquery())
+    total_count = db.execute(count_stmt).scalar() or 0
+
+    stmt = stmt.order_by(desc(VardiyaKayitLog.islem_zamani))
+    offset = (max(1, page) - 1) * per_page
+    stmt = stmt.offset(offset).limit(per_page)
+
+    records = list(db.execute(stmt).scalars().all())
+    return records, total_count
+
+
+def get_all_vardiya_kayit_loglar_for_export(
+    db: Session,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    islem: Optional[str] = None,
+    kullanici_id: Optional[int] = None,
+    kayit_id: Optional[int] = None
+) -> List[VardiyaKayitLog]:
+    """Get all filtered log records for Excel/Mail/Print."""
+    stmt = select(VardiyaKayitLog)
+
+    if start_date:
+        stmt = stmt.where(VardiyaKayitLog.islem_zamani >= datetime.combine(start_date, datetime.min.time()))
+    if end_date:
+        stmt = stmt.where(VardiyaKayitLog.islem_zamani <= datetime.combine(end_date, datetime.max.time()))
+    if islem:
+        stmt = stmt.where(VardiyaKayitLog.islem == islem)
+    if kullanici_id:
+        stmt = stmt.where(VardiyaKayitLog.kullanici_id == kullanici_id)
+    if kayit_id:
+        stmt = stmt.where(VardiyaKayitLog.kayit_id == kayit_id)
+
+    stmt = stmt.order_by(desc(VardiyaKayitLog.islem_zamani))
+    return list(db.execute(stmt).scalars().all())

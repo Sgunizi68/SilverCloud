@@ -1924,3 +1924,105 @@ def delete_vardiya(kayit_id):
     finally:
         db.close()
 
+
+# --- 4. Vardiya Kayıt Log Raporu Endpoints (#81) ---
+
+@hr_bp.route("/vardiya-kayit-log-raporu", methods=["GET"])
+@auth_required
+def list_vardiya_kayit_log_raporu():
+    """
+    List vardiya kayit audit logs with filtering & pagination (#81).
+    Filters: start_date, end_date, islem, kullanici_id, kayit_id.
+    """
+    db = get_db_session()
+    try:
+        user = request.user
+        if not _check_user_permission(db, user, "Vardiya Kayit Log Raporu Görüntüleme"):
+            return jsonify({"error": "Vardiya Kayit Log Raporu Görüntüleme yetkiniz bulunmamaktadır."}), 403
+
+        start_date_str = request.args.get("start_date")
+        end_date_str = request.args.get("end_date")
+        islem = request.args.get("islem")
+        kullanici_id = request.args.get("kullanici_id", type=int)
+        kayit_id = request.args.get("kayit_id", type=int)
+        page = request.args.get("page", 1, type=int)
+        per_page = min(request.args.get("per_page", 50, type=int), 200)
+
+        start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date() if start_date_str else None
+        end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date() if end_date_str else None
+
+        records, total_count = queries.get_vardiya_kayit_loglar(
+            db, start_date=start_date, end_date=end_date,
+            islem=islem, kullanici_id=kullanici_id, kayit_id=kayit_id,
+            page=page, per_page=per_page
+        )
+
+        items = []
+        for r in records:
+            kullanici_ad = r.kullanici.Kullanici_Adi if r.kullanici else str(r.kullanici_id)
+            items.append({
+                "id": r.id,
+                "kayit_id": r.kayit_id,
+                "islem": r.islem,
+                "kullanici_id": r.kullanici_id,
+                "kullanici_adi": kullanici_ad,
+                "islem_zamani": r.islem_zamani.strftime("%d.%m.%Y %H:%M:%S") if r.islem_zamani else "",
+                "gerekce": r.gerekce or "",
+                "eski_deger": r.eski_deger,
+                "yeni_deger": r.yeni_deger
+            })
+
+        return jsonify({
+            "items": items,
+            "total_count": total_count,
+            "page": page,
+            "per_page": per_page,
+            "total_pages": math.ceil(total_count / per_page) if total_count > 0 else 1
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
+
+@hr_bp.route("/vardiya-kayit-log-raporu/export-data", methods=["GET"])
+@auth_required
+def get_vardiya_kayit_log_export_data():
+    """Get all filtered vardiya kayit audit logs for Excel/Mail/Print (#81)."""
+    db = get_db_session()
+    try:
+        user = request.user
+        if not _check_user_permission(db, user, "Vardiya Kayit Log Raporu Görüntüleme"):
+            return jsonify({"error": "Yetkiniz bulunmamaktadır."}), 403
+
+        start_date_str = request.args.get("start_date")
+        end_date_str = request.args.get("end_date")
+        islem = request.args.get("islem")
+        kullanici_id = request.args.get("kullanici_id", type=int)
+        kayit_id = request.args.get("kayit_id", type=int)
+
+        start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date() if start_date_str else None
+        end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date() if end_date_str else None
+
+        records = queries.get_all_vardiya_kayit_loglar_for_export(
+            db, start_date=start_date, end_date=end_date,
+            islem=islem, kullanici_id=kullanici_id, kayit_id=kayit_id
+        )
+
+        items = []
+        for r in records:
+            kullanici_ad = r.kullanici.Kullanici_Adi if r.kullanici else str(r.kullanici_id)
+            items.append({
+                "id": r.id,
+                "kayit_id": r.kayit_id,
+                "islem": r.islem,
+                "kullanici_adi": kullanici_ad,
+                "islem_zamani": r.islem_zamani.strftime("%d.%m.%Y %H:%M:%S") if r.islem_zamani else "",
+                "gerekce": r.gerekce or ""
+            })
+        return jsonify(items), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        db.close()
+
