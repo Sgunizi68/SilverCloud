@@ -392,34 +392,28 @@
         <div class="filter-item">
             <label for="filter-islem">İşlem:</label>
             <select id="filter-islem" class="filter-select" onchange="handleFilterAutoChange()">
-                <option value="">Tüm İşlemler</option>
+                <option value="" selected>Tümü</option>
                 <option value="EKLE">Ekle</option>
                 <option value="GUNCELLE">Güncelle</option>
                 <option value="SIL">Sil</option>
             </select>
         </div>
 
-        <!-- User Selector -->
+        <!-- User Selector (Alfabetik İsim Soyad) -->
         <div class="filter-item">
             <label for="filter-kullanici">İşlem Yapan:</label>
             <select id="filter-kullanici" class="filter-select" onchange="handleFilterAutoChange()">
-                <option value="">Tüm Kullanıcılar</option>
+                <option value="" selected>Tümü</option>
                 {% for u in kullanicilar %}
                 <option value="{{ u.Kullanici_ID }}">{{ u.Kullanici_Adi }}</option>
                 {% endfor %}
             </select>
         </div>
 
-        <!-- Kayit ID filter -->
-        <div class="filter-item">
-            <label for="filter-kayit-id">Kayıt ID:</label>
-            <input type="number" id="filter-kayit-id" class="filter-date-input" style="width: 90px;" placeholder="Tümü" oninput="handleFilterAutoChange()">
-        </div>
-
         <!-- Live Search -->
         <div class="search-container" style="margin-left: auto;">
             <i class="fas fa-search search-icon"></i>
-            <input type="text" id="live-search" class="search-input" placeholder="Gerekçe veya kullanıcı ara..." oninput="handleClientSearch()">
+            <input type="text" id="live-search" class="search-input" placeholder="Çalışan, kullanıcı veya gerekçe ara..." oninput="handleClientSearch()">
         </div>
     </div>
 
@@ -430,17 +424,18 @@
                 <thead>
                     <tr>
                         <th style="width: 70px;">LOG ID</th>
-                        <th style="width: 90px;">KAYIT ID</th>
+                        <th style="width: 80px;">KAYIT ID</th>
+                        <th>ÇALIŞAN</th>
                         <th>İŞLEM</th>
                         <th>İŞLEM YAPAN KULLANICI</th>
                         <th>İŞLEM ZAMANI</th>
                         <th>GEREKÇE / AÇIKLAMA</th>
-                        <th style="text-align: right; width: 80px;">DETAY</th>
+                        <th style="text-align: right; width: 70px;">DETAY</th>
                     </tr>
                 </thead>
                 <tbody id="log-table-body">
                     <tr>
-                        <td colspan="7" style="text-align: center; color: #94a3b8; padding: 30px;">Yükleniyor...</td>
+                        <td colspan="8" style="text-align: center; color: #94a3b8; padding: 30px;">Yükleniyor...</td>
                     </tr>
                 </tbody>
             </table>
@@ -471,9 +466,14 @@
             <button class="modal-close" onclick="closeDetailModal()">&times;</button>
         </div>
 
+        <div style="margin-bottom: 12px;">
+            <label style="font-size: 0.82rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Çalışan:</label>
+            <div id="modal-detail-calisan" style="font-size: 0.9rem; font-weight: 600; color: #1e293b; background: #f8fafc; padding: 6px 12px; border-radius: 6px; border: 1px solid #e2e8f0;"></div>
+        </div>
+
         <div style="margin-bottom: 14px;">
             <label style="font-size: 0.82rem; font-weight: 700; color: #475569; display: block; margin-bottom: 4px;">Gerekçe:</label>
-            <div id="modal-detail-gerekce" style="font-size: 0.9rem; color: #1e293b; background: #f8fafc; padding: 8px 12px; border-radius: 6px; border: 1px solid #e2e8f0;"></div>
+            <div id="modal-detail-gerekce" style="font-size: 0.88rem; color: #1e293b; background: #f8fafc; padding: 8px 12px; border-radius: 6px; border: 1px solid #e2e8f0;"></div>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
@@ -499,6 +499,21 @@
     let cachedLogs = [];
 
     document.addEventListener('DOMContentLoaded', () => {
+        // Default to current month: 1st of month to last day of month
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth(); // 0-indexed
+
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+
+        const pad = (n) => String(n).padStart(2, '0');
+        const firstDayStr = `${firstDay.getFullYear()}-${pad(firstDay.getMonth() + 1)}-01`;
+        const lastDayStr = `${lastDay.getFullYear()}-${pad(lastDay.getMonth() + 1)}-${pad(lastDay.getDate())}`;
+
+        document.getElementById('filter-start-date').value = firstDayStr;
+        document.getElementById('filter-end-date').value = lastDayStr;
+
         loadLogs(1);
     });
 
@@ -509,7 +524,7 @@
     async function loadLogs(page = 1) {
         currentPage = page;
         const tbody = document.getElementById('log-table-body');
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #94a3b8; padding: 30px;">Yükleniyor...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #94a3b8; padding: 30px;">Yükleniyor...</td></tr>';
 
         const params = new URLSearchParams({
             page: currentPage,
@@ -517,8 +532,7 @@
             start_date: document.getElementById('filter-start-date').value,
             end_date: document.getElementById('filter-end-date').value,
             islem: document.getElementById('filter-islem').value,
-            kullanici_id: document.getElementById('filter-kullanici').value,
-            kayit_id: document.getElementById('filter-kayit-id').value
+            kullanici_id: document.getElementById('filter-kullanici').value
         });
 
         try {
@@ -539,14 +553,14 @@
             renderTableRows(data.items);
 
         } catch (err) {
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #ef4444; padding: 30px;">Hata: ${err.message}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #ef4444; padding: 30px;">Hata: ${err.message}</td></tr>`;
         }
     }
 
     function renderTableRows(items) {
         const tbody = document.getElementById('log-table-body');
         if (!items || items.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #94a3b8; padding: 30px;">Filtrelere uygun log kaydı bulunamadı.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #94a3b8; padding: 30px;">Filtrelere uygun log kaydı bulunamadı.</td></tr>';
             return;
         }
 
@@ -567,16 +581,17 @@
             return `
                 <tr>
                     <td style="color: #64748b; font-weight: 500;">#${l.id}</td>
-                    <td><strong>#${l.kayit_id}</strong></td>
+                    <td><strong style="color: #475569;">#${l.kayit_id}</strong></td>
+                    <td><strong>${escapeHtml(l.calisan_adi || '-')}</strong></td>
                     <td>
                         <span class="badge-pill ${islemBadgeClass}">
                             <i class="fas fa-${islemIcon}"></i>
                             ${islemLabel}
                         </span>
                     </td>
-                    <td><strong>${escapeHtml(l.kullanici_adi)}</strong></td>
+                    <td>${escapeHtml(l.kullanici_adi)}</td>
                     <td>${l.islem_zamani}</td>
-                    <td style="max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(l.gerekce)}">
+                    <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(l.gerekce)}">
                         ${escapeHtml(l.gerekce) || '<span style="color:#94a3b8;">-</span>'}
                     </td>
                     <td style="text-align: right;">
@@ -597,12 +612,13 @@
         }
 
         const filtered = cachedLogs.filter(l => {
+            const calisan = (l.calisan_adi || '').toLowerCase();
             const gerekce = (l.gerekce || '').toLowerCase();
             const user = (l.kullanici_adi || '').toLowerCase();
             const islem = (l.islem || '').toLowerCase();
             const kayitId = String(l.kayit_id);
             const id = String(l.id);
-            return gerekce.includes(term) || user.includes(term) || islem.includes(term) || kayitId.includes(term) || id.includes(term);
+            return calisan.includes(term) || gerekce.includes(term) || user.includes(term) || islem.includes(term) || kayitId.includes(term) || id.includes(term);
         });
 
         renderTableRows(filtered);
@@ -621,6 +637,7 @@
         if (!log) return;
 
         document.getElementById('modal-detail-title').innerText = `Log #${log.id} - Kayıt #${log.kayit_id} (${log.islem})`;
+        document.getElementById('modal-detail-calisan').innerText = log.calisan_adi || 'Belirtilmemiş';
         document.getElementById('modal-detail-gerekce').innerText = log.gerekce || 'Açıklama belirtilmemiş';
 
         const eskiStr = log.eski_deger ? JSON.stringify(log.eski_deger, null, 2) : '(Yok)';
@@ -642,8 +659,7 @@
             start_date: document.getElementById('filter-start-date').value,
             end_date: document.getElementById('filter-end-date').value,
             islem: document.getElementById('filter-islem').value,
-            kullanici_id: document.getElementById('filter-kullanici').value,
-            kayit_id: document.getElementById('filter-kayit-id').value
+            kullanici_id: document.getElementById('filter-kullanici').value
         });
         const res = await fetch(`/api/v1/vardiya-kayit-log-raporu/export-data?${params.toString()}`);
         if (!res.ok) throw new Error('Dışa aktarma verisi alınamadı.');
@@ -656,7 +672,7 @@
         const items = await fetchExportData();
         const wb = XLSX.utils.book_new();
 
-        const headers = ['LOG ID', 'KAYIT ID', 'İŞLEM', 'İŞLEM YAPAN', 'İŞLEM ZAMANI', 'GEREKÇE'];
+        const headers = ['LOG ID', 'KAYIT ID', 'ÇALIŞAN', 'İŞLEM', 'İŞLEM YAPAN KULLANICI', 'İŞLEM ZAMANI', 'GEREKÇE'];
         const sheetData = [
             ['VARDİYA KAYIT LOG RAPORU'],
             ['Rapor Tarihi:', new Date().toLocaleString('tr-TR')],
@@ -669,6 +685,7 @@
             sheetData.push([
                 l.id,
                 l.kayit_id,
+                l.calisan_adi || '-',
                 l.islem,
                 l.kullanici_adi,
                 l.islem_zamani,
@@ -711,6 +728,7 @@
                     <tr>
                         <th>Log ID</th>
                         <th>Kayıt ID</th>
+                        <th>Çalışan</th>
                         <th>İşlem</th>
                         <th>İşlem Yapan</th>
                         <th>İşlem Zamanı</th>
@@ -722,6 +740,7 @@
                         <tr>
                             <td>#${l.id}</td>
                             <td>#${l.kayit_id}</td>
+                            <td>${escapeHtml(l.calisan_adi || '-')}</td>
                             <td>${l.islem}</td>
                             <td>${escapeHtml(l.kullanici_adi)}</td>
                             <td>${l.islem_zamani}</td>

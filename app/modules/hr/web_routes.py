@@ -962,10 +962,19 @@ def vardiya_kayit_log_raporu():
     can_print = is_admin or auth_queries.has_permission(db_session, user.Kullanici_ID, "Yazdırma Yetkisi")
     can_mail = is_admin or auth_queries.has_permission(db_session, user.Kullanici_ID, "Mail Gönder")
 
-    # Get user list for filter dropdown
+    # Get user list for filter dropdown (sorted alphabetically by Adi_Soyadi)
     from app.models import Kullanici
     all_users = db_session.query(Kullanici).filter(Kullanici.Aktif_Pasif == True).all()
-    user_list = [{"Kullanici_ID": u.Kullanici_ID, "Kullanici_Adi": u.Kullanici_Adi} for u in all_users]
+    user_list = [
+        {
+            "Kullanici_ID": u.Kullanici_ID,
+            "Kullanici_Adi": u.Adi_Soyadi if u.Adi_Soyadi else u.Kullanici_Adi
+        }
+        for u in all_users
+    ]
+    
+    tr_map = str.maketrans("İIŞĞÜÖÇ", "ıisguoc")
+    user_list.sort(key=lambda x: (x["Kullanici_Adi"] or "").translate(tr_map).lower())
 
     db_session.close()
     return render_template(

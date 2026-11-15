@@ -1957,13 +1957,38 @@ def list_vardiya_kayit_log_raporu():
             page=page, per_page=per_page
         )
 
+        from app.models import Calisan
+
         items = []
         for r in records:
-            kullanici_ad = r.kullanici.Kullanici_Adi if r.kullanici else str(r.kullanici_id)
+            kullanici_ad = r.kullanici.Adi_Soyadi if (r.kullanici and r.kullanici.Adi_Soyadi) else (r.kullanici.Kullanici_Adi if r.kullanici else str(r.kullanici_id))
+            
+            # Extract calisan_id from record or json diff
+            calisan_ad_soyad = "-"
+            calisan_tc = None
+            if r.kayit and r.kayit.calisan:
+                calisan_ad_soyad = f"{r.kayit.calisan.Adi} {r.kayit.calisan.Soyadi}"
+                calisan_tc = r.kayit.calisan_id
+            else:
+                # Fallback to json values
+                if r.yeni_deger and isinstance(r.yeni_deger, dict) and r.yeni_deger.get("calisan_id"):
+                    calisan_tc = str(r.yeni_deger["calisan_id"])
+                elif r.eski_deger and isinstance(r.eski_deger, dict) and r.eski_deger.get("calisan_id"):
+                    calisan_tc = str(r.eski_deger["calisan_id"])
+                
+                if calisan_tc:
+                    c = db.get(Calisan, calisan_tc)
+                    if c:
+                        calisan_ad_soyad = f"{c.Adi} {c.Soyadi}"
+                    else:
+                        calisan_ad_soyad = calisan_tc
+
             items.append({
                 "id": r.id,
                 "kayit_id": r.kayit_id,
                 "islem": r.islem,
+                "calisan_adi": calisan_ad_soyad,
+                "calisan_tc": calisan_tc,
                 "kullanici_id": r.kullanici_id,
                 "kullanici_adi": kullanici_ad,
                 "islem_zamani": r.islem_zamani.strftime("%d.%m.%Y %H:%M:%S") if r.islem_zamani else "",
@@ -2009,12 +2034,33 @@ def get_vardiya_kayit_log_export_data():
             islem=islem, kullanici_id=kullanici_id, kayit_id=kayit_id
         )
 
+        from app.models import Calisan
+
         items = []
         for r in records:
-            kullanici_ad = r.kullanici.Kullanici_Adi if r.kullanici else str(r.kullanici_id)
+            kullanici_ad = r.kullanici.Adi_Soyadi if (r.kullanici and r.kullanici.Adi_Soyadi) else (r.kullanici.Kullanici_Adi if r.kullanici else str(r.kullanici_id))
+            
+            calisan_ad_soyad = "-"
+            calisan_tc = None
+            if r.kayit and r.kayit.calisan:
+                calisan_ad_soyad = f"{r.kayit.calisan.Adi} {r.kayit.calisan.Soyadi}"
+                calisan_tc = r.kayit.calisan_id
+            else:
+                if r.yeni_deger and isinstance(r.yeni_deger, dict) and r.yeni_deger.get("calisan_id"):
+                    calisan_tc = str(r.yeni_deger["calisan_id"])
+                elif r.eski_deger and isinstance(r.eski_deger, dict) and r.eski_deger.get("calisan_id"):
+                    calisan_tc = str(r.eski_deger["calisan_id"])
+                if calisan_tc:
+                    c = db.get(Calisan, calisan_tc)
+                    if c:
+                        calisan_ad_soyad = f"{c.Adi} {c.Soyadi}"
+                    else:
+                        calisan_ad_soyad = calisan_tc
+
             items.append({
                 "id": r.id,
                 "kayit_id": r.kayit_id,
+                "calisan_adi": calisan_ad_soyad,
                 "islem": r.islem,
                 "kullanici_adi": kullanici_ad,
                 "islem_zamani": r.islem_zamani.strftime("%d.%m.%Y %H:%M:%S") if r.islem_zamani else "",
