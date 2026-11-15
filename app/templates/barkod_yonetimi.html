@@ -8,11 +8,22 @@
 
 {% block content %}
 <style>
-    /* Screen Styles */
-    .barkod-container {
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.95);
+        --glass-border: rgba(255, 255, 255, 0.3);
+        --accent-color: #667eea;
+        --text-dark: #2d3748;
+        --text-gray: #718096;
+    }
+
+    .main-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
         padding: 24px;
-        max-width: 1200px;
-        margin: 0 auto;
+        margin-bottom: 24px;
     }
 
     .page-header {
@@ -20,23 +31,65 @@
         justify-content: space-between;
         align-items: center;
         margin-bottom: 24px;
-        flex-wrap: wrap;
         gap: 16px;
+        flex-wrap: wrap;
     }
 
     .page-title {
-        font-size: 1.5rem;
+        font-size: 1.25rem;
         font-weight: 700;
-        color: #0f172a;
+        color: var(--text-dark);
+        margin: 0;
         display: flex;
         align-items: center;
         gap: 10px;
     }
 
-    .header-actions {
+    .action-bar {
         display: flex;
-        gap: 12px;
         align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .btn-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        background: white;
+        color: var(--text-dark);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.95rem;
+    }
+
+    .btn-icon:hover {
+        background: #f7fafc;
+        border-color: #cbd5e0;
+    }
+
+    .btn-new {
+        background: var(--accent-color);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        transition: transform 0.2s, background 0.2s;
+        font-size: 0.9rem;
+    }
+
+    .btn-new:hover {
+        background: #5a67d8;
+        transform: translateY(-1px);
     }
 
     .branch-select-wrapper {
@@ -45,64 +98,31 @@
         gap: 8px;
     }
 
-    .form-select {
+    .branch-select {
         height: 40px;
         padding: 0 16px;
-        border: 1px solid #cbd5e1;
+        border: 1px solid #e2e8f0;
         border-radius: 8px;
-        background-color: #ffffff;
+        background-color: white;
         font-size: 0.9rem;
-        color: #334155;
+        color: var(--text-dark);
         font-weight: 500;
+        outline: none;
+        transition: all 0.2s;
     }
 
-    .btn-primary-action {
-        height: 40px;
-        padding: 0 16px;
-        background-color: #2563eb;
-        color: #ffffff;
-        border: none;
-        border-radius: 8px;
-        font-size: 0.9rem;
-        font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        cursor: pointer;
-        transition: background-color 0.15s;
+    .branch-select:focus {
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
 
-    .btn-primary-action:hover {
-        background-color: #1d4ed8;
-    }
-
-    .btn-secondary-action {
-        height: 40px;
-        padding: 0 16px;
-        background-color: #f1f5f9;
-        color: #334155;
-        border: 1px solid #cbd5e1;
-        border-radius: 8px;
-        font-size: 0.9rem;
-        font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        cursor: pointer;
-        transition: background-color 0.15s;
-    }
-
-    .btn-secondary-action:hover {
-        background-color: #e2e8f0;
-    }
-
-    /* Branch Info Card */
+    /* Summary / Info Banner matching Calisanlar card */
     .branch-info-banner {
         background: #f8fafc;
         border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 16px 20px;
-        margin-bottom: 24px;
+        border-radius: 10px;
+        padding: 14px 20px;
+        margin-bottom: 20px;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -114,7 +134,7 @@
         display: flex;
         align-items: center;
         gap: 8px;
-        font-size: 0.9rem;
+        font-size: 0.88rem;
         color: #475569;
     }
 
@@ -122,61 +142,50 @@
         color: #1e293b;
     }
 
-    /* Table Styles */
-    .card-table {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
+    /* Table styles matching Calisanlar and Avans Talepleri */
+    .table-container {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
         overflow: hidden;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        background: #ffffff;
     }
 
-    .custom-table {
+    .data-table {
         width: 100%;
         border-collapse: collapse;
-        text-align: left;
     }
 
-    .custom-table th {
-        background-color: #f8fafc;
-        padding: 12px 16px;
-        font-size: 0.8rem;
+    .data-table thead tr {
+        background: #1e293b;
+    }
+
+    .data-table th {
+        background: #1e293b;
+        color: #ffffff;
+        font-size: 0.75rem;
         font-weight: 700;
-        color: #64748b;
         text-transform: uppercase;
-        border-bottom: 1px solid #e2e8f0;
+        letter-spacing: 0.05em;
+        padding: 12px 16px;
+        text-align: left;
+        border-bottom: 2px solid #0f172a;
     }
 
-    .custom-table td {
-        padding: 14px 16px;
-        font-size: 0.9rem;
-        color: #334155;
-        border-bottom: 1px solid #f1f5f9;
+    .data-table td {
+        padding: 12px 16px;
+        color: #1e293b;
+        font-size: 0.88rem;
+        border-bottom: 1px solid #e2e8f0;
         vertical-align: middle;
     }
 
-    .custom-table tr:hover {
+    .data-table tbody tr:nth-child(even) td {
         background-color: #f8fafc;
     }
 
-    .badge-status {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 4px 10px;
-        border-radius: 999px;
-        font-size: 0.75rem;
-        font-weight: 600;
-    }
-
-    .badge-active {
-        background-color: #dcfce7;
-        color: #15803d;
-    }
-
-    .badge-passive {
-        background-color: #fee2e2;
-        color: #b91c1c;
+    .data-table tbody tr:hover td {
+        background-color: #eff6ff !important;
     }
 
     .token-cell {
@@ -186,25 +195,60 @@
         border-radius: 6px;
         font-size: 0.85rem;
         color: #0f172a;
+        letter-spacing: 0.5px;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .status-badge.active {
+        background: #dcfce7;
+        color: #15803d;
+    }
+
+    .status-badge.inactive {
+        background: #fee2e2;
+        color: #b91c1c;
     }
 
     /* Action Buttons in Table */
-    .btn-table-action {
-        background: none;
-        border: 1px solid #cbd5e1;
-        border-radius: 6px;
-        padding: 6px 10px;
-        font-size: 0.8rem;
-        font-weight: 600;
-        cursor: pointer;
+    .btn-row-action {
+        width: 32px;
+        height: 32px;
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        transition: all 0.15s;
+        justify-content: center;
+        border-radius: 6px;
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.88rem;
     }
 
-    .btn-table-action:hover {
+    .btn-row-qr {
+        background: #ebf4ff;
+        color: #3182ce;
+    }
+
+    .btn-row-qr:hover {
+        background: #bee3f8;
+    }
+
+    .btn-row-toggle {
         background: #f1f5f9;
+        color: #475569;
+    }
+
+    .btn-row-toggle:hover {
+        background: #e2e8f0;
+        color: #1e293b;
     }
 
     /* QR View Modal */
@@ -259,31 +303,30 @@
             position: absolute;
             left: 0;
             top: 0;
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
+            background: white;
+            padding: 0;
             margin: 0;
-            padding: 10mm;
-            box-sizing: border-box;
-            background: #ffffff;
         }
 
         .print-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             grid-template-rows: 1fr 1fr;
-            gap: 15mm;
-            width: 100%;
-            height: 100%;
+            width: 210mm;
+            height: 297mm;
+            box-sizing: border-box;
+            page-break-inside: avoid;
         }
 
         .print-card {
-            border: 2px dashed #94a3b8;
-            border-radius: 12px;
-            padding: 15mm 10mm;
+            border: 1px dashed #94a3b8;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: space-between;
+            justify-content: center;
+            padding: 10mm;
             text-align: center;
             box-sizing: border-box;
         }
@@ -313,18 +356,23 @@
     }
 </style>
 
-<div class="barkod-container">
+<div class="main-card">
     <!-- Header -->
     <div class="page-header">
-        <div class="page-title">
-            <i class="fas fa-qrcode" style="color: #2563eb;"></i>
-            <span>Barkod Yönetimi</span>
-        </div>
-        <div class="header-actions">
+        <h2 class="page-title">
+            <span>🔲 Barkod Yönetimi</span>
+        </h2>
+
+        <div class="action-bar">
+            <!-- Print Button (Calisan Yonetimi ile birebir ayni buton ve stil) -->
+            <button class="btn-icon" data-permission="Yazdırma Yetkisi" onclick="printA4Barcodes()" title="Yazdır (A4 4'lü Barkod Bas)">
+                <i class="fas fa-print"></i>
+            </button>
+
             <!-- Branch Selector -->
             <div class="branch-select-wrapper">
-                <label for="sube-select" style="font-size: 0.85rem; font-weight: 600; color: #475569;">Şube:</label>
-                <select id="sube-select" class="form-select" onchange="handleBranchChange()">
+                <label for="sube-select" style="font-size: 0.88rem; font-weight: 600; color: var(--text-dark);">Şube:</label>
+                <select id="sube-select" class="branch-select" onchange="handleBranchChange()">
                     {% for s in subeler %}
                     <option value="{{ s.Sube_ID }}" {% if s.Sube_ID == selected_sube_id %}selected{% endif %}>
                         {{ s.Sube_Adi }}
@@ -333,16 +381,10 @@
                 </select>
             </div>
 
-            <!-- New Barcode Button (#75) -->
-            <button type="button" class="btn-primary-action" onclick="createNewBarkod()">
+            <!-- New Barcode Button (Calisan Yonetimi Yeni Ekle butonu stili) -->
+            <button type="button" class="btn-new" onclick="createNewBarkod()">
                 <i class="fas fa-plus"></i>
                 <span>Yeni Barkod Oluştur</span>
-            </button>
-
-            <!-- A4 Print Button (#34) -->
-            <button type="button" class="btn-secondary-action" data-permission="Yazdırma Yetkisi" onclick="printA4Barcodes()">
-                <i class="fas fa-print"></i>
-                <span>A4 Barkod Bas (4'lü)</span>
             </button>
         </div>
     </div>
@@ -367,8 +409,8 @@
     </div>
 
     <!-- Barcodes Table -->
-    <div class="card-table">
-        <table class="custom-table" id="barkod-table">
+    <div class="table-container">
+        <table class="data-table" id="barkod-table">
             <thead>
                 <tr>
                     <th style="width: 80px;">ID</th>
@@ -377,7 +419,7 @@
                     <th>DURUM</th>
                     <th>OLUŞTURAN</th>
                     <th>OLUŞTURMA TARİHİ</th>
-                    <th style="text-align: right; width: 220px;">İŞLEMLER</th>
+                    <th style="text-align: right; width: 140px;">İŞLEMLER</th>
                 </tr>
             </thead>
             <tbody id="barkod-table-body">
@@ -399,9 +441,11 @@
 
         <div style="font-size: 0.8rem; font-family: monospace; background: #f1f5f9; padding: 6px 12px; border-radius: 6px; word-break: break-all; margin-bottom: 16px;" id="modal-token-text"></div>
 
-        <div style="display: flex; gap: 8px;">
-            <button type="button" class="btn-secondary-action" style="flex: 1; justify-content: center;" onclick="closeQrModal()">Kapat</button>
-            <button type="button" class="btn-primary-action" style="flex: 1; justify-content: center;" onclick="printSingleQr()">Yazdır</button>
+        <div style="display: flex; gap: 10px;">
+            <button type="button" class="btn-icon" style="flex: 1; width: auto; height: 38px; font-weight: 600;" onclick="closeQrModal()">Kapat</button>
+            <button type="button" class="btn-new" style="flex: 1; justify-content: center; height: 38px;" onclick="printSingleQr()">
+                <i class="fas fa-print"></i> Yazdır
+            </button>
         </div>
     </div>
 </div>
@@ -446,7 +490,7 @@
 
         if (sube.merkez_enlem && sube.merkez_boylam) {
             latEl.innerText = sube.merkez_enlem.toFixed(6);
-            lonEl.innerText = sube.merkez_boylam.toFixed(6);
+            lonEl.innerText = sube.merkez_enlem.toFixed(6);
             radEl.innerText = `${sube.yaricap_m || 100} metre`;
             warnEl.style.display = 'none';
         } else {
@@ -484,7 +528,7 @@
                     <td><strong>${escapeHtml(b.sube_adi)}</strong></td>
                     <td><span class="token-cell">${b.barkod_kodu}</span></td>
                     <td>
-                        <span class="badge-status ${b.aktif ? 'badge-active' : 'badge-passive'}">
+                        <span class="status-badge ${b.aktif ? 'active' : 'inactive'}">
                             <i class="fas fa-${b.aktif ? 'check-circle' : 'times-circle'}"></i>
                             ${b.aktif ? 'Aktif' : 'Pasif'}
                         </span>
@@ -492,11 +536,11 @@
                     <td>${escapeHtml(b.olusturan_adi || '-')}</td>
                     <td>${b.olusturma_zamani || '-'}</td>
                     <td style="text-align: right;">
-                        <button type="button" class="btn-table-action" onclick="viewQrModal('${b.barkod_kodu}', '${escapeHtml(b.sube_adi)}')">
-                            <i class="fas fa-qrcode"></i> Göster
+                        <button type="button" class="btn-row-action btn-row-qr" title="Karekod Göster" onclick="viewQrModal('${b.barkod_kodu}', '${escapeHtml(b.sube_adi)}')">
+                            <i class="fas fa-qrcode"></i>
                         </button>
-                        <button type="button" class="btn-table-action" onclick="toggleStatus(${b.id}, ${b.aktif})">
-                            <i class="fas fa-${b.aktif ? 'pause' : 'play'}"></i> ${b.aktif ? 'Pasif Yap' : 'Aktif Yap'}
+                        <button type="button" class="btn-row-action btn-row-toggle" title="${b.aktif ? 'Pasif Yap' : 'Aktif Yap'}" onclick="toggleStatus(${b.id}, ${b.aktif})">
+                            <i class="fas fa-${b.aktif ? 'pause' : 'play'}"></i>
                         </button>
                     </td>
                 </tr>
@@ -529,7 +573,6 @@
             }
 
             loadBarcodes();
-            // Automatically open QR view modal
             viewQrModal(data.barkod_kodu, data.sube_adi);
 
         } catch (err) {
@@ -591,7 +634,6 @@
     }
 
     function printA4Barcodes() {
-        // Collect active barcodes for this branch or use the latest ones
         const activeBarcodes = currentBarcodes.filter(b => b.aktif);
         if (activeBarcodes.length === 0) {
             alert('Yazdırılacak aktif barkod bulunamadı. Lütfen önce barkod oluşturun.');
@@ -599,7 +641,6 @@
         }
 
         const tokens = [];
-        // Repeat or fill 4 slots on A4
         for (let i = 0; i < 4; i++) {
             const b = activeBarcodes[i % activeBarcodes.length];
             tokens.push(b.barkod_kodu);
