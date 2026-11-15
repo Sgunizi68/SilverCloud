@@ -956,7 +956,7 @@ def vardiya_kayit_log_raporu():
         is_admin = True
     else:
         roles = auth_queries.get_user_roles(db_session, user.Kullanici_ID)
-        is_admin = any(r.Rol_Adi.lower() == 'admin' for r in roles)
+        is_admin = 'admin' in [r.lower() for r in roles]
 
     can_excel = is_admin or auth_queries.has_permission(db_session, user.Kullanici_ID, "Excel'e Aktarma")
     can_print = is_admin or auth_queries.has_permission(db_session, user.Kullanici_ID, "Yazdırma Yetkisi")
