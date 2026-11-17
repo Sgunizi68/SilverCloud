@@ -2922,11 +2922,22 @@ def get_vps_dashboard_data(db, sube_id, donem):
     month = donem % 100
     _, last_day = calendar.monthrange(year, month)
     
-    dates = [date(year, month, d) for d in range(1, last_day + 1)]
+    # Güncel ay veya gelecek ay kontrolü:
+    # Eğer seçili dönem günümüzün yılı ve ayı ile aynıysa (güncel ay),
+    # bugünden sonraki günleri hesaba katma ve gösterme (günün tarihine kadar sınırla).
+    today = date.today()
+    if year == today.year and month == today.month:
+        effective_days = min(today.day, last_day)
+    elif (year > today.year) or (year == today.year and month > today.month):
+        effective_days = 0
+    else:
+        effective_days = last_day
+
+    dates = [date(year, month, d) for d in range(1, effective_days + 1)]
     
     # 1. Fetch relevant records
     first_day_dt = date(year, month, 1)
-    last_day_dt = date(year, month, last_day)
+    last_day_dt = date(year, month, effective_days) if effective_days > 0 else first_day_dt
     
     calisanlar = db.query(Calisan).filter(
         Calisan.Sube_ID == sube_id,
@@ -2956,7 +2967,7 @@ def get_vps_dashboard_data(db, sube_id, donem):
     tabak_counts = []
     vps_values = []
     
-    score_data_map = {s.Secim_ID: [0] * last_day for s in secimler}
+    score_data_map = {s.Secim_ID: [0] * effective_days for s in secimler}
     
     for i, d in enumerate(dates):
         # Çalışan Sayısı
@@ -2993,14 +3004,15 @@ def get_vps_dashboard_data(db, sube_id, donem):
         vps = round(tabak / day_calisan_count, 2) if day_calisan_count > 0 else 0
         vps_values.append(vps)
         
-    # 3. Monthly Aggregates & Stats
+    # 3. Monthly Aggregates & Stats (Hesaplamalarda güncel ay ise effective_days kullanılır)
     total_calisan = sum(calisan_counts)
     total_tabak = sum(tabak_counts)
+    divisor_days = effective_days if effective_days > 0 else 1
     
     stats = {
-        'calisan_ort': round(total_calisan / last_day, 1) if last_day > 0 else 0.0,
-        'aktif_ort': round(sum(aktif_counts) / last_day, 1) if last_day > 0 else 0.0,
-        'izinli_ort': round(sum(izinli_counts) / last_day, 1) if last_day > 0 else 0.0,
+        'calisan_ort': round(total_calisan / divisor_days, 1) if effective_days > 0 else 0.0,
+        'aktif_ort': round(sum(aktif_counts) / divisor_days, 1) if effective_days > 0 else 0.0,
+        'izinli_ort': round(sum(izinli_counts) / divisor_days, 1) if effective_days > 0 else 0.0,
         'ise_giren': sum(1 for c in calisanlar if c.Sigorta_Giris >= first_day_dt and c.Sigorta_Giris <= last_day_dt),
         'isten_cikan': sum(1 for c in calisanlar if c.Sigorta_Cikis and c.Sigorta_Cikis >= first_day_dt and c.Sigorta_Cikis <= last_day_dt),
         'total_tabak': total_tabak,
@@ -3033,7 +3045,7 @@ def get_vps_dashboard_data(db, sube_id, donem):
         'stats': stats,
         'main_rows': main_rows,
         'puantaj_ozeti': puantaj_ozeti,
-        'days_in_month': last_day,
+        'days_in_month': effective_days,
         'year': year,
         'month': month
     }
