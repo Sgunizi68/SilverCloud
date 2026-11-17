@@ -7,210 +7,403 @@
 
 {% block extra_style %}
 <style>
-    .upload-container {
-        padding: 30px;
-        max-width: 1000px;
-        margin: 0 auto;
+    :root {
+        --glass-bg: rgba(255, 255, 255, 0.95);
+        --glass-border: rgba(255, 255, 255, 0.3);
+        --accent-color: #667eea;
+        --text-dark: #2d3748;
+        --text-gray: #718096;
     }
 
-    .card-glass {
-        background: rgba(255, 255, 255, 0.9);
+    .main-card {
+        background: var(--glass-bg);
         backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.4);
-        border-radius: 16px;
-        padding: 25px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        gap: 16px;
+        flex-wrap: wrap;
     }
 
     .page-title {
-        font-size: 20px;
+        font-size: 1.25rem;
         font-weight: 700;
-        color: #1e293b;
-        margin-bottom: 25px;
+        color: var(--text-dark);
+        margin: 0;
         display: flex;
         align-items: center;
         gap: 10px;
     }
 
-    .form-section {
+    .info-banner {
+        background: #eef2ff;
+        border-left: 4px solid #6366f1;
+        border-radius: 8px;
+        padding: 14px 18px;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        color: #3730a3;
+        font-size: 0.88rem;
+        flex-wrap: wrap;
+    }
+
+    .info-banner-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .info-banner i {
+        font-size: 1.2rem;
+        color: #4f46e5;
+    }
+
+    .btn-template {
+        background: white;
+        color: #4338ca;
+        border: 1px solid #c7d2fe;
+        padding: 8px 14px;
+        border-radius: 6px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+        white-space: nowrap;
+    }
+
+    .btn-template:hover {
+        background: #e0e7ff;
+        border-color: #a5b4fc;
+        transform: translateY(-1px);
+    }
+
+    .upload-form-grid {
         display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 20px;
-        margin-bottom: 25px;
+        grid-template-columns: 1fr 1.5fr auto;
+        gap: 16px;
+        align-items: flex-end;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+        margin-bottom: 24px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
     }
 
     .form-group label {
-        display: block;
-        font-size: 14px;
+        font-size: 0.85rem;
         font-weight: 600;
-        color: #475569;
-        margin-bottom: 8px;
+        color: var(--text-dark);
     }
 
     .form-control {
         width: 100%;
-        padding: 12px;
-        border: 1px solid #cbd5e1;
+        padding: 10px 14px;
         border-radius: 8px;
-        font-size: 14px;
-        transition: all 0.2s;
+        border: 1px solid #cbd5e1;
+        outline: none;
+        font-size: 0.9rem;
         background: white;
+        transition: all 0.2s;
+        box-sizing: border-box;
     }
 
     .form-control:focus {
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-        outline: none;
+        border-color: var(--accent-color);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
     }
 
-    .btn-upload {
-        background: #3b82f6;
+    .btn-new {
+        background: var(--accent-color);
         color: white;
         border: none;
-        padding: 12px 30px;
+        padding: 10px 24px;
         border-radius: 8px;
         font-weight: 600;
-        font-size: 15px;
-        cursor: pointer;
-        display: flex;
+        display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: 8px;
-        transition: all 0.2s;
-        width: fit-content;
-        margin-left: auto;
+        cursor: pointer;
+        transition: transform 0.2s, background 0.2s;
+        font-size: 0.9rem;
+        height: 42px;
+        white-space: nowrap;
     }
 
-    .btn-upload:hover {
-        background: #2563eb;
+    .btn-new:hover {
+        background: #5a67d8;
         transform: translateY(-1px);
     }
 
-    .btn-upload:disabled {
+    .btn-new:disabled {
         background: #94a3b8;
         cursor: not-allowed;
+        transform: none;
     }
 
-    .result-card {
-        margin-top: 30px;
-        padding: 20px;
-        border-radius: 12px;
+    /* Summary Banner & Cards */
+    .summary-banner {
+        background: #ffffff;
+        border: 2px solid #6366f1;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-top: 24px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.08);
         display: none;
-        border: 1px solid #e2e8f0;
     }
 
-    .result-success {
-        background: #f0fdf4;
-        border-color: #bbf7d0;
-        color: #166534;
-    }
-
-    .result-stats {
-        display: flex;
-        gap: 30px;
-        margin-top: 15px;
-    }
-
-    .stat-item {
+    .summary-banner-title {
+        background: #eef2ff;
+        border-bottom: 2px solid #c7d2fe;
+        padding: 12px 20px;
         text-align: center;
-        flex: 1;
-        background: white;
-        padding: 15px;
-        border-radius: 8px;
-        border: 1px solid rgba(0, 0, 0, 0.05);
-    }
-
-    .stat-value {
-        font-size: 24px;
+        font-size: 15px;
         font-weight: 700;
-        display: block;
+        color: #3730a3;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
     }
 
-    .stat-label {
-        font-size: 12px;
+    .summary-cards-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        background: #f8fafc;
+    }
+
+    .summary-stat-box {
+        padding: 16px;
+        text-align: center;
+        border-right: 1px solid #e2e8f0;
+    }
+
+    .summary-stat-box:last-child {
+        border-right: none;
+    }
+
+    .summary-stat-label {
+        font-size: 11px;
+        font-weight: 700;
         color: #64748b;
         text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 5px;
     }
 
-    .error-list {
+    .summary-stat-val {
+        font-size: 24px;
+        font-weight: 800;
+    }
+
+    .stat-added {
+        color: #15803d;
+    }
+
+    .stat-skipped {
+        color: #b45309;
+    }
+
+    .stat-error {
+        color: #dc2626;
+    }
+
+    /* Processed Table Container */
+    .table-container {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        background: #ffffff;
+        margin-top: 20px;
+        display: none;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .data-table thead tr {
+        background: #1e293b;
+    }
+
+    .data-table th {
+        background: #1e293b;
+        color: #ffffff;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 9px 14px;
+        text-align: left;
+        border-bottom: 2px solid #0f172a;
+    }
+
+    .data-table td {
+        padding: 8px 14px;
+        color: #1e293b;
+        font-size: 0.86rem;
+        border-bottom: 1px solid #e2e8f0;
+        vertical-align: middle;
+    }
+
+    .data-table tbody tr:nth-child(even) td {
+        background-color: #f8fafc;
+    }
+
+    .data-table tbody tr:hover td {
+        background-color: #eff6ff !important;
+    }
+
+    .error-list-container {
         margin-top: 15px;
         background: #fff1f2;
-        padding: 15px;
+        padding: 14px 18px;
         border-radius: 8px;
         border: 1px solid #fecaca;
         max-height: 200px;
         overflow-y: auto;
-        font-size: 13px;
+        font-size: 0.84rem;
         color: #b91c1c;
+        display: none;
+    }
+
+    @media (max-width: 768px) {
+        .upload-form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .summary-cards-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .summary-stat-box {
+            border-right: none;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .btn-new {
+            width: 100%;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="upload-container">
-    <div class="card-glass">
-        <h1 class="page-title">
-            <i class="fas fa-cash-register" style="color: #10b981;"></i>
-            Robotpos Gelir Yükleme
-        </h1>
+<div class="main-card">
+    <div class="page-header">
+        <h2 class="page-title">
+            <span>📊 Robotpos Gelir Yükleme</span>
+        </h2>
+    </div>
 
-        <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 rounded-r-lg">
-            <div class="flex items-center gap-3">
-                <i class="fas fa-info-circle text-blue-500"></i>
-                <div class="text-sm text-blue-700">
-                    <p class="font-bold mb-1">Dosya Formatı Bilgisi (Matris Formatı):</p>
-                    <p class="m-0">Lütfen <strong>.xlsx</strong> formatında Robotpos "Kazanç Raporu" (Matris) dosyasını yükleyin:</p>
-                    <ul class="mt-1 ml-4 list-disc">
-                        <li><strong>B Kolonu</strong>: Tarih bilgisi bulunmalıdır.</li>
-                        <li><strong>1. Satır (C ve sonrası)</strong>: Ödeme Tipleri (Nakit, Kredi Kartı, Sodexo vb.) bulunmalıdır.</li>
-                        <li><strong>Kesişim Hücreleri</strong>: İlgili tarihteki toplam tutarlar yer almalıdır.</li>
-                        <li>Dipteki toplam satırları otomatik olarak ayıklanacaktır.</li>
-                    </ul>
-                </div>
+    <!-- Info banner -->
+    <div class="info-banner">
+        <div class="info-banner-left">
+            <i class="fas fa-info-circle"></i>
+            <div>
+                Lütfen <strong>.xlsx</strong> formatında Robotpos "Kazanç Raporu" (Matris) dosyasını yükleyin.
+                <strong>B Kolonu:</strong> Tarih, <strong>1. Satır:</strong> Ödeme Tipleri (Nakit, Kredi Kartı, Multinet vb.), <strong>Kesişim:</strong> Günlük Tutarlar.
             </div>
         </div>
+        <button class="btn-template" id="downloadTemplateBtn" type="button">
+            <i class="fas fa-download"></i> Örnek Şablon İndir
+        </button>
+    </div>
 
-        <form id="uploadForm">
-            <div class="form-section">
-                <div class="form-group">
-                    <label>Şube Seçimi *</label>
-                    <select id="Sube_ID" class="form-control" required>
-                        {% for s in subeler %}
-                        <option value="{{ s.Sube_ID }}" {% if loop.first %}selected{% endif %}>{{ s.Sube_Adi }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Dosya Seçin *</label>
-                    <input type="file" id="excelFile" class="form-control" accept=".xlsx" required>
-                </div>
+    <!-- Upload Form -->
+    <form id="uploadForm">
+        <div class="upload-form-grid">
+            <div class="form-group">
+                <label for="Sube_ID">Şube Seçimi *</label>
+                <select id="Sube_ID" class="form-control" required>
+                    {% for s in subeler %}
+                    <option value="{{ s.Sube_ID }}" {% if loop.first %}selected{% endif %}>{{ s.Sube_Adi }}</option>
+                    {% endfor %}
+                </select>
             </div>
 
-            <button type="submit" class="btn-upload" id="submitBtn">
-                <i class="fas fa-upload"></i> Yükle
+            <div class="form-group">
+                <label for="excelFile">Excel Dosyası (.xlsx) *</label>
+                <input type="file" id="excelFile" class="form-control" accept=".xlsx" required>
+            </div>
+
+            <button type="submit" class="btn-new" id="submitBtn">
+                <i class="fas fa-upload"></i> Dosyayı Yükle
             </button>
-        </form>
+        </div>
+    </form>
 
-        <div id="resultCard" class="result-card result-success">
-            <h3 style="margin-top: 0; font-size: 16px;" id="resultTitle">Yükleme Tamamlandı</h3>
-            <div class="result-stats">
-                <div class="stat-item">
-                    <span class="stat-value" id="countAdded" style="color: #16a34a;">0</span>
-                    <span class="stat-label">Eklenen</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-value" id="countSkipped" style="color: #ca8a04;">0</span>
-                    <span class="stat-label">Atlanan (Mevcut)</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-value" id="countError" style="color: #dc2626;">0</span>
-                    <span class="stat-label">Hatalı / Eşleşmeyen</span>
-                </div>
+    <!-- Summary Banner & Results -->
+    <div class="summary-banner" id="resultBanner">
+        <div class="summary-banner-title">
+            <span>✅ Yükleme Sonuçları</span>
+        </div>
+        <div class="summary-cards-grid">
+            <div class="summary-stat-box">
+                <div class="summary-stat-label">Başarıyla Eklenen / Güncellenen</div>
+                <div class="summary-stat-val stat-added" id="countAdded">0 Adet</div>
             </div>
-            <div id="errorDetails" class="error-list" style="display: none;">
-                <strong>Hata Detayları:</strong>
-                <ul id="errorList" style="margin-top: 5px; list-style-type: none; padding-left: 0;"></ul>
+            <div class="summary-stat-box">
+                <div class="summary-stat-label">Atlanan (Sistemde Mevcut) Kayıtlar</div>
+                <div class="summary-stat-val stat-skipped" id="countSkipped">0 Adet</div>
+            </div>
+            <div class="summary-stat-box">
+                <div class="summary-stat-label">Hatalı / Eşleşmeyen</div>
+                <div class="summary-stat-val stat-error" id="countError">0 Adet</div>
             </div>
         </div>
+    </div>
+
+    <!-- Error list if any -->
+    <div id="errorDetails" class="error-list-container">
+        <strong><i class="fas fa-exclamation-triangle" style="margin-right: 6px;"></i> Hata Detayları:</strong>
+        <ul id="errorList" style="margin-top: 6px; list-style-type: none; padding-left: 0; margin-bottom: 0;"></ul>
+    </div>
+
+    <!-- Processed RobotPOS Income Table -->
+    <div class="table-responsive table-container" id="previewContainer">
+        <div style="padding: 12px 16px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-weight: 700; color: #1e293b; font-size: 0.92rem;">
+                <i class="fas fa-list-check" style="color: #10b981; margin-right: 6px;"></i>
+                Eklenen Robotpos Gelir Kayıtları Listesi (<span id="addedCountLabel">0</span>)
+            </span>
+        </div>
+        <table class="data-table" id="previewTable">
+            <thead>
+                <tr>
+                    <th style="width: 140px;">TARİH</th>
+                    <th>ÖDEME TİPİ</th>
+                    <th style="width: 180px; text-align: right;">GELİR TUTARI</th>
+                </tr>
+            </thead>
+            <tbody id="previewTbody">
+            </tbody>
+        </table>
     </div>
 </div>
 {% endblock %}
@@ -231,23 +424,19 @@
             }
         }
         
-        // Clean and detect format
         const cleanStr = String(dateStr).trim();
         const parts = cleanStr.split(/[-./ ]/);
         
         if (parts.length >= 3) {
-            let day, month, year;
-            // Simplified logic: assume DD.MM.YYYY
-            day = parts[0];
-            month = parts[1];
-            year = parts[2];
+            let day = parts[0];
+            let month = parts[1];
+            let year = parts[2];
             
-            if (day.length === 4) { // YYYY-MM-DD format
+            if (day.length === 4) { // YYYY-MM-DD
                 year = parts[0];
                 month = parts[1];
                 day = parts[2];
             }
-            
             if (year.length === 4) {
                 return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
             }
@@ -265,6 +454,26 @@
         return 0;
     };
 
+    function formatTR(num) {
+        return (num || 0).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    // Download sample template (Robotpos Matrix Format)
+    document.getElementById('downloadTemplateBtn').addEventListener('click', () => {
+        const matrixData = [
+            ["Şube", "Tarih", "Nakit", "Kredi Kartı", "Yemek Çeki Sodexo", "Multinet", "Metropol"],
+            ["Brandium", "01.02.2026", 1540.00, 8920.50, 650.00, 480.00, 310.00],
+            ["Brandium", "02.02.2026", 1820.00, 9450.00, 720.00, 520.00, 290.00]
+        ];
+        const ws = XLSX.utils.aoa_to_sheet(matrixData);
+        ws['!cols'] = [
+            { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 20 }, { wch: 14 }, { wch: 14 }
+        ];
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Kazanç Raporu");
+        XLSX.writeFile(wb, "Robotpos_Gelir_Sablon.xlsx");
+    });
+
     document.getElementById('uploadForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const subeId = document.getElementById('Sube_ID').value;
@@ -275,10 +484,16 @@
             showToast('Lütfen şube seçin.', 'error');
             return;
         }
-        if (!fileInput.files[0]) return;
+        if (!fileInput.files[0]) {
+            showToast('Lütfen bir Excel dosyası seçin.', 'error');
+            return;
+        }
 
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Dosya Okunuyor...';
+        document.getElementById('resultBanner').style.display = 'none';
+        document.getElementById('previewContainer').style.display = 'none';
+        document.getElementById('errorDetails').style.display = 'none';
 
         const reader = new FileReader();
         reader.onload = async (event) => {
@@ -308,7 +523,7 @@
                 if (rows.length < 2) {
                     showToast('Dosya beklenen formatta değil (en az 2 satır olmalı).', 'error');
                     submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
+                    submitBtn.innerHTML = '<i class="fas fa-upload"></i> Dosyayı Yükle';
                     return;
                 }
 
@@ -341,6 +556,7 @@
                         
                         if (value > 0) {
                             records.push({
+                                _index: records.length,
                                 Tarih: formattedDate,
                                 Tutar: value,
                                 Odeme_Tipi: label,
@@ -355,7 +571,7 @@
                 if (records.length === 0) {
                     showToast('Yüklenecek geçerli satır bulunamadı.', 'error');
                     submitBtn.disabled = false;
-                    submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
+                    submitBtn.innerHTML = '<i class="fas fa-upload"></i> Dosyayı Yükle';
                     return;
                 }
 
@@ -366,10 +582,11 @@
                 let skipped = 0;
                 let errorCount = 0;
                 let allErrors = [];
+                const successfullyAddedList = [];
 
                 for (let i = 0; i < totalChunks; i++) {
                     const chunk = records.slice(i * chunkSize, (i + 1) * chunkSize);
-                    submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> İşleniyor... (${i + 1}/${totalChunks})`;
+                    submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Yükleniyor... (${i + 1}/${totalChunks})`;
                     
                     const response = await fetch('/api/v1/robotpos-gelir/bulk', {
                         method: 'POST',
@@ -384,6 +601,13 @@
                         skipped += resData.skipped || 0;
                         errorCount += resData.error_count || 0;
                         if (resData.errors) allErrors = allErrors.concat(resData.errors);
+
+                        const addedIndices = new Set(resData.added_indices || []);
+                        chunk.forEach(item => {
+                            if (addedIndices.has(item._index)) {
+                                successfullyAddedList.push(item);
+                            }
+                        });
                     } else {
                         showToast(`Paket ${i+1} yüklenirken hata oluştu.`, 'error');
                         break;
@@ -391,9 +615,9 @@
                 }
 
                 // Show totals
-                document.getElementById('countAdded').innerText = added;
-                document.getElementById('countSkipped').innerText = skipped;
-                document.getElementById('countError').innerText = errorCount;
+                document.getElementById('countAdded').innerText = `${added} Adet`;
+                document.getElementById('countSkipped').innerText = `${skipped} Adet`;
+                document.getElementById('countError').innerText = `${errorCount} Adet`;
                 
                 if (allErrors.length > 0) {
                     const errorList = document.getElementById('errorList');
@@ -413,15 +637,42 @@
                     document.getElementById('errorDetails').style.display = 'none';
                 }
 
-                document.getElementById('resultCard').style.display = 'block';
-                showToast('Yükleme işlemi tamamlandı.');
+                document.getElementById('resultBanner').style.display = 'block';
+
+                // Fill Table
+                const tbody = document.getElementById('previewTbody');
+                if (successfullyAddedList.length > 0) {
+                    tbody.innerHTML = successfullyAddedList.map(e => `
+                        <tr>
+                            <td style="color: #64748b; font-weight: 500;">${e.Tarih || '-'}</td>
+                            <td style="font-weight: 600; color: #1e293b;">${e.Odeme_Tipi || '-'}</td>
+                            <td style="text-align: right; color: #15803d; font-weight: 700;">
+                                ${formatTR(e.Tutar)} ₺
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="3" style="text-align: center; color: #64748b; padding: 24px;">
+                                <i class="fas fa-info-circle" style="margin-right: 6px;"></i>
+                                Yeni eklenen veya güncellenen kayıt bulunamadı (Tüm kayıtlar sistemde zaten mevcuttu).
+                            </td>
+                        </tr>
+                    `;
+                }
+
+                document.getElementById('addedCountLabel').innerText = `${successfullyAddedList.length} Kayıt`;
+                document.getElementById('previewContainer').style.display = 'block';
+
+                showToast(`İşlem tamamlandı. Eklenen/Güncellenen: ${added}, Atlanan: ${skipped}`);
 
             } catch (err) {
                 console.error(err);
                 showToast('Dosya işleme hatası: ' + err.message, 'error');
             } finally {
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-upload"></i> Yükle';
+                submitBtn.innerHTML = '<i class="fas fa-upload"></i> Dosyayı Yükle';
             }
         };
         reader.readAsArrayBuffer(fileInput.files[0]);

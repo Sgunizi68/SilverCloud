@@ -2300,6 +2300,7 @@ def bulk_robotpos_gelir_route():
                 tutar = float(rec['Tutar'])
                 
                 processed_records.append({
+                    '_index': rec.get('_index'),
                     'Tarih': tarih,
                     'Tutar': tutar,
                     'Odeme_Tipi': odeme_tipi_raw,
@@ -2312,12 +2313,13 @@ def bulk_robotpos_gelir_route():
                 errors.append(f"Satır {idx+1}: Hata - {str(e)}")
         
         # 3. Bulk Insert with Duplicate Control
-        added, skipped = ref_queries.bulk_upsert_robotpos_gelir(db, processed_records)
+        added, skipped, added_indices = ref_queries.bulk_upsert_robotpos_gelir(db, processed_records)
         
         return jsonify({
             "status": "success",
             "added": added,
             "skipped": skipped,
+            "added_indices": added_indices,
             "error_count": len(errors),
             "errors": errors[:50] # Limit error feedback
         }), 200

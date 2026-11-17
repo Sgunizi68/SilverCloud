@@ -951,11 +951,12 @@ def get_gelir_referanslar_for_mapping(db: Session) -> List[RobotposGelirReferans
 def bulk_upsert_robotpos_gelir(db: Session, records: List[dict]) -> tuple:
     """
     Insert or update RobotPOS income records with duplicate control.
-    Returns (added_count, skipped_count)
+    Returns (added_count, skipped_count, added_indices)
     """
     from decimal import Decimal
     added = 0
     skipped = 0
+    added_indices = []
     
     for rec in records:
         # Check for existing by unique keys (excluding Tutar)
@@ -974,6 +975,8 @@ def bulk_upsert_robotpos_gelir(db: Session, records: List[dict]) -> tuple:
                 existing.Tutar = new_tutar
                 existing.Kategori_ID = rec['Kategori_ID'] # Update mapping if changed
                 added += 1
+                if rec.get('_index') is not None:
+                    added_indices.append(rec['_index'])
             else:
                 skipped += 1
             continue
@@ -989,6 +992,8 @@ def bulk_upsert_robotpos_gelir(db: Session, records: List[dict]) -> tuple:
         )
         db.add(new_rec)
         added += 1
+        if rec.get('_index') is not None:
+            added_indices.append(rec['_index'])
         
     db.commit()
-    return added, skipped
+    return added, skipped, added_indices
