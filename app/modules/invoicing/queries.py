@@ -1105,10 +1105,11 @@ def create_pos_hareketi_bulk(
     """
     Bulk create POS transactions.
     pos_list should be a list of dicts with POSHareketleri fields.
-    Returns counts of added and skipped records.
+    Returns counts of added and skipped records, plus added_indices.
     """
     added = 0
     skipped = 0
+    added_indices = []
     
     for data in pos_list:
         try:
@@ -1158,6 +1159,8 @@ def create_pos_hareketi_bulk(
             )
             db.add(new_hareketi)
             added += 1
+            if data.get("_index") is not None:
+                added_indices.append(data["_index"])
             
         except Exception as e:
             print(f"Error skipping POS row: {e}")
@@ -1165,7 +1168,7 @@ def create_pos_hareketi_bulk(
             continue
             
     db.commit()
-    return {"added": added, "skipped": skipped}
+    return {"added": added, "skipped": skipped, "added_indices": added_indices}
 
 # ============================================================================
 # DIGER HARCAMA (OTHER EXPENSES) QUERIES
