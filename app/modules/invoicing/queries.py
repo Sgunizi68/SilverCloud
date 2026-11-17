@@ -1330,6 +1330,7 @@ def update_tabak_sayisi_bulk(db: Session, sube_id: int, data_list: List[dict]) -
     """
     updated_count = 0
     not_found_count = 0
+    updated_indices = []
     errors = []
 
     for index, item in enumerate(data_list):
@@ -1354,6 +1355,8 @@ def update_tabak_sayisi_bulk(db: Session, sube_id: int, data_list: List[dict]) -
             if record:
                 record.Tabak_Sayisi = int(tabak_sayisi)
                 updated_count += 1
+                if item.get('_index') is not None:
+                    updated_indices.append(item['_index'])
             else:
                 # In SilverCloud, if record doesn't exist, we skip it
                 # as GelirEkstra records are usually created by robotpos daily sync.
@@ -1371,6 +1374,7 @@ def update_tabak_sayisi_bulk(db: Session, sube_id: int, data_list: List[dict]) -
     return {
         "updated_records": updated_count,
         "records_not_found": not_found_count,
+        "updated_indices": updated_indices,
         "errors": errors
     }
 
