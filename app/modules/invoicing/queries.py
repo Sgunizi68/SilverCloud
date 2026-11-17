@@ -2531,6 +2531,19 @@ def get_yemek_ceki_kontrol_dashboard_data(db: Session, sube_id: int, donem: int)
         )
     )
     all_cekler = db.scalars(stmt_all_cekler).all()
+
+    # Genişletilmiş çek listesi: dönem dışı ama yakın periyotta (±45 gün) olan çekleri de al.
+    # Bu liste yalnızca çapraz dönem ödeme eşleştirmesi için kullanılır.
+    _extended_window = timedelta(days=45)
+    stmt_all_cekler_ext = select(YemekCeki).where(
+        and_(
+            YemekCeki.Sube_ID == sube_id,
+            YemekCeki.Kategori_ID.in_(kat_ids),
+            YemekCeki.Son_Tarih >= period_start - _extended_window,
+            YemekCeki.Son_Tarih <= period_end + _extended_window
+        )
+    )
+    all_cekler_extended = db.scalars(stmt_all_cekler_ext).all()
     
     if not all_cekler and not kategoriler:
         return {'results': [], 'totals': {}, 'stats': {}}
@@ -2539,6 +2552,10 @@ def get_yemek_ceki_kontrol_dashboard_data(db: Session, sube_id: int, donem: int)
     min_date = period_start
     max_date = period_end
     for c in all_cekler:
+        if c.Ilk_Tarih < min_date: min_date = c.Ilk_Tarih
+        if c.Son_Tarih > max_date: max_date = c.Son_Tarih
+    # Genişletilmiş çekler de tarih aralığını etkileyebilir (çapraz dönem için)
+    for c in all_cekler_extended:
         if c.Ilk_Tarih < min_date: min_date = c.Ilk_Tarih
         if c.Son_Tarih > max_date: max_date = c.Son_Tarih
 
@@ -2615,6 +2632,9 @@ def get_yemek_ceki_kontrol_dashboard_data(db: Session, sube_id: int, donem: int)
 
         # 1c. Cekler for this specific category
         cekler = [c for c in all_cekler if c.Kategori_ID == kat.Kategori_ID]
+
+        # Genişletilmiş çek listesi: çapraz dönem eşleştirmesi için kullanılır
+        cekler_extended = [c for c in all_cekler_extended if c.Kategori_ID == kat.Kategori_ID]
 
         cek_rows = []
         grup_donem_tutar_total = Decimal('0')
@@ -2699,15 +2719,17 @@ def get_yemek_ceki_kontrol_dashboard_data(db: Session, sube_id: int, donem: int)
                                 proportional_share = best_group_odeme.Tutar - other_shares
                             odeme_info = {'tarih': best_group_odeme.Tarih, 'tutar': proportional_share}
 
-                    # If not matched yet, check candidate partner checks in the same category within +/- 3 days (invoice date or check date)
+                    # If not matched yet, check candidate partner checks in the same category.
+                    # Use cekler_extended (±45 days) so cross-period combined payments are detected.
+                    # Son_Tarih within ±15 days covers weekly-staggered Multinet/similar checks.
                     if not odeme_info:
-                        for other_c in cekler:
+                        for other_c in cekler_extended:
                             if other_c.ID == cek.ID:
                                 continue
-                            
-                            # Check date closeness: invoice dates within 3 days OR Son_Tarih within 3 days
+
+                            # Check date closeness: Son_Tarih within 15 days OR invoice dates within 3 days
                             is_close_date = False
-                            if abs((other_c.Son_Tarih - cek.Son_Tarih).days) <= 3:
+                            if abs((other_c.Son_Tarih - cek.Son_Tarih).days) <= 15:
                                 is_close_date = True
                             elif fat_match:
                                 # find other check's invoice
