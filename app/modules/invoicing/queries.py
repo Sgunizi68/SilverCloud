@@ -2970,12 +2970,18 @@ def get_vps_dashboard_data(db, sube_id, donem):
     score_data_map = {s.Secim_ID: [0] * effective_days for s in secimler}
     
     for i, d in enumerate(dates):
-        # Çalışan Sayısı
-        day_calisan_count = sum(1 for c in calisanlar if c.Sigorta_Giris <= d and (c.Sigorta_Cikis == None or c.Sigorta_Cikis >= d))
-        calisan_counts.append(day_calisan_count)
-        
         # Daily Puantaj Processing
         day_puantaj = [p for p in puantaj_records if p.Tarih == d]
+        cikis_tcs_today = {p.TC_No for p in day_puantaj if p.Secim_ID == 5}
+
+        # Çalışan Sayısı ('Çıkış' olan günde veya Sigorta_Cikis tarihinde kişi sayılmaz)
+        day_calisan_count = sum(
+            1 for c in calisanlar 
+            if c.Sigorta_Giris <= d 
+            and (c.Sigorta_Cikis == None or c.Sigorta_Cikis > d)
+            and (c.TC_No not in cikis_tcs_today)
+        )
+        calisan_counts.append(day_calisan_count)
         
         day_aktif = 0
         day_izinli = 0
@@ -2986,7 +2992,7 @@ def get_vps_dashboard_data(db, sube_id, donem):
             if s:
                 if 'Çalışma' in s.Secim:
                     day_aktif += 1
-                if 'İzin' in s.Secim or 'Rapor' in s.Secim:
+                if s.Secim == 'Haftalık İzninde Çalışma' or s.Secim_ID == 9:
                     day_izinli += 1
                 
                 day_puantaj_gunu += Decimal(str(s.Degeri))
