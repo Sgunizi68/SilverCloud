@@ -250,6 +250,26 @@
         color: #64748b;
     }
 
+    .vardiya-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .vardiya-badge.yes {
+        background: #fef3c7;
+        color: #b45309;
+    }
+
+    .vardiya-badge.no {
+        background: #f1f5f9;
+        color: #64748b;
+    }
+
     .color-swatch {
         display: inline-flex;
         align-items: center;
@@ -298,7 +318,8 @@
             </button>
 
             <!-- Mail Button -->
-            <button class="btn-icon" data-permission="Mail Gönder" onclick="openSecimlerReportMail()" title="Mail Gönder" style="color: #3b82f6;">
+            <button class="btn-icon" data-permission="Mail Gönder" onclick="openSecimlerReportMail()"
+                title="Mail Gönder" style="color: #3b82f6;">
                 <i class="fas fa-envelope"></i>
             </button>
 
@@ -332,13 +353,16 @@
                     <th style="width: 140px; text-align: center;">DEĞERİ</th>
                     <th style="width: 220px;">RENK</th>
                     <th style="width: 110px; text-align: center;">PLANLI</th>
+                    <th style="width: 120px; text-align: center;">VARDİYA KAYDI</th>
                     <th style="width: 110px; text-align: center;">DURUM</th>
                     <th style="width: 90px; text-align: center;">İŞLEMLER</th>
                 </tr>
             </thead>
             <tbody>
                 {% for secim in secimler %}
-                <tr data-id="{{ secim.Secim_ID }}" data-secim="{{ secim.Secim | lower }}" data-renk="{{ secim.Renk_Kodu | lower }}" data-aktif="{{ 'true' if secim.Aktif_Pasif else 'false' }}">
+                <tr data-id="{{ secim.Secim_ID }}" data-secim="{{ secim.Secim | lower }}"
+                    data-renk="{{ secim.Renk_Kodu | lower }}"
+                    data-aktif="{{ 'true' if secim.Aktif_Pasif else 'false' }}">
                     <td style="font-family: monospace; font-weight: 600; color: #64748b;">#{{ secim.Secim_ID }}</td>
                     <td>
                         <span class="secim-badge" style="color: {{ secim.Renk_Kodu }};">
@@ -363,6 +387,13 @@
                         {% endif %}
                     </td>
                     <td style="text-align: center;">
+                        {% if secim.Vardiya_Kaydi %}
+                        <span class="vardiya-badge yes"><i class="fas fa-clock"></i> Vardiya</span>
+                        {% else %}
+                        <span class="vardiya-badge no"><i class="fas fa-minus-circle"></i> Hayır</span>
+                        {% endif %}
+                    </td>
+                    <td style="text-align: center;">
                         {% if secim.Aktif_Pasif %}
                         <span class="status-badge active"><i class="fas fa-check-circle"></i> Aktif</span>
                         {% else %}
@@ -378,8 +409,9 @@
                 </tr>
                 {% else %}
                 <tr class="no-data-row">
-                    <td colspan="7" style="text-align: center; padding: 40px; color: #94a3b8;">
-                        <i class="fas fa-clipboard-list" style="font-size: 32px; display: block; margin-bottom: 12px; opacity: 0.5;"></i>
+                    <td colspan="8" style="text-align: center; padding: 40px; color: #94a3b8;">
+                        <i class="fas fa-clipboard-list"
+                            style="font-size: 32px; display: block; margin-bottom: 12px; opacity: 0.5;"></i>
                         Kayıtlı seçim bulunamadı.
                     </td>
                 </tr>
@@ -447,14 +479,18 @@
                         </div>
                     </div>
                 </div>
-                <div style="display: flex; gap: 24px; align-items: center; margin-bottom: 16px;">
+                <div style="display: flex; gap: 24px; align-items: center; margin-bottom: 16px; flex-wrap: wrap;">
                     <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; user-select: none;">
                         <input type="checkbox" name="Aktif_Pasif" checked style="width: 16px; height: 16px;">
                         <span>Aktif Seçim</span>
                     </label>
                     <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; user-select: none;">
                         <input type="checkbox" name="Planli" style="width: 16px; height: 16px;">
-                        <span>Planlı (Vardiya Planında Seçilebilir)</span>
+                        <span>Planlı</span>
+                    </label>
+                    <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; user-select: none;">
+                        <input type="checkbox" name="Vardiya_Kaydi" style="width: 16px; height: 16px;">
+                        <span>Vardiya Kaydı</span>
                     </label>
                 </div>
                 <div class="modal-footer">
@@ -495,14 +531,18 @@
                         </div>
                     </div>
                 </div>
-                <div style="display: flex; gap: 24px; align-items: center; margin-bottom: 16px;">
+                <div style="display: flex; gap: 24px; align-items: center; margin-bottom: 16px; flex-wrap: wrap;">
                     <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; user-select: none;">
                         <input type="checkbox" name="Aktif_Pasif" ${secim.Aktif_Pasif ? 'checked' : ''} style="width: 16px; height: 16px;">
                         <span>Aktif Seçim</span>
                     </label>
                     <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; user-select: none;">
                         <input type="checkbox" name="Planli" ${secim.Planli ? 'checked' : ''} style="width: 16px; height: 16px;">
-                        <span>Planlı (Vardiya Planında Seçilebilir)</span>
+                        <span>Planlı</span>
+                    </label>
+                    <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; user-select: none;">
+                        <input type="checkbox" name="Vardiya_Kaydi" ${secim.Vardiya_Kaydi ? 'checked' : ''} style="width: 16px; height: 16px;">
+                        <span>Vardiya Kaydı</span>
                     </label>
                 </div>
                 <div class="modal-footer">
@@ -529,7 +569,8 @@
             Degeri: parseFloat(formEl.Degeri.value),
             Renk_Kodu: formEl.Renk_Kodu.value,
             Aktif_Pasif: formEl.Aktif_Pasif.checked,
-            Planli: formEl.Planli.checked
+            Planli: formEl.Planli.checked,
+            Vardiya_Kaydi: formEl.Vardiya_Kaydi.checked
         };
 
         try {
@@ -560,7 +601,8 @@
             Degeri: parseFloat(formEl.Degeri.value),
             Renk_Kodu: formEl.Renk_Kodu.value,
             Aktif_Pasif: formEl.Aktif_Pasif.checked,
-            Planli: formEl.Planli.checked
+            Planli: formEl.Planli.checked,
+            Vardiya_Kaydi: formEl.Vardiya_Kaydi.checked
         };
 
         try {
@@ -597,6 +639,10 @@
             const planliColor = s.Planli ? '#4338ca' : '#64748b';
             const planliText = s.Planli ? 'Planlı' : 'Hayır';
 
+            const vardiyaBg = s.Vardiya_Kaydi ? '#fef3c7' : '#f1f5f9';
+            const vardiyaColor = s.Vardiya_Kaydi ? '#b45309' : '#64748b';
+            const vardiyaText = s.Vardiya_Kaydi ? 'Vardiya' : 'Hayır';
+
             rowsHtml += `
                 <tr>
                     <td style="padding: 10px 14px; font-family: monospace; color: #64748b; border-bottom: 1px solid #e2e8f0;">#${s.Secim_ID}</td>
@@ -609,6 +655,11 @@
                     <td align="center" style="padding: 10px 14px; text-align: center; border-bottom: 1px solid #e2e8f0;">
                         <span style="display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; background: ${planliBg}; color: ${planliColor};">
                             ${planliText}
+                        </span>
+                    </td>
+                    <td align="center" style="padding: 10px 14px; text-align: center; border-bottom: 1px solid #e2e8f0;">
+                        <span style="display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; background: ${vardiyaBg}; color: ${vardiyaColor};">
+                            ${vardiyaText}
                         </span>
                     </td>
                     <td align="center" style="padding: 10px 14px; text-align: center; border-bottom: 1px solid #e2e8f0;">
@@ -646,6 +697,7 @@
                             <th align="center" style="color: #ffffff; padding: 12px 14px; font-size: 12px; font-weight: 700; text-transform: uppercase; width: 100px; text-align: center;">DEĞERİ</th>
                             <th align="left" style="color: #ffffff; padding: 12px 14px; font-size: 12px; font-weight: 700; text-transform: uppercase; width: 140px;">RENK</th>
                             <th align="center" style="color: #ffffff; padding: 12px 14px; font-size: 12px; font-weight: 700; text-transform: uppercase; width: 100px; text-align: center;">PLANLI</th>
+                            <th align="center" style="color: #ffffff; padding: 12px 14px; font-size: 12px; font-weight: 700; text-transform: uppercase; width: 110px; text-align: center;">VARDİYA KAYDI</th>
                             <th align="center" style="color: #ffffff; padding: 12px 14px; font-size: 12px; font-weight: 700; text-transform: uppercase; width: 100px; text-align: center;">DURUM</th>
                         </tr>
                     </thead>
@@ -664,7 +716,7 @@
         const totalCount = SECIMLER_DATA.length;
         const activeCount = SECIMLER_DATA.filter(s => s.Aktif_Pasif).length;
 
-        const headers = ['ID', 'SEÇİM ADI', 'DEĞERİ', 'RENK KODU', 'PLANLI', 'DURUM'];
+        const headers = ['ID', 'SEÇİM ADI', 'DEĞERİ', 'RENK KODU', 'PLANLI', 'VARDİYA KAYDI', 'DURUM'];
         const sheetData = [
             ['PUANTAJ SEÇİM YÖNETİMİ RAPORU'],
             ['Toplam Seçim:', totalCount],
@@ -681,6 +733,7 @@
                 parseFloat(s.Degeri) || 0,
                 s.Renk_Kodu,
                 s.Planli ? 'Planlı' : 'Hayır',
+                s.Vardiya_Kaydi ? 'Vardiya' : 'Hayır',
                 s.Aktif_Pasif ? 'Aktif' : 'Pasif'
             ]);
         });
@@ -693,6 +746,7 @@
             { wch: 12 }, // DEĞERİ
             { wch: 16 }, // RENK KODU
             { wch: 12 }, // PLANLI
+            { wch: 15 }, // VARDİYA KAYDI
             { wch: 14 }  // DURUM
         ];
 

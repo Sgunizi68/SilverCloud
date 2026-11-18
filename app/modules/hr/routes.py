@@ -268,6 +268,7 @@ def list_puantaj_secimler():
                 "Renk_Kodu": s.Renk_Kodu,
                 "Aktif_Pasif": s.Aktif_Pasif,
                 "Planli": getattr(s, "Planli", False),
+                "Vardiya_Kaydi": getattr(s, "Vardiya_Kaydi", False),
             }
             for s in secimler
         ]
@@ -296,6 +297,7 @@ def get_puantaj_secim(secim_id):
             "Renk_Kodu": secim.Renk_Kodu,
             "Aktif_Pasif": secim.Aktif_Pasif,
             "Planli": getattr(secim, "Planli", False),
+            "Vardiya_Kaydi": getattr(secim, "Vardiya_Kaydi", False),
         }
         
         return jsonify(result), 200
@@ -319,7 +321,8 @@ def create_puantaj_secim():
             degeri=float(data["Degeri"]),
             renk_kodu=data["Renk_Kodu"],
             aktif_pasif=data.get("Aktif_Pasif", True),
-            planli=bool(data.get("Planli", False))
+            planli=bool(data.get("Planli", False)),
+            vardiya_kaydi=bool(data.get("Vardiya_Kaydi", False))
         )
         db.close()
         
@@ -330,6 +333,7 @@ def create_puantaj_secim():
             "Renk_Kodu": new_secim.Renk_Kodu,
             "Aktif_Pasif": new_secim.Aktif_Pasif,
             "Planli": getattr(new_secim, "Planli", False),
+            "Vardiya_Kaydi": getattr(new_secim, "Vardiya_Kaydi", False),
         }
         
         return jsonify(result), 201
@@ -352,7 +356,8 @@ def update_puantaj_secim(secim_id):
             degeri=float(data.get("Degeri")) if "Degeri" in data else None,
             renk_kodu=data.get("Renk_Kodu"),
             aktif_pasif=data.get("Aktif_Pasif"),
-            planli=bool(data.get("Planli")) if "Planli" in data else None
+            planli=bool(data.get("Planli")) if "Planli" in data else None,
+            vardiya_kaydi=bool(data.get("Vardiya_Kaydi")) if "Vardiya_Kaydi" in data else None
         )
         db.close()
         
@@ -366,6 +371,7 @@ def update_puantaj_secim(secim_id):
             "Renk_Kodu": updated_secim.Renk_Kodu,
             "Aktif_Pasif": updated_secim.Aktif_Pasif,
             "Planli": getattr(updated_secim, "Planli", False),
+            "Vardiya_Kaydi": getattr(updated_secim, "Vardiya_Kaydi", False),
         }
         
         return jsonify(result), 200

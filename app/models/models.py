@@ -655,6 +655,7 @@ class PuantajSecimi(db.Model):
     Degeri = Column(DECIMAL(3, 1), nullable=False)
     Renk_Kodu = Column(String(15), nullable=False)
     Planli = Column("Planlı", Boolean, default=False, nullable=False)
+    Vardiya_Kaydi = Column("Vardiya_Kaydı", Boolean, default=False, nullable=False)
     Aktif_Pasif = Column(Boolean, default=True, index=True)
 
     # Relationships

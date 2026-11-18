@@ -133,6 +133,7 @@ def puantaj_secim_yonetimi():
             "Renk_Kodu": s.Renk_Kodu or "#cccccc",
             "Aktif_Pasif": s.Aktif_Pasif,
             "Planli": getattr(s, "Planli", False),
+            "Vardiya_Kaydi": getattr(s, "Vardiya_Kaydi", False),
         }
         for s in secimler_data
     ]
