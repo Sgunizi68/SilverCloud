@@ -1,0 +1,732 @@
+{% extends "base.html" %}
+
+{% block title %}Puantaj Kontrol Ekranı - SilverCloud{% endblock %}
+
+{% block acc_calisan %}active{% endblock %}
+{% block acc_calisan_content %}open{% endblock %}
+{% block nav_puantaj_kontrol %}active{% endblock %}
+
+{% block extra_style %}
+<style>
+    .kontrol-container {
+        padding: 16px;
+    }
+
+    /* ── Header card ── */
+    .header-card {
+        background: rgba(255, 255, 255, 0.88);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        border-radius: 14px;
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
+        padding: 14px 22px;
+        margin-bottom: 18px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .header-title {
+        font-size: 17px;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .header-controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .icon-btn {
+        width: 34px;
+        height: 34px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: #64748b;
+        transition: all 0.2s;
+    }
+
+    .icon-btn:hover {
+        background: #f1f5f9;
+        color: #1e293b;
+    }
+
+    .form-select-sm {
+        padding: 6px 10px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        background: white;
+        color: #1e293b;
+        cursor: pointer;
+        outline: none;
+    }
+
+    .form-select-sm:focus {
+        border-color: #3b82f6;
+    }
+
+    /* ── Summary Stats Badges ── */
+    .stats-bar {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+    }
+
+    .stat-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 700;
+        background: white;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+        cursor: pointer;
+        user-select: none;
+        transition: all 0.15s ease;
+    }
+
+    .stat-badge:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+    }
+
+    .stat-badge.active-filter {
+        border-width: 2px;
+    }
+
+    .stat-badge.green.active-filter { border-color: #22c55e; background: #f0fdf4; }
+    .stat-badge.red.active-filter { border-color: #ef4444; background: #fef2f2; }
+    .stat-badge.yellow.active-filter { border-color: #eab308; background: #fefce8; }
+    .stat-badge.gray.active-filter { border-color: #94a3b8; background: #f8fafc; }
+
+    /* ── Grid wrapper ── */
+    .grid-wrapper {
+        background: white;
+        border-radius: 14px;
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.06);
+        overflow: auto;
+        max-height: calc(100vh - 250px);
+    }
+
+    #kontrol-table {
+        border-collapse: collapse;
+        font-size: 11px;
+        min-width: 100%;
+        white-space: nowrap;
+    }
+
+    #kontrol-table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: #f8fafc;
+        color: #64748b;
+        font-weight: 700;
+        padding: 8px 6px;
+        text-align: center;
+        border-bottom: 2px solid #e2e8f0;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+        font-size: 10px;
+    }
+
+    #kontrol-table thead th.col-calisan {
+        text-align: left;
+        padding-left: 14px;
+        min-width: 170px;
+        position: sticky;
+        left: 0;
+        z-index: 20;
+    }
+
+    /* Row employee name cell */
+    #kontrol-table td.emp-cell {
+        position: sticky;
+        left: 0;
+        background: white;
+        z-index: 5;
+        padding: 6px 14px;
+        font-weight: 600;
+        font-size: 12px;
+        color: #1e293b;
+        border-bottom: 1px solid #f1f5f9;
+        min-width: 170px;
+        border-right: 1px solid #e2e8f0;
+    }
+
+    /* Check status cell */
+    .check-cell {
+        padding: 4px 6px;
+        text-align: center;
+        cursor: pointer;
+        border-bottom: 1px solid #f1f5f9;
+        border-right: 1px solid #f8fafc;
+        min-width: 44px;
+        vertical-align: middle;
+        transition: background 0.15s ease;
+    }
+
+    .check-cell:hover {
+        background: #f1f5f9 !important;
+    }
+
+    .symbol-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        font-size: 13px;
+        line-height: 1;
+        transition: transform 0.15s ease;
+    }
+
+    .check-cell:hover .symbol-btn {
+        transform: scale(1.15);
+    }
+
+    /* Alternating row color */
+    #kontrol-table tbody tr:nth-child(even) .emp-cell,
+    #kontrol-table tbody tr:nth-child(even) .check-cell {
+        background: #fafbfd;
+    }
+
+    /* ── Legend ── */
+    .legend-card {
+        background: rgba(255, 255, 255, 0.88);
+        border-radius: 14px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+        padding: 12px 20px;
+        margin-top: 16px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px 24px;
+        align-items: center;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #374151;
+    }
+
+    /* ── Detail Modal ── */
+    .detail-section {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 12px 14px;
+        margin-bottom: 12px;
+    }
+
+    .detail-section-title {
+        font-size: 11px;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 4px 0;
+        font-size: 13px;
+        border-bottom: 1px dashed #e2e8f0;
+    }
+
+    .detail-row:last-child {
+        border-bottom: none;
+    }
+
+    .detail-label {
+        color: #64748b;
+        font-weight: 500;
+    }
+
+    .detail-val {
+        font-weight: 700;
+        color: #1e293b;
+    }
+
+    .diff-badge {
+        display: block;
+        padding: 6px 10px;
+        background: #fee2e2;
+        color: #b91c1c;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        margin-top: 4px;
+    }
+
+    .diff-badge.success {
+        background: #dcfce7;
+        color: #15803d;
+    }
+
+    .diff-badge.warning {
+        background: #fef9c3;
+        color: #854d0e;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="kontrol-container">
+
+    {# ── Header ── #}
+    <div class="header-card">
+        <h1 class="header-title">
+            <i class="fas fa-search" style="color: #6366f1;"></i>
+            Puantaj Kontrol Ekranı (Şube: {{ sube_adi }})
+        </h1>
+        <div class="header-controls">
+            <!-- Print Button -->
+            <button class="icon-btn" title="Yazdır" onclick="window.print()">
+                <i class="fas fa-print"></i>
+            </button>
+            <!-- Excel Button -->
+            <button class="icon-btn" title="Excel İndir" onclick="exportKontrolExcel()">
+                <i class="fas fa-file-excel" style="color: #10b981;"></i>
+            </button>
+            <!-- Mail Button -->
+            <button class="icon-btn" data-permission="Mail Gönder" title="Mail Gönder" onclick="openKontrolMailModal()">
+                <i class="fas fa-envelope" style="color: #3b82f6;"></i>
+            </button>
+
+            <!-- Branch Selector -->
+            <label style="font-size: 12px; font-weight: 600; color: #64748b;">Şube:</label>
+            <select class="form-select-sm" id="sube-select" onchange="changeSube(this.value)">
+                {% for s in subeler %}
+                <option value="{{ s.Sube_ID }}" {% if s.Sube_ID == current_sube_id %}selected{% endif %}>{{ s.Sube_Adi }}</option>
+                {% endfor %}
+            </select>
+
+            <!-- Period Selector -->
+            <label style="font-size: 12px; font-weight: 600; color: #64748b;">Dönem:</label>
+            <select class="form-select-sm" id="donem-select" onchange="changePeriod(this.value)">
+                {% for opt in donem_options %}
+                <option value="{{ opt.code }}" {% if opt.code == donem %}selected{% endif %}>{{ opt.label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    {# ── Stats & Status Filter ── #}
+    <div class="stats-bar">
+        <span class="stat-badge" onclick="filterStatus('all')">
+            <span>Tümü</span>
+        </span>
+        <span class="stat-badge green" onclick="filterStatus('green')">
+            <span>🟢 Uyumlu:</span>
+            <span id="stat-green">{{ total_stats.green }}</span>
+        </span>
+        <span class="stat-badge red" onclick="filterStatus('red')">
+            <span>🔴 Hatalı / Eksik:</span>
+            <span id="stat-red">{{ total_stats.red }}</span>
+        </span>
+        <span class="stat-badge yellow" onclick="filterStatus('yellow')">
+            <span>🟡 Seçim Farklı:</span>
+            <span id="stat-yellow">{{ total_stats.yellow }}</span>
+        </span>
+        <span class="stat-badge gray" onclick="filterStatus('gray')">
+            <span>⚪ Kontrol Edilemedi / Boş:</span>
+            <span id="stat-gray">{{ total_stats.gray }}</span>
+        </span>
+    </div>
+
+    {# ── Grid ── #}
+    <div class="grid-wrapper">
+        <table id="kontrol-table">
+            <thead>
+                <tr>
+                    <th class="col-calisan">ÇALIŞAN</th>
+                    {% for d in range(1, num_days + 1) %}
+                    <th>{{ d }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for emp in employees %}
+                <tr id="row-{{ emp.TC_No }}">
+                    <td class="emp-cell">{{ emp.Adi }} {{ emp.Soyadi }}</td>
+                    {% for d in range(1, num_days + 1) %}
+                    {% set tc = emp.TC_No %}
+                    <td class="check-cell" id="cell-{{ tc }}-{{ d }}"
+                        onclick="openDetailModal('{{ tc }}', '{{ emp.Adi }} {{ emp.Soyadi }}', {{ d }})">
+                        <span class="symbol-btn">⚪</span>
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="{{ num_days + 1 }}" style="text-align: center; padding: 40px; color: #94a3b8;">
+                        <i class="fas fa-users-slash" style="font-size: 28px; display: block; margin-bottom: 10px; opacity:0.4;"></i>
+                        Bu şubede kayıtlı çalışan bulunamadı.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {# ── Legend ── #}
+    <div class="legend-card">
+        <div class="legend-item">
+            <span>🟢</span>
+            <span>Uyumlu (Puantaj, Plan ve Vardiya Kayıtları Tutarlı)</span>
+        </div>
+        <div class="legend-item">
+            <span>🔴</span>
+            <span>Hatalı (Beklenen Giriş/Çıkış Yok veya Beklenmeyen Kayıt Var)</span>
+        </div>
+        <div class="legend-item">
+            <span>🟡</span>
+            <span>Farklı (Puantaj ile Vardiya Planı Seçimleri Farklı veya Biri Eksik)</span>
+        </div>
+        <div class="legend-item">
+            <span>⚪</span>
+            <span>Kontrol Edilemedi / Kayıt Yok (Sigorta dışı veya puantaj/plan girilmemiş)</span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const RESULTS_MAP = {{ results_map | safe }};
+    const EMPLOYEES = {{ employees | tojson | safe }};
+    const SUBE_ADI = {{ sube_adi | tojson }};
+    const DONEM = {{ donem }};
+    const YEAR = {{ year }};
+    const MONTH = {{ month }};
+    const NUM_DAYS = {{ num_days }};
+
+    const SYMBOLS = {
+        'green': '🟢',
+        'red': '🔴',
+        'yellow': '🟡',
+        'gray': '⚪'
+    };
+
+    let activeStatusFilter = 'all';
+
+    document.addEventListener('DOMContentLoaded', () => {
+        renderGrid();
+    });
+
+    function renderGrid() {
+        EMPLOYEES.forEach(emp => {
+            const tc = emp.TC_No;
+            const empResults = RESULTS_MAP[tc] || {};
+            for (let d = 1; d <= NUM_DAYS; d++) {
+                const cell = document.getElementById(`cell-${tc}-${d}`);
+                if (!cell) continue;
+                const info = empResults[d];
+                if (info) {
+                    const sym = SYMBOLS[info.status] || '⚪';
+                    cell.innerHTML = `<span class="symbol-btn">${sym}</span>`;
+                    cell.setAttribute('data-status', info.status);
+                    cell.title = `${d}.${MONTH}.${YEAR} - ${info.differences.join(' | ')}`;
+                }
+            }
+        });
+    }
+
+    function filterStatus(status) {
+        activeStatusFilter = status;
+
+        document.querySelectorAll('.stat-badge').forEach(b => b.classList.remove('active-filter'));
+        if (status !== 'all') {
+            const badge = document.querySelector(`.stat-badge.${status}`);
+            if (badge) badge.classList.add('active-filter');
+        }
+
+        EMPLOYEES.forEach(emp => {
+            const tc = emp.TC_No;
+            const row = document.getElementById(`row-${tc}`);
+            if (!row) return;
+
+            const empResults = RESULTS_MAP[tc] || {};
+            let hasMatchingDay = (status === 'all');
+
+            for (let d = 1; d <= NUM_DAYS; d++) {
+                const cell = document.getElementById(`cell-${tc}-${d}`);
+                if (!cell) continue;
+                const info = empResults[d];
+                const matches = (status === 'all' || (info && info.status === status));
+                if (status !== 'all') {
+                    cell.style.opacity = matches ? '1' : '0.15';
+                    if (matches) hasMatchingDay = true;
+                } else {
+                    cell.style.opacity = '1';
+                }
+            }
+
+            row.style.display = hasMatchingDay ? '' : 'none';
+        });
+    }
+
+    function openDetailModal(tc, empName, day) {
+        const info = (RESULTS_MAP[tc] || {})[day];
+        if (!info) return;
+
+        const dateStr = `${String(day).padStart(2, '0')}.${String(MONTH).padStart(2, '0')}.${YEAR}`;
+        const sym = SYMBOLS[info.status] || '⚪';
+
+        let diffHtml = '';
+        info.differences.forEach(diff => {
+            let cls = 'diff-badge';
+            if (info.status === 'green') cls += ' success';
+            else if (info.status === 'yellow') cls += ' warning';
+            diffHtml += `<span class="${cls}">${diff}</span>`;
+        });
+
+        const girisText = info.girisler.length > 0 ? info.girisler.join(', ') : 'Bulunamadı';
+        const cikisText = info.cikisler.length > 0 ? info.cikisler.join(', ') : 'Bulunamadı';
+
+        const content = `
+            <div style="font-family: inherit;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0;">
+                    <div>
+                        <div style="font-size: 15px; font-weight: 800; color: #1e293b;">${empName}</div>
+                        <div style="font-size: 12px; color: #64748b;">TC: ${tc} | Tarih: ${dateStr}</div>
+                    </div>
+                    <div style="font-size: 26px;">${sym}</div>
+                </div>
+
+                <!-- 1. Puantaj Bilgisi -->
+                <div class="detail-section">
+                    <div class="detail-section-title">1. Puantaj Kaydı</div>
+                    <div class="detail-row">
+                        <span class="detail-label">Seçim:</span>
+                        <span class="detail-val" style="color: ${info.puantaj_renk || '#1e293b'};">
+                            ${info.puantaj_secim || '<span style="color:#94a3b8; font-weight: normal;">Kayıt Yok</span>'}
+                        </span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Vardiya Kaydı Beklenir mi:</span>
+                        <span class="detail-val">${info.vardiya_kaydi_beklenir ? 'Evet (1)' : 'Hayır (0)'}</span>
+                    </div>
+                </div>
+
+                <!-- 2. Vardiya Planı Bilgisi -->
+                <div class="detail-section">
+                    <div class="detail-section-title">2. Vardiya Planı</div>
+                    <div class="detail-row">
+                        <span class="detail-label">Planlanan Seçim:</span>
+                        <span class="detail-val" style="color: ${info.plan_renk || '#1e293b'};">
+                            ${info.plan_secim || '<span style="color:#94a3b8; font-weight: normal;">Plan Yok</span>'}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- 3. Mobil Roster (Vardiya Kayıtları) -->
+                <div class="detail-section">
+                    <div class="detail-section-title">3. Mobil Roster (Gerçekleşen Kayıtlar)</div>
+                    <div class="detail-row">
+                        <span class="detail-label">Giriş Kaydı:</span>
+                        <span class="detail-val" style="color: ${info.girisler.length > 0 ? '#15803d' : '#b91c1c'};">${girisText}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Çıkış Kaydı:</span>
+                        <span class="detail-val" style="color: ${info.cikisler.length > 0 ? '#15803d' : '#b91c1c'};">${cikisText}</span>
+                    </div>
+                </div>
+
+                <!-- 4. Kontrol Değerlendirmesi -->
+                <div class="detail-section" style="background: white;">
+                    <div class="detail-section-title">Kontrol Sonucu & Açıklamalar</div>
+                    ${diffHtml}
+                </div>
+
+                <div class="modal-footer" style="margin-top: 16px; padding-top: 10px; border-top: 1px solid #e2e8f0; text-align: right;">
+                    <button type="button" class="btn btn-secondary" onclick="hideModal()">Kapat</button>
+                </div>
+            </div>
+        `;
+
+        showModal(`Puantaj Kontrol Detayı - ${dateStr}`, content);
+    }
+
+    function changePeriod(code) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('donem', code);
+        window.location.href = url.toString();
+    }
+
+    function changeSube(subeId) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('sube_id', subeId);
+        window.location.href = url.toString();
+    }
+
+    // ── Excel & Mail Raporlama ──
+    function buildKontrolReportData() {
+        const headers = [
+            'Çalışan',
+            'TC No',
+            'Şube',
+            'Tarih',
+            'Puantaj Seçimi',
+            'Vardiya Kaydı Beklenir',
+            'Vardiya Planı Seçimi',
+            'Giriş Kaydı Var mı',
+            'Giriş Saatleri',
+            'Çıkış Kaydı Var mı',
+            'Çıkış Saatleri',
+            'Kontrol Sonucu',
+            'Fark Açıklaması'
+        ];
+
+        const rows = [];
+        EMPLOYEES.forEach(emp => {
+            const tc = emp.TC_No;
+            const empResults = RESULTS_MAP[tc] || {};
+            for (let d = 1; d <= NUM_DAYS; d++) {
+                const info = empResults[d];
+                if (!info) continue;
+
+                // Status text
+                let sonucText = 'Uyumlu';
+                if (info.status === 'red') sonucText = 'Hatalı / Eksik';
+                else if (info.status === 'yellow') sonucText = 'Seçim Farklı';
+                else if (info.status === 'gray') sonucText = 'Kontrol Edilemedi';
+
+                const dateStr = `${YEAR}-${String(MONTH).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+
+                rows.push([
+                    `${emp.Adi} ${emp.Soyadi}`,
+                    tc,
+                    SUBE_ADI,
+                    dateStr,
+                    info.puantaj_secim || 'Yok',
+                    info.vardiya_kaydi_beklenir ? 'Evet (1)' : 'Hayır (0)',
+                    info.plan_secim || 'Yok',
+                    info.girisler.length > 0 ? 'Var' : 'Yok',
+                    info.girisler.join(', ') || '-',
+                    info.cikisler.length > 0 ? 'Var' : 'Yok',
+                    info.cikisler.join(', ') || '-',
+                    sonucText,
+                    info.differences.join('; ')
+                ]);
+            }
+        });
+
+        return { headers, rows };
+    }
+
+    function exportKontrolExcel() {
+        if (typeof XLSX === 'undefined') {
+            alert('Excel kütüphanesi yüklenemedi.');
+            return;
+        }
+
+        const { headers, rows } = buildKontrolReportData();
+        const sheetData = [
+            ['PUANTAJ KONTROL EKRENI RAPORU'],
+            ['Şube:', SUBE_ADI],
+            ['Dönem:', DONEM],
+            ['Rapor Tarihi:', new Date().toLocaleString('tr-TR')],
+            [],
+            headers,
+            ...rows
+        ];
+
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet(sheetData);
+
+        ws['!cols'] = [
+            { wch: 22 }, // Çalışan
+            { wch: 14 }, // TC
+            { wch: 18 }, // Şube
+            { wch: 12 }, // Tarih
+            { wch: 18 }, // Puantaj Seçimi
+            { wch: 20 }, // Vardiya Kaydı Beklenir
+            { wch: 20 }, // Vardiya Planı
+            { wch: 16 }, // Giriş Var/Yok
+            { wch: 18 }, // Giriş Saatleri
+            { wch: 16 }, // Çıkış Var/Yok
+            { wch: 18 }, // Çıkış Saatleri
+            { wch: 16 }, // Kontrol Sonucu
+            { wch: 35 }  // Fark Açıklaması
+        ];
+
+        XLSX.utils.book_append_sheet(wb, ws, 'Puantaj Kontrol');
+        XLSX.writeFile(wb, `Puantaj_Kontrol_${DONEM}_${SUBE_ADI}.xlsx`);
+    }
+
+    function openKontrolMailModal() {
+        openReportMailModal({
+            title: `Puantaj Kontrol Raporu (${SUBE_ADI} - ${DONEM})`,
+            filename: `Puantaj_Kontrol_${DONEM}.xlsx`,
+            getHtml: () => {
+                const { rows } = buildKontrolReportData();
+                let tableRows = '';
+                rows.slice(0, 100).forEach(r => {
+                    tableRows += `<tr>
+                        <td style="padding: 6px; border: 1px solid #e2e8f0;">${r[0]}</td>
+                        <td style="padding: 6px; border: 1px solid #e2e8f0;">${r[3]}</td>
+                        <td style="padding: 6px; border: 1px solid #e2e8f0;">${r[4]}</td>
+                        <td style="padding: 6px; border: 1px solid #e2e8f0;">${r[6]}</td>
+                        <td style="padding: 6px; border: 1px solid #e2e8f0;">${r[8]} / ${r[10]}</td>
+                        <td style="padding: 6px; border: 1px solid #e2e8f0;"><b>${r[11]}</b></td>
+                    </tr>`;
+                });
+                return `
+                    <div style="font-family: Arial, sans-serif;">
+                        <h3>Puantaj Kontrol Raporu - ${SUBE_ADI} (${DONEM})</h3>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                            <thead>
+                                <tr style="background: #1e293b; color: white;">
+                                    <th style="padding: 8px;">Çalışan</th>
+                                    <th style="padding: 8px;">Tarih</th>
+                                    <th style="padding: 8px;">Puantaj</th>
+                                    <th style="padding: 8px;">Vardiya Planı</th>
+                                    <th style="padding: 8px;">Giriş / Çıkış</th>
+                                    <th style="padding: 8px;">Durum</th>
+                                </tr>
+                            </thead>
+                            <tbody>${tableRows}</tbody>
+                        </table>
+                    </div>
+                `;
+            },
+            getExcelBase64: () => {
+                if (typeof XLSX === 'undefined') return null;
+                const { headers, rows } = buildKontrolReportData();
+                const sheetData = [headers, ...rows];
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.aoa_to_sheet(sheetData);
+                XLSX.utils.book_append_sheet(wb, ws, 'Puantaj Kontrol');
+                return XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+            }
+        });
+    }
+</script>
+{% endblock %}

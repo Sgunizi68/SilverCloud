@@ -582,6 +582,29 @@ def get_vardiya_planlar_for_month(
     return db.scalars(stmt).all()
 
 
+def get_vardiya_kayitlar_for_month(
+    db: Session,
+    sube_id: int,
+    year: int,
+    month: int
+) -> List[VardiyaKayit]:
+    """Get all non-deleted shift check-in/out records for a branch and month."""
+    import calendar
+    _, last_day = calendar.monthrange(year, month)
+    start_dt = datetime.combine(date(year, month, 1), datetime.min.time())
+    end_dt = datetime.combine(date(year, month, last_day), datetime.max.time())
+
+    stmt = (
+        select(VardiyaKayit)
+        .where(VardiyaKayit.sube_id == sube_id)
+        .where(VardiyaKayit.silindi == False)
+        .where(VardiyaKayit.kayit_zamani >= start_dt)
+        .where(VardiyaKayit.kayit_zamani <= end_dt)
+        .order_by(VardiyaKayit.kayit_zamani.asc())
+    )
+    return db.scalars(stmt).all()
+
+
 # ============================================================================
 # AVANS ISTEK (ADVANCE REQUEST) QUERIES
 # ============================================================================

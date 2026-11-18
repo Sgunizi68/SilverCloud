@@ -378,6 +378,289 @@ def puantaj_girisi():
         cikis_dates_json=json.dumps({emp['TC_No']: emp['Sigorta_Cikis'] for emp in employees}),
     )
 
+
+@web_hr_bp.route("/puantaj-kontrol", methods=["GET"])
+@login_required
+@permission_required("Puantaj Kontrol Ekranı Görüntüleme")
+def puantaj_kontrol():
+    """
+    Puantaj Kontrol Screen (#82).
+    Compares Puantaj, Vardiya_Plan, and vardiya_kayit records.
+    Displays consistency results with intuitive status symbols (🟢, 🔴, 🟡, ⚪).
+    Read-only audit screen.
+    """
+    import calendar
+    import json
+    from datetime import datetime as dt, date as date_type
+
+    db_session = get_db_session()
+    user = auth_queries.get_kullanici_by_id(db_session, session['user_id'])
+    if not user:
+        db_session.close()
+        return redirect(url_for('web_auth.login'))
+
+    # Admin check
+    is_admin = (user.Kullanici_Adi and user.Kullanici_Adi.lower() == 'admin')
+    if not is_admin:
+        roles = auth_queries.get_user_roles(db_session, user.Kullanici_ID)
+        is_admin = 'admin' in [r.lower() for r in roles]
+
+    # Permission #7 check: Puantaj Geçmiş Veri Erişimi
+    has_gecmis_yetki = is_admin or auth_queries.has_permission(
+        db_session, user.Kullanici_ID, "Puantaj Geçmiş Veri Erişimi"
+    )
+
+    # Branch list
+    all_suber = ref_queries.get_suber(db_session, limit=1000)
+    auth_suber = all_suber if is_admin else [
+        s for s in all_suber
+        if s.Sube_ID in auth_queries.get_user_branches(db_session, user.Kullanici_ID)
+    ]
+    subeler_list = [{"Sube_ID": s.Sube_ID, "Sube_Adi": s.Sube_Adi} for s in auth_suber]
+
+    sube_id = request.args.get('sube_id', type=int)
+    if sube_id is None and auth_suber:
+        sube_id = auth_suber[0].Sube_ID
+
+    today = dt.now().date()
+    current_year  = today.year
+    current_month = today.month
+    today_day     = today.day
+    current_donem = int(f"{str(current_year)[2:]}{current_month:02d}")
+
+    # Parse period from URL param
+    donem_raw = request.args.get('donem', None)
+    if not donem_raw:
+        donem_raw = session.get('donem', str(current_donem))
+    try:
+        donem_int = int(donem_raw)
+        year  = 2000 + (donem_int // 100)
+        month = donem_int % 100
+    except (ValueError, TypeError):
+        year      = current_year
+        month     = current_month
+        donem_int = current_donem
+
+    # Period access restrictions for non-admin without Yetki 7
+    def _prev_period(yr, mo, n):
+        mo -= n
+        while mo <= 0:
+            mo += 12
+            yr -= 1
+        return yr, mo
+
+    allowed_donems = set()
+    for i in range(3):
+        yr_tmp2, mo_tmp2 = _prev_period(current_year, current_month, i)
+        code = int(f"{str(yr_tmp2)[2:]}{mo_tmp2:02d}")
+        allowed_donems.add(code)
+
+    if not is_admin and not has_gecmis_yetki and donem_int not in allowed_donems:
+        donem_int = current_donem
+        year  = current_year
+        month = current_month
+
+    is_current_period  = (year == current_year and month == current_month)
+
+    _, num_days = calendar.monthrange(year, month)
+
+    # Load Puantaj Secimleri map
+    secimler_data = queries.get_puantaj_secimler(db_session, skip=0, limit=1000)
+    secimler_map  = {s.Secim_ID: s for s in secimler_data}
+
+    # Load active employees within period bounds
+    period_start = date_type(year, month, 1)
+    period_end = date_type(year, month, num_days)
+
+    all_employees = queries.get_calisanlar(db_session, sube_id=sube_id, aktif_pasif=None, limit=1000)
+    employee_data = []
+    for emp in all_employees:
+        if emp.Sigorta_Cikis and emp.Sigorta_Cikis < period_start:
+            continue
+        if emp.Sigorta_Giris and emp.Sigorta_Giris > period_end:
+            continue
+        employee_data.append(emp)
+
+    # 1. Puantaj records for the month
+    puantaj_records = queries.get_puantajlar_for_month(db_session, sube_id, year, month)
+    # 2. Vardiya_Plan records for the month
+    vardiya_plan_records = queries.get_vardiya_planlar_for_month(db_session, sube_id, year, month)
+    # 3. vardiya_kayit records for the month
+    vardiya_kayit_records = queries.get_vardiya_kayitlar_for_month(db_session, sube_id, year, month)
+
+    # Data structures for O(1) day-employee lookup
+    p_map = {}
+    for p in puantaj_records:
+        tc = p.TC_No
+        day = p.Tarih.day
+        p_map.setdefault(tc, {}).setdefault(day, []).append(p)
+
+    vp_map = {}
+    for vp in vardiya_plan_records:
+        tc = vp.TC_No
+        day = vp.Tarih.day
+        vp_map.setdefault(tc, {}).setdefault(day, []).append(vp)
+
+    vk_map = {}
+    for vk in vardiya_kayit_records:
+        tc = vk.calisan_id
+        day = vk.kayit_zamani.day
+        day_dict = vk_map.setdefault(tc, {}).setdefault(day, {'girisler': [], 'cikisler': []})
+        time_str = vk.kayit_zamani.strftime("%H:%M")
+        if vk.islem_tipi == 'GIRIS':
+            day_dict['girisler'].append(time_str)
+        elif vk.islem_tipi == 'CIKIS':
+            day_dict['cikisler'].append(time_str)
+
+    results_map = {}
+    total_stats = {'green': 0, 'red': 0, 'yellow': 0, 'gray': 0}
+
+    for emp in employee_data:
+        tc = emp.TC_No
+        results_map[tc] = {}
+        for d in range(1, num_days + 1):
+            day_date = date_type(year, month, d)
+
+            is_before_giris = (emp.Sigorta_Giris and day_date < emp.Sigorta_Giris)
+            is_after_cikis = (emp.Sigorta_Cikis and day_date > emp.Sigorta_Cikis)
+            is_out_of_bounds = is_before_giris or is_after_cikis
+
+            p_list = p_map.get(tc, {}).get(d, [])
+            vp_list = vp_map.get(tc, {}).get(d, [])
+            vk_info = vk_map.get(tc, {}).get(d, {'girisler': [], 'cikisler': []})
+
+            has_dup_puantaj = len(p_list) > 1
+            has_dup_plan = len(vp_list) > 1
+
+            p_rec = p_list[0] if p_list else None
+            vp_rec = vp_list[0] if vp_list else None
+
+            p_secim = secimler_map.get(p_rec.Secim_ID) if p_rec else None
+            vp_secim = secimler_map.get(vp_rec.Secim_ID) if vp_rec else None
+
+            giris_count = len(vk_info['girisler'])
+            cikis_count = len(vk_info['cikisler'])
+
+            differences = []
+            status = 'green'
+
+            if is_out_of_bounds:
+                if p_rec or vp_rec or giris_count > 0 or cikis_count > 0:
+                    status = 'red'
+                    reason = "Sigorta giriş öncesi kayıt" if is_before_giris else "Sigorta çıkış sonrası kayıt"
+                    differences.append(reason)
+                else:
+                    status = 'gray'
+                    differences.append("Sigorta kapsamı dışı")
+            else:
+                # 1. Puantaj vs Vardiya Plan
+                if p_rec and vp_rec:
+                    if p_rec.Secim_ID != vp_rec.Secim_ID:
+                        status = 'yellow'
+                        differences.append(f"Seçim Farklı (Puantaj: {p_secim.Secim if p_secim else '?'}, Plan: {vp_secim.Secim if vp_secim else '?'})")
+                elif p_rec and not vp_rec:
+                    if status != 'red':
+                        status = 'yellow'
+                    differences.append("Vardiya Planı Yok")
+                elif not p_rec and vp_rec:
+                    status = 'yellow'
+                    differences.append("Puantaj Kaydı Yok")
+                else:
+                    if giris_count > 0 or cikis_count > 0:
+                        status = 'red'
+                        differences.append("Puantaj ve Plan Yokken Beklenmeyen Vardiya Kaydı")
+                    else:
+                        status = 'gray'
+                        differences.append("Kayıt Yok")
+
+                # Duplicate warnings
+                if has_dup_puantaj:
+                    status = 'red'
+                    differences.append(f"Mükerrer Puantaj Kaydı ({len(p_list)} adet)")
+                if has_dup_plan:
+                    status = 'red'
+                    differences.append(f"Mükerrer Vardiya Planı ({len(vp_list)} adet)")
+
+                # 2. Puantaj vs Vardiya Kaydı
+                if p_secim:
+                    v_kaydi = getattr(p_secim, 'Vardiya_Kaydi', False)
+                    if v_kaydi:
+                        if giris_count == 0 and cikis_count == 0:
+                            status = 'red'
+                            differences.append("Giriş ve Çıkış Kaydı Eksik")
+                        elif giris_count > 0 and cikis_count == 0:
+                            status = 'red'
+                            differences.append("Çıkış Kaydı Eksik")
+                        elif giris_count == 0 and cikis_count > 0:
+                            status = 'red'
+                            differences.append("Giriş Kaydı Eksik")
+                    else:
+                        if giris_count > 0 or cikis_count > 0:
+                            status = 'red'
+                            differences.append("Beklenmeyen Vardiya Kaydı (Vardiya kaydı beklenmeyen puantaj seçimi)")
+
+            if not differences:
+                differences.append("Tüm kontroller uyumlu")
+
+            total_stats[status] += 1
+
+            results_map[tc][d] = {
+                "status": status,
+                "puantaj_secim": p_secim.Secim if p_secim else None,
+                "puantaj_renk": p_secim.Renk_Kodu if p_secim else "#cbd5e1",
+                "vardiya_kaydi_beklenir": getattr(p_secim, 'Vardiya_Kaydi', False) if p_secim else False,
+                "plan_secim": vp_secim.Secim if vp_secim else None,
+                "plan_renk": vp_secim.Renk_Kodu if vp_secim else "#cbd5e1",
+                "girisler": vk_info['girisler'],
+                "cikisler": vk_info['cikisler'],
+                "differences": differences,
+                "is_out_of_bounds": is_out_of_bounds
+            }
+
+    employees = [
+        {
+            "TC_No": emp.TC_No,
+            "Adi": emp.Adi,
+            "Soyadi": emp.Soyadi,
+            "Aktif_Pasif": emp.Aktif_Pasif,
+            "Sigorta_Giris": emp.Sigorta_Giris.isoformat() if emp.Sigorta_Giris else None,
+            "Sigorta_Cikis": emp.Sigorta_Cikis.isoformat() if emp.Sigorta_Cikis else None,
+        }
+        for emp in employee_data
+    ]
+
+    ay_adlari = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
+                 "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
+    donem_options = []
+    max_periods = 12 if (is_admin or has_gecmis_yetki) else 3
+    for i in range(max_periods):
+        yr2, mo2 = _prev_period(current_year, current_month, i)
+        code = int(f"{str(yr2)[2:]}{mo2:02d}")
+        donem_options.append({"code": code, "label": f"{code} - {ay_adlari[mo2]} {yr2}"})
+
+    db_session.close()
+
+    return render_template(
+        "puantaj_kontrol.html",
+        user=user,
+        subeler=subeler_list,
+        current_sube_id=sube_id,
+        employees=employees,
+        results_map=json.dumps(results_map),
+        year=year,
+        month=month,
+        num_days=num_days,
+        donem=donem_int,
+        donem_options=donem_options,
+        sube_adi=next((s["Sube_Adi"] for s in subeler_list if s["Sube_ID"] == sube_id), ""),
+        today_day=today_day,
+        is_current_period=is_current_period,
+        is_admin=is_admin,
+        has_gecmis_yetki=has_gecmis_yetki,
+        total_stats=total_stats
+    )
+
+
 @web_hr_bp.route("/avans-talepleri", methods=["GET"])
 @login_required
 @permission_required("Avans Talebi Ekranı Görüntüleme")
