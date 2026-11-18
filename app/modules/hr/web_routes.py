@@ -239,9 +239,16 @@ def puantaj_girisi():
     is_current_period  = (year == current_year and month == current_month)
     is_prev_period     = (year == current_year and month == current_month - 1) or \
                          (month == 12 and year == current_year - 1 and current_month == 1)
-    # Non-admin can edit previous period only within first 5 days of current month
+    
+    # Check Yetki 7: Puantaj Geçmiş Veri Erişimi
+    has_gecmis_yetki = is_admin or auth_queries.has_permission(
+        db_session, user.Kullanici_ID, "Puantaj Geçmiş Veri Erişimi"
+    )
+
+    # Non-admin / non-gecmis-yetki can edit previous period only within first 5 days of current month
     can_edit_period = (
         is_admin or
+        has_gecmis_yetki or
         is_current_period or
         (is_prev_period and today_day <= 5)
     )
@@ -363,6 +370,7 @@ def puantaj_girisi():
         today_day=today_day,
         is_current_period=is_current_period,
         is_admin=is_admin,
+        has_gecmis_yetki=has_gecmis_yetki,
         can_edit_period=can_edit_period,
         cikis_secim_id=cikis_secim_id or 0,
         cikis_days_json=json.dumps({emp['TC_No']: emp['Cikis_Day'] for emp in employees}),

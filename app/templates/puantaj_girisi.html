@@ -121,6 +121,44 @@
         min-width: 60px;
     }
 
+    .th-day-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 3px;
+    }
+
+    .btn-copy-vardiya {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        border-radius: 4px;
+        border: 1px solid #cbd5e1;
+        background: #ffffff;
+        color: #475569;
+        cursor: pointer;
+        font-size: 10px;
+        transition: all 0.15s ease;
+        padding: 0;
+    }
+
+    .btn-copy-vardiya:hover:not(:disabled) {
+        background: #3b82f6;
+        color: #ffffff;
+        border-color: #2563eb;
+        transform: scale(1.08);
+    }
+
+    .btn-copy-vardiya:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+        background: #f1f5f9;
+        color: #94a3b8;
+        border-color: #e2e8f0;
+    }
+
     /* Row employee name cell */
     #puantaj-table td.emp-cell {
         position: sticky;
@@ -340,7 +378,16 @@
                 <tr>
                     <th class="col-calisan">ÇALIŞAN</th>
                     {% for d in range(1, num_days + 1) %}
-                    <th>{{ d }}</th>
+                    <th>
+                        <div class="th-day-container">
+                            <span>{{ d }}</span>
+                            <button type="button" class="btn-copy-vardiya" id="btn-copy-day-{{ d }}"
+                                onclick="copyVardiyaPlanDay({{ d }})"
+                                title="{{ d }}. gün vardiya planını puantaja aktar">
+                                <i class="fas fa-file-import"></i>
+                            </button>
+                        </div>
+                    </th>
                     {% endfor %}
                     <th class="col-total">TOPLAM</th>
                 </tr>
@@ -405,6 +452,8 @@
     const TODAY_DAY = {{ today_day }};          // day-of-month for today
     const IS_CURRENT = {{ is_current_period | tojson }};   // bool
     const CAN_EDIT = {{ can_edit_period | tojson }};     // bool
+    const HAS_GECMIS_YETKI = {{ has_gecmis_yetki | tojson }}; // bool
+    const IS_ADMIN = {{ is_admin | tojson }};             // bool
     const CIKIS_SECIM_ID = {{ cikis_secim_id }};   // Secim_ID that represents "Çıkış"
 
     // Per-employee cikis day from server (populated on first Çıkış entry)
@@ -446,6 +495,28 @@
             cell.style.cursor = locked ? 'not-allowed' : 'pointer';
             cell.style.opacity = locked ? '0.4' : '1';
         });
+
+        // Also update copy-vardiya day buttons state
+        for (let d = 1; d <= NUM_DAYS; d++) {
+            const btn = document.getElementById(`btn-copy-day-${d}`);
+            if (btn) {
+                const canCopy = canCopyDay(d);
+                btn.disabled = !canCopy;
+                if (!canCopy) {
+                    btn.title = "Bu gün için puantaj kopyalama / değiştirme yetkiniz bulunmamaktadır.";
+                } else {
+                    btn.title = `${d}. gün vardiya planını puantaja aktar`;
+                }
+            }
+        }
+    }
+
+    function canCopyDay(day) {
+        if (!CAN_EDIT) return false;
+        if (IS_ADMIN || HAS_GECMIS_YETKI) return true;
+        // Non-admin without Yetki 7 cannot edit future dates in current period
+        if (IS_CURRENT && day > TODAY_DAY) return false;
+        return true;
     }
 
     // ── Business rule: determine if a cell should be locked ───────────────────
@@ -711,6 +782,65 @@
                 body: JSON.stringify({ Sigorta_Cikis: dateStr })
             });
         } catch (e) { /* Non-critical; ignore silently */ }
+    }
+
+    async function copyVardiyaPlanDay(day) {
+        if (!canCopyDay(day)) {
+            showToastMsg('Bu gün için puantaj kopyalama / düzenleme yetkiniz bulunmamaktadır.', true);
+            return;
+        }
+
+        const dateStr = `${YEAR}-${zeroPad(MONTH)}-${zeroPad(day)}`;
+        const btn = document.getElementById(`btn-copy-day-${day}`);
+        const originalHtml = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        }
+
+        try {
+            const res = await fetch('/api/v1/puantajlar/copy-vardiya-plan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ Tarih: dateStr, Sube_ID: SUBE_ID })
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                if (data.records && data.records.length > 0) {
+                    data.records.forEach(rec => {
+                        const tc = rec.TC_No;
+                        if (!puantajData[tc]) puantajData[tc] = {};
+                        puantajData[tc][day] = {
+                            Puantaj_ID: rec.Puantaj_ID,
+                            Secim_ID: rec.Secim_ID,
+                            Secim: rec.Secim,
+                            Renk_Kodu: rec.Renk_Kodu,
+                            Degeri: rec.Degeri
+                        };
+                        renderCell(tc, day, puantajData[tc][day]);
+                        updateTotal(tc);
+                        // Check if copied selection is Çıkış
+                        if (rec.Secim_ID === CIKIS_SECIM_ID) {
+                            handleCikisChange(tc, day, rec, null);
+                        }
+                    });
+                    applyCellStates();
+                    showToastMsg(data.message || `${data.copied_count} kayıt aktarıldı.`);
+                } else {
+                    showToastMsg(data.message || 'Aktarılacak uygun kayıt bulunamadı.');
+                }
+            } else {
+                showToastMsg(data.error || 'Aktarım sırasında hata oluştu.', true);
+            }
+        } catch (e) {
+            showToastMsg('Bağlantı hatası.', true);
+        } finally {
+            if (btn) {
+                btn.innerHTML = originalHtml;
+                btn.disabled = !canCopyDay(day);
+            }
+        }
     }
 
     // ── Period change ─────────────────────────────────────────────────────────

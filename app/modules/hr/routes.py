@@ -458,6 +458,64 @@ def get_puantaj(puantaj_id):
         return jsonify({"error": str(e)}), 500
 
 
+def _check_puantaj_period_permission(db, target_date):
+    """
+    Check if the user has permission to edit puantaj for target_date.
+    Admins can always edit.
+    Users with Permission 7 ("Puantaj Geçmiş Veri Erişimi") have full access.
+    Non-admins without Permission 7:
+    - Cannot enter future dates (target_date > today).
+    - Can edit current month (target_date in current month and target_date <= today).
+    - Can edit previous month ONLY within the first 5 days of current month.
+    - Cannot edit any older months.
+    """
+    from app.modules.auth import queries as auth_queries
+    user_id = session.get('user_id')
+    if not user_id:
+        return True
+
+    user = auth_queries.get_kullanici_by_id(db, user_id)
+    if not user:
+        return False
+
+    is_admin = (user.Kullanici_Adi and user.Kullanici_Adi.lower() == 'admin')
+    if not is_admin:
+        roles = auth_queries.get_user_roles(db, user.Kullanici_ID)
+        is_admin = 'admin' in [r.lower() for r in roles]
+
+    if is_admin:
+        return True
+
+    has_gecmis_yetki = auth_queries.has_permission(db, user.Kullanici_ID, "Puantaj Geçmiş Veri Erişimi")
+    if has_gecmis_yetki:
+        return True
+
+    from datetime import datetime as dt
+    today = dt.now().date()
+
+    # Rule 1: No future dates
+    if target_date > today:
+        return False
+
+    # Rule 2: Period check
+    current_year = today.year
+    current_month = today.month
+
+    # Current month
+    if target_date.year == current_year and target_date.month == current_month:
+        return True
+
+    # Previous month check (only if today_day <= 5)
+    is_prev_month = (
+        (target_date.year == current_year and target_date.month == current_month - 1) or
+        (target_date.month == 12 and target_date.year == current_year - 1 and current_month == 1)
+    )
+    if is_prev_month and today.day <= 5:
+        return True
+
+    return False
+
+
 @hr_bp.route("/puantajlar", methods=["POST"])
 @auth_required
 def create_puantaj():
@@ -475,6 +533,11 @@ def create_puantaj():
         if isinstance(target_date, str):
             target_date = date_type.fromisoformat(target_date)
         
+        # Validation: Permission check for target_date
+        if not _check_puantaj_period_permission(db, target_date):
+            db.close()
+            return jsonify({"error": "Bu tarih için puantaj giriş/değiştirme yetkiniz bulunmamaktadır."}), 403
+
         calisan = queries.get_calisan_by_tc_no(db, data["TC_No"])
         if calisan:
             if calisan.Sigorta_Giris and target_date < calisan.Sigorta_Giris:
@@ -528,6 +591,11 @@ def update_puantaj(puantaj_id):
             else:
                 target_date = puantaj.Tarih
             
+            # Validation: Permission check for target_date
+            if not _check_puantaj_period_permission(db, target_date):
+                db.close()
+                return jsonify({"error": "Bu tarih için puantaj giriş/değiştirme yetkiniz bulunmamaktadır."}), 403
+
             calisan = queries.get_calisan_by_tc_no(db, puantaj.TC_No)
             if calisan:
                 if calisan.Sigorta_Giris and target_date < calisan.Sigorta_Giris:
@@ -568,6 +636,15 @@ def delete_puantaj(puantaj_id):
     """Delete attendance record."""
     try:
         db = get_db_session()
+        puantaj = queries.get_puantaj_by_id(db, puantaj_id)
+        if not puantaj:
+            db.close()
+            return jsonify({"error": "Puantaj not found"}), 404
+
+        if not _check_puantaj_period_permission(db, puantaj.Tarih):
+            db.close()
+            return jsonify({"error": "Bu tarih için puantaj silme yetkiniz bulunmamaktadır."}), 403
+
         deleted = queries.delete_puantaj(db, puantaj_id)
         db.close()
         
@@ -575,6 +652,125 @@ def delete_puantaj(puantaj_id):
             return jsonify({"error": "Puantaj not found"}), 404
         
         return jsonify({"message": "Puantaj deleted"}), 204
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@hr_bp.route("/puantajlar/copy-vardiya-plan", methods=["POST"])
+@auth_required
+def copy_vardiya_plan_to_puantaj():
+    """
+    Copy daily shift plan (Vardiya Plan) to attendance (Puantaj) for a specific date and branch.
+    Only copies for employees who don't already have a puantaj entry on that date.
+    Respects hire (Sigorta_Giris) and exit (Sigorta_Cikis) date bounds.
+    Requires user permission for target_date.
+    """
+    try:
+        data = request.get_json()
+        if not data or "Tarih" not in data or "Sube_ID" not in data:
+            return jsonify({"error": "Tarih ve Sube_ID gereklidir."}), 400
+
+        from datetime import date as date_type, datetime
+        target_date_raw = data.get("Tarih")
+        target_date = date_type.fromisoformat(target_date_raw) if isinstance(target_date_raw, str) else target_date_raw
+        sube_id = int(data.get("Sube_ID"))
+
+        db = get_db_session()
+
+        # Permission check
+        if not _check_puantaj_period_permission(db, target_date):
+            db.close()
+            return jsonify({"error": "Bu tarih için puantaj giriş/değiştirme yetkiniz bulunmamaktadır."}), 403
+
+        # 1. Get shift plans for this date and branch
+        from app.models.models import VardiyaPlan, Puantaj, Calisan
+        vardiya_plans = (
+            db.query(VardiyaPlan)
+            .filter(VardiyaPlan.Sube_ID == sube_id, VardiyaPlan.Tarih == target_date)
+            .all()
+        )
+
+        if not vardiya_plans:
+            db.close()
+            return jsonify({
+                "message": "Bu tarih için aktarılacak vardiya planı bulunamadı.",
+                "copied_count": 0,
+                "records": []
+            }), 200
+
+        # 2. Get existing puantaj records for this date and branch
+        existing_puantajlar = (
+            db.query(Puantaj)
+            .filter(Puantaj.Sube_ID == sube_id, Puantaj.Tarih == target_date)
+            .all()
+        )
+        existing_tc_set = {p.TC_No for p in existing_puantajlar}
+
+        # 3. Get all relevant employees for hire/exit date checking
+        plan_tcs = [vp.TC_No for vp in vardiya_plans if vp.TC_No not in existing_tc_set]
+        calisanlar = db.query(Calisan).filter(Calisan.TC_No.in_(plan_tcs)).all() if plan_tcs else []
+        calisan_map = {c.TC_No: c for c in calisanlar}
+
+        created_records = []
+        now = datetime.now()
+
+        for vp in vardiya_plans:
+            tc = vp.TC_No
+            # Rule: If already has a puantaj entry for that day, do not overwrite
+            if tc in existing_tc_set:
+                continue
+
+            calisan = calisan_map.get(tc)
+            if not calisan:
+                continue
+
+            # Rule: Date cannot be before Sigorta_Giris or after Sigorta_Cikis
+            if calisan.Sigorta_Giris and target_date < calisan.Sigorta_Giris:
+                continue
+            if calisan.Sigorta_Cikis and target_date > calisan.Sigorta_Cikis:
+                continue
+
+            # Create new Puantaj entry
+            new_p = Puantaj(
+                Tarih=target_date,
+                TC_No=tc,
+                Secim_ID=vp.Secim_ID,
+                Sube_ID=sube_id,
+                Kayit_Tarihi=now
+            )
+            db.add(new_p)
+            created_records.append((new_p, vp.Secim_ID, tc))
+
+        if created_records:
+            db.commit()
+            for p, _, _ in created_records:
+                db.refresh(p)
+
+        # Build response payload
+        secimler_data = queries.get_puantaj_secimler(db, skip=0, limit=1000)
+        secimler_map = {s.Secim_ID: s for s in secimler_data}
+
+        result_records = []
+        for p, secim_id, tc in created_records:
+            secim = secimler_map.get(secim_id)
+            result_records.append({
+                "Puantaj_ID": p.Puantaj_ID,
+                "TC_No": tc,
+                "Tarih": target_date.isoformat(),
+                "Secim_ID": secim_id,
+                "Secim": secim.Secim if secim else "?",
+                "Renk_Kodu": secim.Renk_Kodu if secim else "#ccc",
+                "Degeri": float(secim.Degeri) if secim else 0.0,
+            })
+
+        db.close()
+
+        return jsonify({
+            "message": f"{len(result_records)} kişinin vardiya planı puantaja aktarıldı.",
+            "copied_count": len(result_records),
+            "records": result_records
+        }), 200
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
