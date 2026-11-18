@@ -654,6 +654,7 @@ class PuantajSecimi(db.Model):
     Secim = Column(String(100), nullable=False, unique=True, index=True)
     Degeri = Column(DECIMAL(3, 1), nullable=False)
     Renk_Kodu = Column(String(15), nullable=False)
+    Planli = Column("Planlı", Boolean, default=False, nullable=False)
     Aktif_Pasif = Column(Boolean, default=True, index=True)
 
     # Relationships

@@ -253,14 +253,16 @@ def create_puantaj_secim(
     secim: str,
     degeri: float,
     renk_kodu: str,
-    aktif_pasif: bool = True
+    aktif_pasif: bool = True,
+    planli: bool = False
 ) -> PuantajSecimi:
     """Create a new attendance type."""
     new_secim = PuantajSecimi(
         Secim=secim,
         Degeri=Decimal(str(degeri)),
         Renk_Kodu=renk_kodu,
-        Aktif_Pasif=aktif_pasif
+        Aktif_Pasif=aktif_pasif,
+        Planli=planli
     )
     db.add(new_secim)
     db.commit()
@@ -274,7 +276,8 @@ def update_puantaj_secim(
     secim: Optional[str] = None,
     degeri: Optional[float] = None,
     renk_kodu: Optional[str] = None,
-    aktif_pasif: Optional[bool] = None
+    aktif_pasif: Optional[bool] = None,
+    planli: Optional[bool] = None
 ) -> Optional[PuantajSecimi]:
     """Update attendance type."""
     secim_obj = get_puantaj_secim_by_id(db, secim_id)
@@ -289,6 +292,8 @@ def update_puantaj_secim(
         secim_obj.Renk_Kodu = renk_kodu
     if aktif_pasif is not None:
         secim_obj.Aktif_Pasif = aktif_pasif
+    if planli is not None:
+        secim_obj.Planli = planli
     
     db.commit()
     db.refresh(secim_obj)

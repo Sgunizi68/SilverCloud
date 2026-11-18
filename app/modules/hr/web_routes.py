@@ -132,6 +132,7 @@ def puantaj_secim_yonetimi():
             "Degeri": float(s.Degeri) if s.Degeri is not None else 0.0,
             "Renk_Kodu": s.Renk_Kodu or "#cccccc",
             "Aktif_Pasif": s.Aktif_Pasif,
+            "Planli": getattr(s, "Planli", False),
         }
         for s in secimler_data
     ]
@@ -699,8 +700,9 @@ def vardiya_plan_girisi():
             "Degeri":   float(s.Degeri) if s.Degeri else 0.0,
             "Renk_Kodu": s.Renk_Kodu or "#cccccc",
             "Aktif_Pasif": s.Aktif_Pasif,
+            "Planli": getattr(s, "Planli", False),
         }
-        for s in secimler_data if s.Aktif_Pasif
+        for s in secimler_data if s.Aktif_Pasif and getattr(s, "Planli", False)
     ]
 
     # Identify "Çıkış" seçim ID

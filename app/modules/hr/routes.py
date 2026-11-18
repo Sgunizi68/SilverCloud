@@ -267,6 +267,7 @@ def list_puantaj_secimler():
                 "Degeri": float(s.Degeri),
                 "Renk_Kodu": s.Renk_Kodu,
                 "Aktif_Pasif": s.Aktif_Pasif,
+                "Planli": getattr(s, "Planli", False),
             }
             for s in secimler
         ]
@@ -294,6 +295,7 @@ def get_puantaj_secim(secim_id):
             "Degeri": float(secim.Degeri),
             "Renk_Kodu": secim.Renk_Kodu,
             "Aktif_Pasif": secim.Aktif_Pasif,
+            "Planli": getattr(secim, "Planli", False),
         }
         
         return jsonify(result), 200
@@ -316,7 +318,8 @@ def create_puantaj_secim():
             secim=data["Secim"],
             degeri=float(data["Degeri"]),
             renk_kodu=data["Renk_Kodu"],
-            aktif_pasif=data.get("Aktif_Pasif", True)
+            aktif_pasif=data.get("Aktif_Pasif", True),
+            planli=bool(data.get("Planli", False))
         )
         db.close()
         
@@ -326,6 +329,7 @@ def create_puantaj_secim():
             "Degeri": float(new_secim.Degeri),
             "Renk_Kodu": new_secim.Renk_Kodu,
             "Aktif_Pasif": new_secim.Aktif_Pasif,
+            "Planli": getattr(new_secim, "Planli", False),
         }
         
         return jsonify(result), 201
@@ -347,7 +351,8 @@ def update_puantaj_secim(secim_id):
             secim=data.get("Secim"),
             degeri=float(data.get("Degeri")) if "Degeri" in data else None,
             renk_kodu=data.get("Renk_Kodu"),
-            aktif_pasif=data.get("Aktif_Pasif")
+            aktif_pasif=data.get("Aktif_Pasif"),
+            planli=bool(data.get("Planli")) if "Planli" in data else None
         )
         db.close()
         
@@ -360,6 +365,7 @@ def update_puantaj_secim(secim_id):
             "Degeri": float(updated_secim.Degeri),
             "Renk_Kodu": updated_secim.Renk_Kodu,
             "Aktif_Pasif": updated_secim.Aktif_Pasif,
+            "Planli": getattr(updated_secim, "Planli", False),
         }
         
         return jsonify(result), 200
@@ -690,6 +696,12 @@ def create_vardiya_plan():
             db.close()
             return jsonify({"error": "Bugün ve geçmiş günlere ait vardiya planı giriş/düzenleme yetkiniz bulunmamaktadır."}), 403
 
+        # Validation: Secim must have Planli == True
+        secim = queries.get_puantaj_secim_by_id(db, data["Secim_ID"])
+        if not secim or not getattr(secim, "Planli", False) or not secim.Aktif_Pasif:
+            db.close()
+            return jsonify({"error": "Seçilen puantaj türü vardiya planı için geçerli değildir."}), 400
+
         # Validation: Date cannot be before Sigorta_Giris or after Sigorta_Cikis
         calisan = queries.get_calisan_by_tc_no(db, data["TC_No"])
         if calisan:
@@ -748,6 +760,14 @@ def update_vardiya_plan(plan_id):
         if not _check_vardiya_plan_period_permission(db, target_date):
             db.close()
             return jsonify({"error": "Bugün ve geçmiş günlere ait vardiya planı giriş/düzenleme yetkiniz bulunmamaktadır."}), 403
+
+        # Validation: If Secim_ID is being updated, it must have Planli == True
+        new_secim_id = data.get("Secim_ID")
+        if new_secim_id is not None:
+            secim = queries.get_puantaj_secim_by_id(db, new_secim_id)
+            if not secim or not getattr(secim, "Planli", False) or not secim.Aktif_Pasif:
+                db.close()
+                return jsonify({"error": "Seçilen puantaj türü vardiya planı için geçerli değildir."}), 400
 
         calisan = queries.get_calisan_by_tc_no(db, plan.TC_No)
         if calisan:
